@@ -1,0 +1,55 @@
+* { box-sizing: border-box; }
+body {
+    margin: 0;
+    padding: 24px;
+    font-family: Arial, sans-serif;
+    line-height: 1.5;
+    background: #f2f4f7;
+    color: #202938;
+}
+main {
+    max-width: 900px;
+    margin: auto;
+    padding: 24px;
+    background: white;
+    border-radius: 8px;
+}
+a { color: #174e9b; margin-right: 12px; }
+label { display: block; margin-top: 16px; font-weight: bold; }
+input:not([type="hidden"]), select {
+    display: block;
+    width: 100%;
+    max-width: 420px;
+    padding: 10px;
+    font: inherit;
+    border: 1px solid #687587;
+    border-radius: 4px;
+}
+button {
+    margin: 20px 12px 0 0;
+    padding: 10px 16px;
+    border: 0;
+    border-radius: 4px;
+    background: #174e9b;
+    color: white;
+    font: inherit;
+    cursor: pointer;
+}
+button:hover { background: #123c77; }
+.perigo { background: #a51e2c; }
+.mensagem { padding: 12px; background: #e0f2e7; }
+.erros { padding: 12px 32px; background: #ffe8e8; }
+.busca { margin: 20px 0; }
+.tabela { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; }
+caption { text-align: left; font-weight: bold; margin-bottom: 8px; }
+th, td { padding: 10px; border: 1px solid #ccd3dc; text-align: left; }
+th { background: #edf1f6; }
+
+@media (max-width: 650px) {
+    body { padding: 12px; }
+    main { padding: 16px; }
+    input:not([type="hidden"]), select { max-width: none; }
+    .busca input { margin-bottom: 8px; }
+    table { min-width: 650px; }
+}
