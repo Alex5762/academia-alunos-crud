@@ -1,0 +1,18 @@
+# Arquivos locais e temporários
+.DS_Store
+Thumbs.db
+*.log
+
+# Configurações locais e segredos
+.env
+.env.*
+!.env.example
+
+# Dependências e caches
+/vendor/
+/node_modules/
+
+# Arquivos temporários do editor
+.vscode/
+.idea/
+*.swp
