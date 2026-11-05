@@ -1,0 +1,12 @@
+CREATE DATABASE IF NOT EXISTS academia_alunos
+    CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+USE academia_alunos;
+
+CREATE TABLE IF NOT EXISTS alunos (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    nome VARCHAR(100) NOT NULL,
+    telefone VARCHAR(20) NOT NULL,
+    email VARCHAR(150) NOT NULL,
+    plano VARCHAR(40) NOT NULL
+);
