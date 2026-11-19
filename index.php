@@ -61,17 +61,29 @@ function classePlano($plano) {
     };
 }
 
+function extrairInicial($texto) {
+    preg_match('/^\X/u', trim((string) $texto), $resultado);
+    $inicial = $resultado[0] ?? '';
+
+    // strtoupper cobre letras ASCII; strtr completa as maiúsculas acentuadas do português.
+    return strtr(strtoupper($inicial), [
+        'á' => 'Á', 'à' => 'À', 'â' => 'Â', 'ã' => 'Ã',
+        'é' => 'É', 'ê' => 'Ê', 'í' => 'Í', 'ó' => 'Ó',
+        'ô' => 'Ô', 'õ' => 'Õ', 'ú' => 'Ú', 'ç' => 'Ç'
+    ]);
+}
+
 function iniciaisNome($nome) {
     $partes = preg_split('/\s+/u', trim((string) $nome));
     $primeira = $partes[0] ?? '';
     $ultima = count($partes) > 1 ? $partes[count($partes) - 1] : '';
 
-    $iniciais = mb_substr($primeira, 0, 1, 'UTF-8');
+    $iniciais = extrairInicial($primeira);
     if ($ultima !== '') {
-        $iniciais .= mb_substr($ultima, 0, 1, 'UTF-8');
+        $iniciais .= extrairInicial($ultima);
     }
 
-    return mb_strtoupper($iniciais, 'UTF-8');
+    return $iniciais;
 }
 ?>
 <!DOCTYPE html>
