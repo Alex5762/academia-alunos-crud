@@ -1,0 +1,127 @@
+name: CI - Academia Alunos CRUD
+
+on:
+  push:
+    branches:
+      - main
+      - feat/dashboard-portfolio
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  php-and-mysql:
+    name: PHP syntax and MySQL integration
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: academia_alunos
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: pdo_mysql
+          coverage: none
+
+      - name: Check PHP syntax
+        shell: bash
+        run: |
+          set -e
+          while IFS= read -r -d '' file; do
+            echo "Checking $file"
+            php -l "$file"
+          done < <(find . -type f -name '*.php' -not -path './vendor/*' -print0)
+
+      - name: Check required project files
+        run: |
+          test -f index.php
+          test -f cadastro.php
+          test -f salvar.php
+          test -f excluir.php
+          test -f conexao.php
+          test -f banco.sql
+          test -f style.css
+
+      - name: Import database schema
+        env:
+          MYSQL_PWD: root
+        run: mysql --host=127.0.0.1 --port=3306 --user=root < banco.sql
+
+      - name: Test PDO connection and dashboard queries
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_NAME: academia_alunos
+          DB_USER: root
+          DB_PASSWORD: root
+        run: |
+          php <<'PHP'
+          <?php
+          $dsn = sprintf(
+              'mysql:host=%s;port=%s;dbname=%s;charset=utf8mb4',
+              getenv('DB_HOST'),
+              getenv('DB_PORT'),
+              getenv('DB_NAME')
+          );
+
+          $pdo = new PDO($dsn, getenv('DB_USER'), getenv('DB_PASSWORD'), [
+              PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+              PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+              PDO::ATTR_EMULATE_PREPARES => false,
+          ]);
+
+          $pdo->exec(
+              "INSERT INTO alunos (nome, telefone, email, plano) VALUES
+              ('Ana Teste', '21999990000', 'ana@example.test', 'Mensal'),
+              ('Bruno Teste', '21999990001', 'bruno@example.test', 'Anual')"
+          );
+
+          $total = (int) $pdo->query(
+              'SELECT COUNT(*) FROM alunos'
+          )->fetchColumn();
+
+          if ($total !== 2) {
+              throw new RuntimeException("Esperados 2 alunos; encontrados: {$total}");
+          }
+
+          $planos = $pdo->query(
+              'SELECT plano, COUNT(*) AS quantidade
+               FROM alunos
+               GROUP BY plano
+               ORDER BY quantidade DESC, plano ASC'
+          )->fetchAll();
+
+          if (count($planos) !== 2) {
+              throw new RuntimeException('A consulta de distribuição por plano falhou.');
+          }
+
+          $busca = $pdo->prepare(
+              'SELECT COUNT(*) FROM alunos WHERE nome LIKE :busca'
+          );
+          $busca->execute(['busca' => '%Ana%']);
+
+          if ((int) $busca->fetchColumn() !== 1) {
+              throw new RuntimeException('A consulta de pesquisa por nome falhou.');
+          }
+
+          echo "PDO, schema, indicadores, distribuição por plano e pesquisa: OK\n";
+          PHP
