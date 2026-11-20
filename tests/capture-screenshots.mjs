@@ -6,7 +6,7 @@ const baseUrl = process.env.BASE_URL ?? "http://127.0.0.1:8080";
 const outputDir = fileURLToPath(new URL("../docs/screenshots/", import.meta.url));
 const pageErrors = [];
 const testEmail = "provision-ci@example.test";
-const testPassword = process.env.FITCONTROL_TEST_PASSWORD;
+let testPassword = process.env.FITCONTROL_TEST_PASSWORD;
 
 if (!testPassword) {
   throw new Error("FITCONTROL_TEST_PASSWORD não foi fornecida ao teste visual.");
@@ -18,6 +18,16 @@ async function autenticar(page) {
   await page.getByLabel("E-mail").fill(testEmail);
   await page.getByLabel("Senha").fill(testPassword);
   await page.getByRole("button", { name: "Entrar no painel" }).click();
+
+  if (await page.getByRole("heading", { name: "Crie sua senha pessoal" }).count()) {
+    const novaSenha = "SenhaNova-FitControl-2026!";
+    await page.getByLabel("Senha temporária").fill(testPassword);
+    await page.getByLabel("Nova senha").fill(novaSenha);
+    await page.getByLabel("Confirme a nova senha").fill(novaSenha);
+    await page.getByRole("button", { name: "Salvar nova senha" }).click();
+    testPassword = novaSenha;
+  }
+
   await page.getByRole("heading", { name: "Visão geral" }).waitFor();
 }
 
