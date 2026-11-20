@@ -99,6 +99,10 @@ OLD_PASSWORD_HASH="$(db_value "SELECT COUNT(*) FROM usuarios WHERE email = 'prov
 if [[ -n "${GITHUB_ENV:-}" ]]; then
     printf 'FITCONTROL_TEST_PASSWORD=%s\n' "$FITCONTROL_NEW_PASSWORD" >> "$GITHUB_ENV"
 fi
+if [[ -n "${RUNNER_TEMP:-}" ]]; then
+    printf '%s' "$FITCONTROL_NEW_PASSWORD" > "$RUNNER_TEMP/fitcontrol-test-password"
+    chmod 600 "$RUNNER_TEMP/fitcontrol-test-password"
+fi
 
 curl -fsS -c "$TMP_DIR/old-password-cookies.txt" -b "$TMP_DIR/old-password-cookies.txt" "$BASE_URL/login.php" -o "$TMP_DIR/login-old-password.html"
 LOGIN_TOKEN="$(get_token "$TMP_DIR/login-old-password.html")"
