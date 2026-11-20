@@ -26,9 +26,15 @@ $aluno = buscarAluno($pdo, $id);
 
 if ($metodo === 'POST') {
     try {
+        $pdo->beginTransaction();
         $comando = $pdo->prepare('DELETE FROM alunos WHERE id = :id');
         $comando->execute(['id' => $id]);
-    } catch (PDOException $erro) {
+        registrarAuditoria($pdo, (int) $usuario['id'], 'aluno_excluido', 'alunos', (int) $id);
+        $pdo->commit();
+    } catch (Throwable $erro) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
         error_log($erro->getMessage());
         http_response_code(500);
         exit('Não foi possível excluir. Consulte o registro de erros do Apache.');
