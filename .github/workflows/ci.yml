@@ -147,6 +147,8 @@ jobs:
             ('Henrique Rocha', '(21) 90000-0008', 'henrique.rocha@example.test', 'Anual');
           SQL
 
+          export FITCONTROL_TEST_PASSWORD="$(cat "$RUNNER_TEMP/fitcontrol-test-password")"
+          rm -f "$RUNNER_TEMP/fitcontrol-test-password"
           node tests/capture-screenshots.mjs
 
       - name: Upload screenshots
