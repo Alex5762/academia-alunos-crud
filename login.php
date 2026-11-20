@@ -32,7 +32,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         try {
             $consulta = $pdo->prepare(
-                'SELECT id, nome, email, senha_hash, ativo
+                'SELECT id, nome, email, senha_hash, ativo, deve_trocar_senha
                  FROM usuarios
                  WHERE email = :email
                  LIMIT 1'
@@ -66,7 +66,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 );
                 $pdo->commit();
 
-                redirecionar('index.php');
+                redirecionar((int) $usuario['deve_trocar_senha'] === 1 ? 'trocar-senha.php' : 'index.php');
             }
         } catch (Throwable $falha) {
             if ($pdo->inTransaction()) {
