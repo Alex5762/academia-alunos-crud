@@ -1,14 +1,15 @@
 # Relatório de testes - Academia de Alunos (CRUD)
 
 **Responsável:** Joseph Alexsander  
-**Data da execução:** 11/11/2026  
 **Repositório:** [Alex5762/academia-alunos-crud](https://github.com/Alex5762/academia-alunos-crud)
+
+Este documento mantém o registro dos testes manuais realizados em 11/11/2026 e acrescenta, separadamente, a validação automatizada executada em 20/11/2026. Os resultados de cada modalidade não devem ser confundidos.
 
 ## 1. Objetivo
 
-Registrar a preparação do ambiente local e os testes funcionais executados na aplicação de cadastro de alunos da academia, verificando as operações CRUD (Create, Read, Update e Delete) e a persistência dos dados no MySQL.
+Registrar a preparação do ambiente local e os testes funcionais executados na aplicação de cadastro de alunos da academia, verificando as operações CRUD (Create, Read, Update e Delete), a validação dos dados e a persistência no MySQL.
 
-## 2. Ambiente utilizado
+## 2. Ambiente do teste manual - 11/11/2026
 
 - Sistema operacional: Windows.
 - Ambiente local: XAMPP.
@@ -20,7 +21,7 @@ Registrar a preparação do ambiente local e os testes funcionais executados na 
 - Endereço local da aplicação: `http://localhost/academia-alunos-crud/`.
 - Endereço do phpMyAdmin: `http://localhost/phpmyadmin/`.
 
-## 3. Preparação e configuração
+## 3. Preparação e configuração manual
 
 1. O repositório foi clonado e aberto no Visual Studio Code.
 2. Os arquivos principais foram conferidos no terminal: `index.php`, `conexao.php`, `banco.sql`, `cadastro.php`, `salvar.php`, `excluir.php` e `funcoes.php`.
@@ -48,7 +49,7 @@ A conferência confirmou:
 
 Depois da criação e conferência da estrutura, a aplicação passou a abrir e conectar ao banco.
 
-## 4. Testes funcionais executados
+## 4. Testes funcionais manuais - 11/11/2026
 
 ### 4.1 Create - cadastro de aluno
 
@@ -85,7 +86,7 @@ Depois da criação e conferência da estrutura, a aplicação passou a abrir e 
 
 **Status:** aprovado.
 
-## 5. Resultado consolidado
+## 5. Resultado consolidado - teste manual
 
 | Operação | Resultado |
 |---|---|
@@ -96,29 +97,58 @@ Depois da criação e conferência da estrutura, a aplicação passou a abrir e 
 | Delete - confirmar e excluir aluno | Aprovado |
 | Verificar exclusão diretamente no MySQL | Aprovado |
 
-Ao final dos testes, a tabela `alunos` estava sem registros, conforme a consulta executada no phpMyAdmin após a exclusão do aluno de teste.
+Ao final dos testes manuais, a tabela `alunos` estava sem registros, conforme a consulta executada no phpMyAdmin após a exclusão do aluno de teste.
 
-## 6. Pontos ainda pendentes
+## 6. Testes automatizados de integração - 20/11/2026
 
-Os testes básicos do fluxo CRUD foram concluídos. Para ampliar a validação, ainda é recomendável executar:
+### 6.1 Ambiente utilizado
 
-1. Tentar salvar o formulário com campos obrigatórios vazios.
-2. Testar um endereço de e-mail em formato inválido.
-3. Abrir a tela de confirmação de exclusão e cancelar a operação, verificando que o registro permanece.
-4. Revisar a validação e a formatação do telefone. Na captura da listagem, o número de teste pareceu longo; convém confirmar o limite e o formato esperado.
-5. Repetir os testes com mais de um registro e atualizar a página após cada operação para verificar a persistência.
+- GitHub Actions, runner Ubuntu.
+- PHP 8.2 com extensão `pdo_mysql`.
+- Serviço MySQL 8.0.
+- Servidor embutido do PHP para disponibilizar a aplicação por HTTP.
+- Script `tests/integration-crud.sh`, executado com Bash e curl.
+- Commit testado: `2e32105982a3c52ca153f1b9c687ea56320346da`.
+- Execução: [GitHub Actions - Run #4](https://github.com/Alex5762/academia-alunos-crud/actions/runs/44728236912).
 
-Esses itens estão **pendentes** e não são contabilizados como aprovados neste relatório.
+### 6.2 Cenários automatizados
 
-## 7. Conclusão
+| Cenário | Verificação | Resultado |
+|---|---|---|
+| Token CSRF inválido | Endpoint de gravação responde HTTP 403 | Aprovado |
+| E-mail inválido | Servidor rejeita o dado e preserva os dados preenchidos | Aprovado |
+| Create | Cadastro pelo endpoint `salvar.php` e geração de ID | Aprovado |
+| Read | Pesquisa do aluno pelo endpoint `index.php` | Aprovado |
+| Update | Edição pelo endpoint `salvar.php` e conferência no MySQL | Aprovado |
+| Confirmação de exclusão | Requisição GET exibe confirmação e mantém o registro | Aprovado |
+| Delete | Exclusão via POST e verificação da remoção no MySQL | Aprovado |
 
-O ambiente local com Windows e XAMPP foi preparado, a aplicação PHP foi executada pelo Apache e a conexão com o banco MySQL foi estabelecida após a criação e conferência do banco `academia_alunos` e da tabela `alunos`.
+**Resultado da execução:** o job `PHP syntax and CRUD integration` finalizou com conclusão `success`. As etapas de sintaxe PHP, arquivos obrigatórios, importação do schema e execução dos sete blocos do teste de integração foram concluídas com sucesso.
 
-Os testes manuais realizados confirmaram o funcionamento básico das quatro operações CRUD. A listagem e a pesquisa responderam conforme os dados cadastrados, a edição foi testada e a exclusão foi confirmada também diretamente no banco de dados.
+O workflow também verifica a conexão com o MySQL por meio da aplicação, pois os endpoints PHP carregam o arquivo `conexao.php` configurado com variáveis de ambiente.
 
-**Conclusão:** o fluxo principal do sistema foi validado em ambiente local. A validação complementar dos campos e dos cenários de cancelamento permanece pendente.
+### 6.3 Limites da validação automatizada
+
+A execução confirma os cenários explicitamente descritos acima. Ela não representa cobertura completa de todos os caminhos possíveis, não substitui testes manuais em diferentes navegadores ou tamanhos de tela e não verifica autenticação de usuários, pois o projeto ainda não implementa login.
+
+## 7. Pendências conhecidas
+
+Continuam recomendados para uma próxima rodada de testes:
+
+1. Verificar no navegador a experiência de campos obrigatórios vazios, incluindo mensagens e foco nos campos.
+2. Revisar a validação e a formatação do telefone. Na captura da listagem manual, o número de teste pareceu longo; convém confirmar o formato esperado.
+3. Repetir os testes visuais em diferentes larguras de tela e navegadores.
+4. Planejar autenticação e controle de acesso antes de disponibilizar o painel em ambiente público.
+
+Os testes de e-mail inválido, token CSRF inválido, preservação de dados, confirmação sem exclusão via GET e persistência do CRUD já estão cobertos pela automação de 20/11/2026 e não devem ser tratados como pendentes.
+
+## 8. Conclusão
+
+Os testes manuais de 11/11/2026 registraram o funcionamento básico do CRUD no ambiente local Windows/XAMPP. Em 20/11/2026, a integração contínua foi ampliada para executar a aplicação PHP real conectada ao MySQL e validar, por HTTP, cadastro, pesquisa, edição, validação de e-mail, proteção CSRF e exclusão.
+
+**Conclusão:** os principais fluxos do CRUD foram aprovados tanto no registro manual quanto na execução automatizada do GitHub Actions. Permanecem melhorias de validação de telefone, revisão visual em navegadores e implementação de autenticação antes de qualquer exposição pública do painel.
 
 ---
 
 **Autor:** Joseph Alexsander  
-**Projeto:** Academia de Alunos - CRUD  
+**Projeto:** FitControl — Gestão de alunos de academia
