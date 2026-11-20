@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/funcoes.php';
 require_once __DIR__ . '/conexao.php';
+$usuario = exigirAutenticacao($pdo);
 
 // Sem ID: formulário novo. Com ID: formulário de edição.
 $aluno = ['id' => '', 'nome' => '', 'telefone' => '', 'email' => '', 'plano' => 'Mensal'];
