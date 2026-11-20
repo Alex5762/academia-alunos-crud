@@ -31,42 +31,116 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $erro = 'E-mail ou senha inválidos.';
     } else {
         try {
-            $consulta = $pdo->prepare(
-                'SELECT id, nome, email, senha_hash, ativo, deve_trocar_senha
-                 FROM usuarios
-                 WHERE email = :email
+            // Limite por combinação de e-mail e origem, sem guardar os valores puros.
+            $ipOrigem = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+            if (!is_string($ipOrigem) || filter_var($ipOrigem, FILTER_VALIDATE_IP) === false) {
+                $ipOrigem = 'unknown';
+            }
+
+            $emailHash = hash('sha256', $email);
+            $origemHash = hash('sha256', $ipOrigem);
+
+            // Remove registros sem atividade recente para limitar o crescimento da tabela.
+            $pdo->exec(
+                'DELETE FROM login_tentativas
+                 WHERE atualizado_em < DATE_SUB(NOW(), INTERVAL 1 DAY)'
+            );
+
+            $consultarLimite = $pdo->prepare(
+                'SELECT (bloqueado_ate IS NOT NULL AND bloqueado_ate > NOW()) AS bloqueado
+                 FROM login_tentativas
+                 WHERE email_hash = :email_hash AND origem_hash = :origem_hash
                  LIMIT 1'
             );
-            $consulta->execute(['email' => $email]);
-            $usuario = $consulta->fetch();
+            $consultarLimite->execute([
+                'email_hash' => $emailHash,
+                'origem_hash' => $origemHash
+            ]);
+            $bloqueado = (int) ($consultarLimite->fetchColumn() ?: 0) === 1;
 
-            $credenciaisValidas = $usuario
-                && (int) $usuario['ativo'] === 1
-                && password_verify($senha, $usuario['senha_hash']);
-
-            if (!$credenciaisValidas) {
+            if ($bloqueado) {
                 $erro = 'E-mail ou senha inválidos.';
             } else {
-                if (!session_regenerate_id(true)) {
-                    throw new RuntimeException('Não foi possível renovar a sessão.');
-                }
-
-                // Limpa qualquer estado pré-autenticação e cria novo token CSRF.
-                $_SESSION = [];
-                $_SESSION['usuario_id'] = (int) $usuario['id'];
-                $_SESSION['token'] = bin2hex(random_bytes(32));
-
-                $pdo->beginTransaction();
-                registrarAuditoria(
-                    $pdo,
-                    (int) $usuario['id'],
-                    'login',
-                    'usuarios',
-                    (int) $usuario['id']
+                $consulta = $pdo->prepare(
+                    'SELECT id, nome, email, senha_hash, ativo, deve_trocar_senha
+                     FROM usuarios
+                     WHERE email = :email
+                     LIMIT 1'
                 );
-                $pdo->commit();
+                $consulta->execute(['email' => $email]);
+                $usuario = $consulta->fetch();
 
-                redirecionar((int) $usuario['deve_trocar_senha'] === 1 ? 'trocar-senha.php' : 'index.php');
+                $credenciaisValidas = $usuario
+                    && (int) $usuario['ativo'] === 1
+                    && password_verify($senha, $usuario['senha_hash']);
+
+                if (!$credenciaisValidas) {
+                    // Janela móvel fixa de 15 minutos; a 5ª falha bloqueia por 15 minutos.
+                    // O incremento é atômico para que requisições paralelas não percam tentativas.
+                    $registrarFalha = $pdo->prepare(
+                        'INSERT INTO login_tentativas
+                            (email_hash, origem_hash, tentativas, janela_inicio, bloqueado_ate)
+                         VALUES
+                            (:email_hash, :origem_hash, 1, NOW(), NULL)
+                         ON DUPLICATE KEY UPDATE
+                            tentativas = IF(
+                                janela_inicio <= DATE_SUB(NOW(), INTERVAL 15 MINUTE),
+                                1,
+                                tentativas + 1
+                            ),
+                            bloqueado_ate = IF(
+                                tentativas >= 5,
+                                DATE_ADD(NOW(), INTERVAL 15 MINUTE),
+                                IF(
+                                    janela_inicio <= DATE_SUB(NOW(), INTERVAL 15 MINUTE),
+                                    NULL,
+                                    bloqueado_ate
+                                )
+                            ),
+                            janela_inicio = IF(
+                                janela_inicio <= DATE_SUB(NOW(), INTERVAL 15 MINUTE),
+                                NOW(),
+                                janela_inicio
+                            )'
+                    );
+                    $registrarFalha->execute([
+                        'email_hash' => $emailHash,
+                        'origem_hash' => $origemHash
+                    ]);
+
+                    $erro = 'E-mail ou senha inválidos.';
+                } else {
+                    if (!session_regenerate_id(true)) {
+                        throw new RuntimeException('Não foi possível renovar a sessão.');
+                    }
+
+                    $pdo->beginTransaction();
+                    registrarAuditoria(
+                        $pdo,
+                        (int) $usuario['id'],
+                        'login',
+                        'usuarios',
+                        (int) $usuario['id']
+                    );
+
+                    // Um login válido limpa o contador dessa combinação.
+                    $limparFalhas = $pdo->prepare(
+                        'DELETE FROM login_tentativas
+                         WHERE email_hash = :email_hash AND origem_hash = :origem_hash'
+                    );
+                    $limparFalhas->execute([
+                        'email_hash' => $emailHash,
+                        'origem_hash' => $origemHash
+                    ]);
+                    $pdo->commit();
+
+                    // Limpa qualquer estado pré-autenticação e cria novo token CSRF.
+                    $_SESSION = [];
+                    $_SESSION['usuario_id'] = (int) $usuario['id'];
+                    $_SESSION['token'] = bin2hex(random_bytes(32));
+
+                    redirecionar((int) $usuario['deve_trocar_senha'] === 1 ? 'trocar-senha.php' : 'index.php');
+                }
             }
         } catch (Throwable $falha) {
             if ($pdo->inTransaction()) {
