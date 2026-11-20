@@ -43,7 +43,29 @@ db_value() {
     '
 }
 
-echo "1/8 - Abrindo formulário e validando proteção CSRF..."
+echo "1/10 - Bloqueando acesso anônimo e autenticando usuário..."
+HTTP_CODE="$(curl -sS -o "$TMP_DIR/anonymous.html" -w '%{http_code}' -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/index.php")"
+[[ "$HTTP_CODE" == "303" ]] || fail "Dashboard anônimo deveria redirecionar para login; retornou $HTTP_CODE."
+grep -Fq 'login.php' "$TMP_DIR/anonymous.html" && fail "Redirecionamento inesperado no dashboard."
+
+curl -fsS -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/login.php" -o "$TMP_DIR/login.html"
+LOGIN_TOKEN="$(get_token "$TMP_DIR/login.html")"
+HTTP_CODE="$(curl -sS -o "$TMP_DIR/bad-login.html" -w '%{http_code}' -c "$COOKIE_JAR" -b "$COOKIE_JAR" -X POST "$BASE_URL/login.php" \
+    --data-urlencode "token=$LOGIN_TOKEN" \
+    --data-urlencode "email=provision-ci@example.test" \
+    --data-urlencode "senha=senha-incorreta")"
+[[ "$HTTP_CODE" == "200" ]] || fail "Login inválido deveria retornar a tela com HTTP 200."
+assert_contains "$TMP_DIR/bad-login.html" "E-mail ou senha inválidos."
+
+curl -fsS -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/login.php" -o "$TMP_DIR/login-again.html"
+LOGIN_TOKEN="$(get_token "$TMP_DIR/login-again.html")"
+curl -fsS -L -c "$COOKIE_JAR" -b "$COOKIE_JAR" -X POST "$BASE_URL/login.php" \
+    --data-urlencode "token=$LOGIN_TOKEN" \
+    --data-urlencode "email=provision-ci@example.test" \
+    --data-urlencode "senha=$FITCONTROL_TEST_PASSWORD" \
+    -o "$TMP_DIR/login-success.html"
+assert_contains "$TMP_DIR/login-success.html" "Visão geral"
+
 curl -fsS -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/cadastro.php" -o "$TMP_DIR/form.html"
 TOKEN="$(get_token "$TMP_DIR/form.html")"
 assert_contains "$TMP_DIR/form.html" 'autocomplete="tel"'
@@ -60,7 +82,7 @@ HTTP_CODE="$(curl -sS -o "$TMP_DIR/csrf.html" -w '%{http_code}' \
     --data-urlencode "plano=Mensal")"
 [[ "$HTTP_CODE" == "403" ]] || fail "Token CSRF inválido deveria retornar HTTP 403; retornou $HTTP_CODE."
 
-echo "2/8 - Conferindo validação de e-mail e telefone no servidor..."
+echo "2/10 - Conferindo validação de e-mail e telefone no servidor..."
 curl -fsS -L -c "$COOKIE_JAR" -b "$COOKIE_JAR" \
     -X POST "$BASE_URL/salvar.php" \
     --data-urlencode "token=$TOKEN" \
@@ -85,7 +107,7 @@ curl -fsS -L -c "$COOKIE_JAR" -b "$COOKIE_JAR" \
 assert_contains "$TMP_DIR/invalid-phone.html" "Informe um telefone com DDD e 10 a 13 dígitos"
 assert_contains "$TMP_DIR/invalid-phone.html" 'value="abc123"'
 
-echo "3/8 - Cadastrando aluno pelo endpoint real com telefone formatado..."
+echo "3/10 - Cadastrando aluno pelo endpoint real com telefone formatado..."
 curl -fsS -L -c "$COOKIE_JAR" -b "$COOKIE_JAR" \
     -X POST "$BASE_URL/salvar.php" \
     --data-urlencode "token=$TOKEN" \
@@ -100,7 +122,7 @@ assert_contains "$TMP_DIR/create.html" "Aluno cadastrado com sucesso!"
 ALUNO_ID="$(db_value "SELECT id FROM alunos WHERE email = 'crud-ci-create@example.test' LIMIT 1")"
 [[ "$ALUNO_ID" =~ ^[0-9]+$ ]] || fail "O cadastro não gerou um ID válido."
 
-echo "4/8 - Pesquisando e editando o aluno..."
+echo "4/10 - Pesquisando e editando o aluno..."
 curl -fsS -G -c "$COOKIE_JAR" -b "$COOKIE_JAR" \
     --data-urlencode "busca=Aluno CI CRUD" \
     "$BASE_URL/index.php" -o "$TMP_DIR/search.html"
@@ -125,14 +147,14 @@ assert_contains "$TMP_DIR/update.html" "Aluno atualizado com sucesso!"
 ATUALIZADO="$(db_value "SELECT COUNT(*) FROM alunos WHERE id = $ALUNO_ID AND nome = 'Aluno CI Atualizado' AND email = 'crud-ci-update@example.test' AND plano = 'Anual'")"
 [[ "$ATUALIZADO" == "1" ]] || fail "A edição não foi persistida corretamente."
 
-echo "5/8 - Confirmando que abrir a tela de exclusão não apaga dados..."
+echo "5/10 - Confirmando que abrir a tela de exclusão não apaga dados..."
 curl -fsS -c "$COOKIE_JAR" -b "$COOKIE_JAR" \
     "$BASE_URL/excluir.php?id=$ALUNO_ID" -o "$TMP_DIR/delete-confirmation.html"
 assert_contains "$TMP_DIR/delete-confirmation.html" "Deseja excluir"
 AINDA_EXISTE="$(db_value "SELECT COUNT(*) FROM alunos WHERE id = $ALUNO_ID")"
 [[ "$AINDA_EXISTE" == "1" ]] || fail "Uma requisição GET alterou ou removeu o registro."
 
-echo "6/8 - Excluindo pelo endpoint real..."
+echo "6/10 - Excluindo pelo endpoint real..."
 curl -fsS -L -c "$COOKIE_JAR" -b "$COOKIE_JAR" \
     -X POST "$BASE_URL/excluir.php" \
     --data-urlencode "token=$EDIT_TOKEN" \
@@ -143,9 +165,9 @@ assert_contains "$TMP_DIR/delete.html" "Aluno excluído com sucesso!"
 RESTANTE="$(db_value "SELECT COUNT(*) FROM alunos WHERE id = $ALUNO_ID")"
 [[ "$RESTANTE" == "0" ]] || fail "O registro continuou no banco após a exclusão."
 
-echo "7/8 - Verificando que o endpoint de gravação rejeita GET..."
+echo "7/10 - Verificando que o endpoint de gravação rejeita GET..."
 HTTP_CODE="$(curl -sS -o "$TMP_DIR/method.html" -w '%{http_code}' "$BASE_URL/salvar.php")"
 [[ "$HTTP_CODE" == "405" ]] || fail "GET em salvar.php deveria retornar HTTP 405; retornou $HTTP_CODE."
 
-echo "8/8 - Verificações de integração concluídas."
+echo "8/10 - Verificações de integração concluídas."
 echo "CRUD real via HTTP, validação de e-mail e telefone, CSRF, pesquisa e persistência: OK"
