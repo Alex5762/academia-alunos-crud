@@ -56,14 +56,20 @@ $titulo = $editando ? 'Editar aluno' : 'Cadastrar aluno';
 
         <label for="nome">Nome completo:</label>
         <input type="text" id="nome" name="nome" maxlength="100" required
+               autocomplete="name" autocapitalize="words"
                value="<?= escapar($aluno['nome']) ?>">
 
         <label for="telefone">Telefone:</label>
         <input type="tel" id="telefone" name="telefone" maxlength="20" required
+               autocomplete="tel" inputmode="tel"
+               placeholder="(21) 99999-9999"
+               aria-describedby="ajuda-telefone"
                value="<?= escapar($aluno['telefone']) ?>">
+        <small id="ajuda-telefone">Informe o DDD e o número, com ou sem formatação.</small>
 
         <label for="email">E-mail:</label>
         <input type="email" id="email" name="email" maxlength="150" required
+               autocomplete="email" inputmode="email"
                value="<?= escapar($aluno['email']) ?>">
 
         <label for="plano">Plano:</label>
