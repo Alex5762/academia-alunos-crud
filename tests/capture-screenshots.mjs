@@ -118,6 +118,48 @@ try {
     animations: "disabled",
   });
 
+
+  const settings = await browser.newPage({
+    viewport: { width: 1280, height: 900 },
+    deviceScaleFactor: 1,
+  });
+
+  settings.on("pageerror", (error) => pageErrors.push(error.message));
+
+  const settingsResponse = await settings.goto(`${baseUrl}/configuracoes.php`, {
+    waitUntil: "networkidle",
+  });
+
+  if (!settingsResponse?.ok()) {
+    throw new Error(`Configurações responderam com HTTP ${settingsResponse?.status() ?? "sem resposta"}.`);
+  }
+
+  await settings.getByRole("heading", { name: "Configurações" }).waitFor();
+  await settings.getByRole("button", { name: /Escuro/ }).click();
+
+  const selectedTheme = await settings.locator("html").getAttribute("data-theme");
+  if (selectedTheme !== "dark") {
+    throw new Error("A seleção do tema escuro não foi aplicada.");
+  }
+
+  await settings.screenshot({
+    path: `${outputDir}/configuracoes-escuro.png`,
+    fullPage: true,
+    animations: "disabled",
+  });
+
+  await settings.goto(`${baseUrl}/index.php`, { waitUntil: "networkidle" });
+  const dashboardTheme = await settings.locator("html").getAttribute("data-theme");
+  if (dashboardTheme !== "dark") {
+    throw new Error("A preferência de tema não persistiu ao navegar para o dashboard.");
+  }
+
+  await settings.screenshot({
+    path: `${outputDir}/dashboard-escuro.png`,
+    fullPage: true,
+    animations: "disabled",
+  });
+
   if (pageErrors.length > 0) {
     throw new Error(`Erros JavaScript encontrados: ${pageErrors.join(" | ")}`);
   }
@@ -127,6 +169,8 @@ try {
   console.log("- docs/screenshots/dashboard-mobile.png");
   console.log("- docs/screenshots/alunos-mobile.png");
   console.log("- docs/screenshots/cadastro-desktop.png");
+  console.log("- docs/screenshots/configuracoes-escuro.png");
+  console.log("- docs/screenshots/dashboard-escuro.png");
   console.log("Validação visual automatizada: OK");
 } finally {
   await browser.close();
