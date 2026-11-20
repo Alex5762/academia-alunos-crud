@@ -20,7 +20,7 @@ As imagens abaixo são capturadas automaticamente pelo GitHub Actions com regist
   <img src="docs/screenshots/alunos-mobile.png" alt="Área de alunos cadastrados em tela mobile" width="360">
 </p>
 
-> **Escopo atual:** aplicação acadêmica/local com primeira versão de autenticação individual e auditoria. Ainda faltam proteção contra tentativas repetidas e revisão de segurança para produção. Não exponha o painel à internet nem use dados reais de alunos.
+> **Escopo atual:** aplicação acadêmica/local com primeira versão de autenticação individual e auditoria. Ainda faltam revisão de segurança para produção, HTTPS de produção, monitoramento e controles adicionais. Não exponha o painel à internet nem use dados reais de alunos. Não exponha o painel à internet nem use dados reais de alunos.
 
 ## Funcionalidades
 
@@ -42,6 +42,7 @@ As imagens abaixo são capturadas automaticamente pelo GitHub Actions com regist
 - Proteção contra desativar a própria conta e contra deixar o sistema sem contas ativas.
 - Auditoria de criação, desativação e reativação de contas, identificando o funcionário responsável.
 - Login e logout com senha armazenada por hash, sessão protegida e CSRF.
+- Limitação persistente de tentativas: após 5 falhas na combinação de e-mail e origem em uma janela de 15 minutos, o acesso dessa combinação fica bloqueado por 15 minutos.
 - Troca obrigatória da senha temporária no primeiro acesso, com mínimo de 12 caracteres.
 - Bloqueio das páginas administrativas para visitantes não autenticados e contas desativadas.
 - Auditoria de login/logout e das operações de cadastro, edição e exclusão de alunos.
@@ -97,7 +98,7 @@ academia-alunos-crud/
 5. Confira as configurações de conexão em `conexao.php`, caso seu XAMPP utilize host, porta, usuário ou senha diferentes.
 6. Execute a migração `database/migrations/001_authentication_audit.sql` no banco `academia_alunos` pelo phpMyAdmin (aba SQL).
 7. Execute também `database/migrations/002_force_password_change.sql` para exigir a troca da senha temporária no primeiro acesso.\n8. No terminal, a partir da pasta do projeto, execute `php scripts/provisionar-usuario.php`, informe nome e e-mail e copie a senha temporária exibida uma única vez. No XAMPP, se necessário, use `C:\\xampp\\php\\php.exe scripts\\provisionar-usuario.php`.
-9. Acesse [http://localhost/academia-alunos-crud/login.php](http://localhost/academia-alunos-crud/login.php) e entre com a conta criada. Entregue a senha temporária por canal seguro.
+10. Acesse [http://localhost/academia-alunos-crud/login.php](http://localhost/academia-alunos-crud/login.php) e entre com a conta criada. Entregue a senha temporária por canal seguro.
 
 ### Configuração do banco por variáveis de ambiente
 
@@ -122,7 +123,7 @@ O pipeline:
 1. prepara PHP 8.2, Node.js 24, MySQL 8 e Chromium;
 2. verifica a sintaxe de todos os arquivos PHP;
 3. confere a presença dos arquivos essenciais;
-4. importa o schema de `banco.sql` e executa as migrações de autenticação e troca obrigatória de senha;
+4. importa o schema de `banco.sql` e executa as migrações de autenticação, troca obrigatória de senha e limitação de tentativas;
 5. provisiona uma conta fictícia e valida hash, auditoria e unicidade do e-mail;\n6. inicia a aplicação com o servidor embutido do PHP;
 7. executa `tests/integration-crud.sh` contra os endpoints reais;
 8. prepara registros fictícios no banco temporário e captura as telas desktop e mobile com Playwright;
@@ -163,3 +164,10 @@ A estrutura PHP partiu do exemplo CRUD de PHP e MySQL do Tutorial 7, adaptando o
 
 **Projeto:** FitControl — Gestão de alunos de academia  
 **Repositório:** [Alex5762/academia-alunos-crud](https://github.com/Alex5762/academia-alunos-crud)
+
+
+### Limitação de tentativas de login
+
+O login permite até cinco falhas na combinação do e-mail normalizado com o endereço de origem, dentro de uma janela de 15 minutos. A partir da quinta falha, essa combinação fica temporariamente bloqueada por 15 minutos. Um login válido remove o contador correspondente. As mensagens permanecem genéricas para não revelar se uma conta existe.
+
+A migração `database/migrations/003_login_rate_limit.sql` cria a tabela de controle. Ela guarda hashes SHA-256 do e-mail e do endereço de origem, não os valores puros. Esses hashes são dados pseudonimizados, não anônimos; a proteção não substitui HTTPS, monitoramento, controles de borda ou uma política de retenção adequada para produção. O limite é por combinação de e-mail e origem, não um limite global por IP.
