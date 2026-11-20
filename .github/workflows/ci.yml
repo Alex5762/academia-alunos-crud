@@ -74,11 +74,17 @@ jobs:
           test -f tests/capture-screenshots.mjs
           test -f theme.js
           test -f configuracoes.php
+          test -f database/migrations/001_authentication_audit.sql
 
       - name: Import database schema
         env:
           MYSQL_PWD: root
         run: mysql --host=127.0.0.1 --port=3306 --user=root < banco.sql
+
+      - name: Validate authentication and audit migration
+        env:
+          MYSQL_PWD: root
+        run: mysql --host=127.0.0.1 --port=3306 --user=root < database/migrations/001_authentication_audit.sql
 
       - name: Run CRUD integration tests and capture screenshots
         env:
