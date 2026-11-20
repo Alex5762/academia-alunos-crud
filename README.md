@@ -20,7 +20,7 @@ As imagens abaixo são capturadas automaticamente pelo GitHub Actions com regist
   <img src="docs/screenshots/alunos-mobile.png" alt="Área de alunos cadastrados em tela mobile" width="360">
 </p>
 
-> **Escopo atual:** aplicação local/acadêmica. O painel ainda não possui autenticação real nem controle de acesso por usuário; não deve ser publicado como sistema administrativo aberto à internet sem essa camada.
+> **Escopo atual:** aplicação acadêmica/local com primeira versão de autenticação individual e auditoria. Ainda faltam gestão de contas, troca obrigatória da senha temporária, proteção contra tentativas repetidas e revisão de segurança para produção. Não exponha o painel à internet nem use dados reais de alunos.
 
 ## Funcionalidades
 
@@ -36,6 +36,10 @@ As imagens abaixo são capturadas automaticamente pelo GitHub Actions com regist
 - Mensagens de retorno e preservação dos dados após erros de validação.
 - Layout responsivo para telas menores.
 - Preferência entre tema claro e escuro, disponível em Configurações e salva no navegador.
+- Contas individuais de funcionários, provisionadas pelo terminal (sem cadastro público).
+- Login e logout com senha armazenada por hash, sessão protegida e CSRF.
+- Bloqueio das páginas administrativas para visitantes não autenticados e contas desativadas.
+- Auditoria de login/logout e das operações de cadastro, edição e exclusão de alunos.
 
 Cada aluno possui nome, telefone, e-mail e plano (Mensal, Trimestral, Semestral ou Anual).
 
@@ -86,7 +90,9 @@ academia-alunos-crud/
 3. Acesse o phpMyAdmin em [http://localhost/phpmyadmin/](http://localhost/phpmyadmin/).
 4. Importe o arquivo `banco.sql`. Ele cria o banco `academia_alunos` e a tabela `alunos`.
 5. Confira as configurações de conexão em `conexao.php`, caso seu XAMPP utilize host, porta, usuário ou senha diferentes.
-6. Acesse [http://localhost/academia-alunos-crud/](http://localhost/academia-alunos-crud/).
+6. Execute a migração `database/migrations/001_authentication_audit.sql` no banco `academia_alunos` pelo phpMyAdmin (aba SQL).
+7. No terminal, a partir da pasta do projeto, execute `php scripts/provisionar-usuario.php`, informe nome e e-mail e copie a senha temporária exibida uma única vez. No XAMPP, se necessário, use `C:\\xampp\\php\\php.exe scripts\\provisionar-usuario.php`.
+8. Acesse [http://localhost/academia-alunos-crud/login.php](http://localhost/academia-alunos-crud/login.php) e entre com a conta criada. Entregue a senha temporária por canal seguro.
 
 ### Configuração do banco por variáveis de ambiente
 
@@ -115,7 +121,7 @@ O pipeline:
 5. inicia a aplicação com o servidor embutido do PHP;
 6. executa `tests/integration-crud.sh` contra os endpoints reais;
 7. prepara registros fictícios no banco temporário e captura as telas desktop e mobile com Playwright;
-8. disponibiliza as imagens como artefato e, em pushes para a branch de desenvolvimento, atualiza os arquivos versionados em `docs/screenshots/`.
+9. disponibiliza as imagens como artefato e, em pushes para a branch de desenvolvimento, atualiza os arquivos versionados em `docs/screenshots/`.
 
 Os testes de integração cobrem:
 - rejeição de token CSRF inválido (HTTP 403);
