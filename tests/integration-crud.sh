@@ -97,6 +97,16 @@ assert_contains "$TMP_DIR/password-changed.html" "Visão geral"
 OLD_PASSWORD_HASH="$(db_value "SELECT COUNT(*) FROM usuarios WHERE email = 'provision-ci@example.test' AND deve_trocar_senha = 0")"
 [[ "$OLD_PASSWORD_HASH" == "1" ]] || fail "A conta continuou marcada para troca obrigatória."
 
+curl -fsS -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/logout.php" -o /dev/null
+curl -fsS -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/login.php" -o "$TMP_DIR/login-old-password.html"
+LOGIN_TOKEN="$(get_token "$TMP_DIR/login-old-password.html")"
+curl -fsS -c "$COOKIE_JAR" -b "$COOKIE_JAR" -X POST "$BASE_URL/login.php" \
+    --data-urlencode "token=$LOGIN_TOKEN" \
+    --data-urlencode "email=provision-ci@example.test" \
+    --data-urlencode "senha=$FITCONTROL_TEST_PASSWORD" \
+    -o "$TMP_DIR/old-password-rejected.html"
+assert_contains "$TMP_DIR/old-password-rejected.html" "E-mail ou senha inválidos."
+
 curl -fsS -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/cadastro.php" -o "$TMP_DIR/form.html"
 TOKEN="$(get_token "$TMP_DIR/form.html")"
 assert_contains "$TMP_DIR/form.html" 'autocomplete="tel"'
