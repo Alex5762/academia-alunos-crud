@@ -13,6 +13,7 @@ if ($metodo === 'POST') {
 }
 
 require_once __DIR__ . '/conexao.php';
+$usuario = exigirAutenticacao($pdo);
 $valorId = $metodo === 'POST' ? ($_POST['id'] ?? '') : ($_GET['id'] ?? '');
 $id = validarId($valorId);
 
