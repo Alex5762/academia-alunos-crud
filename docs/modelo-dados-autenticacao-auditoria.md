@@ -97,3 +97,15 @@ A migração usa `CREATE TABLE IF NOT EXISTS`, mas deve ser executada e validada
 - Não incluir endereço IP neste primeiro esquema; sua necessidade e prazo de retenção exigiriam decisão específica de privacidade.
 - A trilha básica identifica autor, ação, alvo e horário; não é ainda um histórico de alterações campo a campo.
 - Acesso à consulta de auditoria será protegido pela autenticação quando uma interface de consulta for criada.
+
+
+## Gestão de contas
+
+A gestão utiliza as tabelas existentes; não exige nova migração.
+
+- `usuarios.ativo`: a desativação bloqueia novos logins e invalida o acesso de uma sessão existente na próxima requisição protegida.
+- `usuarios.deve_trocar_senha`: novas contas são criadas com valor `1`; o funcionário precisa definir sua senha pessoal no primeiro acesso.
+- `auditoria`: eventos `usuario_criado`, `usuario_desativado` e `usuario_reativado` identificam o funcionário autor e a conta afetada.
+- A conta não é apagada fisicamente, preservando a relação com eventos antigos.
+
+A interface não permite desativar a própria conta nem a última conta ativa. Nesta versão, todas as contas ativas têm as mesmas permissões administrativas; não existe coluna de papel/cargo.
