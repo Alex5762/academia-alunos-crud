@@ -75,6 +75,9 @@ jobs:
           test -f theme.js
           test -f configuracoes.php
           test -f database/migrations/001_authentication_audit.sql
+          test -f scripts/provisionar-usuario.php
+          test -f tests/assert-user-provisioned.php
+          test -f tests/provision-user.sh
 
       - name: Import database schema
         env:
@@ -85,6 +88,16 @@ jobs:
         env:
           MYSQL_PWD: root
         run: mysql --host=127.0.0.1 --port=3306 --user=root < database/migrations/001_authentication_audit.sql
+
+      - name: Test secure CLI user provisioning
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_NAME: academia_alunos
+          DB_USER: root
+          DB_PASSWORD: root
+          MYSQL_PWD: root
+        run: bash tests/provision-user.sh
 
       - name: Run CRUD integration tests and capture screenshots
         env:
