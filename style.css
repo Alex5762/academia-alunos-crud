@@ -1420,3 +1420,43 @@ body:not(.dashboard-body) form[action="excluir.php"] a {
         animation-iteration-count: 1 !important;
     }
 }
+
+
+/* Ajustes de acessibilidade e usabilidade dos formulários e da tabela */
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+.table-scroll {
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: #cbd3e3 transparent;
+}
+
+.table-scroll:focus-visible {
+    outline: 3px solid rgba(49, 95, 232, 0.25);
+    outline-offset: -3px;
+}
+
+#ajuda-telefone {
+    display: block;
+    margin-top: 6px;
+    color: var(--muted);
+    font-size: 0.74rem;
+    line-height: 1.45;
+}
+
+@media (max-width: 600px) {
+    body:not(.dashboard-body) form#form-aluno button[type="submit"] {
+        width: 100%;
+        margin-right: 0;
+    }
+}
