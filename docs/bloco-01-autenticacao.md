@@ -4,7 +4,7 @@
 
 Exigir autenticação antes de permitir acesso ao painel e às operações administrativas do FitControl. Cada funcionário terá sua própria conta, permitindo atribuir ações a uma pessoa específica e consultar um histórico básico de atividade.
 
-**Estado:** contas individuais, login/logout, proteção de rotas, auditoria do CRUD e troca obrigatória da senha temporária implementados na branch. A migração 002 e os testes automatizados foram adicionados e aguardam a execução da CI.
+**Estado:** contas individuais, login/logout, proteção de rotas, auditoria do CRUD, troca obrigatória de senha e gestão de contas implementados na branch. A validação automatizada da gestão de contas está incluída na CI e aguarda execução.
 
 ## Diagnóstico da base atual
 
@@ -84,7 +84,7 @@ O teste `tests/provision-user.sh` verifica a criação, a validação do hash, o
 - Cadastro, edição e exclusão de alunos gravam evento de auditoria na mesma transação da alteração de dados.
 - O fluxo de testes agora prevê acesso anônimo, login inválido/válido, CRUD, autoria dos três eventos e logout. O Playwright autentica antes das capturas.
 
-**Limitações conhecidas desta primeira versão:** ainda não há tela para administrar/desativar contas; a desativação deve ser feita diretamente no banco por operador autorizado. Também não há limitação persistente de tentativas de login nem tela para administrar/desativar contas. O provisionador mostra a senha uma única vez; trate-a como segredo e entregue por canal seguro. Não exponha o sistema publicamente até concluir a revisão de segurança e HTTPS.
+**Limitações conhecidas desta primeira versão:** todas as contas ativas possuem as mesmas permissões administrativas; não há separação entre administrador e funcionário. Também não há limitação persistente de tentativas de login, recuperação de senha por e-mail ou MFA. O provisionador mostra a senha uma única vez; trate-a como segredo e entregue por canal seguro. Não exponha o sistema publicamente até concluir a revisão de segurança e HTTPS.
 
 ## Escopo proposto
 
@@ -166,3 +166,25 @@ O teste `tests/provision-user.sh` verifica a criação, a validação do hash, o
 3. Completar gestão segura de contas, desativação e troca de senha temporária.
 4. Expandir a auditoria e os testes de regressão.
 6. Revisar o comportamento, atualizar documentação e validar a PR.
+
+
+## Gestão de contas — implementação
+
+A interface `usuarios.php` permite listar contas, criar novos funcionários e desativar/reativar contas existentes. Os endpoints de escrita (`salvar-usuario.php` e `alterar-status-usuario.php`) aceitam somente POST, exigem sessão autenticada e validam CSRF.
+
+- A criação valida nome e e-mail, normaliza o e-mail, gera senha temporária criptograficamente aleatória, persiste somente o hash e exige troca no primeiro acesso.
+- A senha temporária é apresentada uma única vez na resposta da criação; não é gravada em arquivo nem incluída na auditoria.
+- A desativação não remove a conta nem os eventos históricos.
+- Não é permitido desativar a própria conta nem a última conta ativa.
+- Criação, desativação e reativação são registradas na tabela `auditoria`, com o usuário autenticado como autor e a conta afetada como entidade.
+- Contas inativas são rejeitadas no login e sessões existentes perdem acesso na próxima requisição protegida.
+
+Todas as contas continuam com a mesma permissão administrativa, conforme a decisão funcional desta etapa. A separação por cargos/permissões permanece fora do escopo.
+
+### Cenários automatizados adicionados
+
+- Criação de funcionário e persistência de hash/troca obrigatória.
+- Login inicial da nova conta e definição da senha pessoal.
+- Desativação e rejeição de login da conta inativa.
+- Reativação e verificação dos eventos de auditoria.
+- Bloqueio de tentativa de desativar a própria conta.
