@@ -8,12 +8,12 @@ Exigir autenticação antes de permitir acesso ao painel e às operações admin
 
 ## Diagnóstico da base atual
 
-- `funcoes.php` inicia a sessão e mantém o token CSRF, mas não aplica configuração explícita de segurança da sessão.
-- `index.php`, `cadastro.php`, `salvar.php` e `excluir.php` não exigem autenticação.
-- `configuracoes.php` também não possui verificação de acesso.
+- `funcoes.php` agora configura a sessão, mantém o token CSRF e centraliza as verificações de autenticação.
+- Dashboard, cadastro, configurações e endpoints de escrita agora exigem autenticação.
+- `configuracoes.php` também está protegida pela sessão.
 - As operações de escrita já validam método HTTP e token CSRF.
 - O banco atual contém somente a tabela `alunos`; não existe estrutura de usuários nem de auditoria.
-- A CI exercita o CRUD, mas ainda não cobre autenticação ou autoria das ações.
+- A CI foi ampliada para cobrir autenticação, revogação de sessão e autoria das ações; o novo fluxo aguarda execução verde.
 
 ## Decisão funcional confirmada
 
