@@ -134,6 +134,7 @@ Para conferir os resultados, consulte a aba **Actions** do GitHub. Uma execuçã
 ## Documentação
 
 - [Relatório de testes manuais e automatizados](docs/relatorio-testes-academia-alunos.md)
+- [Roadmap e critérios de evolução por blocos](docs/roadmap.md)
 
 ## Relação com o material da disciplina
 
