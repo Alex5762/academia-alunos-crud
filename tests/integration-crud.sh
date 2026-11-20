@@ -96,6 +96,9 @@ curl -fsS -L -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/trocar-senha.php" \
 assert_contains "$TMP_DIR/password-changed.html" "Visão geral"
 OLD_PASSWORD_HASH="$(db_value "SELECT COUNT(*) FROM usuarios WHERE email = 'provision-ci@example.test' AND deve_trocar_senha = 0")"
 [[ "$OLD_PASSWORD_HASH" == "1" ]] || fail "A conta continuou marcada para troca obrigatória."
+if [[ -n "${GITHUB_ENV:-}" ]]; then
+    printf 'FITCONTROL_TEST_PASSWORD=%s\n' "$FITCONTROL_NEW_PASSWORD" >> "$GITHUB_ENV"
+fi
 
 curl -fsS -c "$TMP_DIR/old-password-cookies.txt" -b "$TMP_DIR/old-password-cookies.txt" "$BASE_URL/login.php" -o "$TMP_DIR/login-old-password.html"
 LOGIN_TOKEN="$(get_token "$TMP_DIR/login-old-password.html")"
