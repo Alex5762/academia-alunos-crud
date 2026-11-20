@@ -72,6 +72,8 @@ jobs:
           test -f style.css
           test -f tests/integration-crud.sh
           test -f tests/capture-screenshots.mjs
+          test -f theme.js
+          test -f configuracoes.php
 
       - name: Import database schema
         env:
