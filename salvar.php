@@ -37,9 +37,17 @@ if ($tamanhoNome === false || $tamanhoNome < 1 || $tamanhoNome > 100) {
     $erros[] = 'Informe um nome com 1 a 100 caracteres.';
 }
 
-$tamanhoTelefone = preg_match_all('/./us', $dados['telefone']);
-if ($tamanhoTelefone === false || $tamanhoTelefone < 1 || $tamanhoTelefone > 20) {
-    $erros[] = 'Informe um telefone com até 20 caracteres.';
+// Aceita números brasileiros com DDD, com ou sem +55 e caracteres de formatação.
+$telefoneTemFormatoValido = preg_match('/^\+?[0-9\s().-]+$/u', $dados['telefone']) === 1;
+$digitosTelefone = preg_replace('/\D+/', '', $dados['telefone']);
+$quantidadeDigitosTelefone = strlen($digitosTelefone);
+if (
+    !$telefoneTemFormatoValido ||
+    $quantidadeDigitosTelefone < 10 ||
+    $quantidadeDigitosTelefone > 13 ||
+    strlen($dados['telefone']) > 20
+) {
+    $erros[] = 'Informe um telefone com DDD e 10 a 13 dígitos, usando apenas números e caracteres de formatação.';
 }
 
 if (!filter_var($dados['email'], FILTER_VALIDATE_EMAIL) || strlen($dados['email']) > 150) {
