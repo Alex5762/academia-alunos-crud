@@ -1,10 +1,15 @@
 <?php
-// Ajuste estes valores se seu XAMPP usar outra configuração.
-$host = '127.0.0.1';
-$porta = '3306';
-$banco = 'academia_alunos';
-$usuario = 'root';
-$senha = ''; // Configuração local comum do XAMPP: root sem senha.
+// O XAMPP continua funcionando com os valores locais abaixo.
+// Em outros ambientes, as variáveis de ambiente podem sobrescrever a configuração.
+$host = getenv('DB_HOST') ?: '127.0.0.1';
+$porta = getenv('DB_PORT') ?: '3306';
+$banco = getenv('DB_NAME') ?: 'academia_alunos';
+$usuario = getenv('DB_USER') ?: 'root';
+$senha = getenv('DB_PASSWORD');
+
+if ($senha === false) {
+    $senha = ''; // Configuração local comum do XAMPP: root sem senha.
+}
 
 try {
     $pdo = new PDO(
