@@ -1845,3 +1845,38 @@ body:not(.dashboard-body) form[action="excluir.php"] a {
         height: 68px;
     }
 }
+
+
+/* Controles da página de configurações */
+body:not(.dashboard-body) .theme-option {
+    display: flex;
+    width: 100%;
+    min-height: 0;
+    align-items: flex-start;
+    justify-content: flex-start;
+    margin: 0;
+    padding: 12px;
+    color: #27344c;
+    background: #fbfcff;
+    border: 1px solid #e2e7f0;
+    border-radius: 12px;
+    box-shadow: none;
+    text-align: left;
+}
+
+body:not(.dashboard-body) .theme-option[aria-pressed="true"] {
+    background: #f0f4ff;
+    border-color: #7895ff;
+    box-shadow: 0 0 0 2px rgba(49, 95, 232, 0.1);
+}
+
+:root[data-theme="dark"] body:not(.dashboard-body) .theme-option {
+    color: #e8edf7;
+    background: #111c2d;
+    border-color: #35435a;
+}
+
+:root[data-theme="dark"] body:not(.dashboard-body) .theme-option[aria-pressed="true"] {
+    background: #243453;
+    border-color: #7895ff;
+}
