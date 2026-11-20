@@ -20,7 +20,7 @@ As imagens abaixo são capturadas automaticamente pelo GitHub Actions com regist
   <img src="docs/screenshots/alunos-mobile.png" alt="Área de alunos cadastrados em tela mobile" width="360">
 </p>
 
-> **Escopo atual:** aplicação acadêmica/local com primeira versão de autenticação individual e auditoria. Ainda faltam gestão de contas, troca obrigatória da senha temporária, proteção contra tentativas repetidas e revisão de segurança para produção. Não exponha o painel à internet nem use dados reais de alunos.
+> **Escopo atual:** aplicação acadêmica/local com primeira versão de autenticação individual e auditoria. Ainda faltam gestão de contas, proteção contra tentativas repetidas e revisão de segurança para produção. Não exponha o painel à internet nem use dados reais de alunos.
 
 ## Funcionalidades
 
@@ -38,6 +38,7 @@ As imagens abaixo são capturadas automaticamente pelo GitHub Actions com regist
 - Preferência entre tema claro e escuro, disponível em Configurações e salva no navegador.
 - Contas individuais de funcionários, provisionadas pelo terminal (sem cadastro público).
 - Login e logout com senha armazenada por hash, sessão protegida e CSRF.
+- Troca obrigatória da senha temporária no primeiro acesso, com mínimo de 12 caracteres.
 - Bloqueio das páginas administrativas para visitantes não autenticados e contas desativadas.
 - Auditoria de login/logout e das operações de cadastro, edição e exclusão de alunos.
 
@@ -91,8 +92,8 @@ academia-alunos-crud/
 4. Importe o arquivo `banco.sql`. Ele cria o banco `academia_alunos` e a tabela `alunos`.
 5. Confira as configurações de conexão em `conexao.php`, caso seu XAMPP utilize host, porta, usuário ou senha diferentes.
 6. Execute a migração `database/migrations/001_authentication_audit.sql` no banco `academia_alunos` pelo phpMyAdmin (aba SQL).
-7. No terminal, a partir da pasta do projeto, execute `php scripts/provisionar-usuario.php`, informe nome e e-mail e copie a senha temporária exibida uma única vez. No XAMPP, se necessário, use `C:\\xampp\\php\\php.exe scripts\\provisionar-usuario.php`.
-8. Acesse [http://localhost/academia-alunos-crud/login.php](http://localhost/academia-alunos-crud/login.php) e entre com a conta criada. Entregue a senha temporária por canal seguro.
+7. Execute também `database/migrations/002_force_password_change.sql` para exigir a troca da senha temporária no primeiro acesso.\n8. No terminal, a partir da pasta do projeto, execute `php scripts/provisionar-usuario.php`, informe nome e e-mail e copie a senha temporária exibida uma única vez. No XAMPP, se necessário, use `C:\\xampp\\php\\php.exe scripts\\provisionar-usuario.php`.
+9. Acesse [http://localhost/academia-alunos-crud/login.php](http://localhost/academia-alunos-crud/login.php) e entre com a conta criada. Entregue a senha temporária por canal seguro.
 
 ### Configuração do banco por variáveis de ambiente
 
@@ -117,10 +118,10 @@ O pipeline:
 1. prepara PHP 8.2, Node.js 24, MySQL 8 e Chromium;
 2. verifica a sintaxe de todos os arquivos PHP;
 3. confere a presença dos arquivos essenciais;
-4. importa o schema de `banco.sql`;
-5. inicia a aplicação com o servidor embutido do PHP;
-6. executa `tests/integration-crud.sh` contra os endpoints reais;
-7. prepara registros fictícios no banco temporário e captura as telas desktop e mobile com Playwright;
+4. importa o schema de `banco.sql` e executa as migrações de autenticação e troca obrigatória de senha;
+5. provisiona uma conta fictícia e valida hash, auditoria e unicidade do e-mail;\n6. inicia a aplicação com o servidor embutido do PHP;
+7. executa `tests/integration-crud.sh` contra os endpoints reais;
+8. prepara registros fictícios no banco temporário e captura as telas desktop e mobile com Playwright;
 9. disponibiliza as imagens como artefato e, em pushes para a branch de desenvolvimento, atualiza os arquivos versionados em `docs/screenshots/`.
 
 Os testes de integração cobrem:
