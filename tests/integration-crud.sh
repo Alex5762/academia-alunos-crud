@@ -179,6 +179,8 @@ curl -sS -c "$TMP_DIR/inactive-user-cookies.txt" -b "$TMP_DIR/inactive-user-cook
     --data-urlencode "senha=$NEW_PASSWORD" \
     -o "$TMP_DIR/inactive-login-rejected.html"
 assert_contains "$TMP_DIR/inactive-login-rejected.html" "E-mail ou senha inválidos."
+HTTP_CODE="$(curl -sS -o "$TMP_DIR/revoked-user-session.html" -w '%{http_code}' -c "$NEW_COOKIE_JAR" -b "$NEW_COOKIE_JAR" "$BASE_URL/index.php")"
+[[ "$HTTP_CODE" == "303" ]] || fail "A sessão da conta desativada continuou acessando o painel."
 
 USERS_TOKEN="$(get_token "$TMP_DIR/user-disabled.html")"
 curl -fsS -L -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/alterar-status-usuario.php" \
