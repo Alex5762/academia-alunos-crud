@@ -8,9 +8,12 @@ As imagens abaixo são capturadas automaticamente pelo GitHub Actions com regist
 
 ![Dashboard FitControl em desktop](docs/screenshots/dashboard-desktop.png)
 
+![Dashboard FitControl em tema escuro](docs/screenshots/dashboard-escuro.png)
+
 <p align="center">
   <img src="docs/screenshots/dashboard-mobile.png" alt="Dashboard FitControl em tela mobile" width="280">
   <img src="docs/screenshots/cadastro-desktop.png" alt="Formulário de cadastro de aluno em desktop" width="680">
+  <img src="docs/screenshots/configuracoes-escuro.png" alt="Configurações de aparência no tema escuro" width="360">
 </p>
 
 <p align="center">
@@ -32,6 +35,7 @@ As imagens abaixo são capturadas automaticamente pelo GitHub Actions com regist
 - Token CSRF nos formulários de escrita.
 - Mensagens de retorno e preservação dos dados após erros de validação.
 - Layout responsivo para telas menores.
+- Preferência entre tema claro e escuro, disponível em Configurações e salva no navegador.
 
 Cada aluno possui nome, telefone, e-mail e plano (Mensal, Trimestral, Semestral ou Anual).
 
@@ -42,6 +46,7 @@ Cada aluno possui nome, telefone, e-mail e plano (Mensal, Trimestral, Semestral 
 - HTML5, CSS3 e JavaScript.
 - GitHub Actions para integração contínua.
 - Playwright e Chromium para capturas e verificações visuais automatizadas.
+- JavaScript e localStorage para persistência da preferência de tema no navegador.
 - Shell script, curl e servidor embutido do PHP para testes de integração.
 
 ## Estrutura do projeto
@@ -63,13 +68,15 @@ academia-alunos-crud/
 │   └── integration-crud.sh
 ├── banco.sql
 ├── conexao.php
+├── configuracoes.php
 ├── funcoes.php
 ├── index.php
 ├── cadastro.php
 ├── salvar.php
 ├── excluir.php
 ├── style.css
-└── script.js
+├── script.js
+└── theme.js
 ```
 
 ## Como executar localmente com XAMPP
@@ -120,7 +127,7 @@ Os testes de integração cobrem:
 - exclusão por POST e verificação da remoção no banco;
 - rejeição de método GET no endpoint de gravação (HTTP 405).
 
-A captura visual também verifica a presença dos registros de demonstração, a ausência de rolagem horizontal na página mobile e a rolagem horizontal contida na tabela de alunos.
+A captura visual também verifica a presença dos registros de demonstração, a ausência de rolagem horizontal na página mobile, a rolagem horizontal contida na tabela de alunos e a persistência da preferência de tema escuro entre páginas.
 
 Para conferir os resultados, consulte a aba **Actions** do GitHub. Uma execução verde confirma apenas os cenários incluídos no workflow; não substitui os testes exploratórios em navegadores e dispositivos físicos.
 
