@@ -309,8 +309,11 @@ function iniciaisNome($nome) {
                         <?php } ?>
                     </div>
                 <?php } else { ?>
-                    <div class="table-scroll">
+                    <div class="table-scroll" role="region"
+                         aria-label="Tabela de alunos. Em telas pequenas, deslize horizontalmente para consultar todas as colunas."
+                         tabindex="0">
                         <table class="students-table">
+                            <caption class="visually-hidden">Alunos cadastrados, com contato, plano e ações disponíveis.</caption>
                             <thead>
                                 <tr>
                                     <th scope="col">Aluno</th>
