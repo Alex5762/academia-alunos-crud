@@ -30,11 +30,24 @@ if ($acao === 'desativar' && $usuarioAlvoId === $usuarioAtualId) {
 try {
     $pdo->beginTransaction();
 
-    $buscar = $pdo->prepare(
-        'SELECT id, ativo FROM usuarios WHERE id = :id FOR UPDATE'
-    );
-    $buscar->execute(['id' => $usuarioAlvoId]);
-    $conta = $buscar->fetch();
+    // Trava as contas em ordem estável antes de contar/alterar status.
+    // Isso serializa as mudanças concorrentes e reduz disputas de lock.
+    $contas = $pdo->query(
+        'SELECT id, ativo FROM usuarios ORDER BY id FOR UPDATE'
+    )->fetchAll();
+
+    $conta = null;
+    $quantidadeAtivas = 0;
+
+    foreach ($contas as $registro) {
+        if ((int) $registro['ativo'] === 1) {
+            $quantidadeAtivas++;
+        }
+
+        if ((int) $registro['id'] === $usuarioAlvoId) {
+            $conta = $registro;
+        }
+    }
 
     if (!$conta) {
         $pdo->rollBack();
@@ -57,13 +70,7 @@ try {
     }
 
     if ($acao === 'desativar') {
-        // Bloqueia as linhas ativas durante a contagem para reduzir disputas
-        // simultâneas que poderiam deixar o sistema sem nenhuma conta ativa.
-        $ativas = $pdo->query(
-            'SELECT id FROM usuarios WHERE ativo = 1 FOR UPDATE'
-        )->fetchAll(PDO::FETCH_COLUMN);
-
-        if (count($ativas) <= 1) {
+        if ($quantidadeAtivas <= 1) {
             $pdo->rollBack();
             $_SESSION['mensagem'] = 'Não é possível desativar a última conta ativa.';
             redirecionar('usuarios.php');
