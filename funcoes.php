@@ -66,7 +66,7 @@ function usuarioAtual(PDO $pdo): ?array {
     }
 
     $consulta = $pdo->prepare(
-        'SELECT id, nome, email
+        'SELECT id, nome, email, deve_trocar_senha
          FROM usuarios
          WHERE id = :id AND ativo = 1
          LIMIT 1'
@@ -92,6 +92,10 @@ function exigirAutenticacao(PDO $pdo): array {
 
     if ($usuario === null) {
         redirecionar('login.php');
+    }
+
+    if ((int) ($usuario['deve_trocar_senha'] ?? 0) === 1) {
+        redirecionar('trocar-senha.php');
     }
 
     return $usuario;
