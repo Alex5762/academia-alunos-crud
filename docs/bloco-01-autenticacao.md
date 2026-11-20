@@ -4,7 +4,7 @@
 
 Exigir autenticação antes de permitir acesso ao painel e às operações administrativas do FitControl. Cada funcionário terá sua própria conta, permitindo atribuir ações a uma pessoa específica e consultar um histórico básico de atividade.
 
-**Estado:** contas individuais, login/logout, proteção de rotas, auditoria do CRUD, troca obrigatória de senha e gestão de contas implementados na branch. A validação automatizada da gestão de contas está incluída na CI e aguarda execução.
+**Estado:** contas individuais, login/logout, proteção de rotas, auditoria do CRUD, troca obrigatória de senha e gestão de contas implementados. Os workflows push #175 e PR #176 passaram na CI para o commit de código `ab0a29f`; a publicação posterior atualizou somente duas capturas versionadas.
 
 ## Diagnóstico da base atual
 
@@ -173,7 +173,7 @@ O teste `tests/provision-user.sh` verifica a criação, a validação do hash, o
 A interface `usuarios.php` permite listar contas, criar novos funcionários e desativar/reativar contas existentes. Os endpoints de escrita (`salvar-usuario.php` e `alterar-status-usuario.php`) aceitam somente POST, exigem sessão autenticada e validam CSRF.
 
 - A criação valida nome e e-mail, normaliza o e-mail, gera senha temporária criptograficamente aleatória, persiste somente o hash e exige troca no primeiro acesso.
-- A senha temporária é apresentada uma única vez na resposta da criação; não é gravada em arquivo nem incluída na auditoria.
+- A senha temporária é mantida temporariamente na sessão do criador para ser apresentada uma única vez após o redirecionamento; depois é removida da sessão. Não é persistida na tabela de usuários nem incluída na auditoria. O armazenamento físico da sessão depende do handler configurado no PHP.
 - A desativação não remove a conta nem os eventos históricos.
 - Não é permitido desativar a própria conta nem a última conta ativa.
 - Criação, desativação e reativação são registradas na tabela `auditoria`, com o usuário autenticado como autor e a conta afetada como entidade.
