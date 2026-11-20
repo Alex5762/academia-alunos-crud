@@ -165,9 +165,27 @@ assert_contains "$TMP_DIR/delete.html" "Aluno excluído com sucesso!"
 RESTANTE="$(db_value "SELECT COUNT(*) FROM alunos WHERE id = $ALUNO_ID")"
 [[ "$RESTANTE" == "0" ]] || fail "O registro continuou no banco após a exclusão."
 
-echo "7/10 - Verificando que o endpoint de gravação rejeita GET..."
+echo "7/10 - Conferindo autoria dos eventos de auditoria..."
+USUARIO_ID="$(db_value "SELECT id FROM usuarios WHERE email = 'provision-ci@example.test' LIMIT 1")"
+EVENTOS="$(db_value "SELECT COUNT(*) FROM auditoria WHERE usuario_id = $USUARIO_ID AND entidade = 'alunos' AND entidade_id = $ALUNO_ID AND acao IN ('aluno_criado', 'aluno_editado', 'aluno_excluido')")"
+[[ "$EVENTOS" == "3" ]] || fail "Esperava 3 eventos do CRUD associados ao usuário; encontrei $EVENTOS."
+LOGIN_EVENTOS="$(db_value "SELECT COUNT(*) FROM auditoria WHERE usuario_id = $USUARIO_ID AND acao = 'login'")"
+[[ "$LOGIN_EVENTOS" == "1" ]] || fail "O login não foi registrado exatamente uma vez."
+
+echo "8/10 - Encerrando sessão por POST com CSRF..."
+curl -fsS -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/index.php" -o "$TMP_DIR/dashboard-before-logout.html"
+LOGOUT_TOKEN="$(get_token "$TMP_DIR/dashboard-before-logout.html")"
+curl -fsS -L -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/logout.php" \\
+    --data-urlencode "token=$LOGOUT_TOKEN" -o "$TMP_DIR/logout.html"
+HTTP_CODE="$(curl -sS -o "$TMP_DIR/after-logout.html" -w '%{http_code}' -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/index.php")"
+[[ "$HTTP_CODE" == "303" ]] || fail "A sessão continuou acessando o painel após logout."
+LOGOUT_EVENTOS="$(db_value "SELECT COUNT(*) FROM auditoria WHERE usuario_id = $USUARIO_ID AND acao = 'logout'")"
+[[ "$LOGOUT_EVENTOS" == "1" ]] || fail "O logout não foi registrado."
+
+
+echo "9/10 - Verificando que o endpoint de gravação rejeita GET..."
 HTTP_CODE="$(curl -sS -o "$TMP_DIR/method.html" -w '%{http_code}' "$BASE_URL/salvar.php")"
 [[ "$HTTP_CODE" == "405" ]] || fail "GET em salvar.php deveria retornar HTTP 405; retornou $HTTP_CODE."
 
-echo "8/10 - Verificações de integração concluídas."
+echo "10/10 - Verificações de integração concluídas."
 echo "CRUD real via HTTP, validação de e-mail e telefone, CSRF, pesquisa e persistência: OK"
