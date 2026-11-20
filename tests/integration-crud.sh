@@ -97,12 +97,9 @@ assert_contains "$TMP_DIR/password-changed.html" "Visão geral"
 OLD_PASSWORD_HASH="$(db_value "SELECT COUNT(*) FROM usuarios WHERE email = 'provision-ci@example.test' AND deve_trocar_senha = 0")"
 [[ "$OLD_PASSWORD_HASH" == "1" ]] || fail "A conta continuou marcada para troca obrigatória."
 
-LOGOUT_TOKEN="$(get_token "$TMP_DIR/password-changed.html")"
-curl -fsS -L -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/logout.php" \
-    --data-urlencode "token=$LOGOUT_TOKEN" -o /dev/null
-curl -fsS -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/login.php" -o "$TMP_DIR/login-old-password.html"
+curl -fsS -c "$TMP_DIR/old-password-cookies.txt" -b "$TMP_DIR/old-password-cookies.txt" "$BASE_URL/login.php" -o "$TMP_DIR/login-old-password.html"
 LOGIN_TOKEN="$(get_token "$TMP_DIR/login-old-password.html")"
-curl -fsS -c "$COOKIE_JAR" -b "$COOKIE_JAR" -X POST "$BASE_URL/login.php" \
+curl -fsS -c "$TMP_DIR/old-password-cookies.txt" -b "$TMP_DIR/old-password-cookies.txt" -X POST "$BASE_URL/login.php" \
     --data-urlencode "token=$LOGIN_TOKEN" \
     --data-urlencode "email=provision-ci@example.test" \
     --data-urlencode "senha=$FITCONTROL_TEST_PASSWORD" \
@@ -240,7 +237,7 @@ curl -fsS -L -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/logout.php" --data-url
 HTTP_CODE="$(curl -sS -o "$TMP_DIR/after-logout.html" -w '%{http_code}' -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/index.php")"
 [[ "$HTTP_CODE" == "303" ]] || fail "A sessão continuou acessando o painel após logout."
 LOGOUT_EVENTOS="$(db_value "SELECT COUNT(*) FROM auditoria WHERE usuario_id = $USUARIO_ID AND acao = 'logout'")"
-[[ "$LOGOUT_EVENTOS" == "2" ]] || fail "Os dois logouts esperados não foram registrados."
+[[ "$LOGOUT_EVENTOS" == "1" ]] || fail "O logout não foi registrado."
 
 
 echo "10/10 - Verificando que o endpoint de gravação rejeita GET..."
