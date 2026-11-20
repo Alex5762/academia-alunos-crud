@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/funcoes.php';
 require_once __DIR__ . '/conexao.php';
+$usuario = exigirAutenticacao($pdo);
 
 // Pesquisa opcional pelo nome. O valor é enviado como parâmetro preparado.
 $busca = $_GET['busca'] ?? '';
@@ -156,11 +157,15 @@ function iniciaisNome($nome) {
                 <strong>Visão geral</strong>
             </div>
             <div class="topbar-user">
-                <span class="user-avatar" aria-hidden="true">AD</span>
+                <span class="user-avatar" aria-hidden="true"><?= escapar(strtoupper(mb_substr($usuario['nome'], 0, 1, 'UTF-8'))) ?></span>
                 <span class="user-label">
-                    <strong>Administrador</strong>
-                    <small>Painel de gestão</small>
+                    <strong><?= escapar($usuario['nome']) ?></strong>
+                    <small><?= escapar($usuario['email']) ?></small>
                 </span>
+                <form action="logout.php" method="post" class="topbar-logout">
+                    <input type="hidden" name="token" value="<?= escapar($_SESSION['token']) ?>">
+                    <button type="submit" class="button button-search">Sair</button>
+                </form>
             </div>
         </header>
 
