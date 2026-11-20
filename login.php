@@ -81,6 +81,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $token = escapar($_SESSION['token']);
+$emailPreenchido = isset($_POST['email']) && is_string($_POST['email']) ? $_POST['email'] : '';
 ?>
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -128,7 +129,7 @@ $token = escapar($_SESSION['token']);
                 inputmode="email"
                 required
                 autofocus
-                value="<?= escapar($_POST['email'] ?? '') ?>"
+                value="<?= escapar($emailPreenchido) ?>"
             >
 
             <label for="senha">Senha</label>
