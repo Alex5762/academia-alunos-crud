@@ -4,7 +4,7 @@
 
 Exigir autenticação antes de permitir acesso ao painel e às operações administrativas do FitControl. Cada funcionário terá sua própria conta, permitindo atribuir ações a uma pessoa específica e consultar um histórico básico de atividade.
 
-**Estado:** decisão de contas individuais confirmada; migração inicial do banco criada. Implementação da autenticação e da auditoria ainda não iniciada.
+**Estado:** contas individuais confirmadas; migração do banco criada e validada na CI; provisionador CLI implementado com teste automatizado. Login web, proteção das rotas e auditoria das operações do CRUD ainda não foram implementados.
 
 ## Diagnóstico da base atual
 
@@ -57,7 +57,21 @@ Pré-requisito: o banco `academia_alunos` já deve existir, com o schema atual i
 
 No phpMyAdmin, selecione `academia_alunos`, abra a aba SQL e execute o conteúdo de `database/migrations/001_authentication_audit.sql`.
 
-A migração cria somente as novas tabelas. Ela ainda não cria contas; o provisionamento será implementado em uma etapa própria, sem usuário/senha padrão e sem credenciais versionadas.
+A migração cria somente as novas tabelas e não cria contas. A CI importa o schema original e executa a migração em um MySQL limpo. A validação passou no workflow Run #52.
+
+## Provisionamento de contas implementado
+
+O script `scripts/provisionar-usuario.php` cria uma conta a partir do terminal, solicita nome e e-mail, normaliza o e-mail para minúsculas, valida os campos e gera uma senha temporária criptograficamente aleatória. A senha é exibida uma única vez no terminal e somente seu hash, gerado com `password_hash()`, é persistido. A inserção do usuário e o evento `usuario_provisionado_cli` são confirmados na mesma transação. O script recusa execução via HTTP e não aceita senha por argumento ou variável de ambiente.
+
+Exemplo no terminal do projeto:
+
+```bash
+php scripts/provisionar-usuario.php
+```
+
+No XAMPP para Windows, execute no Prompt de Comando ou PowerShell a partir da pasta do projeto, usando o PHP do XAMPP se ele não estiver no PATH, por exemplo `C:\\xampp\\php\\php.exe scripts\\provisionar-usuario.php`. Copie a senha temporária e entregue-a ao funcionário por canal seguro; o funcionário deverá alterá-la após o login, quando o fluxo de troca de senha for implementado. Não publique nem envie a senha em commits, issues ou mensagens de equipe.
+
+O teste `tests/provision-user.sh` verifica a criação, a validação do hash, o evento de auditoria e a rejeição de e-mail duplicado. Ele usa uma conta fictícia no banco efêmero da CI.
 
 ## Escopo proposto
 
@@ -134,7 +148,7 @@ A migração cria somente as novas tabelas. Ela ainda não cria contas; o provis
 
 ## Próximas etapas
 
-1. Implementar o provisionamento seguro de contas (primeira conta e contas adicionais).
+1. Implementar e revisar o provisionamento seguro de contas (primeira conta e contas adicionais) — primeira versão implementada e coberta na CI.
 2. Implementar a camada de sessão e autenticação.
 3. Criar login/logout e proteger as rotas.
 4. Implementar o registro dos eventos de auditoria nos fluxos do CRUD.
