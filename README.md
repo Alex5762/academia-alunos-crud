@@ -20,7 +20,7 @@ As imagens abaixo são capturadas automaticamente pelo GitHub Actions com regist
   <img src="docs/screenshots/alunos-mobile.png" alt="Área de alunos cadastrados em tela mobile" width="360">
 </p>
 
-> **Escopo atual:** aplicação acadêmica/local com primeira versão de autenticação individual e auditoria. Ainda faltam gestão de contas, proteção contra tentativas repetidas e revisão de segurança para produção. Não exponha o painel à internet nem use dados reais de alunos.
+> **Escopo atual:** aplicação acadêmica/local com primeira versão de autenticação individual e auditoria. Ainda faltam proteção contra tentativas repetidas e revisão de segurança para produção. Não exponha o painel à internet nem use dados reais de alunos.
 
 ## Funcionalidades
 
@@ -37,6 +37,10 @@ As imagens abaixo são capturadas automaticamente pelo GitHub Actions com regist
 - Layout responsivo para telas menores.
 - Preferência entre tema claro e escuro, disponível em Configurações e salva no navegador.
 - Contas individuais de funcionários, provisionadas pelo terminal (sem cadastro público).
+- Gestão de funcionários: criação de contas, listagem, desativação e reativação sem apagar o histórico.
+- Senhas temporárias aleatórias exibidas uma única vez, com troca obrigatória no primeiro acesso.
+- Proteção contra desativar a própria conta e contra deixar o sistema sem contas ativas.
+- Auditoria de criação, desativação e reativação de contas, identificando o funcionário responsável.
 - Login e logout com senha armazenada por hash, sessão protegida e CSRF.
 - Troca obrigatória da senha temporária no primeiro acesso, com mínimo de 12 caracteres.
 - Bloqueio das páginas administrativas para visitantes não autenticados e contas desativadas.
@@ -144,6 +148,12 @@ Para conferir os resultados, consulte a aba **Actions** do GitHub. Uma execuçã
 - [Roadmap e critérios de evolução por blocos](docs/roadmap.md)
 - [Planejamento do Bloco 01 — autenticação e auditoria](docs/bloco-01-autenticacao.md)
 - [Modelo de dados e migração de autenticação/auditoria](docs/modelo-dados-autenticacao-auditoria.md)
+
+### Gestão de funcionários
+
+Depois de entrar com uma conta ativa, abra **Funcionários** no menu lateral. Informe nome e e-mail para criar uma conta; o sistema gera uma senha temporária e a mostra uma única vez na tela. Copie-a e entregue ao funcionário por canal seguro. No primeiro acesso, ele deverá definir uma senha pessoal com pelo menos 12 caracteres.
+
+Na lista, é possível desativar e reativar outras contas. A própria conta não pode ser desativada, e o sistema bloqueia a operação que deixaria a base sem contas ativas. Contas inativas não conseguem entrar; o histórico de auditoria permanece associado à conta. Nesta versão, todas as contas ativas têm as mesmas permissões administrativas.
 
 ## Relação com o material da disciplina
 
