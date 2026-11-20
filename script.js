@@ -11,12 +11,20 @@ document.addEventListener('DOMContentLoaded', function () {
             const mensagem = document.querySelector('#mensagem-validacao');
             const erros = [];
 
+            const telefoneTemFormatoValido = /^\+?[0-9\s().-]+$/.test(telefone);
+            const quantidadeDigitosTelefone = telefone.replace(/\D/g, '').length;
+
             if (nome === '') {
                 erros.push('Informe o nome do aluno.');
             }
 
-            if (telefone === '') {
-                erros.push('Informe o telefone.');
+            if (
+                !telefoneTemFormatoValido ||
+                quantidadeDigitosTelefone < 10 ||
+                quantidadeDigitosTelefone > 13 ||
+                telefone.length > 20
+            ) {
+                erros.push('Informe um telefone com DDD e 10 a 13 dígitos.');
             }
 
             if (email.value.trim() === '' || !email.validity.valid) {
