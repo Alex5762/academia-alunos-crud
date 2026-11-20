@@ -223,7 +223,7 @@ LOGIN_TOKEN="$(get_token "$TMP_DIR/login-reactivated.html")"
 curl -fsS -L -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/login.php" \
     --data-urlencode "token=$LOGIN_TOKEN" \
     --data-urlencode "email=provision-ci@example.test" \
-    --data-urlencode "senha=$FITCONTROL_TEST_PASSWORD" \
+    --data-urlencode "senha=$FITCONTROL_NEW_PASSWORD" \
     -o "$TMP_DIR/login-reactivated-success.html"
 assert_contains "$TMP_DIR/login-reactivated-success.html" "Visão geral"
 
