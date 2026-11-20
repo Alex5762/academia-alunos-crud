@@ -2,6 +2,21 @@
 
 Aplicação acadêmica de Desenvolvimento Web para gerenciar cadastros de alunos de uma academia. O projeto evoluiu de um CRUD em PHP e MySQL para um painel administrativo com indicadores, distribuição de alunos por plano e busca.
 
+## Prévia do projeto
+
+As imagens abaixo são capturadas automaticamente pelo GitHub Actions com registros de demonstração fictícios, preparados apenas no banco efêmero do CI.
+
+![Dashboard FitControl em desktop](docs/screenshots/dashboard-desktop.png)
+
+<p align="center">
+  <img src="docs/screenshots/dashboard-mobile.png" alt="Dashboard FitControl em tela mobile" width="280">
+  <img src="docs/screenshots/cadastro-desktop.png" alt="Formulário de cadastro de aluno em desktop" width="680">
+</p>
+
+<p align="center">
+  <img src="docs/screenshots/alunos-mobile.png" alt="Área de alunos cadastrados em tela mobile" width="360">
+</p>
+
 > **Escopo atual:** aplicação local/acadêmica. O painel ainda não possui autenticação real nem controle de acesso por usuário; não deve ser publicado como sistema administrativo aberto à internet sem essa camada.
 
 ## Funcionalidades
@@ -26,6 +41,7 @@ Cada aluno possui nome, telefone, e-mail e plano (Mensal, Trimestral, Semestral 
 - MySQL 8 ou MariaDB.
 - HTML5, CSS3 e JavaScript.
 - GitHub Actions para integração contínua.
+- Playwright e Chromium para capturas e verificações visuais automatizadas.
 - Shell script, curl e servidor embutido do PHP para testes de integração.
 
 ## Estrutura do projeto
@@ -36,8 +52,14 @@ academia-alunos-crud/
 │   └── workflows/
 │       └── ci.yml
 ├── docs/
-│   └── relatorio-testes-academia-alunos.md
+│   ├── relatorio-testes-academia-alunos.md
+│   └── screenshots/
+│       ├── dashboard-desktop.png
+│       ├── dashboard-mobile.png
+│       ├── alunos-mobile.png
+│       └── cadastro-desktop.png
 ├── tests/
+│   ├── capture-screenshots.mjs
 │   └── integration-crud.sh
 ├── banco.sql
 ├── conexao.php
@@ -79,12 +101,14 @@ O workflow [CI - Academia Alunos CRUD](https://github.com/Alex5762/academia-alun
 
 O pipeline:
 
-1. prepara PHP 8.2 e MySQL 8;
+1. prepara PHP 8.2, Node.js 24, MySQL 8 e Chromium;
 2. verifica a sintaxe de todos os arquivos PHP;
 3. confere a presença dos arquivos essenciais;
 4. importa o schema de `banco.sql`;
 5. inicia a aplicação com o servidor embutido do PHP;
-6. executa `tests/integration-crud.sh` contra os endpoints reais.
+6. executa `tests/integration-crud.sh` contra os endpoints reais;
+7. prepara registros fictícios no banco temporário e captura as telas desktop e mobile com Playwright;
+8. disponibiliza as imagens como artefato e, em pushes para a branch de desenvolvimento, atualiza os arquivos versionados em `docs/screenshots/`.
 
 Os testes de integração cobrem:
 - rejeição de token CSRF inválido (HTTP 403);
@@ -93,9 +117,12 @@ Os testes de integração cobrem:
 - pesquisa pelo nome;
 - edição e conferência da persistência no MySQL;
 - abertura da confirmação por GET sem excluir o registro;
-- exclusão por POST e verificação da remoção no banco;\n- rejeição de método GET no endpoint de gravação (HTTP 405).
+- exclusão por POST e verificação da remoção no banco;
+- rejeição de método GET no endpoint de gravação (HTTP 405).
 
-Para conferir os resultados, consulte a aba **Actions** do GitHub. Uma execução verde confirma apenas os cenários incluídos no workflow; não substitui os testes exploratórios no navegador.
+A captura visual também verifica a presença dos registros de demonstração, a ausência de rolagem horizontal na página mobile e a rolagem horizontal contida na tabela de alunos.
+
+Para conferir os resultados, consulte a aba **Actions** do GitHub. Uma execução verde confirma apenas os cenários incluídos no workflow; não substitui os testes exploratórios em navegadores e dispositivos físicos.
 
 ## Documentação
 
