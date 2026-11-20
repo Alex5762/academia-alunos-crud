@@ -43,6 +43,24 @@ db_value() {
     '
 }
 
+db_exec() {
+    SQL_STATEMENT="$1" php -r '
+        $dsn = sprintf(
+            "mysql:host=%s;port=%s;dbname=%s;charset=utf8mb4",
+            getenv("DB_HOST") ?: "127.0.0.1",
+            getenv("DB_PORT") ?: "3306",
+            getenv("DB_NAME") ?: "academia_alunos"
+        );
+        $pdo = new PDO(
+            $dsn,
+            getenv("DB_USER") ?: "root",
+            getenv("DB_PASSWORD") === false ? "" : getenv("DB_PASSWORD"),
+            [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
+        );
+        $pdo->exec(getenv("SQL_STATEMENT"));
+    '
+}
+
 echo "1/10 - Bloqueando acesso anônimo e autenticando usuário..."
 HTTP_CODE="$(curl -sS -o "$TMP_DIR/anonymous.html" -w '%{http_code}' -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/index.php")"
 [[ "$HTTP_CODE" == "303" ]] || fail "Dashboard anônimo deveria redirecionar para login; retornou $HTTP_CODE."
@@ -172,7 +190,25 @@ EVENTOS="$(db_value "SELECT COUNT(*) FROM auditoria WHERE usuario_id = $USUARIO_
 LOGIN_EVENTOS="$(db_value "SELECT COUNT(*) FROM auditoria WHERE usuario_id = $USUARIO_ID AND acao = 'login'")"
 [[ "$LOGIN_EVENTOS" == "1" ]] || fail "O login não foi registrado exatamente uma vez."
 
-echo "8/10 - Encerrando sessão por POST com CSRF..."
+echo "8/10 - Revogando sessão quando a conta é desativada..."
+db_exec "UPDATE usuarios SET ativo = 0 WHERE id = $USUARIO_ID"
+HTTP_CODE="$(curl -sS -o "$TMP_DIR/disabled-account.html" -w '%{http_code}' -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/index.php")"
+[[ "$HTTP_CODE" == "303" ]] || fail "Conta desativada manteve acesso ao painel."
+db_exec "UPDATE usuarios SET ativo = 1 WHERE id = $USUARIO_ID"
+
+curl -fsS -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/login.php" -o "$TMP_DIR/login-reactivated.html"
+LOGIN_TOKEN="$(get_token "$TMP_DIR/login-reactivated.html")"
+curl -fsS -L -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/login.php" \
+    --data-urlencode "token=$LOGIN_TOKEN" \
+    --data-urlencode "email=provision-ci@example.test" \
+    --data-urlencode "senha=$FITCONTROL_TEST_PASSWORD" \
+    -o "$TMP_DIR/login-reactivated-success.html"
+assert_contains "$TMP_DIR/login-reactivated-success.html" "Visão geral"
+
+LOGIN_EVENTOS="$(db_value "SELECT COUNT(*) FROM auditoria WHERE usuario_id = $USUARIO_ID AND acao = 'login'")"
+[[ "$LOGIN_EVENTOS" == "2" ]] || fail "O segundo login após reativação não foi registrado."
+
+echo "9/10 - Encerrando sessão por POST com CSRF..."
 curl -fsS -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/index.php" -o "$TMP_DIR/dashboard-before-logout.html"
 LOGOUT_TOKEN="$(get_token "$TMP_DIR/dashboard-before-logout.html")"
 curl -fsS -L -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/logout.php" --data-urlencode "token=$LOGOUT_TOKEN" -o "$TMP_DIR/logout.html"
@@ -182,9 +218,9 @@ LOGOUT_EVENTOS="$(db_value "SELECT COUNT(*) FROM auditoria WHERE usuario_id = $U
 [[ "$LOGOUT_EVENTOS" == "1" ]] || fail "O logout não foi registrado."
 
 
-echo "9/10 - Verificando que o endpoint de gravação rejeita GET..."
+echo "10/10 - Verificando que o endpoint de gravação rejeita GET..."
 HTTP_CODE="$(curl -sS -o "$TMP_DIR/method.html" -w '%{http_code}' "$BASE_URL/salvar.php")"
 [[ "$HTTP_CODE" == "405" ]] || fail "GET em salvar.php deveria retornar HTTP 405; retornou $HTTP_CODE."
 
-echo "10/10 - Verificações de integração concluídas."
+echo "11/11 - Verificações de integração concluídas."
 echo "CRUD real via HTTP, validação de e-mail e telefone, CSRF, pesquisa e persistência: OK"
