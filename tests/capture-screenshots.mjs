@@ -5,6 +5,21 @@ import { chromium } from "playwright";
 const baseUrl = process.env.BASE_URL ?? "http://127.0.0.1:8080";
 const outputDir = fileURLToPath(new URL("../docs/screenshots/", import.meta.url));
 const pageErrors = [];
+const testEmail = "provision-ci@example.test";
+const testPassword = process.env.FITCONTROL_TEST_PASSWORD;
+
+if (!testPassword) {
+  throw new Error("FITCONTROL_TEST_PASSWORD não foi fornecida ao teste visual.");
+}
+
+async function autenticar(page) {
+  const response = await page.goto(`${baseUrl}/login.php`, { waitUntil: "networkidle" });
+  if (!response?.ok()) throw new Error("Não foi possível abrir a tela de login.");
+  await page.getByLabel("E-mail").fill(testEmail);
+  await page.getByLabel("Senha").fill(testPassword);
+  await page.getByRole("button", { name: "Entrar no painel" }).click();
+  await page.getByRole("heading", { name: "Visão geral" }).waitFor();
+}
 
 await mkdir(outputDir, { recursive: true });
 
@@ -18,6 +33,7 @@ try {
 
   desktop.on("pageerror", (error) => pageErrors.push(error.message));
 
+  await autenticar(desktop);
   const dashboardResponse = await desktop.goto(`${baseUrl}/index.php`, {
     waitUntil: "networkidle",
   });
@@ -56,6 +72,7 @@ try {
 
   mobile.on("pageerror", (error) => pageErrors.push(error.message));
 
+  await autenticar(mobile);
   const mobileResponse = await mobile.goto(`${baseUrl}/index.php`, {
     waitUntil: "networkidle",
   });
@@ -101,6 +118,7 @@ try {
 
   form.on("pageerror", (error) => pageErrors.push(error.message));
 
+  await autenticar(form);
   const formResponse = await form.goto(`${baseUrl}/cadastro.php`, {
     waitUntil: "networkidle",
   });
@@ -126,6 +144,7 @@ try {
 
   settings.on("pageerror", (error) => pageErrors.push(error.message));
 
+  await autenticar(settings);
   const settingsResponse = await settings.goto(`${baseUrl}/configuracoes.php`, {
     waitUntil: "networkidle",
   });
