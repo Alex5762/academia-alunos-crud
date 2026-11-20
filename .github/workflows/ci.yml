@@ -74,6 +74,8 @@ jobs:
           test -f tests/capture-screenshots.mjs
           test -f theme.js
           test -f configuracoes.php
+          test -f login.php
+          test -f logout.php
           test -f database/migrations/001_authentication_audit.sql
           test -f scripts/provisionar-usuario.php
           test -f tests/assert-user-provisioned.php
