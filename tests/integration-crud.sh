@@ -129,7 +129,7 @@ assert_contains "$TMP_DIR/user-created.html" "Conta criada com sucesso."
 assert_contains "$TMP_DIR/user-created.html" "Senha temporária"
 
 TEMP_PASSWORD="$(grep -oE '<code id="temporary-password">[^<]+' "$TMP_DIR/user-created.html" | sed -E 's/.*>//')"
-[[ \${#TEMP_PASSWORD} -ge 30 ]] || fail "A senha temporária não foi exibida corretamente."
+[[ ${#TEMP_PASSWORD} -ge 30 ]] || fail "A senha temporária não foi exibida corretamente."
 
 NOVO_USUARIO_ID="$(db_value "SELECT id FROM usuarios WHERE email = 'funcionario-ci@example.test' LIMIT 1")"
 NOVO_HASH_OK="$(db_value "SELECT COUNT(*) FROM usuarios WHERE id = $NOVO_USUARIO_ID AND ativo = 1 AND deve_trocar_senha = 1 AND senha_hash <> '$TEMP_PASSWORD'")"
