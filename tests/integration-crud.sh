@@ -113,6 +113,8 @@ curl -fsS -c "$TMP_DIR/old-password-cookies.txt" -b "$TMP_DIR/old-password-cooki
     -o "$TMP_DIR/old-password-rejected.html"
 assert_contains "$TMP_DIR/old-password-rejected.html" "E-mail ou senha inválidos."
 
+USUARIO_ID="$(db_value "SELECT id FROM usuarios WHERE email = 'provision-ci@example.test' LIMIT 1")"
+
 echo "1.2/10 - Criando, desativando e reativando uma conta pela interface..."
 curl -fsS -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/usuarios.php" -o "$TMP_DIR/users-before.html"
 assert_contains "$TMP_DIR/users-before.html" "Funcionários"
@@ -132,6 +134,27 @@ TEMP_PASSWORD="$(grep -oE '<code id="temporary-password">[^<]+' "$TMP_DIR/user-c
 NOVO_USUARIO_ID="$(db_value "SELECT id FROM usuarios WHERE email = 'funcionario-ci@example.test' LIMIT 1")"
 NOVO_HASH_OK="$(db_value "SELECT COUNT(*) FROM usuarios WHERE id = $NOVO_USUARIO_ID AND ativo = 1 AND deve_trocar_senha = 1 AND senha_hash <> '$TEMP_PASSWORD'")"
 [[ "$NOVO_HASH_OK" == "1" ]] || fail "A conta não foi criada ativa, com hash e troca obrigatória."
+
+NEW_COOKIE_JAR="$TMP_DIR/new-user-cookies.txt"
+curl -fsS -c "$NEW_COOKIE_JAR" -b "$NEW_COOKIE_JAR" "$BASE_URL/login.php" -o "$TMP_DIR/new-user-login.html"
+NEW_LOGIN_TOKEN="$(get_token "$TMP_DIR/new-user-login.html")"
+curl -fsS -L -c "$NEW_COOKIE_JAR" -b "$NEW_COOKIE_JAR" "$BASE_URL/login.php" \
+    --data-urlencode "token=$NEW_LOGIN_TOKEN" \
+    --data-urlencode "email=funcionario-ci@example.test" \
+    --data-urlencode "senha=$TEMP_PASSWORD" \
+    -o "$TMP_DIR/new-user-first-login.html"
+assert_contains "$TMP_DIR/new-user-first-login.html" "Crie sua senha pessoal"
+NEW_PASSWORD="SenhaNova-Funcionario-2026!"
+NEW_PASSWORD_TOKEN="$(get_token "$TMP_DIR/new-user-first-login.html")"
+curl -fsS -L -c "$NEW_COOKIE_JAR" -b "$NEW_COOKIE_JAR" "$BASE_URL/trocar-senha.php" \
+    --data-urlencode "token=$NEW_PASSWORD_TOKEN" \
+    --data-urlencode "senha_atual=$TEMP_PASSWORD" \
+    --data-urlencode "nova_senha=$NEW_PASSWORD" \
+    --data-urlencode "confirmacao=$NEW_PASSWORD" \
+    -o "$TMP_DIR/new-user-password-changed.html"
+assert_contains "$TMP_DIR/new-user-password-changed.html" "Visão geral"
+NOVO_ACESSO_OK="$(db_value "SELECT COUNT(*) FROM usuarios WHERE id = $NOVO_USUARIO_ID AND deve_trocar_senha = 0")"
+[[ "$NOVO_ACESSO_OK" == "1" ]] || fail "A nova conta não concluiu a troca obrigatória de senha."
 CRIACAO_AUDITADA="$(db_value "SELECT COUNT(*) FROM auditoria WHERE usuario_id = (SELECT id FROM usuarios WHERE email = 'provision-ci@example.test') AND acao = 'usuario_criado' AND entidade_id = $NOVO_USUARIO_ID")"
 [[ "$CRIACAO_AUDITADA" == "1" ]] || fail "A criação da conta não foi auditada com o autor correto."
 
@@ -153,7 +176,7 @@ INACTIVE_LOGIN_TOKEN="$(get_token "$TMP_DIR/inactive-login.html")"
 curl -sS -c "$TMP_DIR/inactive-user-cookies.txt" -b "$TMP_DIR/inactive-user-cookies.txt" -X POST "$BASE_URL/login.php" \
     --data-urlencode "token=$INACTIVE_LOGIN_TOKEN" \
     --data-urlencode "email=funcionario-ci@example.test" \
-    --data-urlencode "senha=$TEMP_PASSWORD" \
+    --data-urlencode "senha=$NEW_PASSWORD" \
     -o "$TMP_DIR/inactive-login-rejected.html"
 assert_contains "$TMP_DIR/inactive-login-rejected.html" "E-mail ou senha inválidos."
 
