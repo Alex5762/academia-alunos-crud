@@ -135,6 +135,8 @@ Para conferir os resultados, consulte a aba **Actions** do GitHub. Uma execuçã
 
 - [Relatório de testes manuais e automatizados](docs/relatorio-testes-academia-alunos.md)
 - [Roadmap e critérios de evolução por blocos](docs/roadmap.md)
+- [Planejamento do Bloco 01 — autenticação e auditoria](docs/bloco-01-autenticacao.md)
+- [Modelo de dados e migração de autenticação/auditoria](docs/modelo-dados-autenticacao-auditoria.md)
 
 ## Relação com o material da disciplina
 
