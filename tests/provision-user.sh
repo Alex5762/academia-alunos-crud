@@ -21,6 +21,9 @@ grep -Fq 'Conta criada com sucesso.' "$TMP_DIR/provision.txt" ||
 
 SENHA="$(sed -n 's/^Senha temporária (copie agora): //p' "$TMP_DIR/provision.txt")"
 [[ "${#SENHA}" -eq 32 ]] || fail "A senha temporária não tem o tamanho esperado."
+if [[ -n "${GITHUB_ENV:-}" ]]; then
+    printf 'FITCONTROL_TEST_PASSWORD=%s\\n' "$SENHA" >> "$GITHUB_ENV"
+fi
 
 echo "2/3 - Conferindo hash e evento de auditoria..."
 printf '%s' "$SENHA" | php tests/assert-user-provisioned.php ||
