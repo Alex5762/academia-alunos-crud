@@ -82,6 +82,37 @@ HTTP_CODE="$(curl -sS -o "$TMP_DIR/bad-login.html" -w '%{http_code}' -c "$COOKIE
 [[ "$HTTP_CODE" == "200" ]] || fail "Login inválido deveria retornar a tela com HTTP 200."
 assert_contains "$TMP_DIR/bad-login.html" "E-mail ou senha inválidos."
 
+echo "1.0/10 - Limitando tentativas repetidas de login..."
+RATE_EMAIL="rate-limit-ci@example.test"
+RATE_HASH="$(printf '%s' "$RATE_EMAIL" | sha256sum | awk '{print $1}')"
+ORIGIN_HASH="$(printf '%s' '127.0.0.1' | sha256sum | awk '{print $1}')"
+for attempt in 1 2 3 4; do
+    curl -sS -o "$TMP_DIR/rate-limit-$attempt.html" -c "$COOKIE_JAR" -b "$COOKIE_JAR" -X POST "$BASE_URL/login.php" \
+        --data-urlencode "token=$LOGIN_TOKEN" \
+        --data-urlencode "email=$RATE_EMAIL" \
+        --data-urlencode "senha=senha-incorreta"
+    assert_contains "$TMP_DIR/rate-limit-$attempt.html" "E-mail ou senha inválidos."
+done
+RATE_BEFORE_FIFTH="$(db_value "SELECT tentativas FROM login_tentativas WHERE email_hash = '$RATE_HASH' AND origem_hash = '$ORIGIN_HASH'")"
+[[ "$RATE_BEFORE_FIFTH" == "4" ]] || fail "Esperava quatro tentativas registradas antes da quinta."
+
+curl -sS -o "$TMP_DIR/rate-limit-5.html" -c "$COOKIE_JAR" -b "$COOKIE_JAR" -X POST "$BASE_URL/login.php" \
+    --data-urlencode "token=$LOGIN_TOKEN" \
+    --data-urlencode "email=$RATE_EMAIL" \
+    --data-urlencode "senha=senha-incorreta"
+assert_contains "$TMP_DIR/rate-limit-5.html" "E-mail ou senha inválidos."
+RATE_BLOCKED="$(db_value "SELECT COUNT(*) FROM login_tentativas WHERE email_hash = '$RATE_HASH' AND origem_hash = '$ORIGIN_HASH' AND tentativas = 5 AND bloqueado_ate > NOW()")"
+[[ "$RATE_BLOCKED" == "1" ]] || fail "A quinta falha não aplicou bloqueio temporário."
+
+curl -sS -o "$TMP_DIR/rate-limit-6.html" -c "$COOKIE_JAR" -b "$COOKIE_JAR" -X POST "$BASE_URL/login.php" \
+    --data-urlencode "token=$LOGIN_TOKEN" \
+    --data-urlencode "email=$RATE_EMAIL" \
+    --data-urlencode "senha=senha-incorreta"
+assert_contains "$TMP_DIR/rate-limit-6.html" "E-mail ou senha inválidos."
+RATE_STILL_BLOCKED="$(db_value "SELECT COUNT(*) FROM login_tentativas WHERE email_hash = '$RATE_HASH' AND origem_hash = '$ORIGIN_HASH' AND tentativas = 5 AND bloqueado_ate > NOW()")"
+[[ "$RATE_STILL_BLOCKED" == "1" ]] || fail "A tentativa durante o bloqueio alterou o contador indevidamente."
+
+
 curl -fsS -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/login.php" -o "$TMP_DIR/login-again.html"
 LOGIN_TOKEN="$(get_token "$TMP_DIR/login-again.html")"
 curl -fsS -L -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/login.php" \
@@ -90,6 +121,8 @@ curl -fsS -L -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/login.php" \
     --data-urlencode "senha=$FITCONTROL_TEST_PASSWORD" \
     -o "$TMP_DIR/login-success.html"
 assert_contains "$TMP_DIR/login-success.html" "Crie sua senha pessoal"
+CLEARED_RATE_LIMIT="$(db_value "SELECT COUNT(*) FROM login_tentativas WHERE email_hash = '$(printf '%s' 'provision-ci@example.test' | sha256sum | awk '{print $1}')' AND origem_hash = '$(printf '%s' '127.0.0.1' | sha256sum | awk '{print $1}')'")"
+[[ "$CLEARED_RATE_LIMIT" == "0" ]] || fail "Login válido não limpou as tentativas anteriores."
 
 echo "1.1/10 - Exigindo troca da senha temporária no primeiro acesso..."
 PASSWORD_TOKEN="$(get_token "$TMP_DIR/login-success.html")"
