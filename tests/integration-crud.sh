@@ -82,7 +82,20 @@ curl -fsS -L -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/login.php" \
     --data-urlencode "email=provision-ci@example.test" \
     --data-urlencode "senha=$FITCONTROL_TEST_PASSWORD" \
     -o "$TMP_DIR/login-success.html"
-assert_contains "$TMP_DIR/login-success.html" "Visão geral"
+assert_contains "$TMP_DIR/login-success.html" "Crie sua senha pessoal"
+
+echo "1.1/10 - Exigindo troca da senha temporária no primeiro acesso..."
+PASSWORD_TOKEN="$(get_token "$TMP_DIR/login-success.html")"
+FITCONTROL_NEW_PASSWORD="SenhaNova-FitControl-2026!"
+curl -fsS -L -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/trocar-senha.php" \
+    --data-urlencode "token=$PASSWORD_TOKEN" \
+    --data-urlencode "senha_atual=$FITCONTROL_TEST_PASSWORD" \
+    --data-urlencode "nova_senha=$FITCONTROL_NEW_PASSWORD" \
+    --data-urlencode "confirmacao=$FITCONTROL_NEW_PASSWORD" \
+    -o "$TMP_DIR/password-changed.html"
+assert_contains "$TMP_DIR/password-changed.html" "Visão geral"
+OLD_PASSWORD_HASH="$(db_value "SELECT COUNT(*) FROM usuarios WHERE email = 'provision-ci@example.test' AND deve_trocar_senha = 0")"
+[[ "$OLD_PASSWORD_HASH" == "1" ]] || fail "A conta continuou marcada para troca obrigatória."
 
 curl -fsS -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/cadastro.php" -o "$TMP_DIR/form.html"
 TOKEN="$(get_token "$TMP_DIR/form.html")"
