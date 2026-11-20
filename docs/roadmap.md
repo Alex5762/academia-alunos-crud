@@ -48,7 +48,7 @@ Entregas:
 - Resolver pendências visuais ou documentá-las com clareza.
 - Atualizar a descrição da PR para refletir o estado real.
 
-**Estado:** em andamento. A CI e a captura automatizada passaram; a inspeção visual manual em navegador/dispositivo ainda precisa ser concluída.
+**Estado:** autenticação, contas individuais, troca obrigatória de senha e gestão básica de funcionários implementadas na branch. A validação da nova gestão pela CI e a inspeção visual manual ainda precisam ser concluídas.
 
 ### Bloco 01 — Autenticação e proteção do painel
 
@@ -63,6 +63,14 @@ Escopo inicial:
 - Testes para acesso sem sessão, login válido/inválido e logout.
 
 **Decisão antes de implementar:** confirmar se o projeto precisa somente de um perfil administrador ou de vários níveis de permissão. Não criar um sistema complexo de papéis sem requisito.
+
+### Bloco 01 — complemento implementado
+
+- Tela de funcionários com criação, listagem, desativação e reativação.
+- Senha temporária gerada no servidor e troca obrigatória no primeiro acesso.
+- Auditoria das operações de conta.
+- Proteção contra desativar a própria conta e contra desativar a última conta ativa.
+- Todas as contas permanecem com permissões iguais nesta primeira versão.
 
 ### Bloco 02 — Gestão de alunos
 
