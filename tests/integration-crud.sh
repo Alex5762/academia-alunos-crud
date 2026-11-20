@@ -113,6 +113,70 @@ curl -fsS -c "$TMP_DIR/old-password-cookies.txt" -b "$TMP_DIR/old-password-cooki
     -o "$TMP_DIR/old-password-rejected.html"
 assert_contains "$TMP_DIR/old-password-rejected.html" "E-mail ou senha inválidos."
 
+echo "1.2/10 - Criando, desativando e reativando uma conta pela interface..."
+curl -fsS -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/usuarios.php" -o "$TMP_DIR/users-before.html"
+assert_contains "$TMP_DIR/users-before.html" "Funcionários"
+USERS_TOKEN="$(get_token "$TMP_DIR/users-before.html")"
+
+curl -fsS -L -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/salvar-usuario.php" \
+    --data-urlencode "token=$USERS_TOKEN" \
+    --data-urlencode "nome=Funcionário CI" \
+    --data-urlencode "email=funcionario-ci@example.test" \
+    -o "$TMP_DIR/user-created.html"
+assert_contains "$TMP_DIR/user-created.html" "Conta criada com sucesso."
+assert_contains "$TMP_DIR/user-created.html" "Senha temporária"
+
+TEMP_PASSWORD="$(grep -oE '<code id="temporary-password">[^<]+' "$TMP_DIR/user-created.html" | sed -E 's/.*>//')"
+[[ \${#TEMP_PASSWORD} -ge 30 ]] || fail "A senha temporária não foi exibida corretamente."
+
+NOVO_USUARIO_ID="$(db_value "SELECT id FROM usuarios WHERE email = 'funcionario-ci@example.test' LIMIT 1")"
+NOVO_HASH_OK="$(db_value "SELECT COUNT(*) FROM usuarios WHERE id = $NOVO_USUARIO_ID AND ativo = 1 AND deve_trocar_senha = 1 AND senha_hash <> '$TEMP_PASSWORD'")"
+[[ "$NOVO_HASH_OK" == "1" ]] || fail "A conta não foi criada ativa, com hash e troca obrigatória."
+CRIACAO_AUDITADA="$(db_value "SELECT COUNT(*) FROM auditoria WHERE usuario_id = (SELECT id FROM usuarios WHERE email = 'provision-ci@example.test') AND acao = 'usuario_criado' AND entidade_id = $NOVO_USUARIO_ID")"
+[[ "$CRIACAO_AUDITADA" == "1" ]] || fail "A criação da conta não foi auditada com o autor correto."
+
+USERS_TOKEN="$(get_token "$TMP_DIR/user-created.html")"
+curl -fsS -L -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/alterar-status-usuario.php" \
+    --data-urlencode "token=$USERS_TOKEN" \
+    --data-urlencode "id=$NOVO_USUARIO_ID" \
+    --data-urlencode "acao=desativar" \
+    -o "$TMP_DIR/user-disabled.html"
+assert_contains "$TMP_DIR/user-disabled.html" "Conta desativada."
+
+CONTA_INATIVA="$(db_value "SELECT COUNT(*) FROM usuarios WHERE id = $NOVO_USUARIO_ID AND ativo = 0")"
+[[ "$CONTA_INATIVA" == "1" ]] || fail "A desativação da conta não foi persistida."
+DESATIVACAO_AUDITADA="$(db_value "SELECT COUNT(*) FROM auditoria WHERE usuario_id = (SELECT id FROM usuarios WHERE email = 'provision-ci@example.test') AND acao = 'usuario_desativado' AND entidade_id = $NOVO_USUARIO_ID")"
+[[ "$DESATIVACAO_AUDITADA" == "1" ]] || fail "A desativação não foi auditada."
+
+curl -fsS -c "$TMP_DIR/inactive-user-cookies.txt" -b "$TMP_DIR/inactive-user-cookies.txt" "$BASE_URL/login.php" -o "$TMP_DIR/inactive-login.html"
+INACTIVE_LOGIN_TOKEN="$(get_token "$TMP_DIR/inactive-login.html")"
+curl -sS -c "$TMP_DIR/inactive-user-cookies.txt" -b "$TMP_DIR/inactive-user-cookies.txt" -X POST "$BASE_URL/login.php" \
+    --data-urlencode "token=$INACTIVE_LOGIN_TOKEN" \
+    --data-urlencode "email=funcionario-ci@example.test" \
+    --data-urlencode "senha=$TEMP_PASSWORD" \
+    -o "$TMP_DIR/inactive-login-rejected.html"
+assert_contains "$TMP_DIR/inactive-login-rejected.html" "E-mail ou senha inválidos."
+
+USERS_TOKEN="$(get_token "$TMP_DIR/user-disabled.html")"
+curl -fsS -L -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/alterar-status-usuario.php" \
+    --data-urlencode "token=$USERS_TOKEN" \
+    --data-urlencode "id=$NOVO_USUARIO_ID" \
+    --data-urlencode "acao=reativar" \
+    -o "$TMP_DIR/user-reactivated.html"
+assert_contains "$TMP_DIR/user-reactivated.html" "Conta reativada com sucesso."
+REATIVACAO_AUDITADA="$(db_value "SELECT COUNT(*) FROM auditoria WHERE usuario_id = (SELECT id FROM usuarios WHERE email = 'provision-ci@example.test') AND acao = 'usuario_reativado' AND entidade_id = $NOVO_USUARIO_ID")"
+[[ "$REATIVACAO_AUDITADA" == "1" ]] || fail "A reativação não foi auditada."
+
+USERS_TOKEN="$(get_token "$TMP_DIR/user-reactivated.html")"
+curl -fsS -L -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/alterar-status-usuario.php" \
+    --data-urlencode "token=$USERS_TOKEN" \
+    --data-urlencode "id=$USUARIO_ID" \
+    --data-urlencode "acao=desativar" \
+    -o "$TMP_DIR/self-disable.html"
+assert_contains "$TMP_DIR/self-disable.html" "Você não pode desativar sua própria conta."
+SELF_ACTIVE="$(db_value "SELECT COUNT(*) FROM usuarios WHERE email = 'provision-ci@example.test' AND ativo = 1")"
+[[ "$SELF_ACTIVE" == "1" ]] || fail "A própria conta foi desativada indevidamente."
+
 curl -fsS -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/cadastro.php" -o "$TMP_DIR/form.html"
 TOKEN="$(get_token "$TMP_DIR/form.html")"
 assert_contains "$TMP_DIR/form.html" 'autocomplete="tel"'
