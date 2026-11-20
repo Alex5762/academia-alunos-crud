@@ -59,7 +59,7 @@ assert_contains "$TMP_DIR/bad-login.html" "E-mail ou senha inválidos."
 
 curl -fsS -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/login.php" -o "$TMP_DIR/login-again.html"
 LOGIN_TOKEN="$(get_token "$TMP_DIR/login-again.html")"
-curl -fsS -L -c "$COOKIE_JAR" -b "$COOKIE_JAR" -X POST "$BASE_URL/login.php" \
+curl -fsS -L -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/login.php" \
     --data-urlencode "token=$LOGIN_TOKEN" \
     --data-urlencode "email=provision-ci@example.test" \
     --data-urlencode "senha=$FITCONTROL_TEST_PASSWORD" \
