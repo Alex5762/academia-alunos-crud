@@ -4,6 +4,15 @@ $requisicaoHttps = isset($_SERVER['HTTPS'])
     && $_SERVER['HTTPS'] !== ''
     && strtolower((string) $_SERVER['HTTPS']) !== 'off';
 
+// Cabeçalhos defensivos para todas as páginas PHP, incluindo login e respostas
+// que exibem dados de funcionários ou senhas temporárias.
+header('X-Content-Type-Options: nosniff');
+header('X-Frame-Options: DENY');
+header('Referrer-Policy: strict-origin-when-cross-origin');
+header('Permissions-Policy: camera=(), microphone=(), geolocation=()');
+header('Cache-Control: no-store, private, max-age=0');
+header('Pragma: no-cache');
+
 if (session_status() !== PHP_SESSION_ACTIVE) {
     ini_set('session.use_strict_mode', '1');
     ini_set('session.use_only_cookies', '1');
