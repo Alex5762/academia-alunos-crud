@@ -81,19 +81,28 @@ Os registros são inseridos apenas no banco efêmero do CI. As capturas e verifi
 3. Conferir navegação por teclado, foco visível e mensagens de campos obrigatórios vazios.
 4. Repetir a inspeção visual em outro navegador, se disponível.
 
-## 6. Limites atuais do sistema
+## 6. Autenticação e auditoria — validação pendente
 
-- Não há login, autenticação ou controle de acesso por usuário.
+A branch recebeu a primeira implementação de login/logout, proteção das páginas administrativas, contas individuais provisionadas por CLI e auditoria das operações do CRUD.
+
+O teste de integração foi ampliado para validar acesso anônimo, credenciais inválidas/válidas, CRUD autenticado, autoria dos eventos, revogação de sessão após desativar uma conta e logout. O Playwright também autentica antes de capturar as telas.
+
+**Atenção:** esses cenários ainda não possuem uma execução CI verde confirmada nesta revisão. Não registrar os novos testes como aprovados até consultar o resultado do workflow.
+
+## 7. Limites atuais do sistema
+
+- Ainda não há tela administrativa para criar/desativar contas; o provisionamento inicial e de novas contas é feito pelo terminal.
+- Ainda não há troca obrigatória da senha temporária nem limitação persistente de tentativas de login.
 - O banco contém apenas a tabela `alunos`; `plano` é texto, sem relação com tabela própria.
 - Não existem módulos de matrícula/contrato, pagamentos, frequência, agenda ou aulas.
 
 O FitControl permanece uma aplicação acadêmica/local. Não deve ser exposto como painel administrativo público nem receber dados reais de alunos antes da implementação e revisão das proteções necessárias.
 
-## 7. Conclusão
+## 8. Conclusão
 
 Os testes manuais registraram o funcionamento básico do CRUD no ambiente XAMPP. Em 20/11/2026, a CI aprovou as nove verificações funcionais descritas e gerou capturas automatizadas desktop/mobile para os temas claro e escuro.
 
-**Conclusão:** os fluxos atualmente implementados passaram pelas verificações registradas. A revisão visual manual continua pendente, assim como autenticação e os módulos futuros descritos em [`docs/roadmap.md`](roadmap.md).
+**Conclusão:** o CRUD e as verificações visuais anteriores passaram pelas execuções registradas. A primeira implementação de autenticação foi adicionada posteriormente e aguarda validação automatizada. A revisão visual manual continua pendente, assim como os módulos futuros descritos em [`docs/roadmap.md`](roadmap.md).
 
 ---
 
