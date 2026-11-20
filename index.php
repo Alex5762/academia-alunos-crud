@@ -157,7 +157,7 @@ function iniciaisNome($nome) {
                 <strong>Visão geral</strong>
             </div>
             <div class="topbar-user">
-                <span class="user-avatar" aria-hidden="true"><?= escapar(strtoupper(mb_substr($usuario['nome'], 0, 1, 'UTF-8'))) ?></span>
+                <span class="user-avatar" aria-hidden="true"><?= escapar(inicialNome($usuario['nome'])) ?></span>
                 <span class="user-label">
                     <strong><?= escapar($usuario['nome']) ?></strong>
                     <small><?= escapar($usuario['email']) ?></small>
