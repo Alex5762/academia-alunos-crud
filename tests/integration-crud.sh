@@ -175,8 +175,7 @@ LOGIN_EVENTOS="$(db_value "SELECT COUNT(*) FROM auditoria WHERE usuario_id = $US
 echo "8/10 - Encerrando sessão por POST com CSRF..."
 curl -fsS -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/index.php" -o "$TMP_DIR/dashboard-before-logout.html"
 LOGOUT_TOKEN="$(get_token "$TMP_DIR/dashboard-before-logout.html")"
-curl -fsS -L -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/logout.php" \\
-    --data-urlencode "token=$LOGOUT_TOKEN" -o "$TMP_DIR/logout.html"
+curl -fsS -L -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/logout.php" --data-urlencode "token=$LOGOUT_TOKEN" -o "$TMP_DIR/logout.html"
 HTTP_CODE="$(curl -sS -o "$TMP_DIR/after-logout.html" -w '%{http_code}' -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/index.php")"
 [[ "$HTTP_CODE" == "303" ]] || fail "A sessão continuou acessando o painel após logout."
 LOGOUT_EVENTOS="$(db_value "SELECT COUNT(*) FROM auditoria WHERE usuario_id = $USUARIO_ID AND acao = 'logout'")"
