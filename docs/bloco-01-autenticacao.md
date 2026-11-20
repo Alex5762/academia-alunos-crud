@@ -4,7 +4,7 @@
 
 Exigir autenticação antes de permitir acesso ao painel e às operações administrativas do FitControl. Cada funcionário terá sua própria conta, permitindo atribuir ações a uma pessoa específica e consultar um histórico básico de atividade.
 
-**Estado:** contas individuais confirmadas; migração validada na CI; provisionador CLI implementado; primeira versão do login/logout, proteção de rotas e auditoria do CRUD registrada na branch. A validação automatizada dessa integração está pendente.
+**Estado:** contas individuais, login/logout, proteção de rotas, auditoria do CRUD e troca obrigatória da senha temporária implementados na branch. A migração 002 e os testes automatizados foram adicionados e aguardam a execução da CI.
 
 ## Diagnóstico da base atual
 
@@ -59,7 +59,7 @@ No phpMyAdmin, selecione `academia_alunos`, abra a aba SQL e execute o conteúdo
 
 A migração cria somente as novas tabelas e não cria contas. A CI importa o schema original e executa a migração em um MySQL limpo. A validação passou no workflow Run #52.
 
-## Provisionamento de contas implementado
+## Migração 002 — troca obrigatória de senha\n\nA migração `database/migrations/002_force_password_change.sql` adiciona `usuarios.deve_trocar_senha`, com valor padrão `1`. Assim, contas novas e contas já existentes devem definir uma senha pessoal antes de acessar o painel. Execute-a depois da migração 001.\n\nO provisionador marca explicitamente novas contas para troca no primeiro acesso. O login redireciona essas contas para `trocar-senha.php`; a tela exige a senha temporária atual, uma nova senha com pelo menos 12 caracteres e confirmação. A alteração atualiza o hash, remove a exigência e registra o evento `senha_alterada_primeiro_acesso` na mesma transação.\n\n## Provisionamento de contas implementado
 
 O script `scripts/provisionar-usuario.php` cria uma conta a partir do terminal, solicita nome e e-mail, normaliza o e-mail para minúsculas, valida os campos e gera uma senha temporária criptograficamente aleatória. A senha é exibida uma única vez no terminal e somente seu hash, gerado com `password_hash()`, é persistido. A inserção do usuário e o evento `usuario_provisionado_cli` são confirmados na mesma transação. O script recusa execução via HTTP e não aceita senha por argumento ou variável de ambiente.
 
@@ -69,7 +69,7 @@ Exemplo no terminal do projeto:
 php scripts/provisionar-usuario.php
 ```
 
-No XAMPP para Windows, execute no Prompt de Comando ou PowerShell a partir da pasta do projeto, usando o PHP do XAMPP se ele não estiver no PATH, por exemplo `C:\\xampp\\php\\php.exe scripts\\provisionar-usuario.php`. Copie a senha temporária e entregue-a ao funcionário por canal seguro; o funcionário deverá alterá-la após o login, quando o fluxo de troca de senha for implementado. Não publique nem envie a senha em commits, issues ou mensagens de equipe.
+No XAMPP para Windows, execute no Prompt de Comando ou PowerShell a partir da pasta do projeto, usando o PHP do XAMPP se ele não estiver no PATH, por exemplo `C:\\xampp\\php\\php.exe scripts\\provisionar-usuario.php`. Copie a senha temporária e entregue-a ao funcionário por canal seguro; o funcionário deverá substituí-la obrigatoriamente no primeiro acesso. Não publique nem envie a senha em commits, issues ou mensagens de equipe.
 
 O teste `tests/provision-user.sh` verifica a criação, a validação do hash, o evento de auditoria e a rejeição de e-mail duplicado. Ele usa uma conta fictícia no banco efêmero da CI.
 
@@ -84,7 +84,7 @@ O teste `tests/provision-user.sh` verifica a criação, a validação do hash, o
 - Cadastro, edição e exclusão de alunos gravam evento de auditoria na mesma transação da alteração de dados.
 - O fluxo de testes agora prevê acesso anônimo, login inválido/válido, CRUD, autoria dos três eventos e logout. O Playwright autentica antes das capturas.
 
-**Limitações conhecidas desta primeira versão:** ainda não há tela para administrar/desativar contas; a desativação deve ser feita diretamente no banco por operador autorizado. Também não há limitação persistente de tentativas de login nem fluxo de troca obrigatória da senha temporária. O provisionador mostra a senha uma única vez; trate-a como segredo e entregue por canal seguro. Não exponha o sistema publicamente até concluir a revisão de segurança e HTTPS.
+**Limitações conhecidas desta primeira versão:** ainda não há tela para administrar/desativar contas; a desativação deve ser feita diretamente no banco por operador autorizado. Também não há limitação persistente de tentativas de login nem tela para administrar/desativar contas. O provisionador mostra a senha uma única vez; trate-a como segredo e entregue por canal seguro. Não exponha o sistema publicamente até concluir a revisão de segurança e HTTPS.
 
 ## Escopo proposto
 
