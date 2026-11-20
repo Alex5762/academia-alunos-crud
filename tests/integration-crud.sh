@@ -222,5 +222,5 @@ echo "10/10 - Verificando que o endpoint de gravação rejeita GET..."
 HTTP_CODE="$(curl -sS -o "$TMP_DIR/method.html" -w '%{http_code}' "$BASE_URL/salvar.php")"
 [[ "$HTTP_CODE" == "405" ]] || fail "GET em salvar.php deveria retornar HTTP 405; retornou $HTTP_CODE."
 
-echo "11/11 - Verificações de integração concluídas."
+echo "10/10 - Verificações de integração concluídas."
 echo "CRUD real via HTTP, validação de e-mail e telefone, CSRF, pesquisa e persistência: OK"
