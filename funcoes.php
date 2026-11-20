@@ -120,6 +120,11 @@ function registrarAuditoria(
     ]);
 }
 
+function inicialNome($nome): string {
+    preg_match('/^\\X/u', trim((string) $nome), $resultado);
+    return strtoupper($resultado[0] ?? '?');
+}
+
 function validarId($valor) {
     return filter_var($valor, FILTER_VALIDATE_INT, [
         'options' => ['min_range' => 1, 'max_range' => 4294967295]
