@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   php-and-mysql:
-    name: PHP syntax and MySQL integration
+    name: PHP syntax and CRUD integration
     runs-on: ubuntu-latest
 
     services:
@@ -60,13 +60,14 @@ jobs:
           test -f conexao.php
           test -f banco.sql
           test -f style.css
+          test -f tests/integration-crud.sh
 
       - name: Import database schema
         env:
           MYSQL_PWD: root
         run: mysql --host=127.0.0.1 --port=3306 --user=root < banco.sql
 
-      - name: Test PDO connection and dashboard queries
+      - name: Run application and test real CRUD endpoints
         env:
           DB_HOST: 127.0.0.1
           DB_PORT: 3306
@@ -74,54 +75,16 @@ jobs:
           DB_USER: root
           DB_PASSWORD: root
         run: |
-          php <<'PHP'
-          <?php
-          $dsn = sprintf(
-              'mysql:host=%s;port=%s;dbname=%s;charset=utf8mb4',
-              getenv('DB_HOST'),
-              getenv('DB_PORT'),
-              getenv('DB_NAME')
-          );
+          php -S 127.0.0.1:8080 -t . > /tmp/academia-php-server.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill "$SERVER_PID" 2>/dev/null || true' EXIT
 
-          $pdo = new PDO($dsn, getenv('DB_USER'), getenv('DB_PASSWORD'), [
-              PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-              PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-              PDO::ATTR_EMULATE_PREPARES => false,
-          ]);
+          for attempt in $(seq 1 20); do
+            if curl --silent --fail http://127.0.0.1:8080/cadastro.php >/dev/null; then
+              break
+            fi
+            sleep 1
+          done
 
-          $pdo->exec(
-              "INSERT INTO alunos (nome, telefone, email, plano) VALUES
-              ('Ana Teste', '21999990000', 'ana@example.test', 'Mensal'),
-              ('Bruno Teste', '21999990001', 'bruno@example.test', 'Anual')"
-          );
-
-          $total = (int) $pdo->query(
-              'SELECT COUNT(*) FROM alunos'
-          )->fetchColumn();
-
-          if ($total !== 2) {
-              throw new RuntimeException("Esperados 2 alunos; encontrados: {$total}");
-          }
-
-          $planos = $pdo->query(
-              'SELECT plano, COUNT(*) AS quantidade
-               FROM alunos
-               GROUP BY plano
-               ORDER BY quantidade DESC, plano ASC'
-          )->fetchAll();
-
-          if (count($planos) !== 2) {
-              throw new RuntimeException('A consulta de distribuição por plano falhou.');
-          }
-
-          $busca = $pdo->prepare(
-              'SELECT COUNT(*) FROM alunos WHERE nome LIKE :busca'
-          );
-          $busca->execute(['busca' => '%Ana%']);
-
-          if ((int) $busca->fetchColumn() !== 1) {
-              throw new RuntimeException('A consulta de pesquisa por nome falhou.');
-          }
-
-          echo "PDO, schema, indicadores, distribuição por plano e pesquisa: OK\n";
-          PHP
+          curl --fail --silent http://127.0.0.1:8080/cadastro.php >/dev/null
+          bash tests/integration-crud.sh
