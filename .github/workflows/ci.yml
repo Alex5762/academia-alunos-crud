@@ -80,6 +80,9 @@ jobs:
           test -f database/migrations/002_force_password_change.sql
           test -f database/migrations/001_authentication_audit.sql
           test -f scripts/provisionar-usuario.php
+          test -f usuarios.php
+          test -f salvar-usuario.php
+          test -f alterar-status-usuario.php
           test -f tests/assert-user-provisioned.php
           test -f tests/provision-user.sh
 
