@@ -1950,3 +1950,164 @@ body:not(.dashboard-body) .theme-option[aria-pressed="true"] {
 :root[data-theme="dark"] .login-footnote,
 :root[data-theme="dark"] .login-footer { color: #9aa8bf; }
 :root[data-theme="dark"] .login-form input { color: #e8edf7; background: #111a2a; border-color: #35435b; }
+
+
+/* Gestão de contas de funcionários */
+.users-page {
+    width: min(100%, 1040px);
+}
+.account-card {
+    margin-top: 20px;
+}
+.account-create-form {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: end;
+    gap: 14px;
+}
+.account-create-form label {
+    display: block;
+    margin: 0 0 6px;
+    color: var(--ink);
+    font-size: .8rem;
+    font-weight: 700;
+}
+.account-create-form input {
+    width: 100%;
+    min-height: 44px;
+    padding: 10px 12px;
+    color: var(--ink);
+    background: var(--canvas);
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    font: inherit;
+}
+.account-create-form button {
+    grid-column: 1 / -1;
+    justify-self: start;
+}
+.account-list-heading {
+    justify-content: space-between;
+}
+.accounts-table {
+    min-width: 760px;
+}
+.account-person {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.account-person strong {
+    color: var(--ink);
+    font-size: .82rem;
+}
+.account-person small,
+.account-current {
+    color: var(--muted);
+    font-size: .7rem;
+}
+.account-status {
+    display: inline-flex;
+    align-items: center;
+    padding: 5px 9px;
+    border-radius: 999px;
+    font-size: .7rem;
+    font-weight: 750;
+}
+.account-status.is-active {
+    color: #176c55;
+    background: #eaf8f2;
+}
+.account-status.is-inactive {
+    color: #8a4650;
+    background: #fff0f1;
+}
+.account-status-form {
+    margin: 0;
+}
+.account-status-form .button {
+    min-height: 34px;
+    padding: 7px 10px;
+    font-size: .72rem;
+}
+.account-current {
+    font-weight: 700;
+}
+.temporary-password {
+    margin: 0 0 20px;
+    padding: 16px 18px;
+    color: #176c55;
+    background: #eaf8f2;
+    border: 1px solid #cceede;
+    border-radius: 12px;
+}
+.temporary-password strong {
+    display: block;
+    margin-bottom: 4px;
+    font-size: .88rem;
+}
+.temporary-password p {
+    margin: 0 0 10px;
+    font-size: .78rem;
+    line-height: 1.5;
+}
+.temporary-password code {
+    display: inline-block;
+    padding: 8px 10px;
+    color: #173e35;
+    background: rgba(255,255,255,.75);
+    border: 1px solid #cceede;
+    border-radius: 7px;
+    font-size: .9rem;
+    font-weight: 750;
+    overflow-wrap: anywhere;
+}
+.account-policy {
+    margin: 17px 2px 0;
+    color: var(--muted);
+    font-size: .76rem;
+    line-height: 1.6;
+}
+:root[data-theme="dark"] .account-create-form label {
+    color: #c5d0e2;
+}
+:root[data-theme="dark"] .account-create-form input {
+    color: #e8edf7;
+    background: #111c2d;
+    border-color: #35435a;
+}
+:root[data-theme="dark"] .account-person strong {
+    color: #e8edf7;
+}
+:root[data-theme="dark"] .account-status.is-active {
+    color: #9ce4ce;
+    background: #183b36;
+}
+:root[data-theme="dark"] .account-status.is-inactive {
+    color: #ffb4bd;
+    background: #492a36;
+}
+:root[data-theme="dark"] .temporary-password {
+    color: #9ce4ce;
+    background: #183b36;
+    border-color: #285b50;
+}
+:root[data-theme="dark"] .temporary-password code {
+    color: #d6f7eb;
+    background: #102c29;
+    border-color: #285b50;
+}
+:root[data-theme="dark"] .account-policy,
+:root[data-theme="dark"] .account-current,
+:root[data-theme="dark"] .account-person small {
+    color: #9aa8bf;
+}
+@media (max-width: 620px) {
+    .account-create-form {
+        grid-template-columns: 1fr;
+    }
+    .account-create-form button {
+        width: 100%;
+        justify-self: stretch;
+    }
+}
