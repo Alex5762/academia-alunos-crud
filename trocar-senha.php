@@ -122,7 +122,7 @@ $token = escapar($_SESSION['token']);
         <form action="trocar-senha.php" method="post" class="login-form">
             <input type="hidden" name="token" value="<?= $token ?>">
             <label for="senha-atual">Senha temporária</label>
-            <input type="password" id="senha-atual" name="senha_atual" autocomplete="current-password" required maxlength="4096>
+            <input type="password" id="senha-atual" name="senha_atual" autocomplete="current-password" required maxlength="4096">
             <label for="nova-senha">Nova senha</label>
             <input type="password" id="nova-senha" name="nova_senha" autocomplete="new-password" minlength="12" maxlength="4096" required>
             <label for="confirmacao">Confirme a nova senha</label>
