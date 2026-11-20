@@ -66,6 +66,13 @@ HTTP_CODE="$(curl -sS -o "$TMP_DIR/anonymous.html" -w '%{http_code}' -c "$COOKIE
 [[ "$HTTP_CODE" == "303" ]] || fail "Dashboard anônimo deveria redirecionar para login; retornou $HTTP_CODE."
 grep -Fq 'login.php' "$TMP_DIR/anonymous.html" && fail "Redirecionamento inesperado no dashboard."
 
+CACHE_CONTROL="$(curl -sSI "$BASE_URL/login.php" | tr -d '\r' | grep -i '^Cache-Control:' | tail -n 1)"
+[[ "$CACHE_CONTROL" == *"no-store"* ]] || fail "Login não enviou Cache-Control: no-store."
+FRAME_POLICY="$(curl -sSI "$BASE_URL/login.php" | tr -d '\r' | grep -i '^X-Frame-Options:' | tail -n 1)"
+[[ "$FRAME_POLICY" == *"DENY"* ]] || fail "Login não bloqueou incorporação em iframe."
+NOSNIFF="$(curl -sSI "$BASE_URL/login.php" | tr -d '\r' | grep -i '^X-Content-Type-Options:' | tail -n 1)"
+[[ "$NOSNIFF" == *"nosniff"* ]] || fail "Login não enviou X-Content-Type-Options: nosniff."
+
 curl -fsS -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/login.php" -o "$TMP_DIR/login.html"
 LOGIN_TOKEN="$(get_token "$TMP_DIR/login.html")"
 HTTP_CODE="$(curl -sS -o "$TMP_DIR/bad-login.html" -w '%{http_code}' -c "$COOKIE_JAR" -b "$COOKIE_JAR" -X POST "$BASE_URL/login.php" \
