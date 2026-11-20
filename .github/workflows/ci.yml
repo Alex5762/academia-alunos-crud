@@ -78,6 +78,7 @@ jobs:
           test -f logout.php
           test -f trocar-senha.php
           test -f database/migrations/002_force_password_change.sql
+          test -f database/migrations/003_login_rate_limit.sql
           test -f database/migrations/001_authentication_audit.sql
           test -f scripts/provisionar-usuario.php
           test -f usuarios.php
@@ -100,6 +101,11 @@ jobs:
         env:
           MYSQL_PWD: root
         run: mysql --host=127.0.0.1 --port=3306 --user=root < database/migrations/002_force_password_change.sql
+
+      - name: Validate login rate-limit migration
+        env:
+          MYSQL_PWD: root
+        run: mysql --host=127.0.0.1 --port=3306 --user=root < database/migrations/003_login_rate_limit.sql
 
       - name: Test secure CLI user provisioning
         env:
