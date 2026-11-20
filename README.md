@@ -12,7 +12,7 @@ Aplicação acadêmica de Desenvolvimento Web para gerenciar cadastros de alunos
 - Cadastro e edição de alunos.
 - Listagem e pesquisa por nome.
 - Exclusão com tela de confirmação.
-- Validação dos dados no servidor e no navegador.
+- Validação dos dados no servidor e no navegador, incluindo formato e quantidade de dígitos do telefone.
 - Consultas preparadas com PDO.
 - Token CSRF nos formulários de escrita.
 - Mensagens de retorno e preservação dos dados após erros de validação.
@@ -88,12 +88,12 @@ O pipeline:
 
 Os testes de integração cobrem:
 - rejeição de token CSRF inválido (HTTP 403);
-- validação de e-mail inválido e preservação dos dados do formulário;
+- validação de e-mail e telefone inválidos, com preservação dos dados do formulário;
 - cadastro de aluno;
 - pesquisa pelo nome;
 - edição e conferência da persistência no MySQL;
 - abertura da confirmação por GET sem excluir o registro;
-- exclusão por POST e verificação da remoção no banco.
+- exclusão por POST e verificação da remoção no banco;\n- rejeição de método GET no endpoint de gravação (HTTP 405).
 
 Para conferir os resultados, consulte a aba **Actions** do GitHub. Uma execução verde confirma apenas os cenários incluídos no workflow; não substitui os testes exploratórios no navegador.
 
