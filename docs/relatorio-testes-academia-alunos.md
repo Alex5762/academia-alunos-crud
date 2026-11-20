@@ -116,12 +116,12 @@ Ao final dos testes manuais, a tabela `alunos` estava sem registros, conforme a 
 | Cenário | Verificação | Resultado |
 |---|---|---|
 | Token CSRF inválido | Endpoint de gravação responde HTTP 403 | Aprovado |
-| E-mail inválido | Servidor rejeita o dado e preserva os dados preenchidos | Aprovado |
+| E-mail inválido | Servidor rejeita o dado e preserva os dados preenchidos | Aprovado |\n| Telefone inválido | Servidor rejeita letras e quantidade insuficiente de dígitos | Aprovado |
 | Create | Cadastro pelo endpoint `salvar.php` e geração de ID | Aprovado |
 | Read | Pesquisa do aluno pelo endpoint `index.php` | Aprovado |
 | Update | Edição pelo endpoint `salvar.php` e conferência no MySQL | Aprovado |
 | Confirmação de exclusão | Requisição GET exibe confirmação e mantém o registro | Aprovado |
-| Delete | Exclusão via POST e verificação da remoção no MySQL | Aprovado |
+| Delete | Exclusão via POST e verificação da remoção no MySQL | Aprovado |\n| Método HTTP | Endpoint de gravação rejeita GET com HTTP 405 | Aprovado |
 
 **Resultado da execução:** o job `PHP syntax and CRUD integration` finalizou com conclusão `success`. As etapas de sintaxe PHP, arquivos obrigatórios, importação do schema e execução dos sete blocos do teste de integração foram concluídas com sucesso.
 
@@ -144,9 +144,9 @@ Os testes de e-mail inválido, token CSRF inválido, preservação de dados, con
 
 ## 8. Conclusão
 
-Os testes manuais de 11/11/2026 registraram o funcionamento básico do CRUD no ambiente local Windows/XAMPP. Em 20/11/2026, a integração contínua foi ampliada para executar a aplicação PHP real conectada ao MySQL e validar, por HTTP, cadastro, pesquisa, edição, validação de e-mail, proteção CSRF e exclusão.
+Os testes manuais de 11/11/2026 registraram o funcionamento básico do CRUD no ambiente local Windows/XAMPP. Em 20/11/2026, a integração contínua foi ampliada para executar a aplicação PHP real conectada ao MySQL e validar, por HTTP, cadastro, pesquisa, edição, validação de e-mail e telefone, proteção CSRF, rejeição de método HTTP indevido e exclusão.
 
-**Conclusão:** os principais fluxos do CRUD foram aprovados tanto no registro manual quanto na execução automatizada do GitHub Actions. Permanecem melhorias de validação de telefone, revisão visual em navegadores e implementação de autenticação antes de qualquer exposição pública do painel.
+**Conclusão:** os principais fluxos do CRUD foram aprovados tanto no registro manual quanto na execução automatizada do GitHub Actions. Permanecem a revisão visual em navegadores e a implementação de autenticação antes de qualquer exposição pública do painel.
 
 ---
 
