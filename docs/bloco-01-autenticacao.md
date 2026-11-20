@@ -84,7 +84,20 @@ O teste `tests/provision-user.sh` verifica a criação, a validação do hash, o
 - Cadastro, edição e exclusão de alunos gravam evento de auditoria na mesma transação da alteração de dados.
 - O fluxo de testes agora prevê acesso anônimo, login inválido/válido, CRUD, autoria dos três eventos e logout. O Playwright autentica antes das capturas.
 
-**Limitações conhecidas desta primeira versão:** todas as contas ativas possuem as mesmas permissões administrativas; não há separação entre administrador e funcionário. Também não há limitação persistente de tentativas de login, recuperação de senha por e-mail ou MFA. O provisionador mostra a senha uma única vez; trate-a como segredo e entregue por canal seguro. Não exponha o sistema publicamente até concluir a revisão de segurança e HTTPS.
+**Limitações conhecidas desta primeira versão:** todas as contas ativas possuem as mesmas permissões administrativas; não há separação entre administrador e funcionário. A limitação persistente de tentativas de login foi adicionada na migração 003. Ainda não há recuperação de senha por e-mail nem MFA. O provisionador mostra a senha uma única vez; trate-a como segredo e entregue por canal seguro. Não exponha o sistema publicamente até concluir a revisão de segurança e HTTPS.
+
+## Limitação de tentativas de login — implementação
+
+A migração `database/migrations/003_login_rate_limit.sql` cria a tabela `login_tentativas`, com chave única por hash do e-mail normalizado e hash do endereço de origem. Não armazena os valores puros; os hashes são pseudonimizados, não anônimos.
+
+- Cinco falhas dentro de uma janela de 15 minutos ativam bloqueio temporário de 15 minutos para aquela combinação.
+- Tentativas recebidas durante o bloqueio mantêm a resposta genérica e não incrementam o contador.
+- Um login válido limpa o contador da combinação correspondente.
+- O incremento é feito por `INSERT ... ON DUPLICATE KEY UPDATE` para evitar perda de incrementos concorrentes.
+- Registros sem atividade por mais de um dia são removidos durante requisições válidas de login.
+- O controle é por e-mail + origem, não é um bloqueio global por IP e não impede ataques distribuídos com várias origens.
+
+A CI executa a migração 003 e os testes cobrem quatro falhas, bloqueio na quinta, manutenção do bloqueio na sexta e limpeza após login válido.
 
 ## Escopo proposto
 
