@@ -9,6 +9,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 validarToken();
 require_once __DIR__ . '/conexao.php';
+$usuario = exigirAutenticacao($pdo);
 
 // Aceita somente textos nos campos esperados.
 $dados = [];
