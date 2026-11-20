@@ -86,9 +86,23 @@ try {
         $mensagem = 'Aluno atualizado com sucesso!';
     }
 
+    $pdo->beginTransaction();
     $comando = $pdo->prepare($sql);
     $comando->execute($parametros);
-} catch (PDOException $erro) {
+
+    $alunoIdAuditoria = $id === null ? (int) $pdo->lastInsertId() : (int) $id;
+    registrarAuditoria(
+        $pdo,
+        (int) $usuario['id'],
+        $id === null ? 'aluno_criado' : 'aluno_editado',
+        'alunos',
+        $alunoIdAuditoria
+    );
+    $pdo->commit();
+} catch (Throwable $erro) {
+    if ($pdo->inTransaction()) {
+        $pdo->rollBack();
+    }
     error_log($erro->getMessage());
     http_response_code(500);
     exit('Não foi possível salvar. Consulte o registro de erros do Apache.');
