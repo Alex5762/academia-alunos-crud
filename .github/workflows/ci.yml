@@ -71,6 +71,8 @@ jobs:
           test -f banco.sql
           test -f style.css
           test -f tests/integration-crud.sh
+          test -f tests/migration-student-status.sh
+          test -f database/migrations/004_student_status.sql
           test -f tests/capture-screenshots.mjs
           test -f tests/browser-compatibility.mjs
           test -f theme.js
@@ -112,6 +114,16 @@ jobs:
         env:
           MYSQL_PWD: root
         run: mysql --host=127.0.0.1 --port=3306 --user=root < database/migrations/003_login_rate_limit.sql
+
+      - name: Validate student status migration and legacy data preservation
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_NAME: academia_alunos
+          DB_USER: root
+          DB_PASSWORD: root
+          MYSQL_PWD: root
+        run: bash tests/migration-student-status.sh
 
       - name: Validate student status migration and legacy data preservation
         env:
