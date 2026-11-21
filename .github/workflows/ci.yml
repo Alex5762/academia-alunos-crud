@@ -13,6 +13,68 @@ permissions:
   contents: read
 
 jobs:
+  database-compatibility:
+    name: Database compatibility (${{ matrix.database-name }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - database-name: MySQL 8.0
+            database-image: mysql:8.0
+          - database-name: MariaDB 10.11
+            database-image: mariadb:10.11
+
+    services:
+      database:
+        image: ${{ matrix.database-image }}
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: academia_alunos
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: pdo_mysql
+          coverage: none
+
+      - name: Install MySQL-compatible client
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes default-mysql-client
+
+      - name: Import current schema and migrations
+        env:
+          MYSQL_PWD: root
+        run: |
+          set -euo pipefail
+          mysql --host=127.0.0.1 --port=3306 --user=root < banco.sql
+          mysql --host=127.0.0.1 --port=3306 --user=root < database/migrations/001_authentication_audit.sql
+          mysql --host=127.0.0.1 --port=3306 --user=root < database/migrations/002_force_password_change.sql
+          mysql --host=127.0.0.1 --port=3306 --user=root < database/migrations/003_login_rate_limit.sql
+          mysql --host=127.0.0.1 --port=3306 --user=root < database/migrations/004_student_status.sql
+
+      - name: Validate InnoDB, DATETIME and timezone contract
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_NAME: academia_alunos
+          DB_USER: root
+          DB_PASSWORD: root
+        run: php tests/database-temporal-compatibility.php
+
   php-and-mysql:
     name: PHP, CRUD integration and visual capture
     runs-on: ubuntu-latest
