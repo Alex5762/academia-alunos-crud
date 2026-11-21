@@ -169,7 +169,7 @@ Manter `aluno_criado` e `aluno_editado`. Eventos históricos `aluno_excluido` ex
 - [x] Oferecer atalhos de edição e ativação/inativação conforme o estado atual.
 - [x] Preservar filtros ao retornar à listagem e ao alterar status pelo perfil.
 - [x] Adicionar testes HTTP para acesso anônimo, IDs inválidos/inexistentes, dados, eventos e ações pelo perfil.
-- [x] Adicionar captura Playwright desktop do perfil.
+- [x] Adicionar capturas Playwright desktop e mobile do perfil, com verificação de overflow horizontal.
 - [ ] Validar os novos testes na CI e revisar a captura.
 
 **Entrega:** consulta individual e histórico operacional básico sem implementar histórico campo a campo.
