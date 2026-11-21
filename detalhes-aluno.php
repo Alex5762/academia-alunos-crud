@@ -12,7 +12,7 @@ if ($id === false) {
 }
 
 $consulta = $pdo->prepare(
-    'SELECT id, nome, telefone, email, plano, ativo, criado_em
+    'SELECT id, nome, telefone, email, plano, ativo
      FROM alunos
      WHERE id = :id
      LIMIT 1'
@@ -100,7 +100,6 @@ unset($_SESSION['mensagem']);
             <div><dt>Telefone</dt><dd><a href="tel:<?= escapar(preg_replace('/[^0-9+]/', '', $aluno['telefone'])) ?>"><?= escapar($aluno['telefone']) ?></a></dd></div>
             <div><dt>Plano</dt><dd><?= escapar($aluno['plano']) ?></dd></div>
             <div><dt>Situação</dt><dd><?= $ativo ? 'Ativo' : 'Inativo' ?></dd></div>
-            <div><dt>Cadastrado em</dt><dd><?= escapar(date('d/m/Y H:i', strtotime($aluno['criado_em']))) ?></dd></div>
         </dl>
         <div class="student-detail-actions">
             <a class="button button-primary" href="<?= escapar(urlCadastroAluno((int) $aluno['id'], $contextoLista)) ?>">Editar cadastro</a>
