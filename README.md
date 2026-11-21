@@ -75,9 +75,17 @@ academia-alunos-crud/
 │       ├── dashboard-mobile.png
 │       ├── alunos-mobile.png
 │       └── cadastro-desktop.png
+├── database/
+│   └── migrations/
+│       ├── 001_authentication_audit.sql
+│       ├── 002_force_password_change.sql
+│       ├── 003_login_rate_limit.sql
+│       └── 004_student_status.sql
 ├── tests/
+│   ├── browser-compatibility.mjs
 │   ├── capture-screenshots.mjs
-│   └── integration-crud.sh
+│   ├── integration-crud.sh
+│   └── migration-student-status.sh
 ├── banco.sql
 ├── conexao.php
 ├── configuracoes.php
@@ -126,7 +134,7 @@ O workflow [CI - Academia Alunos CRUD](https://github.com/Alex5762/academia-alun
 
 O pipeline:
 
-1. prepara PHP 8.2, Node.js 24, MySQL 8 e Chromium;
+1. prepara PHP 8.2, Node.js 24, MySQL 8 e os motores Chromium, Firefox e WebKit;
 2. verifica a sintaxe de todos os arquivos PHP e a presença dos arquivos essenciais;
 3. importa \`banco.sql\` e executa as migrações 001, 002 e 003 em um banco MySQL limpo;
 4. provisiona uma conta fictícia e verifica hash, auditoria e unicidade do e-mail;
@@ -140,7 +148,7 @@ Os testes de integração cobrem:
 - troca obrigatória da senha temporária, rejeição da senha antiga e auditoria;
 - limite de tentativas de login e liberação após autenticação válida;
 - criação, desativação e reativação de funcionários, incluindo bloqueio de autodesativação;
-- cadastro, pesquisa, edição e exclusão de alunos com persistência no MySQL;
+- cadastro, pesquisa, edição e exclusão física de alunos (fluxo legado ainda ativo até a etapa 2 do Bloco 02), com persistência no MySQL;
 - associação dos eventos de auditoria ao funcionário autenticado;
 - logout, revogação de sessão após desativação de conta e proteção CSRF;
 - expiração após 30 minutos de inatividade e após 8 horas de duração absoluta;
