@@ -50,7 +50,7 @@ jobs:
       - name: Install Playwright browsers
         run: |
           npm install --no-save --no-package-lock playwright@1.65.1
-          npx playwright install --with-deps chromium firefox webkit firefox webkit
+          npx playwright install --with-deps chromium firefox webkit
 
       - name: Check PHP syntax
         shell: bash
@@ -81,6 +81,8 @@ jobs:
           test -f alterar-senha.php
           test -f database/migrations/002_force_password_change.sql
           test -f database/migrations/003_login_rate_limit.sql
+          test -f database/migrations/004_student_status.sql
+          test -f tests/migration-student-status.sh
           test -f database/migrations/001_authentication_audit.sql
           test -f scripts/provisionar-usuario.php
           test -f usuarios.php
@@ -110,6 +112,16 @@ jobs:
         env:
           MYSQL_PWD: root
         run: mysql --host=127.0.0.1 --port=3306 --user=root < database/migrations/003_login_rate_limit.sql
+
+      - name: Validate student status migration and legacy data preservation
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_NAME: academia_alunos
+          DB_USER: root
+          DB_PASSWORD: root
+          MYSQL_PWD: root
+        run: bash tests/migration-student-status.sh
 
       - name: Test secure CLI user provisioning
         env:
@@ -163,7 +175,6 @@ jobs:
           export FITCONTROL_TEST_PASSWORD="$(cat "$RUNNER_TEMP/fitcontrol-test-password")"
           rm -f "$RUNNER_TEMP/fitcontrol-test-password"
           node tests/capture-screenshots.mjs
-          node tests/browser-compatibility.mjs
           node tests/browser-compatibility.mjs
 
       - name: Upload screenshots
