@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-use FitControl\\Domain\\Enrollment\\EnrollmentPeriodCalculator;
+use FitControl\Domain\Enrollment\EnrollmentPeriodCalculator;
 
 require_once dirname(__DIR__) . '/src/Domain/Enrollment/EnrollmentPeriodCalculator.php';
 
@@ -23,7 +23,7 @@ function assertSameValue(mixed $expected, mixed $actual, string $message): void
     if ($expected !== $actual) {
         throw new RuntimeException(
             sprintf(
-                "%s\\nEsperado: %s\\nObtido: %s",
+                "%s\nEsperado: %s\nObtido: %s",
                 $message,
                 var_export($expected, true),
                 var_export($actual, true)
@@ -183,4 +183,4 @@ assertThrows(
     'Limite além do DATETIME deve ser rejeitado'
 );
 
-printf("Testes da calculadora de vigência: OK (%d asserções)\\n", $assertions);
+printf("Testes da calculadora de vigência: OK (%d asserções)\n", $assertions);
