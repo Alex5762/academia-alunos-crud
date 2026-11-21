@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace FitControl\\Domain\\Enrollment;
+namespace FitControl\Domain\Enrollment;
 
 use DateInterval;
 use DateTimeImmutable;
