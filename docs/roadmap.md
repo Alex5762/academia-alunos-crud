@@ -99,7 +99,7 @@ O encerramento formal depende da inspeção em aparelho físico/navegador instal
 
 ### Bloco 03 — Planos e matrículas
 
-**Estado: pesquisa e proposta técnica documentadas; quatro regras de negócio aprovadas; implementação não iniciada.**
+**Estado: pesquisa e proposta técnica documentadas; cinco regras de negócio aprovadas; implementação não iniciada.**
 
 Documento de referência: [Pesquisa e proposta técnica do Bloco 03](bloco-03-planos-matriculas.md).
 
@@ -117,10 +117,11 @@ Escopo candidato:
 - Na renovação antecipada contínua, a nova matrícula começa no dia seguinte ao último dia incluído da matrícula vigente, preservando todos os dias já contratados.
 - A data final é inclusiva. Durações em meses usam meses de calendário; dias inexistentes no mês de destino são ajustados para o último dia válido. O dia de referência original é preservado nas renovações contínuas.
 - O cancelamento tem efeito imediato, preserva a matrícula no histórico e registra instante e funcionário responsável; o motivo é opcional. Uma nova matrícula só pode começar após o encerramento efetivo e não pode retroagir sobre período utilizado.
+- Alunos com vínculo legado pendente continuam consultáveis, mas não recebem nova matrícula até regularização com informações reais e verificáveis. A regularização deve ser auditada e preservar o texto original; sem dados confiáveis, o bloqueio permanece.
 
 A implementação deverá proteger a regra de não sobreposição contra solicitações concorrentes e centralizar o cálculo de datas em uma função testável. Como as datas de vigência usam calendário e o cancelamento registra horário, a modelagem final deverá definir com precisão a compatibilidade entre esses campos.
 
-**Decisões ainda pendentes:** tratamento de novas matrículas quando há legado sem datas; possibilidade de intervalos escolhidos entre contratos; representação temporal de uma nova matrícula no mesmo dia de um cancelamento intradiário. Outras recomendações do documento ainda não foram aprovadas.
+**Decisões ainda pendentes:** possibilidade de intervalos escolhidos entre contratos; representação temporal de uma nova matrícula no mesmo dia de um cancelamento intradiário; outras recomendações do documento ainda não aprovadas.
 
 Não iniciar migrations ou implementação até revisar as decisões restantes e confirmar os critérios de aceite.
 
