@@ -84,6 +84,15 @@ jobs:
           DB_PASSWORD: root
         run: php tests/database-plan-lock-concurrency.php
 
+      - name: Validate transactional legacy enrollment rectification
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_NAME: academia_alunos
+          DB_USER: root
+          DB_PASSWORD: root
+        run: php tests/database-legacy-enrollment-rectification.php
+
       - name: Validate transactional legacy review decisions
         env:
           DB_HOST: 127.0.0.1
@@ -197,6 +206,8 @@ jobs:
           test -f src/Domain/Enrollment/EnrollmentCancellationService.php
           test -f src/Domain/Enrollment/EnrollmentCreationService.php
           test -f src/Domain/Enrollment/LegacyReviewDecisionService.php
+          test -f src/Domain/Enrollment/LegacyEnrollmentRectificationService.php
+          test -f tests/database-legacy-enrollment-rectification.php
           test -f tests/database-legacy-review-decision.php
           test -f tests/database-enrollment-creation.php
           test -f tests/database-enrollment-cancellation.php
