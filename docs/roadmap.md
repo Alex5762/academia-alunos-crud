@@ -99,16 +99,24 @@ O encerramento formal depende da inspeção em aparelho físico/navegador instal
 
 ### Bloco 03 — Planos e matrículas
 
-**Objetivo:** deixar de tratar o plano como texto livre e representar a relação do aluno com um plano.
+**Estado: pesquisa e proposta técnica documentadas; implementação não iniciada.**
 
-Possíveis entregas:
-- Cadastro e edição de planos.
-- Valor, duração e situação do plano.
-- Matrículas/contratos com início, término e status.
-- Renovação e consulta de vencimentos.
-- Migração dos valores atuais de `alunos.plano`, sem perder registros.
+Documento de referência: [Pesquisa e proposta técnica do Bloco 03](bloco-03-planos-matriculas.md).
 
-**Dependência:** decisões do modelo de alunos do Bloco 02. As regras de renovação e cancelamento devem ser definidas antes da implementação.
+**Objetivo:** deixar de tratar o plano como texto livre e representar separadamente o catálogo de planos e os vínculos contratuais dos alunos.
+
+Escopo candidato:
+- Catálogo de planos com duração, valor e situação.
+- Matrículas com condições contratadas, período e histórico.
+- Renovação sem sobrescrever matrículas anteriores.
+- Consulta de vencimentos e histórico no perfil do aluno.
+- Migração preservadora dos valores atuais de `alunos.plano`.
+
+**Recomendações registradas, ainda pendentes de aprovação:** separar aluno, plano e matrícula; guardar cópia do nome, valor e duração contratados; desativar planos em vez de apagar histórico; preservar registros legados sem inventar preço ou datas; tratar renovações como novas matrículas.
+
+**Decisões de negócio pendentes:** permitir matrículas simultâneas ou períodos sobrepostos, regra de renovação antecipada, inclusão da data final, efeito do cancelamento e compatibilidade da unidade de duração. Não iniciar migrations ou implementação até revisar essas decisões.
+
+**Dependência:** Bloco 02. A inspeção física do Bloco 02 continua pendente; este planejamento não o encerra e não autoriza merge da PR #1 em `main`.
 
 ### Bloco 04 — Frequência e check-in
 
