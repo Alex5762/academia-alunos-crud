@@ -2278,3 +2278,123 @@ body:not(.dashboard-body) .theme-option[aria-pressed="true"] {
     background: #111c2d;
     border-color: #35435a;
 }
+
+
+/* Perfil individual e histórico de auditoria do aluno */
+.student-detail-page { width: min(100%, 900px); }
+.student-detail-heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 18px;
+    margin-bottom: 22px;
+}
+.student-detail-heading h1 { overflow-wrap: anywhere; }
+.student-detail-heading .settings-intro { margin-bottom: 0; }
+.detail-card { margin-top: 18px; }
+.student-detail-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0;
+    margin: 0;
+}
+.student-detail-grid > div {
+    min-width: 0;
+    padding: 15px 12px;
+    border-top: 1px solid var(--line);
+}
+.student-detail-grid dt {
+    margin-bottom: 6px;
+    color: var(--muted);
+    font-size: .7rem;
+    font-weight: 750;
+    letter-spacing: .035em;
+    text-transform: uppercase;
+}
+.student-detail-grid dd {
+    margin: 0;
+    color: var(--ink);
+    font-size: .88rem;
+    font-weight: 650;
+    overflow-wrap: anywhere;
+}
+.student-detail-grid a { color: var(--blue-dark); }
+.student-detail-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 18px;
+    padding-top: 18px;
+    border-top: 1px solid var(--line);
+}
+.student-detail-actions form { margin: 0; }
+.student-history-empty {
+    margin: 0;
+    color: var(--muted);
+    font-size: .84rem;
+}
+.student-timeline {
+    display: grid;
+    gap: 0;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+.student-timeline li {
+    position: relative;
+    display: grid;
+    grid-template-columns: 18px minmax(0, 1fr);
+    gap: 12px;
+    padding: 0 0 20px;
+}
+.student-timeline li:last-child { padding-bottom: 0; }
+.student-timeline li:not(:last-child)::before {
+    position: absolute;
+    top: 14px;
+    bottom: -1px;
+    left: 6px;
+    width: 2px;
+    background: var(--line);
+    content: "";
+}
+.timeline-marker {
+    z-index: 1;
+    width: 14px;
+    height: 14px;
+    margin-top: 3px;
+    background: var(--blue-soft);
+    border: 3px solid var(--blue);
+    border-radius: 50%;
+}
+.timeline-event {
+    display: grid;
+    gap: 4px;
+    min-width: 0;
+}
+.timeline-event strong {
+    color: var(--ink);
+    font-size: .86rem;
+}
+.timeline-event time,
+.timeline-event small {
+    color: var(--muted);
+    font-size: .73rem;
+}
+:root[data-theme="dark"] .student-detail-grid > div,
+:root[data-theme="dark"] .student-detail-actions {
+    border-color: #293449;
+}
+:root[data-theme="dark"] .student-detail-grid a { color: #a9bcff; }
+:root[data-theme="dark"] .timeline-marker {
+    background: #243453;
+    border-color: #8ea7ff;
+}
+:root[data-theme="dark"] .student-timeline li:not(:last-child)::before {
+    background: #35435a;
+}
+@media (max-width: 560px) {
+    .student-detail-heading { flex-direction: column; }
+    .student-detail-grid { grid-template-columns: 1fr; }
+    .student-detail-actions { flex-direction: column; }
+    .student-detail-actions .button { width: 100%; }
+}
