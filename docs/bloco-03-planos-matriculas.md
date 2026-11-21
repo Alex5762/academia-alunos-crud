@@ -52,13 +52,15 @@ Campos candidatos:
 | `ativo` | Indica se o plano pode receber novas matrículas. |
 | `created_at` / `updated_at` | Datas de criação e atualização. |
 
-Regras propostas:
+Regras aprovadas e propostas:
 
-- Desativar um plano em vez de apagá-lo quando já houver matrículas associadas.
-- Um plano desativado permanece visível no histórico, mas não pode ser escolhido em uma nova matrícula.
-- Alterar o preço do catálogo afeta somente novas matrículas.
-- A aplicação deve validar duração positiva e valor não negativo; um plano sem preço definido não deve ser usado para contratar.
-- Não criar automaticamente preços fictícios para os planos atuais.
+- **Decisão aprovada:** um plano pode ser salvo como rascunho enquanto seu cadastro estiver incompleto.
+- Para ser ativado e disponibilizado para novas matrículas, o plano deve ter todos os campos obrigatórios preenchidos, duração válida e preço definido maior que zero.
+- Planos em rascunho ou inativos não aparecem como opção para novas matrículas.
+- Um plano sem preço, com preço zero ou com dados obrigatórios incompletos não pode ser ativado nem contratado.
+- Não preencher preço automaticamente e não criar preços fictícios para os planos atuais.
+- Alterar o preço do catálogo afeta somente novas matrículas; matrículas existentes preservam o valor contratado.
+- Desativar um plano em vez de apagá-lo quando já houver matrículas associadas. A desativação e a exclusão com histórico ainda aguardam aprovação como regra formal.
 
 ### 4.2 Tabela `matriculas`
 
@@ -114,6 +116,8 @@ A decisão entre persistir todos esses estados ou derivar `AGENDADA`, `ATIVA` e 
 ### 5.1 Preço e duração
 
 - O preço do catálogo é uma referência para novas contratações.
+- Um plano só pode sair de rascunho e ficar disponível para contratação quando tiver preço válido maior que zero e todos os dados obrigatórios preenchidos.
+- Planos com preço nulo, zero ou dados obrigatórios incompletos não podem receber novas matrículas.
 - O valor contratado fica registrado na matrícula.
 - Duração também deve ser copiada para a matrícula, para que uma edição posterior do plano não modifique contratos históricos.
 - A matrícula deve preservar o dia de referência do calendário para calcular os limites de períodos mensais e renovações contínuas sem deriva após meses curtos.
@@ -274,7 +278,10 @@ A coluna antiga será mantida durante a transição. Sua remoção só poderá s
 - [ ] A migration funciona em banco limpo e em banco com alunos legados.
 - [ ] Nenhum aluno, ID ou texto original de plano é perdido.
 - [ ] Reexecutar a rotina de migração não duplica registros.
-- [ ] Planos desativados não aparecem para novas matrículas.
+- [ ] Planos em rascunho ou inativos não aparecem para novas matrículas.
+- [ ] Plano incompleto pode ser salvo como rascunho, mas não pode ser ativado nem contratado.
+- [ ] Plano com preço nulo ou igual a zero não pode ser ativado nem contratado.
+- [ ] Plano só pode ser ativado quando todos os campos obrigatórios estiverem preenchidos e o preço for maior que zero.
 - [ ] Alterar o preço de um plano não altera matrículas antigas.
 - [ ] Aluno inativo não recebe nova matrícula.
 - [ ] Aluno com vínculo legado pendente de revisão continua consultável, mas não consegue receber nova matrícula.
@@ -316,7 +323,7 @@ A coluna antiga será mantida durante a transição. Sua remoção só poderá s
 | Nova matrícula no dia do cancelamento | Permitir início no mesmo instante do cancelamento ou depois, com comparação por horário e sem sobreposição. | **Aprovada** |
 | Trancamento/suspensão | Fora do primeiro escopo. | Proposta |
 | Legados sem preço e datas | Preservar como pendentes; bloquear novas matrículas até regularização com dados reais e auditados. | **Aprovada** |
-| Plano sem preço definido | Não permitir nova contratação até completar o cadastro. | Proposta |
+| Plano sem preço ou cadastro incompleto | Permitir salvar como rascunho; só ativar e disponibilizar para contratação com dados obrigatórios completos e preço maior que zero. | **Aprovada** |
 | Exclusão de plano | Desativar; impedir exclusão quando houver histórico. | Proposta |
 
 As regras aprovadas podem ser usadas como base para a especificação. Os itens pendentes ou propostos ainda precisam ser validados antes da implementação.
