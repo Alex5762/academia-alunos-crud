@@ -99,7 +99,7 @@ O encerramento formal depende da inspeção em aparelho físico/navegador instal
 
 ### Bloco 03 — Planos e matrículas
 
-**Estado: onze regras de negócio aprovadas e revisão técnica ampliada; implementação não iniciada.**
+**Estado: regras de negócio e diretrizes temporais aprovadas; revisão técnica ampliada; implementação não iniciada.**
 
 Documento de referência: [Pesquisa e proposta técnica do Bloco 03](bloco-03-planos-matriculas.md).
 
@@ -114,8 +114,9 @@ Escopo candidato:
 
 **Regras aprovadas:**
 - Um aluno pode ter várias matrículas no histórico, mas não pode ter períodos sobrepostos em matrículas não canceladas.
-- Na renovação contínua antecipada, a nova matrícula começa automaticamente no dia seguinte ao último dia incluído da matrícula vigente, preservando todos os dias já contratados.
-- A data final apresentada é inclusiva. Durações em meses usam meses de calendário; dias inexistentes no mês de destino são ajustados para o último dia válido. O dia de referência original é preservado nas renovações contínuas.
+- Na renovação contínua antecipada, a nova matrícula começa exatamente no limite exclusivo da matrícula vigente, preservando todos os dias/horários contratados; o início não pode ser retroativo se esse limite já passou.
+- Durações mensais incluem integralmente o último dia calculado e terminam à 00:00 local do dia seguinte; datas inexistentes são ajustadas ao último dia válido, preservando a referência original nas renovações contínuas.
+- Durações em dias/semanas preservam a hora local de início e somam dias de calendário, sem converter para segundos fixos.
 - O cancelamento tem efeito imediato, preserva a matrícula no histórico e registra instante e funcionário responsável; o motivo é opcional.
 - Uma nova matrícula pode começar exatamente no mesmo instante do cancelamento anterior ou depois, nunca antes, desde que não haja sobreposição com o período efetivamente utilizado.
 - A revisão de cada legado deve resultar em uma das três conclusões auditadas: vínculo confirmado (`VINCULO_CONFIRMADO`), ausência comprovada de matrícula vigente (`LEGADO_SEM_VIGENCIA`) ou impossibilidade de confirmar (`PENDENTE_REVISAO`). `VINCULO_CONFIRMADO` só libera novas matrículas quando o intervalo efetivo exato estiver comprovado e registrado para a verificação de sobreposição; preço, duração original ou correspondência com o catálogo podem permanecer desconhecidos. `LEGADO_SEM_VIGENCIA` libera novas matrículas com evidência confiável; `PENDENTE_REVISAO` mantém o bloqueio. A revisão registra funcionário, instante, conclusão e referência da fonte, sem inventar dados ou sobrescrever o texto original.
