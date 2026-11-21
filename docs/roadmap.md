@@ -22,7 +22,7 @@ Já existe:
 Limites conhecidos:
 - Todas as contas ativas têm a mesma permissão administrativa; não existe separação por cargo.
 - Não há recuperação de senha por e-mail nem MFA.
-- O campo \`alunos.plano\` ainda é texto, sem relação com uma tabela de planos.
+- O campo `alunos.plano` ainda é texto, sem relação com uma tabela de planos.
 - Não existem módulos de matrículas/contratos, pagamentos, check-in, aulas, agenda ou relatórios operacionais.
 - A aplicação permanece acadêmica/local; não está preparada para uso público ou dados reais.
 
@@ -72,14 +72,30 @@ Entregas:
 
 ### Bloco 02 — Gestão de alunos
 
-**Objetivo:** transformar o cadastro básico em um registro útil para a operação da academia.
+**Estado: planejado e especificado em `docs/bloco-02-gestao-alunos.md`; implementação ainda não iniciada.**
 
-Possíveis entregas:
-- Perfil/detalhes do aluno.
-- Situação do cadastro (por exemplo, ativo ou inativo), com regras explícitas.
-- Histórico de alterações ou eventos relevantes, se necessário.
-- Filtros e pesquisa mais úteis.
-- Validação e unicidade dos campos conforme regras acordadas.
+Objetivo: evoluir o cadastro básico para gestão do ciclo de vida dos alunos, preservando registros e permitindo consulta, pesquisa, filtros e histórico operacional.
+
+Decisões fechadas:
+- Adicionar `alunos.ativo`, com padrão `1`; todos os registros existentes serão considerados ativos.
+- Substituir a exclusão física pela inativação/reativação lógica.
+- Alterações de status serão feitas por POST autenticado, com CSRF, transação e auditoria.
+- Pesquisa por nome, e-mail e telefone; filtro Ativos/Inativos/Todos, com Ativos como padrão.
+- Alunos inativos continuarão consultáveis e editáveis.
+- Dashboard contará ativos e inativos separadamente; distribuição de planos considerará somente ativos.
+- Detalhes do aluno terão histórico simples dos eventos registrados na auditoria.
+- Não haverá UNIQUE novo para telefone ou e-mail nesta etapa.
+- Exclusão física excepcional, histórico campo a campo, planos/matrículas e financeiro ficam fora do escopo.
+
+Etapas previstas:
+1. Migração 004 e camada de dados, com teste de preservação de registros legados.
+2. Endpoint de ativação/inativação e aposentadoria do fluxo de exclusão física.
+3. Listagem, pesquisa e filtros.
+4. Indicadores do dashboard.
+5. Detalhes do aluno e histórico simples de auditoria.
+6. Regressão, documentação, CI e revisão visual.
+
+O bloco só será concluído quando todos os critérios de aceite de `docs/bloco-02-gestao-alunos.md` forem atendidos e a revisão manual estiver concluída.
 
 ### Bloco 03 — Planos e matrículas
 
@@ -123,57 +139,31 @@ Possíveis entregas:
 **Objetivo:** organizar horários, turmas e reservas, caso façam parte do escopo desejado.
 
 Possíveis entregas:
-- Cadastro de modalidades/turmas.
-- Instrutores.
-- Grade de horários e capacidade.
-- Reservas/cancelamentos e regras de lotação.
+- Cadastro de modalidades e turmas.
+- Instrutores e horários.
+- Capacidade e reservas.
+- Consulta da agenda.
 
-### Bloco 07 — Relatórios e indicadores
+### Bloco 07 — Relatórios e experiência
 
-**Objetivo:** transformar dados dos módulos anteriores em informação útil.
-
-Possíveis entregas:
-- Indicadores de alunos ativos.
-- Frequência por período.
-- Matrículas e vencimentos.
-- Resumo financeiro.
-- Filtros e exportação, se necessários.
-
-**Dependência:** construir os relatórios depois que os dados e as regras dos módulos correspondentes estiverem estáveis.
-
-### Bloco 08 — Preparação para disponibilização
-
-**Objetivo:** preparar uma versão confiável para o ambiente escolhido, somente quando houver decisão de publicar ou usar com dados reais.
+**Objetivo:** melhorar a leitura operacional dos dados e a usabilidade.
 
 Possíveis entregas:
-- Configuração de hospedagem e ambiente.
-- Segredos fora do repositório.
+- Relatórios por período.
+- Indicadores de evolução.
+- Exportação controlada.
+- Melhorias de acessibilidade e navegação.
+
+### Bloco 08 — Preparação para produção
+
+**Objetivo:** avaliar o que seria necessário antes de qualquer implantação real.
+
+Possíveis entregas:
+- Revisão independente de segurança.
+- HTTPS e gestão de segredos.
 - Backups e teste de restauração.
-- Logs, monitoramento e tratamento de erros.
-- Revisão de privacidade e LGPD.
-- Atualização do banco por migrações e plano de recuperação.
+- Monitoramento e logs.
+- Revisão de privacidade/LGPD.
+- Estratégia de hospedagem, atualização e recuperação.
 
-**Decisão separada:** multiunidade/multi-tenant só entra se o FitControl for efetivamente direcionado a múltiplas academias como produto SaaS. Não faz parte do escopo presumido.
-
-## Critério de conclusão de cada bloco
-
-Um bloco só é considerado concluído quando:
-- O escopo e os critérios de aceite foram registrados.
-- O código está implementado sem quebrar os fluxos anteriores.
-- Os testes relevantes foram executados e seus resultados registrados.
-- A documentação de uso/configuração foi atualizada.
-- As limitações restantes estão explícitas.
-- A PR foi revisada; o merge depende de aprovação explícita.
-
-## Modelo de planejamento por bloco
-
-Para cada novo bloco, manter um registro com:
-- **Objetivo e problema:** por que a funcionalidade existe.
-- **Escopo:** entregas incluídas e itens explicitamente adiados.
-- **Impacto técnico:** arquivos, rotas, banco e comportamento atual afetados.
-- **Modelo de dados:** tabelas, relações, migração e estratégia de preservação dos dados.
-- **Segurança e privacidade:** validações, permissões e dados tratados.
-- **Tarefas:** etapas pequenas e verificáveis.
-- **Testes:** cenários esperados, regressão e evidências.
-- **Critérios de aceite:** o que precisa funcionar para encerrar o bloco.
-- **Decisões pendentes:** pontos que não devem ser presumidos.
+**Regra:** o projeto não deve receber dados reais nem ser exposto publicamente antes desta etapa e de uma avaliação específica.
