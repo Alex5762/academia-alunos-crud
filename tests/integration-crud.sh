@@ -66,6 +66,9 @@ HTTP_CODE="$(curl -sS -o "$TMP_DIR/anonymous.html" -w '%{http_code}' -c "$COOKIE
 [[ "$HTTP_CODE" == "303" ]] || fail "Dashboard anônimo deveria redirecionar para login; retornou $HTTP_CODE."
 grep -Fq 'login.php' "$TMP_DIR/anonymous.html" && fail "Redirecionamento inesperado no dashboard."
 
+HTTP_CODE="$(curl -sS -o "$TMP_DIR/detail-anonymous.html" -w '%{http_code}' -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/detalhes-aluno.php?id=1")"
+[[ "$HTTP_CODE" == "303" ]] || fail "Perfil de aluno anônimo deveria redirecionar para login; retornou $HTTP_CODE."
+
 CACHE_CONTROL="$(curl -sSI "$BASE_URL/login.php" | tr -d '\r' | grep -i '^Cache-Control:' | tail -n 1)"
 [[ "$CACHE_CONTROL" == *"no-store"* ]] || fail "Login não enviou Cache-Control: no-store."
 FRAME_POLICY="$(curl -sSI "$BASE_URL/login.php" | tr -d '\r' | grep -i '^X-Frame-Options:' | tail -n 1)"
@@ -360,6 +363,23 @@ assert_contains "$TMP_DIR/create.html" "Aluno cadastrado com sucesso!"
 ALUNO_ID="$(db_value "SELECT id FROM alunos WHERE email = 'crud-ci-create@example.test' LIMIT 1")"
 [[ "$ALUNO_ID" =~ ^[0-9]+$ ]] || fail "O cadastro não gerou um ID válido."
 
+echo "3.5/10 - Validando perfil individual e histórico..."
+HTTP_CODE="$(curl -sS -o "$TMP_DIR/detail-invalid.html" -w '%{http_code}' -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/detalhes-aluno.php?id=abc")"
+[[ "$HTTP_CODE" == "400" ]] || fail "ID inválido no perfil deveria retornar 400; retornou $HTTP_CODE."
+HTTP_CODE="$(curl -sS -o "$TMP_DIR/detail-missing.html" -w '%{http_code}' -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/detalhes-aluno.php?id=999999")"
+[[ "$HTTP_CODE" == "404" ]] || fail "Aluno inexistente deveria retornar 404; retornou $HTTP_CODE."
+curl -fsS -G -c "$COOKIE_JAR" -b "$COOKIE_JAR" \
+    --data-urlencode "id=$ALUNO_ID" \
+    --data-urlencode "busca=Aluno CI CRUD" \
+    --data-urlencode "status=ativos" \
+    "$BASE_URL/detalhes-aluno.php" -o "$TMP_DIR/detail-created.html"
+assert_contains "$TMP_DIR/detail-created.html" "Informações cadastrais"
+assert_contains "$TMP_DIR/detail-created.html" "Aluno CI CRUD"
+assert_contains "$TMP_DIR/detail-created.html" "Cadastro criado"
+assert_contains "$TMP_DIR/detail-created.html" 'href="index.php?status=ativos&amp;busca=Aluno%20CI%20CRUD#alunos"'
+DETAIL_AUDIT_COUNT="$(db_value "SELECT COUNT(*) FROM auditoria WHERE entidade = 'alunos' AND entidade_id = $ALUNO_ID AND acao = 'aluno_criado'")"
+[[ "$DETAIL_AUDIT_COUNT" == "1" ]] || fail "Perfil não refletiu o evento de criação na auditoria."
+
 echo "4/10 - Pesquisando e editando o aluno..."
 curl -fsS -G -c "$COOKIE_JAR" -b "$COOKIE_JAR" \
     --data-urlencode "busca=Aluno CI CRUD" \
@@ -474,6 +494,17 @@ ATIVO="$(db_value "SELECT COUNT(*) FROM alunos WHERE id = $ALUNO_ID AND ativo = 
 [[ "$ATIVO" == "1" ]] || fail "A reativação não foi persistida."
 AUDIT_REATIVACAO="$(db_value "SELECT COUNT(*) FROM auditoria WHERE usuario_id = $USUARIO_ID AND entidade = 'alunos' AND entidade_id = $ALUNO_ID AND acao = 'aluno_reativado'")"
 [[ "$AUDIT_REATIVACAO" == "1" ]] || fail "A reativação não gerou exatamente um evento de auditoria."
+
+curl -fsS -G -c "$COOKIE_JAR" -b "$COOKIE_JAR" \
+    --data-urlencode "id=$ALUNO_ID" \
+    --data-urlencode "busca=Aluno CI Atualizado" \
+    --data-urlencode "status=inativos" \
+    "$BASE_URL/detalhes-aluno.php" -o "$TMP_DIR/detail-history.html"
+assert_contains "$TMP_DIR/detail-history.html" "Aluno CI Atualizado"
+assert_contains "$TMP_DIR/detail-history.html" "Dados cadastrais atualizados"
+assert_contains "$TMP_DIR/detail-history.html" "Aluno inativado"
+assert_contains "$TMP_DIR/detail-history.html" "Aluno reativado"
+assert_contains "$TMP_DIR/detail-history.html" "Por Provisionamento CI"
 
 echo "6/10 - Confirmando que a exclusão física foi aposentada..."
 HTTP_CODE="$(curl -sS -o "$TMP_DIR/legacy-delete-get.html" -w '%{http_code}' -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/excluir.php?id=$ALUNO_ID")"
