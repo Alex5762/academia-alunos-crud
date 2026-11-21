@@ -123,6 +123,9 @@ jobs:
             php -l "$file"
           done < <(find . -type f -name '*.php' -not -path './vendor/*' -print0)
 
+      - name: Test enrollment calendar calculations
+        run: php tests/enrollment-period-calculator.php
+
       - name: Check required project files
         run: |
           test -f index.php
@@ -134,6 +137,8 @@ jobs:
           test -f style.css
           test -f tests/integration-crud.sh
           test -f tests/migration-student-status.sh
+          test -f src/Domain/Enrollment/EnrollmentPeriodCalculator.php
+          test -f tests/enrollment-period-calculator.php
           test -f database/migrations/004_student_status.sql
           test -f tests/capture-screenshots.mjs
           test -f tests/browser-compatibility.mjs
