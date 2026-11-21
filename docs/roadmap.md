@@ -123,7 +123,7 @@ Escopo candidato:
 - Um plano incompleto pode ser salvo como rascunho, mas só pode ser ativado e disponibilizado para novas matrículas quando todos os campos obrigatórios estiverem preenchidos e o preço for maior que zero. Planos em rascunho/inativos não podem ser contratados; nenhum preço é inventado.
 - Plano sem matrícula vinculada pode ser excluído; plano com histórico não pode ser apagado e deve ser desativado. Planos desativados continuam consultáveis no histórico, mas não recebem novas matrículas.
 
-**Diretriz temporal:** a implementação deve comparar instantes de vigência com precisão de horário, usando intervalos semiabertos `[início, fim exclusivo)`. A data final inclusiva é apresentada a partir do limite exclusivo; o cancelamento antecipa o limite efetivo para o instante exato registrado. O fuso horário da academia deve ser único e configurado.
+**Situação e diretriz temporal aprovadas:** `AGENDADA`, `ATIVA` e `VENCIDA` serão calculadas em tempo de consulta a partir dos instantes; `CANCELADA` será identificada por `cancelada_em` e pelo evento de auditoria. Os resultados da revisão de legados (`VINCULO_CONFIRMADO`, `LEGADO_SEM_VIGENCIA`, `PENDENTE_REVISAO`) ficam no registro próprio da revisão, não como estados de matrícula. A implementação deve comparar instantes de vigência com precisão de horário, usando intervalos semiabertos `[início, fim exclusivo)`. A data final inclusiva é apresentada a partir do limite exclusivo; o cancelamento antecipa o limite efetivo para o instante exato registrado. O fuso horário da academia deve ser único e configurado.
 
 A implementação deverá proteger a regra de não sobreposição contra solicitações concorrentes e centralizar o cálculo de datas em uma função testável. A exclusão de planos e a criação de matrículas também devem ser protegidas contra condições de corrida.
 
@@ -131,7 +131,7 @@ A implementação deverá proteger a regra de não sobreposição contra solicit
 
 **Fora do escopo aprovado:** trancamento, suspensão e congelamento.
 
-**Revisão de consistência:** foram corrigidas a duplicação do campo de cancelamento e a ambiguidade dos legados pendentes. O fluxo de revisão de legados com três resultados e seus requisitos de auditoria foi aprovado. Permanecem para fechar antes das migrations: detalhes operacionais da tela/referência de evidência, estados persistidos versus derivados, fuso horário IANA, versão MySQL/MariaDB, cancelamento antes do início e idempotência da migração.
+**Revisão de consistência:** foram corrigidas a duplicação do campo de cancelamento e a ambiguidade dos legados pendentes. O fluxo de revisão de legados com três resultados e seus requisitos de auditoria foi aprovado. Permanecem para fechar antes das migrations: detalhes operacionais da tela/referência de evidência, implementação da consulta dos estados derivados, fuso horário IANA, versão MySQL/MariaDB, cancelamento antes do início e idempotência da migração.
 
 Não iniciar migrations ou implementação até revisar as decisões restantes e confirmar os critérios de aceite.
 
