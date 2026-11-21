@@ -186,10 +186,11 @@ for (const engine of engines) {
     await page.getByRole("link", { name: "Ver detalhes de Ana Beatriz Costa" }).click();
     await page.getByRole("heading", { name: "Informações cadastrais" }).waitFor();
     await page.getByRole("heading", { name: "Histórico de atividade" }).waitFor();
+    const profileHeadings = page.locator("main.student-detail-page");
     ensure(
-      await page.locator("h1").count() === 1 &&
-        await page.locator("h2").count() === 2,
-      engine.name + ": hierarquia de títulos do perfil está inesperada.",
+      await profileHeadings.locator("h1").count() === 1 &&
+        await profileHeadings.locator("h2").count() === 2,
+      engine.name + ": hierarquia de títulos dentro do perfil está inesperada.",
     );
     ensure(
       await page.locator('a[href^="mailto:"]').count() === 1 &&
