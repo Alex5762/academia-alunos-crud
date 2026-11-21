@@ -72,7 +72,7 @@ Entregas:
 
 ### Bloco 02 — Gestão de alunos
 
-**Estado: em implementação.** Etapa 1 (migração e preservação de legado) aprovada pela CI em push #268 e PR #269. Etapas 2 e 4 (endpoint transacional de status, auditoria, aposentadoria da exclusão física e indicadores) implementadas em código. Etapa 3 (busca/filtros) agora preserva o contexto ao editar, salvar, voltar e alterar status; esta atualização aguarda nova validação de CI. Etapa 5 (detalhes e histórico do aluno) ainda não iniciada.
+**Estado: em implementação, aguardando CI da atualização atual.** Etapa 1 (migração e preservação de legado) aprovada em CI anterior. Etapas 2 e 4 (endpoint transacional de status, auditoria, aposentadoria da exclusão física e indicadores) implementadas. Etapa 3 preserva busca e situação ao editar, salvar, voltar e alterar status. Etapa 5 agora tem `detalhes-aluno.php` com dados cadastrais, status, histórico de eventos/responsável e ações de edição/inativação/reativação; testes HTTP e captura Playwright foram adicionados, mas ainda aguardam CI.
 
 Objetivo: evoluir o cadastro básico para gestão do ciclo de vida dos alunos, preservando registros e permitindo consulta, pesquisa, filtros e histórico operacional.
 
@@ -92,8 +92,8 @@ Etapas previstas:
 2. [Em validação] Endpoint de ativação/inativação, auditoria e aposentadoria do fluxo de exclusão física.
 3. [Parcial] Situação, filtro e pesquisa implementados; falta preservar contexto de consulta ao editar.
 4. [Em validação] Indicadores de ativos/inativos e distribuição de planos somente para ativos.
-5. Detalhes do aluno e histórico simples de auditoria.
-6. Regressão, documentação, CI e revisão visual.
+5. [Implementada em código, aguardando CI] Detalhes do aluno e histórico simples de auditoria.
+6. [Em validação] Regressão, documentação, CI e revisão visual.
 
 O bloco só será concluído quando todos os critérios de aceite de `docs/bloco-02-gestao-alunos.md` forem atendidos e a revisão manual estiver concluída.
 
