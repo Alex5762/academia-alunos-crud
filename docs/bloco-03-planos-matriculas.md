@@ -179,7 +179,10 @@ Regras:
 - A renovação contínua copia o dia de referência da matrícula anterior, inclusive quando a data anterior foi ajustada por fevereiro ou outro mês curto.
 - Essa regra cobre a renovação contínua padrão, sem intervalo.
 - **Decisão aprovada:** o funcionário também pode escolher manualmente uma data de início para uma nova matrícula, criando um intervalo entre contratos quando necessário. O início efetivo deve ser um instante igual ou posterior ao momento atual no fuso da academia e não pode provocar sobreposição com qualquer outra matrícula não cancelada do mesmo aluno.
-- **Detalhe ainda pendente para a revisão final:** definir o horário padrão quando o funcionário seleciona apenas uma data futura (por exemplo, início à meia-noite ou no horário de abertura). Para início no dia atual, a aplicação nunca poderá aceitar um horário anterior ao instante atual.
+- **Decisão aprovada sobre horário de início:** quando o funcionário informar apenas uma data futura, a matrícula começa às 00:00 dessa data, no fuso horário da academia.
+- Quando a data escolhida for hoje, o horário padrão é o instante atual da operação. O funcionário pode escolher um horário posterior no mesmo dia, mas nunca um horário anterior ao momento atual.
+- Se o funcionário informar data e horário futuros, o instante completo deve ser validado contra o momento atual e contra os períodos de outras matrículas não canceladas.
+- Renovações contínuas não usam esse padrão de agendamento manual: começam automaticamente no limite exclusivo da matrícula anterior, equivalente ao dia seguinte ao último dia incluído.
 - O intervalo é permitido, não obrigatório. A renovação contínua continua usando automaticamente o dia seguinte ao último dia incluído da matrícula anterior.
 - Uma matrícula futura pode ocupar qualquer intervalo livre entre períodos já agendados, desde que não se sobreponha a eles; não é obrigatório colocá-la sempre depois da última matrícula agendada.
 - A nova matrícula continua sujeita à regra aprovada de não sobreposição de períodos.
@@ -309,7 +312,11 @@ A coluna antiga será mantida durante a transição. Sua remoção só poderá s
 - [ ] Períodos adjacentes com `fim_exclusivo_em` igual ao `inicio_em` seguinte são aceitos.
 - [ ] Comparações e exibições respeitam o fuso horário configurado da academia.
 - [ ] Inativar o aluno não cancela automaticamente suas matrículas.
-- [ ] O sistema permite escolher uma data futura válida e não retroativa para nova matrícula.
+- [ ] Ao informar apenas uma data futura, a matrícula começa às 00:00 no fuso horário da academia.
+- [ ] Ao informar apenas a data de hoje, o início padrão corresponde ao instante atual.
+- [ ] É possível escolher um horário posterior no dia atual, mas horários anteriores ao instante atual são rejeitados.
+- [ ] Data e horário futuros escolhidos manualmente são validados contra o momento atual e as demais matrículas.
+- [ ] Renovações contínuas começam no limite exclusivo da matrícula anterior, sem usar o horário padrão de agendamento.
 - [ ] O sistema permite inserir uma matrícula em um intervalo livre entre duas matrículas futuras já agendadas.
 - [ ] O sistema rejeita datas inválidas, datas passadas e qualquer período que se sobreponha a uma matrícula não cancelada.
 - [ ] Solicitações concorrentes não criam vínculos incompatíveis.
@@ -334,6 +341,7 @@ As regras abaixo já foram aprovadas para orientar a implementação. O status n
 | Legados sem preço e datas | Preservar como pendentes; bloquear novas matrículas até regularização com dados reais e auditados. | **Aprovada** |
 | Plano sem preço ou cadastro incompleto | Permitir salvar como rascunho; só ativar e disponibilizar para contratação com dados obrigatórios completos e preço maior que zero. | **Aprovada** |
 | Exclusão de plano | Permitir exclusão física somente sem matrículas vinculadas; com histórico, bloquear exclusão e permitir desativação. | **Aprovada** |
+| Horário padrão de início | Data futura sem horário: 00:00; hoje sem horário: instante atual; permitir horário posterior hoje, nunca anterior ao momento atual. | **Aprovada** |
 
 As regras marcadas como aprovadas compõem a base funcional do Bloco 03. Os pontos ainda pendentes devem ser resolvidos durante a revisão final da especificação, antes da criação das migrations. Recomendações não aprovadas não devem ser tratadas como requisitos.
 
@@ -343,18 +351,18 @@ A primeira revisão cruzada encontrou e tratou os seguintes pontos:
 
 - Removida a duplicação de `cancelada_em` na lista conceitual de campos.
 - Alinhada a regra de legados: enquanto existir `PENDENTE_REVISAO`, novas matrículas ficam bloqueadas; não se considera o período legado livre por ausência de datas.
-- Alinhada a regra de início: a validação deve comparar o instante escolhido com o momento atual no fuso da academia, e não apenas comparar a data do calendário.
+- Alinhada a regra de início: a validação compara o instante escolhido com o momento atual no fuso da academia, e não apenas a data do calendário.
+- Aprovado o padrão de horário: data futura sem horário inicia às 00:00; hoje usa o instante atual; horário posterior hoje pode ser escolhido, sem permitir retroatividade.
 - Confirmado que o motivo de cancelamento é opcional, conforme decisão já aprovada.
 
 Pontos técnicos que ainda precisam ser fechados antes das migrations:
 
-1. **Horário padrão de início:** decidir o horário aplicado quando o funcionário informa apenas uma data futura. Para início no dia atual, rejeitar qualquer instante anterior ao momento atual.
-2. **Regularização de legado:** definir o fluxo de tela e quais evidências/campos serão exigidos para converter `PENDENTE_REVISAO` em registro regularizado, sem sobrescrever o texto importado.
-3. **Estado da matrícula:** decidir quais estados serão persistidos e quais serão derivados dos instantes de início/fim; evitar divergência entre estado gravado e cálculo temporal.
-4. **Fuso horário:** confirmar o fuso IANA configurado para a academia e padronizar a forma de persistência/consulta entre PHP e MySQL/MariaDB.
-5. **Compatibilidade do banco:** confirmar a versão real do MySQL/MariaDB no XAMPP antes de definir `CHECK`, índices, constraints e estratégia de bloqueio.
-6. **Cancelamento de matrícula futura:** definir como apresentar uma matrícula cancelada antes do início (ela permanece no histórico como cancelada, sem período efetivamente utilizado).
-7. **Migração e idempotência:** detalhar como identificar cada aluno legado já migrado e garantir reexecução segura sem duplicar matrículas.
+1. **Regularização de legado:** definir o fluxo de tela e quais evidências/campos serão exigidos para converter `PENDENTE_REVISAO` em registro regularizado, sem sobrescrever o texto importado.
+2. **Estado da matrícula:** decidir quais estados serão persistidos e quais serão derivados dos instantes de início/fim; evitar divergência entre estado gravado e cálculo temporal.
+3. **Fuso horário:** confirmar o fuso IANA configurado para a academia e padronizar a forma de persistência/consulta entre PHP e MySQL/MariaDB.
+4. **Compatibilidade do banco:** confirmar a versão real do MySQL/MariaDB no XAMPP antes de definir `CHECK`, índices, constraints e estratégia de bloqueio.
+5. **Cancelamento de matrícula futura:** definir como apresentar uma matrícula cancelada antes do início (ela permanece no histórico como cancelada, sem período efetivamente utilizado).
+6. **Migração e idempotência:** detalhar como identificar cada aluno legado já migrado e garantir reexecução segura sem duplicar matrículas.
 
 A revisão não encontrou motivo para alterar as regras de negócio já aprovadas; os itens acima são detalhes de modelagem e operação ainda em aberto. Não iniciar migrations até resolvê-los e revisar novamente a especificação completa.
 
