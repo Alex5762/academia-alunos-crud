@@ -196,18 +196,23 @@ A validação deve ocorrer no servidor e ser protegida contra solicitações con
 
 A migração é o ponto de maior risco do bloco, porque os registros atuais guardam apenas o texto de `alunos.plano`.
 
-Estratégia recomendada:
+**Decisão aprovada para alunos legados:** os registros antigos continuam acessíveis para consulta, mas um aluno com vínculo legado pendente de revisão não pode receber nova matrícula até que o vínculo anterior seja regularizado.
+
+Estratégia de migração e regularização:
 
 1. Preservar integralmente a coluna `alunos.plano` durante a transição.
 2. Criar as novas tabelas sem exigir que dados históricos desconhecidos sejam preenchidos.
 3. Para cada aluno existente, criar um registro de histórico legado, mantendo o texto original em `plano_nome_contratado`.
-4. Marcar sua origem como migração legada e sua situação como pendente de revisão quando faltarem datas, valor ou duração confiáveis.
+4. Marcar a origem como migração legada e a situação como `PENDENTE_REVISAO` quando faltarem datas, valor ou duração confiáveis.
 5. Deixar `plano_id` nulo quando não houver correspondência inequívoca com um plano do catálogo.
-6. Manter preço, início, término e duração desconhecidos como `NULL`; nunca inferir preço ou vigência.
+6. Manter preço, início, término e duração desconhecidos como `NULL`; nunca inferir preço, datas ou vigência.
 7. Não criar planos de catálogo com dados inventados apenas para satisfazer o relacionamento.
-8. Depois da migração, comparar a quantidade de alunos antes/depois, conferir IDs e texto original, identificar duplicações e executar o teste novamente para verificar a proteção contra reprocessamento.
+8. Antes de liberar uma nova matrícula, um funcionário deve regularizar o vínculo legado com informações reais e verificáveis: plano/condições contratadas, valor e período, quando esses dados puderem ser confirmados.
+9. A regularização deve registrar quem a realizou, quando ocorreu e quais informações foram complementadas, por meio da auditoria. O texto original importado deve permanecer preservado para consulta.
+10. Se não for possível confirmar as condições históricas, o vínculo permanece pendente e novas matrículas continuam bloqueadas. Não usar estimativas ou valores padrão para contornar a pendência.
+11. Depois da migração, comparar a quantidade de alunos antes/depois, conferir IDs e texto original, identificar duplicações e executar o teste novamente para verificar a proteção contra reprocessamento.
 
-A estratégia definitiva deve decidir se a coluna antiga será mantida por um período de compatibilidade ou removida em uma migration posterior, somente depois de todos os leitores e escritores terem sido atualizados.
+A coluna antiga será mantida durante a transição. Sua remoção só poderá ser considerada em uma migration posterior, depois de todos os leitores e escritores terem sido atualizados e a preservação dos dados ter sido verificada.
 
 ## 7. Integridade, transações e segurança
 
@@ -251,6 +256,9 @@ A estratégia definitiva deve decidir se a coluna antiga será mantida por um pe
 - [ ] Planos desativados não aparecem para novas matrículas.
 - [ ] Alterar o preço de um plano não altera matrículas antigas.
 - [ ] Aluno inativo não recebe nova matrícula.
+- [ ] Aluno com vínculo legado pendente de revisão continua consultável, mas não consegue receber nova matrícula.
+- [ ] Regularização de legado exige informações reais e verificáveis, registra funcionário/data e preserva o texto original importado.
+- [ ] Legado sem informações confiáveis permanece pendente e bloqueia novas matrículas, sem preenchimento por estimativa.
 - [ ] Matrícula nova exige todos os dados obrigatórios.
 - [ ] Datas inválidas e valores negativos são rejeitados no servidor e, quando suportado, pelo banco.
 - [ ] Data final é inclusiva: uma matrícula de 01/11 até 30/11 permanece válida durante todo o dia 30/11.
@@ -278,7 +286,7 @@ A estratégia definitiva deve decidir se a coluna antiga será mantida por um pe
 | Data final | Inclusiva; duração em meses usa calendário, ajuste ao último dia válido e preservação do dia de referência nas renovações contínuas. | **Aprovada** |
 | Cancelamento | Efeito imediato; preservar histórico, registrar instante, funcionário responsável e motivo opcional. Nova matrícula deve iniciar após o encerramento efetivo. | **Aprovada** |
 | Trancamento/suspensão | Fora do primeiro escopo. | Proposta |
-| Legados sem preço e datas | Preservar como pendentes de revisão, sem inventar dados. | Proposta |
+| Legados sem preço e datas | Preservar como pendentes; bloquear novas matrículas até regularização com dados reais e auditados. | **Aprovada** |
 | Plano sem preço definido | Não permitir nova contratação até completar o cadastro. | Proposta |
 | Exclusão de plano | Desativar; impedir exclusão quando houver histórico. | Proposta |
 
