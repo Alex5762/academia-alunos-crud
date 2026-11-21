@@ -225,3 +225,17 @@ Durante a utilização, eventos reais de interação na página atualizam o marc
 Cinco minutos antes do limite absoluto de oito horas, a interface exibe um aviso separado para salvar o trabalho. A confirmação desse aviso apenas o dispensa; ela não estende o limite absoluto. A expiração continua sendo aplicada no servidor, independentemente do JavaScript.
 
 Os testes de integração verificam renovação válida, rejeição de CSRF inválido, rejeição de método GET e continuidade do acesso após renovação. O Playwright avança o relógio para verificar os avisos de inatividade e de duração absoluta.
+
+
+## Alteração voluntária de senha após o primeiro acesso
+
+A tela `alterar-senha.php` fica disponível em **Configurações → Segurança da conta** para funcionários que já concluíram a troca obrigatória da senha temporária.
+
+- Exige a senha atual e valida sua correspondência com o hash armazenado.
+- Exige nova senha com pelo menos 12 caracteres e confirmação correspondente.
+- Rejeita a reutilização da senha atual.
+- Atualiza o hash e registra `senha_alterada` na mesma transação.
+- Regenera o identificador de sessão e o token CSRF após a alteração; o limite absoluto de oito horas continua o mesmo.
+- Testes cobrem senha atual incorreta, senha curta, confirmação divergente, reutilização, alteração válida, rejeição da senha antiga, login com a nova senha e auditoria.
+
+A navegação mobile possui rolagem horizontal com indicação visual, pode receber foco pelo teclado e é validada pelo Playwright. A revisão de contraste também ajusta os rótulos dos gráficos no tema escuro.

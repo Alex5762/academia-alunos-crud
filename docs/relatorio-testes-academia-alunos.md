@@ -129,3 +129,17 @@ Em 20/11/2026, os workflows de push e pull request do commit \`7ff2a9da84a20e0fe
 
 **Autor:** Joseph Alexsander  
 **Projeto:** FitControl — Gestão de alunos de academia
+
+
+## 9. Alteração voluntária de senha e revisão visual — 21/11/2026
+
+**Commit testado:** `72b43761378a1a5a8c2b3bd2a5ccb335207f7109`.
+
+- [Run 44859058017 — push, sucesso](https://github.com/Alex5762/academia-alunos-crud/actions/runs/44859058017).
+- [Run 44859062182 — pull request, sucesso](https://github.com/Alex5762/academia-alunos-crud/actions/runs/44859062182).
+
+A alteração voluntária de senha foi validada com senha atual incorreta, senha curta, confirmação divergente, tentativa de reutilizar a senha atual, alteração válida, registro de auditoria, rejeição da senha antiga e autenticação com a nova senha.
+
+O Playwright também verificou a navegação mobile por foco sequencial com Tab e rolagem automática até o último atalho, além de abrir a tela de alteração de senha e a página de funcionários. As capturas atualizadas foram publicadas no artefato da CI e sincronizadas na branch pelo commit automatizado `841983e1ff4aa9d9a4c01e2b0709269ef0ca1a11`.
+
+A inspeção das capturas identificou e motivou ajustes de contraste dos rótulos dos gráficos no tema escuro e de indicação/foco da navegação horizontal mobile. A inspeção física em dispositivo real e em navegador adicional ainda deve ser realizada.

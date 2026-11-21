@@ -50,7 +50,7 @@ Entregas:
 - Resolver pendências visuais ou documentá-las com clareza.
 - Atualizar a descrição da PR para refletir o estado real.
 
-**Estado:** base funcional, autenticação, gestão de funcionários, auditoria e política de sessão implementadas. A CI do commit atual passou em 20/11/2026; permanece pendente a inspeção visual manual em navegador/dispositivo real.
+**Estado:** base funcional, autenticação, gestão de funcionários, auditoria, política de sessão e alteração voluntária de senha implementadas. Os workflows de push e PR do commit `72b43761378a1a5a8c2b3bd2a5ccb335207f7109` passaram em 21/11/2026. Permanece pendente a inspeção em dispositivo físico e navegador adicional.
 
 ### Bloco 01 — Autenticação e proteção do painel
 
@@ -61,6 +61,7 @@ Entregas:
 - Sessões protegidas, CSRF e proteção centralizada das páginas e endpoints administrativos.
 - Contas individuais, provisionamento seguro, troca obrigatória da senha temporária e gestão de funcionários.
 - Desativação/reativação sem apagar histórico; bloqueio de autodesativação e da desativação da última conta ativa.
+- Alteração voluntária de senha após o primeiro acesso, com verificação da senha atual e auditoria.
 - Auditoria de login/logout, operações de alunos e operações de contas.
 - Limitação de tentativas de login: cinco falhas por combinação de e-mail/origem em 15 minutos geram bloqueio temporário de 15 minutos.
 - Expiração por 30 minutos de inatividade ou 8 horas absolutas, aviso antecipado e renovação autenticada durante interação.
