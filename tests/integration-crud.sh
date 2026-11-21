@@ -366,16 +366,6 @@ curl -fsS -G -c "$COOKIE_JAR" -b "$COOKIE_JAR" \
     "$BASE_URL/index.php" -o "$TMP_DIR/search.html"
 assert_contains "$TMP_DIR/search.html" "Aluno CI CRUD"
 
-curl -fsS -G -c "$COOKIE_JAR" -b "$COOKIE_JAR" \
-    --data-urlencode "busca=crud-ci-update@example.test" \
-    "$BASE_URL/index.php" -o "$TMP_DIR/search-email.html"
-assert_contains "$TMP_DIR/search-email.html" "Aluno CI Atualizado"
-
-curl -fsS -G -c "$COOKIE_JAR" -b "$COOKIE_JAR" \
-    --data-urlencode "busca=21999990001" \
-    "$BASE_URL/index.php" -o "$TMP_DIR/search-phone.html"
-assert_contains "$TMP_DIR/search-phone.html" "Aluno CI Atualizado"
-
 curl -fsS -c "$COOKIE_JAR" -b "$COOKIE_JAR" \
     "$BASE_URL/cadastro.php?id=$ALUNO_ID" -o "$TMP_DIR/edit-form.html"
 EDIT_TOKEN="$(get_token "$TMP_DIR/edit-form.html")"
@@ -394,6 +384,16 @@ assert_contains "$TMP_DIR/update.html" "Aluno atualizado com sucesso!"
 
 ATUALIZADO="$(db_value "SELECT COUNT(*) FROM alunos WHERE id = $ALUNO_ID AND nome = 'Aluno CI Atualizado' AND email = 'crud-ci-update@example.test' AND plano = 'Anual'")"
 [[ "$ATUALIZADO" == "1" ]] || fail "A edição não foi persistida corretamente."
+
+curl -fsS -G -c "$COOKIE_JAR" -b "$COOKIE_JAR" \
+    --data-urlencode "busca=crud-ci-update@example.test" \
+    "$BASE_URL/index.php" -o "$TMP_DIR/search-email.html"
+assert_contains "$TMP_DIR/search-email.html" "Aluno CI Atualizado"
+
+curl -fsS -G -c "$COOKIE_JAR" -b "$COOKIE_JAR" \
+    --data-urlencode "busca=21999990001" \
+    "$BASE_URL/index.php" -o "$TMP_DIR/search-phone.html"
+assert_contains "$TMP_DIR/search-phone.html" "Aluno CI Atualizado"
 
 USUARIO_ID="$(db_value "SELECT id FROM usuarios WHERE email = 'provision-ci@example.test' LIMIT 1")"
 
