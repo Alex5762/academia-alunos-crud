@@ -198,3 +198,40 @@ Após a aprovação da migração 004 nas execuções de push #268 e PR #269, fo
 A pesquisa por nome/e-mail/telefone e o filtro Ativos/Inativos/Todos já foram incluídos na consulta da listagem nesta mesma implementação; os indicadores agora contam ativos/inativos separadamente e a distribuição de planos considera somente ativos.
 
 **Resultado:** código implementado; aguarda as execuções de CI do novo commit. Os cenários adicionados incluem também pesquisa por e-mail/telefone e filtros Ativos/Inativos/Todos. A preservação dos filtros durante edição permanece pendente. Não marcar as etapas como aprovadas antes de verificar os logs de push e pull request.
+
+## 14. Bloco 02 — gestão, perfil e histórico de alunos — 21/11/2026
+
+**Commit de código/testes validado:** [3105b550e5e95f1f0737bfc20b04d5c0cc4a385f](https://github.com/Alex5762/academia-alunos-crud/commit/3105b550e5e95f1f0737bfc20b04d5c0cc4a385f).
+
+**CI:** [Run 44876515363 — CI #359, sucesso](https://github.com/Alex5762/academia-alunos-crud/actions/runs/44876515363). O job principal de PHP, MySQL, integração HTTP e capturas visuais terminou com sucesso. A publicação de capturas na branch foi realizada pelo workflow de push.
+
+### 14.1 Cenários do Bloco 02 validados
+
+| Área | Cenários cobertos | Resultado |
+|---|---|---|
+| Migração 004 | Aluno legado preservado com ID/dados, status ativo padrão, novo aluno ativo por padrão e índice composto | Aprovado |
+| Inativação/reativação | POST obrigatório, GET 405, CSRF inválido 403, ação inválida 400, persistência do status e transação | Aprovado |
+| Idempotência | Repetir uma mudança para estado já existente sem duplicar auditoria | Aprovado |
+| Exclusão física | Endpoint legado retorna HTTP 410 e mantém o registro | Aprovado |
+| Pesquisa e filtros | Busca por nome, e-mail e telefone; filtros Ativos, Inativos e Todos | Aprovado |
+| Contexto da listagem | Preservação de busca/filtro ao editar, salvar, voltar e alterar status | Aprovado |
+| Perfil individual | Acesso anônimo, IDs inválidos/inexistentes e dados atuais | Aprovado |
+| Histórico | Criação, edição, inativação e reativação, com data/responsável disponível | Aprovado |
+| Ações no perfil | Inativar e reativar a partir da tela de detalhes | Aprovado |
+| Capturas Playwright | Perfil individual em desktop e mobile, com verificação de overflow horizontal mobile | Aprovado |
+
+### 14.2 Artefatos visuais
+
+As capturas geradas pelo workflow e versionadas na branch incluem:
+- `docs/screenshots/aluno-detalhes-desktop.png`
+- `docs/screenshots/aluno-detalhes-mobile.png`
+
+Elas foram publicadas pelo commit automatizado [1fa3be6b55a07965399be905a9b161e16365f272](https://github.com/Alex5762/academia-alunos-crud/commit/1fa3be6b55a07965399be905a9b161e16365f272).
+
+As capturas e verificações Playwright demonstram que os fluxos programados foram executados. Não equivalem a inspeção visual humana completa nem a teste em aparelho físico.
+
+### 14.3 Estado após a execução
+
+**Resultado automatizado: aprovado.** Migração, fluxos de status, filtros, perfil, histórico e regressão cobertos pelo workflow passaram. A PR #1 permanece aberta e a branch de desenvolvimento continua separada da `main`.
+
+**Pendências manuais:** revisar legibilidade, contraste, estados vazios, hierarquia visual, foco por teclado e interação em aparelho físico/navegador adicional. Não declarar o Bloco 02 totalmente encerrado até essa revisão e aprovação explícita.
