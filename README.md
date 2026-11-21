@@ -186,6 +186,7 @@ Para conferir os resultados, consulte a aba **Actions** do GitHub. Uma execuçã
 ## Documentação
 
 - [Relatório de testes manuais e automatizados](docs/relatorio-testes-academia-alunos.md)
+- [Checklist de validação manual pendente — celular real, navegadores e acessibilidade](docs/checklist-validacao-manual.md)
 - [Roadmap e critérios de evolução por blocos](docs/roadmap.md)
 - [Planejamento do Bloco 01 — autenticação e auditoria](docs/bloco-01-autenticacao.md)
 - [Planejamento do Bloco 02 — gestão de alunos](docs/bloco-02-gestao-alunos.md)
