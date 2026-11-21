@@ -10,10 +10,18 @@ As imagens abaixo são capturadas automaticamente pelo GitHub Actions com regist
 
 ![Dashboard FitControl em tema escuro](docs/screenshots/dashboard-escuro.png)
 
-![Perfil individual do aluno com dados cadastrais e histórico de atividade](docs/screenshots/aluno-detalhes-desktop.png)
+### Perfil do aluno — tema claro
 
 <p align="center">
-  <img src="docs/screenshots/aluno-detalhes-mobile.png" alt="Perfil individual do aluno em tela mobile" width="320">
+  <img src="docs/screenshots/aluno-detalhes-desktop.png" alt="Perfil do aluno com histórico em tema claro no desktop" width="720">
+  <img src="docs/screenshots/aluno-detalhes-mobile.png" alt="Perfil do aluno com histórico em tema claro no mobile" width="280">
+</p>
+
+### Perfil do aluno — tema escuro
+
+<p align="center">
+  <img src="docs/screenshots/aluno-detalhes-desktop-escuro.png" alt="Perfil do aluno com histórico em tema escuro no desktop" width="720">
+  <img src="docs/screenshots/aluno-detalhes-mobile-escuro.png" alt="Perfil do aluno com histórico em tema escuro no mobile" width="280">
 </p>
 
 <p align="center">
@@ -80,6 +88,10 @@ academia-alunos-crud/
 │   └── screenshots/
 │       ├── dashboard-desktop.png
 │       ├── dashboard-mobile.png
+│       ├── aluno-detalhes-desktop.png
+│       ├── aluno-detalhes-mobile.png
+│       ├── aluno-detalhes-desktop-escuro.png
+│       ├── aluno-detalhes-mobile-escuro.png
 │       ├── alunos-mobile.png
 │       └── cadastro-desktop.png
 ├── database/
