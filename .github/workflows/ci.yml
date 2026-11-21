@@ -92,6 +92,7 @@ jobs:
           test -f renovar-sessao.php
           test -f salvar-usuario.php
           test -f alterar-status-usuario.php
+          test -f alterar-status-aluno.php
           test -f tests/assert-user-provisioned.php
           test -f tests/provision-user.sh
 
