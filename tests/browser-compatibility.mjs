@@ -182,6 +182,74 @@ for (const engine of engines) {
     const persistedTheme = await page.locator("html").getAttribute("data-theme");
     ensure(persistedTheme === "dark", engine.name + ": a preferência de tema não persistiu.");
 
+    // Perfil sem eventos: valida o estado vazio e a semântica da página em todos os motores.
+    await page.getByRole("link", { name: "Ver detalhes de Ana Beatriz Costa" }).click();
+    await page.getByRole("heading", { name: "Informações cadastrais" }).waitFor();
+    await page.getByRole("heading", { name: "Histórico de atividade" }).waitFor();
+    ensure(
+      await page.locator("h1").count() === 1 &&
+        await page.locator("h2").count() === 2,
+      engine.name + ": hierarquia de títulos do perfil está inesperada.",
+    );
+    ensure(
+      await page.locator('a[href^="mailto:"]').count() === 1 &&
+        await page.locator('a[href^="tel:"]').count() === 1,
+      engine.name + ": os contatos do aluno não estão expostos como links apropriados.",
+    );
+    ensure(
+      await page.getByText("Nenhum evento de auditoria disponível para este cadastro.").count() === 1,
+      engine.name + ": o estado vazio do histórico não foi apresentado.",
+    );
+    ensure(
+      await page.getByRole("button", { name: "Inativar aluno" }).count() === 1,
+      engine.name + ": a ação de inativação não tem nome acessível esperado.",
+    );
+
+    await page.keyboard.press("Tab");
+    const backLinkFocus = await page.locator(".settings-back").evaluate((element) => {
+      const style = window.getComputedStyle(element);
+      return {
+        focused: document.activeElement === element,
+        outlineStyle: style.outlineStyle,
+        outlineWidth: style.outlineWidth,
+      };
+    });
+    ensure(
+      backLinkFocus.focused &&
+        backLinkFocus.outlineStyle !== "none" &&
+        parseFloat(backLinkFocus.outlineWidth) >= 2,
+      engine.name + ": o link de retorno não apresenta foco visível por teclado. " +
+        JSON.stringify(backLinkFocus),
+    );
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await assertNoDocumentOverflow(page, engine.name, "perfil mobile de 390px");
+    await page.setViewportSize({ width: 320, height: 780 });
+    await assertNoDocumentOverflow(page, engine.name, "perfil mobile estreito de 320px");
+
+    // Perfil com linha do tempo: confere os quatro tipos de evento exibidos ao usuário.
+    await page.goto(baseUrl + "/index.php", { waitUntil: "domcontentloaded" });
+    await page.getByRole("link", { name: "Ver detalhes de Henrique Rocha" }).click();
+    await page.getByRole("heading", { name: "Histórico de atividade" }).waitFor();
+    const historyEvents = await page.locator(".student-timeline > li").count();
+    ensure(
+      historyEvents === 4,
+      engine.name + ": o perfil com auditoria deveria exibir quatro eventos; encontrou " + historyEvents + ".",
+    );
+    for (const label of [
+      "Cadastro criado",
+      "Dados cadastrais atualizados",
+      "Aluno inativado",
+      "Aluno reativado",
+    ]) {
+      ensure(
+        await page.getByText(label, { exact: true }).count() === 1,
+        engine.name + ": o histórico não exibiu o evento " + label + ".",
+      );
+    }
+    const populatedTheme = await page.locator("html").getAttribute("data-theme");
+    ensure(populatedTheme === "dark", engine.name + ": o tema escuro não persistiu ao abrir o perfil com histórico.");
+
     ensure(
       pageErrors.length === 0,
       engine.name + ": erros JavaScript: " + pageErrors.join(" | "),
@@ -190,7 +258,7 @@ for (const engine of engines) {
     console.log(
       engine.name +
         ": OK — login, dashboard, larguras desktop/mobile, rolagem interna, teclado, " +
-        "foco visível, campos obrigatórios e tema escuro.",
+        "foco visível, campos obrigatórios, tema escuro, perfil vazio/preenchido, histórico e overflow mobile.",
     );
   } finally {
     await browser.close();
