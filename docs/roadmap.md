@@ -99,7 +99,7 @@ O encerramento formal depende da inspeção em aparelho físico/navegador instal
 
 ### Bloco 03 — Planos e matrículas
 
-**Estado: pesquisa e proposta técnica documentadas; oito regras de negócio aprovadas; implementação não iniciada.**
+**Estado: pesquisa e proposta técnica documentadas; nove regras de negócio aprovadas; implementação não iniciada.**
 
 Documento de referência: [Pesquisa e proposta técnica do Bloco 03](bloco-03-planos-matriculas.md).
 
@@ -121,12 +121,13 @@ Escopo candidato:
 - Alunos com vínculo legado pendente continuam consultáveis, mas não recebem nova matrícula até regularização com informações reais e verificáveis. A regularização deve ser auditada e preservar o texto original; sem dados confiáveis, o bloqueio permanece.
 - O funcionário pode escolher início hoje ou em data futura válida, inclusive criando intervalo entre contratos. A data escolhida não pode ser passada nem sobrepor qualquer matrícula não cancelada do mesmo aluno. A renovação contínua automática permanece como padrão quando não se escolhe outro início.
 - Um plano incompleto pode ser salvo como rascunho, mas só pode ser ativado e disponibilizado para novas matrículas quando todos os campos obrigatórios estiverem preenchidos e o preço for maior que zero. Planos em rascunho/inativos não podem ser contratados; nenhum preço é inventado.
+- Plano sem matrícula vinculada pode ser excluído; plano com histórico não pode ser apagado e deve ser desativado. Planos desativados continuam consultáveis no histórico, mas não recebem novas matrículas.
 
 **Diretriz temporal:** a implementação deve comparar instantes de vigência com precisão de horário, usando intervalos semiabertos `[início, fim exclusivo)`. A data final inclusiva é apresentada a partir do limite exclusivo; o cancelamento antecipa o limite efetivo para o instante exato registrado. O fuso horário da academia deve ser único e configurado.
 
-A implementação deverá proteger a regra de não sobreposição contra solicitações concorrentes e centralizar o cálculo de datas em uma função testável.
+A implementação deverá proteger a regra de não sobreposição contra solicitações concorrentes e centralizar o cálculo de datas em uma função testável. A exclusão de planos e a criação de matrículas também devem ser protegidas contra condições de corrida.
 
-**Decisões ainda pendentes:** exclusão/desativação de planos com histórico e trancamento/suspensão, além de outras recomendações ainda não aprovadas no documento.
+**Decisões ainda pendentes:** trancamento/suspensão e outras recomendações ainda não aprovadas no documento.
 
 Não iniciar migrations ou implementação até revisar as decisões restantes e confirmar os critérios de aceite.
 
