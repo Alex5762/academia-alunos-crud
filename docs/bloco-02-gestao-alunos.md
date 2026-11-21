@@ -2,7 +2,7 @@
 
 ## Estado
 
-**Implementação e regressão automatizada aprovadas pelas CI #359, #375 e #387 em 21/11/2026; revisão visual das capturas concluída, inspeção em aparelho físico pendente.** A CI #387 (https://github.com/Alex5762/academia-alunos-crud/actions/runs/44880764637) aprovou a validação multibrowser ampliada. Os logs confirmam Chromium, Firefox e WebKit, incluindo perfil vazio/preenchido, histórico com quatro eventos, foco visível, links de contato, hierarquia de títulos e ausência de overflow em larguras mobile de 390px e 320px. As quatro capturas desktop/mobile nos temas claro/escuro permanecem versionadas. A inspeção visual dessas capturas foi realizada; falta apenas conferir em aparelho físico/navegador instalado. A PR continua aberta em Draft e não foi integrada em main.
+**Implementação e regressão automatizada aprovadas pelas CI #359, #375, #387 e #395 em 21/11/2026; revisão das capturas concluída, inspeção em aparelho físico pendente.** A CI #387 (https://github.com/Alex5762/academia-alunos-crud/actions/runs/44880764637) aprovou Chromium, Firefox e WebKit para o perfil vazio/preenchido, histórico, foco visível, links de contato, hierarquia de títulos e responsividade. A CI #395 (https://github.com/Alex5762/academia-alunos-crud/actions/runs/44882082854) acrescentou e aprovou nos três motores os estados vazios da listagem: nenhum aluno inativo e pesquisa sem resultados, incluindo os links de recuperação da navegação. As quatro capturas desktop/mobile nos temas claro/escuro permanecem versionadas e foram inspecionadas. A única validação visual ainda pendente é em aparelho físico/navegador instalado. A PR continua aberta em Draft e não foi integrada em main.
 
 Este documento fecha o escopo funcional e técnico do Bloco 02. A execução deve acontecer na branch `feat/dashboard-portfolio`, em etapas pequenas, com testes e documentação acompanhando o código. Não fazer merge em `main` sem revisão e aprovação explícita.
 
@@ -149,16 +149,16 @@ Manter `aluno_criado` e `aluno_editado`. Eventos históricos `aluno_excluido` ex
 - [x] Preservar os filtros ao inativar/reativar um aluno.
 - [x] Validar os cenários de consulta e preservação de contexto na CI #359.
 
-**Entrega:** equipe localiza registros e administra a situação. A preservação do contexto está implementada e aguarda validação na CI.
+**Entrega:** equipe localiza registros e administra a situação. A preservação do contexto foi validada na CI #359.
 
 ### Etapa 4 — Dashboard
 
 - [x] Contar ativos e inativos separadamente.
 - [x] Atualizar distribuição por plano para considerar somente ativos.
 - [x] Calcular indicadores independentemente da pesquisa e do filtro da lista.
-- [ ] Revisar textos acessíveis, estados vazios e capturas visuais após a nova tabela.
+- [x] Revisar textos de estados vazios e validar os fluxos de lista vazia e pesquisa sem resultados na CI #395.
 - [x] Validar o dashboard e a regressão na CI #359.
-- [ ] Fazer revisão humana dos textos, estados vazios e hierarquia visual.
+- [x] Conferir a hierarquia de títulos e os nomes acessíveis; validar os estados vazios nos três motores na CI #395.
 
 **Entrega:** os indicadores refletem claramente a população ativa.
 
@@ -172,7 +172,7 @@ Manter `aluno_criado` e `aluno_editado`. Eventos históricos `aluno_excluido` ex
 - [x] Adicionar testes HTTP para acesso anônimo, IDs inválidos/inexistentes, dados, eventos e ações pelo perfil.
 - [x] Adicionar capturas Playwright desktop e mobile do perfil, com verificação de overflow horizontal.
 - [x] Validar os novos testes HTTP e a captura automatizada desktop/mobile na CI #359.
-- [ ] Fazer inspeção visual humana das capturas em desktop e mobile.
+- [x] Inspecionar visualmente as capturas desktop/mobile do perfil nos temas claro e escuro.
 
 **Entrega:** consulta individual e histórico operacional básico sem implementar histórico campo a campo.
 
@@ -180,8 +180,9 @@ Manter `aluno_criado` e `aluno_editado`. Eventos históricos `aluno_excluido` ex
 
 - [x] Atualizar testes HTTP e Playwright para o perfil, histórico e preservação de filtros.
 - [x] Atualizar README, roadmap, relatório de testes e este documento com os resultados da CI #359.
-- [x] Executar e inspecionar a CI #359: job principal de integração e capturas concluído com sucesso.
+- [x] Executar e inspecionar as CI #359, #375, #387 e #395: integração, capturas e matriz multibrowser concluídas com sucesso.
 - [x] Revisar as quatro capturas automatizadas de perfil: desktop/mobile e temas claro/escuro; conferir linha do tempo com quatro eventos.
+- [x] Validar nos três motores os estados vazios da listagem e os links para recuperar a navegação (CI #395).
 - [ ] Fazer inspeção em aparelho físico e navegador instalado adicional, incluindo gesto de toque e leitura real.
 - [x] Manter a PR aberta sem merge automático; main permanece intacta.
 
@@ -240,8 +241,8 @@ O Bloco 02 só poderá ser marcado como concluído quando os seguintes cenários
 
 ### Regressão e interface
 - Fluxos atuais de login, sessão, funcionários, CRUD, CSRF e auditoria continuam passando.
-- [x] Testes automatizados cobrem desktop/mobile, estados vazio e preenchido, temas claro/escuro, navegação por teclado, foco visível, links de contato e overflow em 390px/320px.
-- [x] CI #387 aprovada nos motores Chromium, Firefox e WebKit, além da regressão PHP/MySQL e Playwright.
+- [x] Testes automatizados cobrem desktop/mobile, estados vazios da listagem e do perfil, estado preenchido, temas claro/escuro, navegação por teclado, foco visível, links de contato e overflow em 390px/320px.
+- [x] CI #387 e #395 aprovadas nos motores Chromium, Firefox e WebKit, além da regressão PHP/MySQL e Playwright.
 - [x] Capturas e documentação correspondem ao código efetivamente validado.
 - [ ] Inspecionar em aparelho físico e navegador instalado adicional.
 
