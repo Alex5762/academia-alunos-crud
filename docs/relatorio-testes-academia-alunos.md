@@ -197,4 +197,4 @@ Após a aprovação da migração 004 nas execuções de push #268 e PR #269, fo
 
 A pesquisa por nome/e-mail/telefone e o filtro Ativos/Inativos/Todos já foram incluídos na consulta da listagem nesta mesma implementação; os indicadores agora contam ativos/inativos separadamente e a distribuição de planos considera somente ativos.
 
-**Resultado:** código implementado; aguarda as execuções de CI do novo commit. Não marcar a etapa como aprovada antes de verificar os logs de push e pull request.
+**Resultado:** código implementado; aguarda as execuções de CI do novo commit. Os cenários adicionados incluem também pesquisa por e-mail/telefone e filtros Ativos/Inativos/Todos. A preservação dos filtros durante edição permanece pendente. Não marcar as etapas como aprovadas antes de verificar os logs de push e pull request.
