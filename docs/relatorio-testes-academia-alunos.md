@@ -235,3 +235,20 @@ As capturas e verificações Playwright demonstram que os fluxos programados for
 **Resultado automatizado: aprovado.** Migração, fluxos de status, filtros, perfil, histórico e regressão cobertos pelo workflow passaram. A PR #1 permanece aberta e a branch de desenvolvimento continua separada da `main`.
 
 **Pendências manuais:** revisar legibilidade, contraste, estados vazios, hierarquia visual, foco por teclado e interação em aparelho físico/navegador adicional. Não declarar o Bloco 02 totalmente encerrado até essa revisão e aprovação explícita.
+## 15. Galeria do perfil do aluno — temas claro/escuro — 21/11/2026
+
+**Execuções adicionais:**
+- [Run 44877723150 — CI #373, sucesso](https://github.com/Alex5762/academia-alunos-crud/actions/runs/44877723150): regressão e captura automatizada concluídas com sucesso.
+- [Run 44877943853 — CI #375, sucesso](https://github.com/Alex5762/academia-alunos-crud/actions/runs/44877943853): regressão, preparação do banco, capturas e verificações Playwright concluídas com sucesso.
+
+O workflow prepara quatro eventos fictícios de auditoria para o registro de demonstração e exige que os rótulos visíveis estejam presentes antes de capturar as imagens. O tema escuro é aplicado e sua persistência é verificada ao navegar do dashboard para o perfil.
+
+Capturas geradas e versionadas na branch:
+- `docs/screenshots/aluno-detalhes-desktop.png` — tema claro, desktop.
+- `docs/screenshots/aluno-detalhes-mobile.png` — tema claro, mobile.
+- `docs/screenshots/aluno-detalhes-desktop-escuro.png` — tema escuro, desktop.
+- `docs/screenshots/aluno-detalhes-mobile-escuro.png` — tema escuro, mobile.
+
+**Resultado da revisão das imagens:** as quatro capturas exibem os quatro eventos em ordem cronológica inversa, com data/hora e funcionário responsável. O layout mobile organiza os dados em uma coluna e apresenta os botões em largura integral. Não foi observado overflow horizontal nas verificações automatizadas. A inspeção visual das capturas foi realizada; ainda não houve teste em aparelho físico.
+
+**Pendência final:** inspecionar em celular real e navegador instalado, com atenção a toque, legibilidade, zoom, contraste percebido e tecnologias assistivas. A aprovação Playwright não substitui essa etapa.
