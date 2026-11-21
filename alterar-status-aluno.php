@@ -10,6 +10,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 require_once __DIR__ . '/conexao.php';
 $usuario = exigirAutenticacao($pdo);
 validarToken();
+$contextoLista = obterContextoListaAlunos($_POST);
 
 $valorId = $_POST['id'] ?? null;
 $acao = $_POST['acao'] ?? '';
@@ -57,7 +58,7 @@ try {
         $_SESSION['mensagem'] = $statusDesejado === 0
             ? 'O aluno já estava inativo.'
             : 'O aluno já estava ativo.';
-        redirecionar('index.php');
+        redirecionar(urlListaAlunos($contextoLista));
     }
 
     $atualizar = $pdo->prepare(
@@ -88,7 +89,7 @@ try {
     $_SESSION['mensagem'] = $statusDesejado === 0
         ? 'Aluno inativado com sucesso.'
         : 'Aluno reativado com sucesso.';
-    redirecionar('index.php');
+    redirecionar(urlListaAlunos($contextoLista));
 } catch (Throwable $falha) {
     if ($pdo->inTransaction()) {
         $pdo->rollBack();
