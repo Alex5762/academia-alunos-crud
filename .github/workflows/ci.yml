@@ -50,7 +50,7 @@ jobs:
       - name: Install Playwright browsers
         run: |
           npm install --no-save --no-package-lock playwright@1.65.1
-          npx playwright install --with-deps chromium firefox webkit
+          npx playwright install --with-deps chromium firefox webkit firefox webkit
 
       - name: Check PHP syntax
         shell: bash
@@ -72,6 +72,7 @@ jobs:
           test -f style.css
           test -f tests/integration-crud.sh
           test -f tests/capture-screenshots.mjs
+          test -f tests/browser-compatibility.mjs
           test -f theme.js
           test -f configuracoes.php
           test -f login.php
@@ -162,6 +163,7 @@ jobs:
           export FITCONTROL_TEST_PASSWORD="$(cat "$RUNNER_TEMP/fitcontrol-test-password")"
           rm -f "$RUNNER_TEMP/fitcontrol-test-password"
           node tests/capture-screenshots.mjs
+          node tests/browser-compatibility.mjs
           node tests/browser-compatibility.mjs
 
       - name: Upload screenshots
