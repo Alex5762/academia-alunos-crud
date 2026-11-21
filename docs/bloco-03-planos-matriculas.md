@@ -227,20 +227,26 @@ Com intervalos semiabertos, dois períodos se sobrepõem quando `inicio_A < fim_
 
 A migração é o ponto de maior risco do bloco, porque os registros atuais guardam apenas o texto de `alunos.plano`.
 
-**Decisão aprovada para alunos legados:** os registros antigos continuam acessíveis para consulta, mas um aluno com vínculo legado pendente de revisão não pode receber nova matrícula até que o vínculo anterior seja regularizado.
+**Decisão aprovada para alunos legados:** a revisão de cada vínculo antigo deve produzir um de três resultados explícitos. Os registros originais permanecem consultáveis, e o texto de `alunos.plano` nunca é sobrescrito.
+
+1. **Vínculo confirmado (`VINCULO_CONFIRMADO`):** o funcionário registra as condições antigas que conseguiu comprovar, incluindo plano, valor e período quando houver evidência confiável. Os dados desconhecidos continuam nulos; uma matrícula operacional só pode ser criada/liberada quando os dados necessários para determinar sua vigência estiverem comprovados. A revisão não autoriza estimativas.
+2. **Sem matrícula vigente (`LEGADO_SEM_VIGENCIA`):** o funcionário confirma, com uma fonte confiável, que o aluno não possui contrato vigente. O registro legado é encerrado para fins operacionais e deixa de bloquear novas matrículas. Isso não cria uma matrícula histórica fictícia nem exige preencher preço, datas ou duração desconhecidos.
+3. **Não foi possível confirmar (`PENDENTE_REVISAO`):** quando não houver evidência suficiente para concluir uma das duas situações anteriores, o vínculo continua pendente e novas matrículas permanecem bloqueadas.
+
+Em qualquer resultado, a revisão deve registrar o funcionário responsável, o instante da decisão, o resultado, uma referência da fonte consultada e observações necessárias à rastreabilidade. A ausência de informação ou a simples existência de texto em `alunos.plano` não comprova, por si só, que exista ou não exista uma matrícula vigente. Sem fonte confiável, o resultado obrigatório é `PENDENTE_REVISAO`.
 
 Estratégia de migração e regularização:
 
 1. Preservar integralmente a coluna `alunos.plano` durante a transição.
 2. Criar as novas tabelas sem exigir que dados históricos desconhecidos sejam preenchidos.
 3. Para cada aluno existente, criar um registro de histórico legado, mantendo o texto original em `plano_nome_contratado`.
-4. Marcar a origem como migração legada e a situação como `PENDENTE_REVISAO` quando faltarem datas, valor ou duração confiáveis.
+4. Inicialmente, marcar a origem como migração legada e a situação como `PENDENTE_REVISAO`.
 5. Deixar `plano_id` nulo quando não houver correspondência inequívoca com um plano do catálogo.
 6. Manter preço, início, término e duração desconhecidos como `NULL`; nunca inferir preço, datas ou vigência.
 7. Não criar planos de catálogo com dados inventados apenas para satisfazer o relacionamento.
-8. Antes de liberar uma nova matrícula, um funcionário deve regularizar o vínculo legado com informações reais e verificáveis: plano/condições contratadas, valor e período, quando esses dados puderem ser confirmados.
-9. A regularização deve registrar quem a realizou, quando ocorreu e quais informações foram complementadas, por meio da auditoria. O texto original importado deve permanecer preservado para consulta.
-10. Se não for possível confirmar as condições históricas, o vínculo permanece pendente e novas matrículas continuam bloqueadas. Não usar estimativas ou valores padrão para contornar a pendência.
+8. Disponibilizar o fluxo de revisão com os três resultados descritos acima. Para `VINCULO_CONFIRMADO`, registrar somente os dados sustentados pela evidência e criar uma matrícula operacional apenas quando a vigência puder ser determinada com segurança.
+9. Para `LEGADO_SEM_VIGENCIA`, manter o registro legado consultável com o resultado auditado, sem criar uma matrícula ativa ou inventar condições históricas; liberar novas matrículas após a confirmação.
+10. Para `PENDENTE_REVISAO`, manter o bloqueio de novas matrículas até que uma revisão posterior baseada em evidências permita concluir o caso.
 11. Depois da migração, comparar a quantidade de alunos antes/depois, conferir IDs e texto original, identificar duplicações e executar o teste novamente para verificar a proteção contra reprocessamento.
 
 A coluna antiga será mantida durante a transição. Sua remoção só poderá ser considerada em uma migration posterior, depois de todos os leitores e escritores terem sido atualizados e a preservação dos dados ter sido verificada.
@@ -295,8 +301,12 @@ A coluna antiga será mantida durante a transição. Sua remoção só poderá s
 - [ ] Alterar o preço de um plano não altera matrículas antigas.
 - [ ] Aluno inativo não recebe nova matrícula.
 - [ ] Aluno com vínculo legado pendente de revisão continua consultável, mas não consegue receber nova matrícula.
-- [ ] Regularização de legado exige informações reais e verificáveis, registra funcionário/data e preserva o texto original importado.
-- [ ] Legado sem informações confiáveis permanece pendente e bloqueia novas matrículas, sem preenchimento por estimativa.
+- [ ] Revisão de legado permite concluir somente um dos três resultados: `VINCULO_CONFIRMADO`, `LEGADO_SEM_VIGENCIA` ou `PENDENTE_REVISAO`.
+- [ ] `VINCULO_CONFIRMADO` exige evidência confiável, registra apenas dados comprovados e só libera matrícula operacional quando a vigência puder ser determinada.
+- [ ] `LEGADO_SEM_VIGENCIA` exige evidência confiável de ausência de contrato vigente, libera nova matrícula e não inventa datas, preço, duração ou matrícula histórica.
+- [ ] `PENDENTE_REVISAO` permanece como resultado quando não há evidência suficiente e continua bloqueando novas matrículas.
+- [ ] Todos os resultados registram funcionário, instante, conclusão e referência da fonte consultada.
+- [ ] A revisão nunca sobrescreve o texto original importado de `alunos.plano`.
 - [ ] Matrícula nova exige todos os dados obrigatórios.
 - [ ] Datas inválidas e valores negativos são rejeitados no servidor e, quando suportado, pelo banco.
 - [ ] Data final é inclusiva: uma matrícula de 01/11 até 30/11 permanece válida durante todo o dia 30/11.
@@ -338,7 +348,7 @@ As regras abaixo já foram aprovadas para orientar a implementação. O status n
 | Cancelamento | Efeito imediato; preservar histórico, registrar instante, funcionário responsável e motivo opcional. | **Aprovada** |
 | Nova matrícula no dia do cancelamento | Permitir início no mesmo instante do cancelamento ou depois, com comparação por horário e sem sobreposição. | **Aprovada** |
 | Trancamento/suspensão/congelamento | Fora do escopo aprovado da primeira versão do Bloco 03. | **Fora de escopo — aprovado** |
-| Legados sem preço e datas | Preservar como pendentes; bloquear novas matrículas até regularização com dados reais e auditados. | **Aprovada** |
+| Revisão de legados | Exigir um resultado auditado: `VINCULO_CONFIRMADO` com dados comprovados; `LEGADO_SEM_VIGENCIA` com evidência de ausência de contrato vigente; ou `PENDENTE_REVISAO` quando não for possível confirmar. Preservar o texto original e nunca inventar condições. | **Aprovada** |
 | Plano sem preço ou cadastro incompleto | Permitir salvar como rascunho; só ativar e disponibilizar para contratação com dados obrigatórios completos e preço maior que zero. | **Aprovada** |
 | Exclusão de plano | Permitir exclusão física somente sem matrículas vinculadas; com histórico, bloquear exclusão e permitir desativação. | **Aprovada** |
 | Horário padrão de início | Data futura sem horário: 00:00; hoje sem horário: instante atual; permitir horário posterior hoje, nunca anterior ao momento atual. | **Aprovada** |
@@ -350,14 +360,14 @@ As regras marcadas como aprovadas compõem a base funcional do Bloco 03. Os pont
 A primeira revisão cruzada encontrou e tratou os seguintes pontos:
 
 - Removida a duplicação de `cancelada_em` na lista conceitual de campos.
-- Alinhada a regra de legados: enquanto existir `PENDENTE_REVISAO`, novas matrículas ficam bloqueadas; não se considera o período legado livre por ausência de datas.
+- Alinhado o fluxo de legados: a revisão possui três resultados explícitos e auditados (`VINCULO_CONFIRMADO`, `LEGADO_SEM_VIGENCIA` e `PENDENTE_REVISAO`). Somente os dois primeiros, quando sustentados por evidência confiável, encerram o bloqueio; ausência de comprovação mantém o bloqueio.
 - Alinhada a regra de início: a validação compara o instante escolhido com o momento atual no fuso da academia, e não apenas a data do calendário.
 - Aprovado o padrão de horário: data futura sem horário inicia às 00:00; hoje usa o instante atual; horário posterior hoje pode ser escolhido, sem permitir retroatividade.
 - Confirmado que o motivo de cancelamento é opcional, conforme decisão já aprovada.
 
 Pontos técnicos que ainda precisam ser fechados antes das migrations:
 
-1. **Regularização de legado:** definir o fluxo de tela e quais evidências/campos serão exigidos para converter `PENDENTE_REVISAO` em registro regularizado, sem sobrescrever o texto importado.
+1. **Implementação operacional da revisão de legado:** projetar a tela/fluxo, definir como a referência da fonte será registrada e garantir que cada uma das três conclusões produza o estado e o desbloqueio corretos. A regra de negócio e os dados mínimos de auditoria já estão aprovados.
 2. **Estado da matrícula:** decidir quais estados serão persistidos e quais serão derivados dos instantes de início/fim; evitar divergência entre estado gravado e cálculo temporal.
 3. **Fuso horário:** confirmar o fuso IANA configurado para a academia e padronizar a forma de persistência/consulta entre PHP e MySQL/MariaDB.
 4. **Compatibilidade do banco:** confirmar a versão real do MySQL/MariaDB no XAMPP antes de definir `CHECK`, índices, constraints e estratégia de bloqueio.
