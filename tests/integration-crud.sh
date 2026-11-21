@@ -367,7 +367,7 @@ curl -fsS -G -c "$COOKIE_JAR" -b "$COOKIE_JAR" \
 assert_contains "$TMP_DIR/search.html" "Aluno CI CRUD"
 
 curl -fsS -G -c "$COOKIE_JAR" -b "$COOKIE_JAR" \
-    --data-urlencode "busca=crud-ci-create@example.test" \
+    --data-urlencode "busca=crud-ci-update@example.test" \
     "$BASE_URL/index.php" -o "$TMP_DIR/search-email.html"
 assert_contains "$TMP_DIR/search-email.html" "Aluno CI Atualizado"
 
