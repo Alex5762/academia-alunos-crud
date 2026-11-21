@@ -58,6 +58,50 @@ function redirecionar($pagina) {
     exit;
 }
 
+/**
+ * Lê o contexto da listagem de alunos sem aceitar arrays ou estados arbitrários.
+ * O prefixo permite reutilizar a mesma validação em campos hidden de formulários.
+ */
+function obterContextoListaAlunos(array $origem, string $prefixo = ''): array {
+    $busca = $origem[$prefixo . 'busca'] ?? '';
+    if (!is_string($busca)) {
+        $busca = '';
+    }
+
+    $status = $origem[$prefixo . 'status'] ?? 'ativos';
+    if (!is_string($status) || !in_array($status, ['ativos', 'inativos', 'todos'], true)) {
+        $status = 'ativos';
+    }
+
+    return [
+        'busca' => trim($busca),
+        'status' => $status
+    ];
+}
+
+/** Gera um retorno fixo para a listagem, sem aceitar URLs fornecidas pelo cliente. */
+function urlListaAlunos(array $contexto): string {
+    $parametros = ['status' => $contexto['status']];
+    if ($contexto['busca'] !== '') {
+        $parametros['busca'] = $contexto['busca'];
+    }
+
+    return 'index.php?' . http_build_query($parametros, '', '&', PHP_QUERY_RFC3986) . '#alunos';
+}
+
+/** Gera o endereço do formulário mantendo apenas o ID e os filtros validados. */
+function urlCadastroAluno(?int $alunoId, array $contexto): string {
+    $parametros = [
+        'busca' => $contexto['busca'],
+        'status' => $contexto['status']
+    ];
+    if ($alunoId !== null) {
+        $parametros['id'] = $alunoId;
+    }
+
+    return 'cadastro.php?' . http_build_query($parametros, '', '&', PHP_QUERY_RFC3986);
+}
+
 function validarToken() {
     $token = $_POST['token'] ?? '';
     $tokenSessao = $_SESSION['token'] ?? '';
