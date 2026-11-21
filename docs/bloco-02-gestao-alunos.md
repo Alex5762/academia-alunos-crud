@@ -2,7 +2,7 @@
 
 ## Estado
 
-**Implementação e regressão automatizada aprovadas pelas CI #359 e #375 em 21/11/2026; revisão visual das capturas concluída, inspeção em aparelho físico pendente.** A execução 44876515363 (https://github.com/Alex5762/academia-alunos-crud/actions/runs/44876515363) validou a gestão, o perfil e o histórico. As execuções 44877723150 (https://github.com/Alex5762/academia-alunos-crud/actions/runs/44877723150) e 44877943853 (https://github.com/Alex5762/academia-alunos-crud/actions/runs/44877943853) também concluíram com sucesso a regressão e as novas capturas. As imagens atuais mostram quatro eventos de auditoria em desktop e mobile, nos temas claro e escuro. A inspeção visual dessas quatro capturas foi realizada; permanece pendente apenas a conferência em aparelho físico/navegador instalado. A PR continua aberta em Draft e não foi integrada em main.
+**Implementação e regressão automatizada aprovadas pelas CI #359, #375 e #387 em 21/11/2026; revisão visual das capturas concluída, inspeção em aparelho físico pendente.** A CI #387 (https://github.com/Alex5762/academia-alunos-crud/actions/runs/44880764637) aprovou a validação multibrowser ampliada. Os logs confirmam Chromium, Firefox e WebKit, incluindo perfil vazio/preenchido, histórico com quatro eventos, foco visível, links de contato, hierarquia de títulos e ausência de overflow em larguras mobile de 390px e 320px. As quatro capturas desktop/mobile nos temas claro/escuro permanecem versionadas. A inspeção visual dessas capturas foi realizada; falta apenas conferir em aparelho físico/navegador instalado. A PR continua aberta em Draft e não foi integrada em main.
 
 Este documento fecha o escopo funcional e técnico do Bloco 02. A execução deve acontecer na branch `feat/dashboard-portfolio`, em etapas pequenas, com testes e documentação acompanhando o código. Não fazer merge em `main` sem revisão e aprovação explícita.
 
@@ -240,9 +240,10 @@ O Bloco 02 só poderá ser marcado como concluído quando os seguintes cenários
 
 ### Regressão e interface
 - Fluxos atuais de login, sessão, funcionários, CRUD, CSRF e auditoria continuam passando.
-- Testes automatizados cobrem desktop/mobile, estados vazio/ativo/inativo, temas e navegação por teclado.
-- CI de push e PR passa no commit que será considerado para conclusão.
-- Capturas e documentação correspondem ao código efetivamente validado.
+- [x] Testes automatizados cobrem desktop/mobile, estados vazio e preenchido, temas claro/escuro, navegação por teclado, foco visível, links de contato e overflow em 390px/320px.
+- [x] CI #387 aprovada nos motores Chromium, Firefox e WebKit, além da regressão PHP/MySQL e Playwright.
+- [x] Capturas e documentação correspondem ao código efetivamente validado.
+- [ ] Inspecionar em aparelho físico e navegador instalado adicional.
 
 ## 8. Fora de escopo
 
@@ -268,4 +269,4 @@ Esses itens permanecem para blocos posteriores ou decisões específicas.
 
 ## 10. Critério de encerramento
 
-O bloco será considerado concluído somente quando todos os critérios de aceite forem atendidos, a documentação registrar os resultados observados, a CI estiver verde e a revisão manual de interface estiver concluída. A integração em `main` dependerá de aprovação explícita separada.
+A implementação e a regressão automatizada estão aprovadas. O encerramento formal ainda depende da inspeção em aparelho físico/navegador instalado e da aprovação explícita para integrar a PR #1 em `main`; não fazer merge automaticamente.
