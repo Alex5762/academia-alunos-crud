@@ -189,7 +189,6 @@ O intervalo efetivo será tratado como semiaberto: `[inicio_em, fim_exclusivo_em
 Regra de calendário aprovada para durações em meses:
 
 - Tratar mês como unidade de calendário; nunca converter um mês em 30 dias.
-- `dia_referencia_calendario` representa o dia do mês usado para determinar a data final de ciclos mensais. Em uma nova contratação independente, recebe o dia local de `inicio_em`; uma renovação contínua copia a referência anterior.
 - `dia_referencia_calendario` guarda o dia original e nunca é substituído pelo dia ajustado de um mês curto. Em uma contratação independente, recebe o dia local de início; na renovação contínua, copia o valor anterior.
 - Para calcular `N` meses, identificar o primeiro mês de ciclo: usar o próprio mês local de início quando o dia de referência ainda estiver adiante do dia local de início; caso contrário, usar o mês seguinte. A partir desse mês, avançar `N - 1` meses de calendário. No mês-alvo, a data final inclusiva é o menor valor entre o dia de referência e o último dia válido do mês.
 - O último dia inclusivo é coberto integralmente. Portanto, `fim_exclusivo_em` será sempre 00:00 local do dia seguinte à data final inclusiva, independentemente do horário em que a matrícula começou. Exemplo: início em 10/01 às 15:00, duração de um mês e referência 10 resulta em data final inclusiva 10/02 e limite exclusivo 11/02 às 00:00.
@@ -475,7 +474,7 @@ Pontos técnicos que ainda precisam ser fechados antes das migrations:
 7. **Compatibilidade de timestamps de auditoria:** verificar a convenção histórica de `auditoria.criado_em` e definir como os novos eventos armazenarão UTC sem reinterpretar incorretamente logs existentes.
 8. **Cancelamento de matrícula vencida:** definir na camada de serviço se a operação de cancelamento será permitida apenas para matrículas `AGENDADA` ou `ATIVA`; impedir que uma ação posterior ao fim natural mascare uma matrícula já `VENCIDA` como `CANCELADA`.
 
-A revisão consolidada corrigiu contradições entre limites exclusivos, renovação contínua e critérios de aceite. Permanecem apenas as validações técnicas e operacionais listadas acima. Não iniciar migrations enquanto esses itens técnicos não forem verificados e os critérios de aceite finais não forem fechados.
+A revisão consolidada corrigiu contradições entre limites exclusivos, renovação contínua, regras de dias/semanas, legado comprovado e critérios de aceite. Permanecem validações técnicas e uma decisão operacional sobre cancelamento após o vencimento, descritas acima. Não iniciar migrations enquanto esses itens não forem verificados e os critérios de aceite finais não forem fechados.
 
 ## 12. Dependências e limites do projeto
 
