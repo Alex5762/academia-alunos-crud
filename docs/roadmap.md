@@ -99,7 +99,7 @@ O encerramento formal depende da inspeção em aparelho físico/navegador instal
 
 ### Bloco 03 — Planos e matrículas
 
-**Estado: nove regras de negócio e escopo sem trancamento/suspensão/congelamento aprovados; primeira revisão de consistência registrada; implementação não iniciada.**
+**Estado: dez regras de negócio e escopo sem trancamento/suspensão/congelamento aprovados; primeira revisão de consistência registrada; implementação não iniciada.**
 
 Documento de referência: [Pesquisa e proposta técnica do Bloco 03](bloco-03-planos-matriculas.md).
 
@@ -127,9 +127,11 @@ Escopo candidato:
 
 A implementação deverá proteger a regra de não sobreposição contra solicitações concorrentes e centralizar o cálculo de datas em uma função testável. A exclusão de planos e a criação de matrículas também devem ser protegidas contra condições de corrida.
 
+**Horário de início aprovado:** quando for informada apenas uma data futura, o início será às 00:00 no fuso da academia; para hoje, o padrão será o instante atual, permitindo escolher horário posterior, nunca anterior. A renovação contínua começa automaticamente no limite exclusivo anterior.
+
 **Fora do escopo aprovado:** trancamento, suspensão e congelamento.
 
-**Revisão de consistência:** foram corrigidas a duplicação do campo de cancelamento e a ambiguidade dos legados pendentes. Permanecem para fechar antes das migrations: horário padrão para início em data futura, fluxo auditado de regularização de legados, estados persistidos versus derivados, fuso horário IANA, versão MySQL/MariaDB, cancelamento antes do início e idempotência da migração.
+**Revisão de consistência:** foram corrigidas a duplicação do campo de cancelamento e a ambiguidade dos legados pendentes. Permanecem para fechar antes das migrations: fluxo auditado de regularização de legados, estados persistidos versus derivados, fuso horário IANA, versão MySQL/MariaDB, cancelamento antes do início e idempotência da migração.
 
 Não iniciar migrations ou implementação até revisar as decisões restantes e confirmar os critérios de aceite.
 
