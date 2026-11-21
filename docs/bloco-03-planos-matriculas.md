@@ -29,7 +29,7 @@ O desenho recomendado separa:
 2. **Plano:** a oferta disponível no catálogo da academia, com nome, duração e preço vigente para novas contratações.
 3. **Matrícula:** o vínculo de um aluno com um plano em um período específico, registrando as condições efetivamente contratadas.
 
-Essa separação evita que a edição do preço ou do nome de um plano altere retroativamente o histórico dos alunos.
+Essa separação evita que a edição do preço ou do nome de um plano altere retroativamente o histórico dos alunos. O processo de revisão dos registros antigos terá um registro de controle próprio, separado de `matriculas`; ele não representa contrato nem gera vigência por si só.
 
 ## 4. Modelo de dados proposto
 
@@ -82,8 +82,7 @@ Campos candidatos:
 | `inicio_em` | Início efetivo da vigência (`DATETIME`), incluindo horário para permitir início após cancelamento intradiário. |
 | `fim_exclusivo_em` | Limite final exclusivo (`DATETIME`): a matrícula deixa de valer exatamente neste instante. Para vigência normal, corresponde à meia-noite seguinte ao último dia de calendário inclusivo. |
 | `dia_referencia_calendario` | Dia original do mês usado no cálculo de durações mensais e preservado nas renovações contínuas. |
-| `cancelada_em` | Instante exato em que o cancelamento produziu efeito, quando aplicável. |
-| `cancelada_em` | Quando preenchido, registra que a matrícula foi cancelada; o evento também deve identificar o funcionário no mecanismo de auditoria. Não é necessário persistir `AGENDADA`, `ATIVA` ou `VENCIDA`. |
+| `cancelada_em` | Quando preenchido, registra o instante exato do cancelamento. O evento de auditoria associado identifica o funcionário responsável. Não é necessário persistir `AGENDADA`, `ATIVA` ou `VENCIDA`. |
 | `origem` | Distingue registros migrados dos criados pelo fluxo normal. |
 | `motivo_cancelamento` | Justificativa opcional. |
 | `created_at` | Momento em que o registro foi criado. |
@@ -97,7 +96,26 @@ Regras propostas:
 - O projeto já utiliza inativação lógica para alunos. A matrícula deve continuar consultável mesmo que o cadastro do aluno seja inativado.
 - Uma matrícula não deve ser excluída fisicamente por uma ação comum da interface.
 
-### 4.3 Separar situação do aluno e situação da matrícula
+### 4.3 Registro de revisão dos legados
+
+**Decisão aprovada:** manter a revisão dos registros antigos em uma estrutura própria, separada das matrículas operacionais. A proposta conceitual é uma tabela `revisoes_legado`, com relação de um para um com o aluno de origem.
+
+Campos candidatos:
+
+| Campo | Finalidade |
+|---|---|
+| `id` | Identificador do registro de revisão. |
+| `aluno_id_origem` | Referência ao aluno importado; deve ter chave estrangeira e restrição `UNIQUE`, garantindo no máximo um registro inicial de revisão por aluno. |
+| `plano_texto_original` | Cópia exata do valor de `alunos.plano` no momento da migração, apenas para rastreabilidade; a coluna original não será alterada. |
+| `resultado_atual` | Um dos resultados `VINCULO_CONFIRMADO`, `LEGADO_SEM_VIGENCIA` ou `PENDENTE_REVISAO`. |
+| `fonte_referencia` | Referência da fonte que sustenta a última conclusão humana; fica sem valor na criação automática inicial até a revisão. |
+| `created_at` / `updated_at` | Datas de criação e atualização do controle de revisão. |
+
+Cada decisão humana deve gerar auditoria com funcionário, instante, resultado e referência da fonte. A criação automática inicial como `PENDENTE_REVISAO` deve ser distinguível de uma decisão humana (por exemplo, como evento de importação/migração). A definição física final de tipos, nomes, chaves e índices ainda será validada antes da migration.
+
+**Regra importante:** a existência de `revisoes_legado` não significa que exista uma matrícula. Não criar linhas artificiais em `matriculas` apenas para representar o legado pendente ou sem vigência. Criar uma matrícula operacional somente quando existir contratação comprovada com os dados necessários para determinar sua vigência.
+
+### 4.4 Separar situação do aluno e situação da matrícula
 
 `alunos.ativo` descreve o cadastro da pessoa. A situação da matrícula descreve o contrato e sua vigência. São dimensões independentes.
 
@@ -248,16 +266,18 @@ Em qualquer resultado, a revisão deve registrar o funcionário responsável, o 
 Estratégia de migração e regularização:
 
 1. Preservar integralmente a coluna `alunos.plano` durante a transição.
-2. Criar as novas tabelas sem exigir que dados históricos desconhecidos sejam preenchidos.
-3. Para cada aluno existente, criar um registro de histórico legado, mantendo o texto original em `plano_nome_contratado`.
-4. Criar para cada aluno um registro de revisão de legado com origem de migração e resultado inicial `PENDENTE_REVISAO`. Esse registro não deve ser confundido com uma matrícula operacional.
-5. Deixar `plano_id` nulo quando não houver correspondência inequívoca com um plano do catálogo.
-6. Manter preço, início, término e duração desconhecidos como `NULL`; nunca inferir preço, datas ou vigência.
-7. Não criar planos de catálogo com dados inventados apenas para satisfazer o relacionamento.
+2. Criar as novas estruturas sem exigir que dados históricos desconhecidos sejam preenchidos.
+3. Para cada aluno que compõe o conjunto inicial da migração, criar exatamente um registro em `revisoes_legado`, copiando o valor original de `alunos.plano` para `plano_texto_original` sem alterar a coluna de origem.
+4. Criar a chave estrangeira de `aluno_id_origem` e a restrição `UNIQUE`. Essa chave é a identidade estável do registro migrado: uma segunda execução não pode inserir outro controle para o mesmo aluno.
+5. Inicializar `resultado_atual` como `PENDENTE_REVISAO`; registrar a criação como evento de migração, não como uma decisão humana.
+6. Não criar uma matrícula operacional para cada aluno apenas por ele existir na tabela antiga. Uma matrícula só nasce quando uma contratação e os dados necessários para determinar sua vigência forem comprovados.
+7. Manter preço, início, término e duração desconhecidos como `NULL`; nunca inferir preço, datas ou vigência. Não criar planos de catálogo com dados inventados.
 8. Disponibilizar o fluxo de revisão com os três resultados descritos acima. Para `VINCULO_CONFIRMADO`, registrar somente os dados sustentados pela evidência e criar uma matrícula operacional apenas quando as condições necessárias para determinar sua vigência estiverem comprovadas.
 9. Para `LEGADO_SEM_VIGENCIA`, manter o registro de revisão consultável, sem criar matrícula operacional fictícia; liberar novas matrículas após a confirmação auditada.
 10. Para `PENDENTE_REVISAO`, manter o bloqueio de novas matrículas até que uma revisão posterior baseada em evidências permita concluir o caso.
-11. Depois da migração, comparar a quantidade de alunos antes/depois, conferir IDs e texto original, identificar duplicações e executar o teste novamente para verificar a proteção contra reprocessamento.
+11. Executar a carga de dados em transação. Se qualquer etapa falhar, desfazer a transação; se a execução for repetida, identificar a colisão especificamente como duplicidade da chave única e preservar o resultado, a fonte e a auditoria já existentes. Outros erros não devem ser mascarados como duplicidade.
+12. Tratar a carga como migration versionada e de execução única sobre o conjunto inicial de alunos. Não executar essa rotina como varredura recorrente de todos os alunos, pois alunos criados posteriormente seguem o fluxo normal e não são legados da carga inicial.
+13. Depois da migração, comparar o conjunto de IDs de alunos da origem com as referências em `revisoes_legado`, conferir a quantidade de registros, verificar os textos originais, confirmar ausência de duplicações e executar novamente a rotina em teste para provar que nenhum registro ou decisão existente é recriado ou sobrescrito.
 
 A coluna antiga será mantida durante a transição. Sua remoção só poderá ser considerada em uma migration posterior, depois de todos os leitores e escritores terem sido atualizados e a preservação dos dados ter sido verificada.
 
@@ -299,7 +319,10 @@ A coluna antiga será mantida durante a transição. Sua remoção só poderá s
 
 - [ ] A migration funciona em banco limpo e em banco com alunos legados.
 - [ ] Nenhum aluno, ID ou texto original de plano é perdido.
-- [ ] Reexecutar a rotina de migração não duplica registros.
+- [ ] A carga inicial cria exatamente um registro em `revisoes_legado` para cada aluno do conjunto inicial, com `aluno_id_origem` único e chave estrangeira válida.
+- [ ] Reexecutar a carga não duplica registros, não altera resultados humanos já registrados, não sobrescreve referências de fonte nem duplica eventos de auditoria.
+- [ ] Uma colisão na chave única é tratada como registro já migrado; erros diferentes de duplicidade causam rollback e não são ignorados.
+- [ ] Alunos criados depois da migration inicial não são incluídos retroativamente pela reexecução da carga legada.
 - [ ] Planos em rascunho ou inativos não aparecem para novas matrículas.
 - [ ] Plano sem matrículas vinculadas pode ser excluído.
 - [ ] Plano com pelo menos uma matrícula vinculada não pode ser excluído fisicamente e pode ser desativado.
@@ -365,6 +388,7 @@ As regras abaixo já foram aprovadas para orientar a implementação. O status n
 | Nova matrícula no dia do cancelamento | Permitir início no mesmo instante do cancelamento ou depois, com comparação por horário e sem sobreposição. | **Aprovada** |
 | Trancamento/suspensão/congelamento | Fora do escopo aprovado da primeira versão do Bloco 03. | **Fora de escopo — aprovado** |
 | Revisão de legados | Exigir um resultado auditado: `VINCULO_CONFIRMADO` com dados comprovados; `LEGADO_SEM_VIGENCIA` com evidência de ausência de contrato vigente; ou `PENDENTE_REVISAO` quando não for possível confirmar. Preservar o texto original e nunca inventar condições. | **Aprovada** |
+| Migração idempotente | Identificar cada registro inicial pela referência única do aluno de origem; executar a carga em transação e preservar revisões/auditorias já existentes em reexecuções. | **Aprovada** |
 | Plano sem preço ou cadastro incompleto | Permitir salvar como rascunho; só ativar e disponibilizar para contratação com dados obrigatórios completos e preço maior que zero. | **Aprovada** |
 | Exclusão de plano | Permitir exclusão física somente sem matrículas vinculadas; com histórico, bloquear exclusão e permitir desativação. | **Aprovada** |
 | Horário padrão de início | Data futura sem horário: 00:00; hoje sem horário: instante atual; permitir horário posterior hoje, nunca anterior ao momento atual. | **Aprovada** |
@@ -375,7 +399,7 @@ As regras marcadas como aprovadas compõem a base funcional do Bloco 03. Os pont
 
 A primeira revisão cruzada encontrou e tratou os seguintes pontos:
 
-- Removida a duplicação de `cancelada_em` na lista conceitual de campos.
+- Corrigida a duplicação de `cancelada_em` na lista conceitual de campos; o cancelamento é representado por um único atributo e pelo evento de auditoria.
 - Alinhado o fluxo de legados: a revisão possui três resultados explícitos e auditados (`VINCULO_CONFIRMADO`, `LEGADO_SEM_VIGENCIA` e `PENDENTE_REVISAO`). Somente os dois primeiros, quando sustentados por evidência confiável, encerram o bloqueio; ausência de comprovação mantém o bloqueio.
 - Alinhada a regra de início: a validação compara o instante escolhido com o momento atual no fuso da academia, e não apenas a data do calendário.
 - Aprovado o padrão de horário: data futura sem horário inicia às 00:00; hoje usa o instante atual; horário posterior hoje pode ser escolhido, sem permitir retroatividade.
@@ -391,7 +415,7 @@ Pontos técnicos que ainda precisam ser fechados antes das migrations:
 3. **Implementação e validação do fuso aprovado:** aplicar `America/Sao_Paulo` na camada de data/hora, persistir instantes UTC nos campos `DATETIME` conforme a convenção documentada e testar conversões de entrada/saída no XAMPP. A decisão funcional de fuso e armazenamento já está aprovada.
 4. **Compatibilidade do banco:** confirmar a versão real do MySQL/MariaDB no XAMPP antes de definir `CHECK`, índices, constraints e estratégia de bloqueio.
 5. **Cancelamento de matrícula futura:** comportamento aprovado; implementar e testar cancelamento antes do início, exatamente no início e depois do início, preservando histórico e tratando corretamente o intervalo efetivo vazio.
-6. **Migração e idempotência:** detalhar como identificar cada aluno legado já migrado e garantir reexecução segura sem duplicar matrículas.
+6. **Implementação e validação da migration idempotente:** aplicar a referência única do aluno, transação, tratamento específico de conflito e testes de reexecução sem sobrescrever a revisão ou duplicar auditoria. A estratégia funcional já está aprovada.
 
 A revisão não encontrou motivo para alterar as regras de negócio já aprovadas; os itens acima são detalhes de modelagem e operação ainda em aberto. Não iniciar migrations até resolvê-los e revisar novamente a especificação completa.
 
