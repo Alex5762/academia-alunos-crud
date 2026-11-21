@@ -302,6 +302,42 @@ try {
         'Repetição não pode duplicar evento.'
     );
 
+    // Se uma evidência posterior gerar dúvida, a revisão volta a PENDENTE sem
+    // apagar/cancelar a matrícula provisória; uma confirmação posterior reutiliza
+    // o mesmo intervalo e o mesmo registro, sem duplicar a matrícula LEGADO.
+    $service->decide(
+        $studentIds[0],
+        $reviewIds[0],
+        $actorId,
+        'PENDENTE_REVISAO',
+        null,
+        'Nova evidência contraditória exige reavaliação do vínculo.'
+    );
+    assertLegacyReview(
+        (string) $pdo->query('SELECT resultado_atual FROM revisoes_legado WHERE id = ' . $reviewIds[0])->fetchColumn() === 'PENDENTE_REVISAO',
+        'Nova dúvida deve reabrir a revisão.'
+    );
+    assertLegacyReview(
+        (int) $pdo->query('SELECT COUNT(*) FROM matriculas WHERE aluno_id = ' . $studentIds[0] . " AND origem = 'LEGADO'")->fetchColumn() === 1,
+        'Reabrir a revisão não pode apagar nem duplicar o vínculo legado.'
+    );
+
+    $reconfirmedLegacyId = $service->decide(
+        $studentIds[0],
+        $reviewIds[0],
+        $actorId,
+        'VINCULO_CONFIRMADO',
+        'Contrato físico revalidado, pasta 2025/12, folha 18',
+        'Intervalo original confirmado novamente após revisão da nova evidência.',
+        legacyLocalDate('2025-12-01 00:00:00'),
+        legacyLocalDate('2026-01-01 00:00:00')
+    );
+    assertLegacyReview($reconfirmedLegacyId === $legacyEnrollmentId, 'Nova confirmação deve reutilizar a matrícula LEGADO existente.');
+    assertLegacyReview(
+        (int) $pdo->query('SELECT COUNT(*) FROM matriculas WHERE aluno_id = ' . $studentIds[0] . " AND origem = 'LEGADO'")->fetchColumn() === 1,
+        'Nova confirmação não pode duplicar a matrícula LEGADO.'
+    );
+
     // Ausência de vigência exige fonte e não cria matrícula artificial.
     $noVigencyResult = $service->decide(
         $studentIds[1],
