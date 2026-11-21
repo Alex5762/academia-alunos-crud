@@ -2,7 +2,7 @@
 
 ## Estado
 
-**Planejado e especificado; implementação ainda não iniciada.**
+**Em implementação — Etapa 1 (migração e camada de dados).** A migração `004_student_status.sql` e o teste de preservação `tests/migration-student-status.sh` foram adicionados; a validação pela CI ainda está pendente. As etapas de endpoint, listagem, dashboard e detalhes não foram iniciadas.
 
 Este documento fecha o escopo funcional e técnico do Bloco 02. A execução deve acontecer na branch `feat/dashboard-portfolio`, em etapas pequenas, com testes e documentação acompanhando o código. Não fazer merge em `main` sem revisão e aprovação explícita.
 
@@ -119,10 +119,11 @@ Manter `aluno_criado` e `aluno_editado`. Eventos históricos `aluno_excluido` ex
 
 ### Etapa 1 — Migração e camada de dados
 
-- Criar a migração 004.
-- Atualizar a CI para aplicar a migração após 001–003.
-- Criar fixture legado antes da migração e verificar preservação/valor padrão.
-- Ajustar consultas centrais para ler o status explicitamente.
+- [x] Criar `database/migrations/004_student_status.sql` com `ativo TINYINT(1) NOT NULL DEFAULT 1` e o índice `idx_alunos_ativo_nome`.
+- [x] Atualizar a CI para executar a migração após 001–003.
+- [x] Criar `tests/migration-student-status.sh`: inserir fixture legado antes da migração, conferir ID e dados preservados, confirmar `ativo = 1` nos registros existentes, testar o padrão em novo registro e verificar o índice.
+- [ ] Validar a execução real do teste em CI.
+- [ ] Ajustar consultas centrais para ler o status explicitamente.
 
 **Entrega:** banco novo e banco com registros anteriores suportam o status do aluno.
 
