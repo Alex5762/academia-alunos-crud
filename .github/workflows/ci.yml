@@ -147,6 +147,9 @@ jobs:
       - name: Test enrollment interval rules
         run: php tests/enrollment-interval.php
 
+      - name: Test enrollment status and cancellation eligibility
+        run: php tests/enrollment-status.php
+
       - name: Check required project files
         run: |
           test -f index.php
@@ -162,6 +165,8 @@ jobs:
           test -f tests/enrollment-period-calculator.php
           test -f src/Domain/Enrollment/EnrollmentInterval.php
           test -f tests/enrollment-interval.php
+          test -f src/Domain/Enrollment/EnrollmentStatus.php
+          test -f tests/enrollment-status.php
           test -f tests/database-plan-lock-concurrency.php
           test -f database/migrations/004_student_status.sql
           test -f tests/capture-screenshots.mjs
