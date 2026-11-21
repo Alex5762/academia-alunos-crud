@@ -13,6 +13,10 @@ As imagens abaixo são capturadas automaticamente pelo GitHub Actions com regist
 ![Perfil individual do aluno com dados cadastrais e histórico de atividade](docs/screenshots/aluno-detalhes-desktop.png)
 
 <p align="center">
+  <img src="docs/screenshots/aluno-detalhes-mobile.png" alt="Perfil individual do aluno em tela mobile" width="320">
+</p>
+
+<p align="center">
   <img src="docs/screenshots/dashboard-mobile.png" alt="Dashboard FitControl em tela mobile" width="280">
   <img src="docs/screenshots/cadastro-desktop.png" alt="Formulário de cadastro de aluno em desktop" width="680">
   <img src="docs/screenshots/configuracoes-escuro.png" alt="Configurações de aparência no tema escuro" width="360">
