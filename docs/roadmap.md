@@ -127,7 +127,9 @@ Escopo candidato:
 
 A implementação deverá proteger a regra de não sobreposição contra solicitações concorrentes e centralizar o cálculo de datas em uma função testável. A exclusão de planos e a criação de matrículas também devem ser protegidas contra condições de corrida.
 
-**Fora do escopo aprovado:** trancamento, suspensão e congelamento.\n\n**Revisão de consistência:** foram corrigidas a duplicação do campo de cancelamento e a ambiguidade dos legados pendentes. Permanecem para fechar antes das migrations: horário padrão para início em data futura, fluxo auditado de regularização de legados, estados persistidos versus derivados, fuso horário IANA, versão MySQL/MariaDB, cancelamento antes do início e idempotência da migração.
+**Fora do escopo aprovado:** trancamento, suspensão e congelamento.
+
+**Revisão de consistência:** foram corrigidas a duplicação do campo de cancelamento e a ambiguidade dos legados pendentes. Permanecem para fechar antes das migrations: horário padrão para início em data futura, fluxo auditado de regularização de legados, estados persistidos versus derivados, fuso horário IANA, versão MySQL/MariaDB, cancelamento antes do início e idempotência da migração.
 
 Não iniciar migrations ou implementação até revisar as decisões restantes e confirmar os critérios de aceite.
 
