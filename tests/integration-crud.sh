@@ -385,6 +385,8 @@ assert_contains "$TMP_DIR/update.html" "Aluno atualizado com sucesso!"
 ATUALIZADO="$(db_value "SELECT COUNT(*) FROM alunos WHERE id = $ALUNO_ID AND nome = 'Aluno CI Atualizado' AND email = 'crud-ci-update@example.test' AND plano = 'Anual'")"
 [[ "$ATUALIZADO" == "1" ]] || fail "A edição não foi persistida corretamente."
 
+USUARIO_ID="$(db_value "SELECT id FROM usuarios WHERE email = 'provision-ci@example.test' LIMIT 1")"
+
 echo "5/10 - Inativando e reativando sem excluir o cadastro..."
 HTTP_CODE="$(curl -sS -o "$TMP_DIR/status-get.html" -w '%{http_code}' -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/alterar-status-aluno.php")"
 [[ "$HTTP_CODE" == "405" ]] || fail "GET em alterar-status-aluno.php deveria retornar 405; retornou $HTTP_CODE."
