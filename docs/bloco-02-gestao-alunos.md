@@ -2,7 +2,7 @@
 
 ## Estado
 
-**Em implementação — Etapas 1 e 2 aprovadas em CI anterior; preservação do contexto da listagem implementada, aguardando nova CI.** A migração 004 e seu teste de preservação passaram em push/PR #268/#269. O endpoint transacional, a inativação/reativação, a aposentadoria da exclusão física, os filtros e o dashboard estão implementados. Esta atualização preserva busca e situação ao abrir a edição, salvar, voltar e alterar o status. A validação integrada desta atualização ainda está pendente.
+**Em implementação — perfil individual e histórico implementados em código; aguardando CI.** A migração 004 e seu teste de preservação passaram em CI anterior. O endpoint transacional, inativação/reativação, aposentadoria da exclusão física, filtros e dashboard estão implementados. A preservação de busca e situação foi coberta por novos testes de integração. A Etapa 5 agora inclui página individual com dados atuais, situação, eventos de auditoria e ações de edição/status; esta entrega e a regressão correspondente aguardam CI.
 
 Este documento fecha o escopo funcional e técnico do Bloco 02. A execução deve acontecer na branch `feat/dashboard-portfolio`, em etapas pequenas, com testes e documentação acompanhando o código. Não fazer merge em `main` sem revisão e aprovação explícita.
 
@@ -163,10 +163,14 @@ Manter `aluno_criado` e `aluno_editado`. Eventos históricos `aluno_excluido` ex
 
 ### Etapa 5 — Detalhes do aluno e auditoria
 
-- Criar tela de detalhes identificada por ID validado.
-- Exibir os dados atuais e o status.
-- Exibir histórico simples de eventos com ação, data e funcionário responsável quando disponível.
-- Oferecer atalhos de edição e ativação/inativação conforme o estado atual.
+- [x] Criar `detalhes-aluno.php` com ID validado e respostas 400/404.
+- [x] Exibir dados atuais, situação e data de cadastro.
+- [x] Exibir histórico simples de criação, edição, inativação e reativação, com data e responsável quando disponível; limitar a 50 eventos.
+- [x] Oferecer atalhos de edição e ativação/inativação conforme o estado atual.
+- [x] Preservar filtros ao retornar à listagem e ao alterar status pelo perfil.
+- [x] Adicionar testes HTTP para acesso anônimo, IDs inválidos/inexistentes, dados, eventos e ações pelo perfil.
+- [x] Adicionar captura Playwright desktop do perfil.
+- [ ] Validar os novos testes na CI e revisar a captura.
 
 **Entrega:** consulta individual e histórico operacional básico sem implementar histórico campo a campo.
 
@@ -182,6 +186,7 @@ Manter `aluno_criado` e `aluno_editado`. Eventos históricos `aluno_excluido` ex
 
 - `database/migrations/004_student_status.sql`
 - `index.php`
+- `detalhes-aluno.php` (perfil individual e histórico)
 - `cadastro.php`
 - `salvar.php`
 - `excluir.php` (aposentadoria do fluxo destrutivo)
