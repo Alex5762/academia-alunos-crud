@@ -201,3 +201,17 @@ Todas as contas continuam com a mesma permissão administrativa, conforme a deci
 - Desativação e rejeição de login da conta inativa.
 - Reativação e verificação dos eventos de auditoria.
 - Bloqueio de tentativa de desativar a própria conta.
+
+
+## Expiração de sessão — implementação
+
+A camada central em \`funcoes.php\` aplica dois limites a sessões autenticadas:
+
+- **Inatividade:** 30 minutos sem requisições autenticadas.
+- **Duração absoluta:** 8 horas desde o login, mesmo que a conta continue ativa no navegador.
+
+O timestamp de autenticação é definido no login e não é renovado por atividade. O timestamp de último acesso é atualizado após confirmar no banco que a conta continua ativa. Sessões antigas sem os dois marcadores, timestamps futuros ou sessões fora dos limites são invalidadas.
+
+Quando expira, os dados autenticados são limpos, o identificador de sessão é regenerado, um novo token CSRF é criado e a tela de login informa que será necessário entrar novamente. O cookie continua sendo de sessão, HttpOnly, SameSite=Lax e Secure quando HTTPS é detectado. O \`session.gc_maxlifetime\` foi alinhado ao limite absoluto de oito horas; a expiração efetiva é feita pela validação da aplicação, não depende apenas da coleta de lixo do PHP.
+
+A CI testa os dois limites com sessões de teste independentes, sem alterar a sessão usada pelos testes de CRUD.
