@@ -66,6 +66,10 @@ try {
   }
   await desktop.getByRole("heading", { name: "Informações cadastrais" }).waitFor();
   await desktop.getByRole("heading", { name: "Histórico de atividade" }).waitFor();
+  await desktop.getByText("aluno_criado").waitFor();
+  await desktop.getByText("aluno_editado").waitFor();
+  await desktop.getByText("aluno_inativado").waitFor();
+  await desktop.getByText("aluno_reativado").waitFor();
   await desktop.screenshot({
     path: `${outputDir}/aluno-detalhes-desktop.png`,
     fullPage: true,
@@ -142,6 +146,8 @@ try {
 
   await mobile.getByRole("link", { name: /Ver detalhes de/ }).first().click();
   await mobile.getByRole("heading", { name: "Informações cadastrais" }).waitFor();
+  await mobile.getByText("aluno_criado").waitFor();
+  await mobile.getByText("aluno_reativado").waitFor();
   const detailMobileWidth = await mobile.evaluate(() => ({
     viewport: document.documentElement.clientWidth,
     document: document.documentElement.scrollWidth,
