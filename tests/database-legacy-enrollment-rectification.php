@@ -601,6 +601,15 @@ try {
         $pdo->exec('DROP TRIGGER IF EXISTS fitcontrol_fail_rectification_audit');
     }
 
+    // O usuário é exclusivo deste fixture. Remover toda a auditoria vinculada
+    // antes de apagar o usuário, cuja FK em auditoria usa ON DELETE RESTRICT.
+    if ($actorId !== null) {
+        $deleteActorAudits = $pdo->prepare(
+            'DELETE FROM auditoria WHERE usuario_id = :actor_id'
+        );
+        $deleteActorAudits->execute(['actor_id' => $actorId]);
+    }
+
     if ($reviewIds !== []) {
         $placeholders = implode(',', array_fill(0, count($reviewIds), '?'));
         $deleteEvents = $pdo->prepare(
