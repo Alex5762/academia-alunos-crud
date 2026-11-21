@@ -7,6 +7,8 @@ if (usuarioAtual($pdo) !== null) {
 }
 
 $erro = '';
+$sessaoExpirada = !empty($_SESSION['sessao_expirada']);
+unset($_SESSION['sessao_expirada']);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     validarToken();
@@ -136,7 +138,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                     // Limpa qualquer estado pré-autenticação e cria novo token CSRF.
                     $_SESSION = [];
+                    $instanteAutenticacao = time();
                     $_SESSION['usuario_id'] = (int) $usuario['id'];
+                    $_SESSION['usuario_autenticado_em'] = $instanteAutenticacao;
+                    $_SESSION['usuario_ultimo_acesso'] = $instanteAutenticacao;
                     $_SESSION['token'] = bin2hex(random_bytes(32));
 
                     redirecionar((int) $usuario['deve_trocar_senha'] === 1 ? 'trocar-senha.php' : 'index.php');
@@ -186,6 +191,9 @@ $emailPreenchido = isset($_POST['email']) && is_string($_POST['email']) ? $_POST
         <h1 id="login-title">Bem-vindo de volta</h1>
         <p class="login-intro">Entre com sua conta individual para acessar o painel.</p>
 
+        <?php if ($sessaoExpirada) { ?>
+            <p class="login-error" role="status">Sua sessão expirou por inatividade ou pelo tempo máximo de acesso. Entre novamente.</p>
+        <?php } ?>
         <?php if ($erro !== '') { ?>
             <p class="login-error" role="alert"><?= escapar($erro) ?></p>
         <?php } ?>
