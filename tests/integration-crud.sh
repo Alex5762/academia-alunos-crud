@@ -504,7 +504,7 @@ assert_contains "$TMP_DIR/detail-history.html" "Aluno CI Atualizado"
 assert_contains "$TMP_DIR/detail-history.html" "Dados cadastrais atualizados"
 assert_contains "$TMP_DIR/detail-history.html" "Aluno inativado"
 assert_contains "$TMP_DIR/detail-history.html" "Aluno reativado"
-assert_contains "$TMP_DIR/detail-history.html" "Por Provisionamento CI"
+assert_contains "$TMP_DIR/detail-history.html" "Por Usuário de Teste CI"
 
 echo "5.5/10 - Alterando status diretamente pelo perfil..."
 curl -fsS -L -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/alterar-status-aluno.php" \
