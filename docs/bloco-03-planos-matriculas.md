@@ -85,8 +85,7 @@ Campos candidatos:
 | `cancelada_em` | Instante exato em que o cancelamento produziu efeito, quando aplicável. |
 | `situacao` | Estado operacional ou de revisão da matrícula. |
 | `origem` | Distingue registros migrados dos criados pelo fluxo normal. |
-| `cancelada_em` | Momento do cancelamento, quando aplicável. |
-| `motivo_cancelamento` | Justificativa opcional, conforme regra a definir. |
+| `motivo_cancelamento` | Justificativa opcional. |
 | `created_at` | Momento em que o registro foi criado. |
 
 Regras propostas:
@@ -179,7 +178,8 @@ Regras:
 - O sistema deve calcular a data de início da renovação a partir do limite seguinte do período e do dia de referência preservado, sem depender do dia em que o funcionário realizou a operação.
 - A renovação contínua copia o dia de referência da matrícula anterior, inclusive quando a data anterior foi ajustada por fevereiro ou outro mês curto.
 - Essa regra cobre a renovação contínua padrão, sem intervalo.
-- **Decisão aprovada:** o funcionário também pode escolher manualmente uma data de início futura para uma nova matrícula, criando um intervalo entre contratos quando necessário. A data escolhida deve ser hoje ou posterior, ser válida para o calendário e não provocar sobreposição com qualquer outra matrícula não cancelada do mesmo aluno.
+- **Decisão aprovada:** o funcionário também pode escolher manualmente uma data de início para uma nova matrícula, criando um intervalo entre contratos quando necessário. O início efetivo deve ser um instante igual ou posterior ao momento atual no fuso da academia e não pode provocar sobreposição com qualquer outra matrícula não cancelada do mesmo aluno.
+- **Detalhe ainda pendente para a revisão final:** definir o horário padrão quando o funcionário seleciona apenas uma data futura (por exemplo, início à meia-noite ou no horário de abertura). Para início no dia atual, a aplicação nunca poderá aceitar um horário anterior ao instante atual.
 - O intervalo é permitido, não obrigatório. A renovação contínua continua usando automaticamente o dia seguinte ao último dia incluído da matrícula anterior.
 - Uma matrícula futura pode ocupar qualquer intervalo livre entre períodos já agendados, desde que não se sobreponha a eles; não é obrigatório colocá-la sempre depois da última matrícula agendada.
 - A nova matrícula continua sujeita à regra aprovada de não sobreposição de períodos.
@@ -192,7 +192,7 @@ Regras aprovadas:
 
 - O sistema registra o instante efetivo do cancelamento em `cancelada_em`, com precisão de data e horário (`DATETIME`).
 - O evento deve identificar o funcionário responsável pela operação, usando o mecanismo de auditoria já existente no projeto.
-- O motivo do cancelamento pode ser registrado como justificativa opcional; não deve ser obrigatório para concluir a operação.
+- O motivo do cancelamento é opcional; sua ausência não impede a conclusão da operação.
 - Depois do cancelamento efetivo, a matrícula deixa de representar uma vigência ativa.
 - **Decisão aprovada:** uma nova matrícula pode começar no mesmo dia e exatamente no instante do cancelamento, ou em instante posterior. Não pode começar antes desse instante nem retroagir sobre período utilizado.
 - O início e o fim precisam ser comparados como instantes (`DATETIME`), não apenas como datas, para permitir essa transição intradiária sem sobreposição.
@@ -208,13 +208,13 @@ Trancamento, suspensão e congelamento ficam fora da primeira versão: exigem re
 
 Regras aprovadas:
 
-- Permitir que o funcionário escolha uma data de início para uma nova matrícula, desde que seja hoje ou uma data futura válida.
+- Permitir que o funcionário escolha um instante de início igual ou posterior ao momento atual no fuso da academia; quando a interface coletar somente a data, aplicar o horário padrão que ainda será definido na revisão final.
 - Permitir intervalos livres entre contratos; a data escolhida pode ocupar um espaço entre matrículas já agendadas, desde que não haja sobreposição.
 - Não permitir que o período de uma nova matrícula se sobreponha ao de qualquer outra matrícula não cancelada do mesmo aluno, seja vigente ou futura.
 - A regra de renovação contínua permanece automática: início no dia seguinte ao último dia incluído da matrícula vigente, salvo quando o funcionário optar por agendar outro início futuro válido.
 - Preservar matrículas anteriores no histórico; renovar não significa editar ou substituir o registro anterior.
 - Matrículas canceladas permanecem no histórico e não devem bloquear novos períodos depois de efetivamente canceladas.
-- Registros legados sem datas ficam como pendentes de revisão. Como não é possível determinar sua vigência, eles não devem ser tratados automaticamente como períodos livres nem como contratos vigentes; a regra para liberar novas matrículas nesses casos precisa ser definida no tratamento dos legados.
+- Registros legados sem datas ficam como `PENDENTE_REVISAO`. Enquanto existir vínculo legado pendente para o aluno, nenhuma nova matrícula pode ser criada, mesmo que o sistema não consiga determinar sua vigência. A liberação só ocorre após regularização com informações reais e auditadas, conforme a seção 6.
 
 A validação deve ocorrer no servidor e ser protegida contra solicitações concorrentes. Uma consulta simples antes do INSERT não é suficiente: a implementação deverá usar transação e estratégia de bloqueio apropriada, com testes concorrentes para garantir que duas requisições simultâneas não criem períodos incompatíveis.
 
@@ -337,7 +337,28 @@ As regras abaixo já foram aprovadas para orientar a implementação. O status n
 
 As regras marcadas como aprovadas compõem a base funcional do Bloco 03. Os pontos ainda pendentes devem ser resolvidos durante a revisão final da especificação, antes da criação das migrations. Recomendações não aprovadas não devem ser tratadas como requisitos.
 
-## 11. Dependências e limites do projeto
+## 11. Revisão de consistência das decisões aprovadas
+
+A primeira revisão cruzada encontrou e tratou os seguintes pontos:
+
+- Removida a duplicação de `cancelada_em` na lista conceitual de campos.
+- Alinhada a regra de legados: enquanto existir `PENDENTE_REVISAO`, novas matrículas ficam bloqueadas; não se considera o período legado livre por ausência de datas.
+- Alinhada a regra de início: a validação deve comparar o instante escolhido com o momento atual no fuso da academia, e não apenas comparar a data do calendário.
+- Confirmado que o motivo de cancelamento é opcional, conforme decisão já aprovada.
+
+Pontos técnicos que ainda precisam ser fechados antes das migrations:
+
+1. **Horário padrão de início:** decidir o horário aplicado quando o funcionário informa apenas uma data futura. Para início no dia atual, rejeitar qualquer instante anterior ao momento atual.
+2. **Regularização de legado:** definir o fluxo de tela e quais evidências/campos serão exigidos para converter `PENDENTE_REVISAO` em registro regularizado, sem sobrescrever o texto importado.
+3. **Estado da matrícula:** decidir quais estados serão persistidos e quais serão derivados dos instantes de início/fim; evitar divergência entre estado gravado e cálculo temporal.
+4. **Fuso horário:** confirmar o fuso IANA configurado para a academia e padronizar a forma de persistência/consulta entre PHP e MySQL/MariaDB.
+5. **Compatibilidade do banco:** confirmar a versão real do MySQL/MariaDB no XAMPP antes de definir `CHECK`, índices, constraints e estratégia de bloqueio.
+6. **Cancelamento de matrícula futura:** definir como apresentar uma matrícula cancelada antes do início (ela permanece no histórico como cancelada, sem período efetivamente utilizado).
+7. **Migração e idempotência:** detalhar como identificar cada aluno legado já migrado e garantir reexecução segura sem duplicar matrículas.
+
+A revisão não encontrou motivo para alterar as regras de negócio já aprovadas; os itens acima são detalhes de modelagem e operação ainda em aberto. Não iniciar migrations até resolvê-los e revisar novamente a especificação completa.
+
+## 12. Dependências e limites do projeto
 
 O Bloco 02 já implementou situação cadastral e inativação lógica, mas a inspeção em aparelho físico/navegador instalado continua pendente. A preparação deste documento não encerra formalmente o Bloco 02 e não autoriza merge da PR #1.
 
@@ -345,7 +366,7 @@ Este documento registra planejamento. O Bloco 03 só deve entrar em implementaç
 
 O FitControl permanece um projeto acadêmico/local. Não usar dados reais de alunos nem expor a aplicação publicamente.
 
-## 12. Referências técnicas
+## 13. Referências técnicas
 
 Documentação oficial do MySQL consultada para fundamentar as recomendações de modelagem e integridade:
 
