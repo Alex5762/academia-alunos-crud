@@ -99,7 +99,7 @@ O encerramento formal depende da inspeção em aparelho físico/navegador instal
 
 ### Bloco 03 — Planos e matrículas
 
-**Estado: dez regras de negócio e escopo sem trancamento/suspensão/congelamento aprovados; primeira revisão de consistência registrada; implementação não iniciada.**
+**Estado: onze regras de negócio e escopo sem trancamento/suspensão/congelamento aprovados; revisão de consistência em andamento; implementação não iniciada.**
 
 Documento de referência: [Pesquisa e proposta técnica do Bloco 03](bloco-03-planos-matriculas.md).
 
@@ -118,7 +118,7 @@ Escopo candidato:
 - A data final apresentada é inclusiva. Durações em meses usam meses de calendário; dias inexistentes no mês de destino são ajustados para o último dia válido. O dia de referência original é preservado nas renovações contínuas.
 - O cancelamento tem efeito imediato, preserva a matrícula no histórico e registra instante e funcionário responsável; o motivo é opcional.
 - Uma nova matrícula pode começar exatamente no mesmo instante do cancelamento anterior ou depois, nunca antes, desde que não haja sobreposição com o período efetivamente utilizado.
-- Alunos com vínculo legado pendente continuam consultáveis, mas não recebem nova matrícula até regularização com informações reais e verificáveis. A regularização deve ser auditada e preservar o texto original; sem dados confiáveis, o bloqueio permanece.
+- A revisão de cada legado deve resultar em uma das três conclusões auditadas: vínculo confirmado (`VINCULO_CONFIRMADO`), ausência comprovada de matrícula vigente (`LEGADO_SEM_VIGENCIA`) ou impossibilidade de confirmar (`PENDENTE_REVISAO`). Somente as duas primeiras, quando sustentadas por fonte confiável, liberam novas matrículas; a última mantém o bloqueio. A revisão registra funcionário, instante, conclusão e referência da fonte, sem inventar dados ou sobrescrever o texto original.
 - O funcionário pode escolher início hoje ou em data futura válida, inclusive criando intervalo entre contratos. A data escolhida não pode ser passada nem sobrepor qualquer matrícula não cancelada do mesmo aluno. A renovação contínua automática permanece como padrão quando não se escolhe outro início.
 - Um plano incompleto pode ser salvo como rascunho, mas só pode ser ativado e disponibilizado para novas matrículas quando todos os campos obrigatórios estiverem preenchidos e o preço for maior que zero. Planos em rascunho/inativos não podem ser contratados; nenhum preço é inventado.
 - Plano sem matrícula vinculada pode ser excluído; plano com histórico não pode ser apagado e deve ser desativado. Planos desativados continuam consultáveis no histórico, mas não recebem novas matrículas.
@@ -131,7 +131,7 @@ A implementação deverá proteger a regra de não sobreposição contra solicit
 
 **Fora do escopo aprovado:** trancamento, suspensão e congelamento.
 
-**Revisão de consistência:** foram corrigidas a duplicação do campo de cancelamento e a ambiguidade dos legados pendentes. Permanecem para fechar antes das migrations: fluxo auditado de regularização de legados, estados persistidos versus derivados, fuso horário IANA, versão MySQL/MariaDB, cancelamento antes do início e idempotência da migração.
+**Revisão de consistência:** foram corrigidas a duplicação do campo de cancelamento e a ambiguidade dos legados pendentes. O fluxo de revisão de legados com três resultados e seus requisitos de auditoria foi aprovado. Permanecem para fechar antes das migrations: detalhes operacionais da tela/referência de evidência, estados persistidos versus derivados, fuso horário IANA, versão MySQL/MariaDB, cancelamento antes do início e idempotência da migração.
 
 Não iniciar migrations ou implementação até revisar as decisões restantes e confirmar os critérios de aceite.
 
