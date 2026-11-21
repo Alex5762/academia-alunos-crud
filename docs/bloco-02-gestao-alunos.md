@@ -123,7 +123,7 @@ Manter `aluno_criado` e `aluno_editado`. Eventos históricos `aluno_excluido` ex
 - [x] Atualizar a CI para executar a migração após 001–003.
 - [x] Criar `tests/migration-student-status.sh`: inserir fixture legado antes da migração, conferir ID e dados preservados, confirmar `ativo = 1` nos registros existentes, testar o padrão em novo registro e verificar o índice.
 - [x] Validar a execução real do teste em CI (push #268 e PR #269, ambos verdes).
-- [ ] Ajustar consultas centrais para ler o status explicitamente.
+- [x] Ajustar consultas centrais e distribuição de planos para considerar o status.
 
 **Entrega:** banco novo e banco com registros anteriores suportam o status do aluno. A migração e o teste estão no branch; a entrega só será considerada validada após CI verde.
 
@@ -141,20 +141,22 @@ Manter `aluno_criado` e `aluno_editado`. Eventos históricos `aluno_excluido` ex
 
 ### Etapa 3 — Listagem, pesquisa e filtros
 
-- Incluir situação visível na tabela/lista.
-- Mostrar ativos por padrão.
-- Adicionar filtro Ativos/Inativos/Todos.
-- Pesquisar por nome, e-mail e telefone.
-- Preservar os filtros ao editar, consultar, ativar ou inativar e retornar à listagem.
+- [x] Incluir situação visível na tabela/lista.
+- [x] Mostrar ativos por padrão.
+- [x] Adicionar filtro Ativos/Inativos/Todos.
+- [x] Pesquisar por nome, e-mail e telefone.
+- [ ] Preservar os filtros ao editar e retornar à listagem.
+- [ ] Validar todos os cenários de consulta na CI.
 
-**Entrega:** equipe localiza registros e administra a situação sem perder o contexto da consulta.
+**Entrega:** equipe localiza registros e administra a situação. A preservação completa do contexto de busca durante edição fica como ajuste pendente desta etapa.
 
 ### Etapa 4 — Dashboard
 
-- Contar ativos e inativos separadamente.
-- Atualizar distribuição por plano para considerar somente ativos.
-- Garantir que pesquisa e filtro não alterem os indicadores globais.
-- Atualizar textos acessíveis, estados vazios e capturas visuais.
+- [x] Contar ativos e inativos separadamente.
+- [x] Atualizar distribuição por plano para considerar somente ativos.
+- [x] Calcular indicadores independentemente da pesquisa e do filtro da lista.
+- [ ] Revisar textos acessíveis, estados vazios e capturas visuais após a nova tabela.
+- [ ] Validar o dashboard na CI.
 
 **Entrega:** os indicadores refletem claramente a população ativa.
 
