@@ -127,10 +127,16 @@ A decisão entre persistir todos esses estados ou derivar `AGENDADA`, `ATIVA` e 
 
 ### 5.3 Renovação e histórico
 
+**Decisão aprovada para renovação antecipada:** a nova matrícula começa no dia seguinte ao último dia da matrícula vigente. A renovação não consome dias que já foram contratados e não cria sobreposição com a matrícula anterior.
+
+Regras:
+
 - Renovar significa criar uma nova matrícula, não sobrescrever a anterior.
 - O histórico deve manter o plano, o preço, a duração e o período de cada contratação.
-- Uma renovação antecipada precisa de regra explícita para decidir se começa imediatamente ou no dia seguinte ao término vigente.
-- Não permitir sobreposição de períodos sem uma regra de negócio que a justifique.
+- Se a matrícula vigente termina em 30/11, por exemplo, a renovação começa em 01/12.
+- O sistema deve calcular a data de início da renovação a partir da data final registrada, sem depender do dia em que o funcionário realizou a operação.
+- Essa regra cobre renovação antecipada contínua, sem intervalo solicitado. A possibilidade de escolher uma data futura com intervalo será uma regra separada, ainda não definida.
+- A nova matrícula continua sujeita à regra aprovada de não sobreposição de períodos.
 
 ### 5.4 Cancelamento e inativação
 
@@ -225,13 +231,11 @@ A estratégia definitiva deve decidir se a coluna antiga será mantida por um pe
 
 ## 10. Decisões que precisam ser aprovadas antes da implementação
 
-| Tema | Recomendação inicial | Situação |
-|---|---|---|
 | Tema | Regra registrada | Situação |
 |---|---|---|
 | Várias matrículas por aluno | Permitir histórico de várias matrículas, sem sobreposição de períodos não cancelados. | **Aprovada** |
 | Matrículas futuras | Permitir matrícula futura quando começar após o término da última matrícula não cancelada. | **Aprovada** |
-| Renovação antecipada | Definir o cálculo e a data de início da renovação. | Pendente |
+| Renovação antecipada | Nova matrícula começa no dia seguinte ao último dia da matrícula vigente. | **Aprovada** |
 | Data final | Definir inclusão do último dia e regra de calendário para fins de mês. | Pendente |
 | Cancelamento | Preservar o registro; definir efeito e momento em que deixa de bloquear novos períodos. | Parcialmente definida |
 | Trancamento/suspensão | Fora do primeiro escopo. | Proposta |
