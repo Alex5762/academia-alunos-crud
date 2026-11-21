@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-MYSQL_HOST="\${DB_HOST:-127.0.0.1}"
-MYSQL_PORT="\${DB_PORT:-3306}"
-MYSQL_USER="\${DB_USER:-root}"
-MYSQL_DATABASE="\${DB_NAME:-academia_alunos}"
+MYSQL_HOST="${DB_HOST:-127.0.0.1}"
+MYSQL_PORT="${DB_PORT:-3306}"
+MYSQL_USER="${DB_USER:-root}"
+MYSQL_DATABASE="${DB_NAME:-academia_alunos}"
 
 mysql_cli() {
-    MYSQL_PWD="\${DB_PASSWORD:-}" mysql \
+    MYSQL_PWD="${DB_PASSWORD:-}" mysql \
         --host="$MYSQL_HOST" \
         --port="$MYSQL_PORT" \
         --user="$MYSQL_USER" \
