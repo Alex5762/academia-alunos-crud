@@ -31,6 +31,104 @@ O desenho recomendado separa:
 
 Essa separação evita que a edição do preço ou do nome de um plano altere retroativamente o histórico dos alunos. O processo de revisão dos registros antigos terá um registro de controle próprio, separado de `matriculas`; ele não representa contrato nem gera vigência por si só.
 
+### 4.6 Relacionamentos e cardinalidade
+
+O modelo final mantém apenas os relacionamentos necessários ao escopo:
+
+| Origem | Relação | Destino | Regra |
+|---|---|---|---|
+| `alunos` | 1:N | `matriculas` | Um aluno pode ter várias matrículas históricas; os períodos efetivos não podem se sobrepor. |
+| `planos` | 1:N | `matriculas` | Um plano pode aparecer em várias matrículas; `plano_id` pode ser nulo somente quando o vínculo legado não puder ser associado com segurança ao catálogo. |
+| `alunos` | 1:0..1 | `revisoes_legado` | Cada aluno do conjunto inicial recebe um controle de revisão; alunos criados depois não recebem esse registro automaticamente. |
+| `revisoes_legado` | 1:N | `revisoes_legado_eventos` | Cada decisão humana cria um evento histórico imutável na aplicação. |
+| `usuarios` | 1:N | `revisoes_legado_eventos` | Toda decisão humana identifica o funcionário autenticado. |
+| `usuarios` | 1:N | `auditoria` | A trilha geral identifica quem criou, alterou, cancelou ou revisou; eventos automáticos podem ter autor nulo. |
+
+```text
+alunos 1 ───── N matriculas N ───── 0..1 planos
+   │
+   └────── 0..1 revisoes_legado 1 ───── N revisoes_legado_eventos
+                                             │
+usuarios 1 ──────────────────────────────────┘
+
+usuarios 1 ───── N auditoria
+```
+
+A relação opcional matrícula-plano existe apenas para legados sem correspondência segura no catálogo. Matrículas novas sempre exigem plano ativo. Não criar relação direta entre aluno e plano: o vínculo é representado por `matriculas`.
+
+### 4.7 Tipos, nulabilidade, índices e integridade sugeridos
+
+Os tipos são uma proposta física simples, alinhada aos identificadores atuais (`alunos.id` e `usuarios.id` são `INT UNSIGNED`; `auditoria.id` é `BIGINT UNSIGNED`). Confirmar a versão real do MySQL/MariaDB antes de fechar constraints.
+
+**`planos`**
+
+| Campo | Tipo sugerido | Regra |
+|---|---|---|
+| `id` | `INT UNSIGNED` | PK, auto incremento. |
+| `nome` | `VARCHAR(100)` | Obrigatório. |
+| `descricao` | `VARCHAR(255)` | Opcional. |
+| `duracao_valor` | `SMALLINT UNSIGNED` | Nulo enquanto rascunho incompleto; maior que zero para ativação. |
+| `duracao_unidade` | `ENUM('DIA','SEMANA','MES')` | Nulo enquanto rascunho incompleto. |
+| `valor_atual` | `DECIMAL(10,2)` | Nulo enquanto rascunho; maior que zero para ativação. |
+| `situacao` | `ENUM('RASCUNHO','ATIVO','INATIVO')` | Obrigatório, padrão `RASCUNHO`. |
+| `created_at`, `updated_at` | `DATETIME` | Metadados com padrão/atualização pelo banco. |
+
+**`matriculas`**
+
+| Campo | Tipo sugerido | Regra |
+|---|---|---|
+| `id` | `BIGINT UNSIGNED` | PK, compatível com `auditoria.entidade_id`. |
+| `aluno_id` | `INT UNSIGNED` | FK obrigatória para `alunos.id`. |
+| `plano_id` | `INT UNSIGNED` | FK para `planos.id`; nulo somente em legado sem correspondência segura. |
+| `plano_nome_contratado` | `VARCHAR(100)` | Cópia do nome na contratação; nulo somente se desconhecido em legado. |
+| `valor_contratado` | `DECIMAL(10,2)` | Cópia do preço; nulo somente se desconhecido em legado. |
+| `duracao_contratada_valor` | `SMALLINT UNSIGNED` | Cópia da duração; nulo somente se desconhecido em legado. |
+| `duracao_contratada_unidade` | `ENUM('DIA','SEMANA','MES')` | Cópia da unidade; nulo somente se desconhecida em legado. |
+| `inicio_em`, `fim_exclusivo_em` | `DATETIME` | Obrigatórios em UTC; `fim_exclusivo_em > inicio_em`. |
+| `dia_referencia_calendario` | `TINYINT UNSIGNED` | 1–31 para mês; nulo para dia/semana ou quando não comprovado no legado. |
+| `cancelada_em` | `DATETIME` | Nulo enquanto não cancelada; instante UTC do cancelamento. |
+| `origem` | `ENUM('SISTEMA','LEGADO')` | Obrigatório, padrão `SISTEMA`. |
+| `motivo_cancelamento` | `VARCHAR(255)` | Opcional. |
+| `created_at` | `DATETIME` | Metadado de criação. |
+
+**`revisoes_legado`**
+
+| Campo | Tipo sugerido | Regra |
+|---|---|---|
+| `id` | `BIGINT UNSIGNED` | PK, auto incremento. |
+| `aluno_id_origem` | `INT UNSIGNED` | FK para `alunos.id`, obrigatório e UNIQUE. |
+| `plano_texto_original` | `VARCHAR(40)` | Cópia exata do campo de origem. |
+| `resultado_atual` | `ENUM('VINCULO_CONFIRMADO','LEGADO_SEM_VIGENCIA','PENDENTE_REVISAO')` | Obrigatório, padrão `PENDENTE_REVISAO`. |
+| `fonte_referencia` | `VARCHAR(255)` | Fonte da última decisão; nula antes da primeira revisão. |
+| `created_at`, `updated_at` | `DATETIME` | Metadados do controle. |
+
+**`revisoes_legado_eventos`**
+
+| Campo | Tipo sugerido | Regra |
+|---|---|---|
+| `id` | `BIGINT UNSIGNED` | PK, auto incremento. |
+| `revisao_legado_id` | `BIGINT UNSIGNED` | FK para `revisoes_legado.id`. |
+| `usuario_id` | `INT UNSIGNED` | FK para `usuarios.id`; obrigatório em decisão humana. |
+| `resultado_anterior` | Mesmo ENUM dos resultados | Nulo apenas no primeiro evento humano. |
+| `resultado_novo` | Mesmo ENUM dos resultados | Obrigatório. |
+| `fonte_referencia` | `VARCHAR(255)` | Referência da evidência; quando o resultado for pendente por falta de fonte, explicar isso em observações. |
+| `observacoes` | `TEXT` | Opcional. |
+| `criado_em` | `DATETIME` | Metadado do evento, seguindo a convenção atual da auditoria geral. |
+
+Índices mínimos:
+- `planos(situacao, nome)`, para listar opções disponíveis.
+- `matriculas(aluno_id, inicio_em, fim_exclusivo_em)`, para histórico e sobreposição por aluno.
+- `matriculas(plano_id)`, para verificar vínculos antes de excluir/desativar plano.
+- `revisoes_legado(aluno_id_origem)` UNIQUE.
+- `revisoes_legado_eventos(revisao_legado_id, criado_em)`, para a linha do tempo.
+
+Usar FKs com `ON DELETE RESTRICT` nas relações históricas. Não usar exclusão em cascata para apagar contratos ou auditoria. O aluno já é inativado logicamente; plano só pode ser excluído sem matrícula vinculada, caso contrário fica inativo.
+
+Preço positivo, duração positiva, consistência entre duração/unidade e `fim_exclusivo_em > inicio_em` são validados no PHP. Usar `CHECK` no banco somente se a versão instalada garantir seu enforcement. Não adicionar UNIQUE ao nome do plano sem necessidade demonstrada.
+
+**Simplificação para o portfólio:** não criar tabela genérica de eventos de matrícula nem framework de auditoria próprio. Usar `auditoria` para criação/edição/cancelamento comuns de planos e matrículas. Manter `revisoes_legado_eventos` porque esse fluxo precisa registrar resultado anterior/novo, fonte e observações.
+
+
 ## 4. Modelo de dados proposto
 
 O modelo abaixo é conceitual. Os nomes, tamanhos, nulabilidade, índices, restrições e estratégia de migração precisam ser revisados antes da migration.
@@ -139,7 +237,7 @@ Regras:
 - Cada revisão humana insere um novo evento; não atualiza nem apaga eventos anteriores.
 - A mesma transação atualiza `revisoes_legado.resultado_atual`, grava o evento especializado e insere o evento correspondente na tabela geral `auditoria`.
 - A transação só confirma se as três gravações forem concluídas. Em falha, fazer rollback para que o estado atual e os dois históricos não divirjam.
-- A linha inicial criada automaticamente pela migração como `PENDENTE_REVISAO` não deve inventar funcionário nem gerar uma falsa decisão humana. A origem da criação fica identificada pela migration registrada em `schema_migrations`.
+- A linha inicial criada automaticamente pela migração como `PENDENTE_REVISAO` não deve inventar funcionário nem gerar uma falsa decisão humana. A origem fica identificada pela migration SQL numerada e, se necessário, por um evento automático em `auditoria` com `usuario_id = NULL`.
 - A aplicação não oferece edição ou exclusão de eventos históricos. Correções são novos eventos de revisão, preservando a trilha anterior.
 
 ### 4.5 Separar situação do aluno e situação da matrícula
@@ -306,6 +404,14 @@ Em qualquer resultado, a revisão deve registrar o funcionário responsável, o 
 
 Estratégia de migração e regularização:
 
+**Sequência simples sugerida (arquivos ainda não criados):**
+
+- `005_plans_enrollments_schema.sql`: DDL para `planos`, `matriculas`, `revisoes_legado` e `revisoes_legado_eventos`, índices e FKs.
+- `006_import_legacy_review.sql`: somente carga DML do conjunto inicial de alunos para `revisoes_legado` e, se adotado, o evento geral de importação. Executar a carga em transação.
+- Manter as migrations 001–004 intactas; README e CI devem passar a executar 005 e 006 depois da 004 quando forem implementadas.
+
+O DDL do MySQL/MariaDB pode confirmar implicitamente; após 005, conferir as tabelas com `SHOW CREATE TABLE` e metadados. Se falhar parcialmente, inspecionar o que foi criado e corrigir manualmente antes de continuar. Não criar runner genérico para esse cenário neste portfólio.
+
 1. Preservar integralmente a coluna `alunos.plano` durante a transição.
 2. Criar as novas estruturas sem exigir que dados históricos desconhecidos sejam preenchidos.
 3. Para cada aluno que compõe o conjunto inicial da migração, criar exatamente um registro em `revisoes_legado`, copiando o valor original de `alunos.plano` para `plano_texto_original` sem alterar a coluna de origem.
@@ -428,8 +534,9 @@ A coluna antiga será mantida durante a transição. Sua remoção só poderá s
 - [ ] Solicitações concorrentes não criam vínculos incompatíveis, usando bloqueio da linha-pai do aluno e ordem de locks consistente.
 - [ ] Operações simultâneas de criação de matrícula e desativação/exclusão do plano são serializadas pelo bloqueio da linha do plano.
 - [ ] Deadlock ou timeout provoca rollback integral e não deixa evento de sucesso parcial.
-- [ ] O runner impede duas migrations simultâneas, valida checksums e retoma DDL parcial sem duplicar dados.
-- [ ] Migration estrutural não promete rollback de DDL; a carga de dados DML é revertida por transação.
+- [ ] As migrations SQL são numeradas e executadas na ordem documentada no XAMPP e na CI.
+- [ ] O DDL das novas tabelas é separado da carga inicial DML; a carga é transacional e pode ser reexecutada em teste sem duplicar nem sobrescrever revisões.
+- [ ] Em falha parcial de DDL, inspecionar a estrutura real do banco antes de corrigir/continuar; não presumir rollback automático nem executar novamente às cegas.
 - [ ] Todas as operações de escrita exigem autenticação, autorização e CSRF.
 - [ ] Testes automatizados e regressão dos módulos existentes passam.
 - [ ] Documentação local e README são atualizados.
@@ -450,7 +557,7 @@ As regras abaixo já foram aprovadas para orientar a implementação. O status n
 | Nova matrícula no dia do cancelamento | Permitir início no mesmo instante do cancelamento ou depois, com comparação por horário e sem sobreposição. | **Aprovada** |
 | Trancamento/suspensão/congelamento | Fora do escopo aprovado da primeira versão do Bloco 03. | **Fora de escopo — aprovado** |
 | Revisão de legados | Exigir um resultado auditado: `VINCULO_CONFIRMADO` com dados comprovados; `LEGADO_SEM_VIGENCIA` com evidência de ausência de contrato vigente; ou `PENDENTE_REVISAO` quando não for possível confirmar. Preservar o texto original e nunca inventar condições. | **Aprovada** |
-| Migração idempotente | Identificar cada registro inicial pela referência única do aluno de origem; executar a carga em transação e preservar revisões/auditorias já existentes em reexecuções. | **Aprovada** |
+| Migração de legados | Carga inicial identificada pelo aluno de origem, protegida por UNIQUE e executada em transação; reexecução não duplica nem sobrescreve revisão/auditoria. | **Aprovada** |
 | Plano sem preço ou cadastro incompleto | Permitir salvar como rascunho; só ativar e disponibilizar para contratação com dados obrigatórios completos e preço maior que zero. | **Aprovada** |
 | Exclusão de plano | Permitir exclusão física somente sem matrículas vinculadas; com histórico, bloquear exclusão e permitir desativação. | **Aprovada** |
 | Horário padrão de início | Data futura sem horário: 00:00; hoje sem horário: instante atual; permitir horário posterior hoje, nunca anterior ao momento atual. | **Aprovada** |
@@ -482,7 +589,7 @@ Pontos técnicos que ainda precisam ser fechados antes das migrations:
 3. **Implementação e validação do fuso aprovado:** aplicar `America/Sao_Paulo` na camada de data/hora, persistir instantes UTC nos campos `DATETIME` conforme a convenção documentada e testar conversões de entrada/saída no XAMPP. A decisão funcional de fuso e armazenamento já está aprovada.
 4. **Compatibilidade do banco:** confirmar a versão real do MySQL/MariaDB no XAMPP antes de definir `CHECK`, índices, constraints e estratégia de bloqueio.
 5. **Cancelamento de matrícula futura:** comportamento aprovado; implementar e testar cancelamento antes do início, exatamente no início e depois do início, preservando histórico e tratando corretamente o intervalo efetivo vazio.
-6. **Implementação e validação da migration idempotente:** aplicar a referência única do aluno, transação, tratamento específico de conflito e testes de reexecução sem sobrescrever a revisão ou duplicar auditoria. A estratégia funcional já está aprovada.
+6. **Implementação e validação da carga inicial de legados:** aplicar a referência única do aluno, transação e testes de reexecução sem sobrescrever revisões ou duplicar auditoria. Usar migrations SQL numeradas na ordem da CI/README; não construir runner próprio ou tabela de checksums nesta versão.
 7. **Compatibilidade de timestamps de auditoria:** verificar a convenção histórica de `auditoria.criado_em` e definir como os novos eventos armazenarão UTC sem reinterpretar incorretamente logs existentes.
 8. **Aplicação da elegibilidade de cancelamento:** a regra está aprovada; implementar a revalidação da situação dentro da transação e testar concorrência entre cancelamento e vencimento natural.
 
