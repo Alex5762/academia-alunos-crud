@@ -185,7 +185,7 @@ try {
   await sessionWarningPage.goto(baseUrl + "/index.php", { waitUntil: "networkidle" });
 
   const sessionWarning = sessionWarningPage.locator("#fitcontrol-session-warning");
-  await sessionWarning.waitFor();
+  await sessionWarning.waitFor({ state: "attached" });
   if (!(await sessionWarning.isHidden())) {
     throw new Error("O aviso de sessão não deveria aparecer logo após o login.");
   }
