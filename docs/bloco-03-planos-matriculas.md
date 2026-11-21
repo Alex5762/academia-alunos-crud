@@ -142,9 +142,17 @@ A decisão entre persistir todos esses estados ou derivar `AGENDADA`, `ATIVA` e 
 
 ### 5.5 Uma ou várias matrículas simultâneas
 
-Recomendação inicial: impedir períodos sobrepostos para um mesmo aluno na primeira versão, até existir uma necessidade real de múltiplos contratos simultâneos.
+**Decisão aprovada:** um aluno pode possuir várias matrículas no histórico, mas não pode ter duas matrículas não canceladas com períodos de vigência sobrepostos na primeira versão.
 
-Essa regra precisa ser validada como requisito de negócio. Uma verificação feita apenas com uma consulta simples pode sofrer corrida entre solicitações concorrentes; a implementação deve proteger a operação com transação e estratégia de bloqueio apropriada, além de testes concorrentes.
+Regras aprovadas:
+
+- Permitir novas matrículas futuras, desde que o início seja posterior ao término da matrícula vigente ou da última matrícula agendada.
+- Não permitir que o período de uma nova matrícula se sobreponha ao de outra matrícula não cancelada do mesmo aluno.
+- Preservar matrículas anteriores no histórico; renovar não significa editar ou substituir o registro anterior.
+- Matrículas canceladas permanecem no histórico e não devem bloquear novos períodos depois de efetivamente canceladas.
+- Registros legados sem datas ficam como pendentes de revisão. Como não é possível determinar sua vigência, eles não devem ser tratados automaticamente como períodos livres nem como contratos vigentes; a regra para liberar novas matrículas nesses casos precisa ser definida no tratamento dos legados.
+
+A validação deve ocorrer no servidor e ser protegida contra solicitações concorrentes. Uma consulta simples antes do INSERT não é suficiente: a implementação deverá usar transação e estratégia de bloqueio apropriada, com testes concorrentes para garantir que duas requisições simultâneas não criem períodos incompatíveis.
 
 ## 6. Migração dos alunos existentes
 
@@ -219,16 +227,19 @@ A estratégia definitiva deve decidir se a coluna antiga será mantida por um pe
 
 | Tema | Recomendação inicial | Situação |
 |---|---|---|
-| Vários planos simultâneos por aluno | Não permitir sobreposição na primeira versão. | Pendente |
-| Renovação antecipada | Iniciar no dia seguinte ao fim da matrícula vigente. | Pendente |
-| Data final | Inclusiva; definir regra de calendário para fins de mês. | Pendente |
-| Cancelamento | Registrar evento e preservar o contrato; definir efeito na vigência. | Pendente |
-| Trancamento/suspensão | Fora do primeiro escopo. | Pendente |
-| Legados sem preço e datas | Preservar como pendentes de revisão, sem inventar dados. | Pendente |
-| Plano sem preço definido | Não permitir nova contratação até completar o cadastro. | Pendente |
-| Exclusão de plano | Desativar; impedir exclusão quando houver histórico. | Pendente |
+| Tema | Regra registrada | Situação |
+|---|---|---|
+| Várias matrículas por aluno | Permitir histórico de várias matrículas, sem sobreposição de períodos não cancelados. | **Aprovada** |
+| Matrículas futuras | Permitir matrícula futura quando começar após o término da última matrícula não cancelada. | **Aprovada** |
+| Renovação antecipada | Definir o cálculo e a data de início da renovação. | Pendente |
+| Data final | Definir inclusão do último dia e regra de calendário para fins de mês. | Pendente |
+| Cancelamento | Preservar o registro; definir efeito e momento em que deixa de bloquear novos períodos. | Parcialmente definida |
+| Trancamento/suspensão | Fora do primeiro escopo. | Proposta |
+| Legados sem preço e datas | Preservar como pendentes de revisão, sem inventar dados. | Proposta |
+| Plano sem preço definido | Não permitir nova contratação até completar o cadastro. | Proposta |
+| Exclusão de plano | Desativar; impedir exclusão quando houver histórico. | Proposta |
 
-Estas recomendações são uma base para discussão, não decisões de negócio já aprovadas.
+As regras aprovadas podem ser usadas como base para a especificação. Os itens pendentes ou propostos ainda precisam ser validados antes da implementação.
 
 ## 11. Dependências e limites do projeto
 
