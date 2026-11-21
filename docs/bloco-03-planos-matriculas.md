@@ -83,7 +83,7 @@ Campos candidatos:
 | `fim_exclusivo_em` | Limite final exclusivo (`DATETIME`): a matrícula deixa de valer exatamente neste instante. Para vigência normal, corresponde à meia-noite seguinte ao último dia de calendário inclusivo. |
 | `dia_referencia_calendario` | Dia original do mês usado no cálculo de durações mensais e preservado nas renovações contínuas. |
 | `cancelada_em` | Instante exato em que o cancelamento produziu efeito, quando aplicável. |
-| `situacao` | Estado operacional ou de revisão da matrícula. |
+| `cancelada_em` | Quando preenchido, registra que a matrícula foi cancelada; o evento também deve identificar o funcionário no mecanismo de auditoria. Não é necessário persistir `AGENDADA`, `ATIVA` ou `VENCIDA`. |
 | `origem` | Distingue registros migrados dos criados pelo fluxo normal. |
 | `motivo_cancelamento` | Justificativa opcional. |
 | `created_at` | Momento em que o registro foi criado. |
@@ -101,17 +101,20 @@ Regras propostas:
 
 `alunos.ativo` descreve o cadastro da pessoa. A situação da matrícula descreve o contrato e sua vigência. São dimensões independentes.
 
-Uma primeira proposta para a matrícula:
+**Decisão aprovada — estados persistidos versus derivados:** não persistir `AGENDADA`, `ATIVA` nem `VENCIDA`. Esses estados serão calculados em tempo de consulta, comparando o instante atual com `inicio_em` e com o limite efetivo da vigência, sempre no fuso configurado da academia.
 
-| Situação | Interpretação |
+| Situação apresentada | Como determinar |
 |---|---|
-| `AGENDADA` | O início ainda está no futuro. |
-| `ATIVA` | Está dentro do período de vigência e não foi cancelada. |
-| `VENCIDA` | A data final já passou. |
-| `CANCELADA` | O cancelamento foi registrado. |
-| `PENDENTE_REVISAO` | Registro legado sem dados suficientes para determinar a vigência ou as condições. |
+| `CANCELADA` | `cancelada_em` está preenchido; tem prioridade sobre os estados temporais, inclusive se o cancelamento ocorreu antes do início agendado. |
+| `AGENDADA` | Não está cancelada e o instante atual é anterior a `inicio_em`. |
+| `ATIVA` | Não está cancelada e o instante atual é igual ou posterior a `inicio_em`, mas anterior ao limite efetivo de término. |
+| `VENCIDA` | Não está cancelada e o instante atual é igual ou posterior ao limite efetivo de término. |
 
-A decisão entre persistir todos esses estados ou derivar `AGENDADA`, `ATIVA` e `VENCIDA` a partir das datas deve ser tomada na modelagem final. Recomenda-se evitar estados derivados que precisem ser atualizados manualmente e possam ficar inconsistentes. `CANCELADA` e `PENDENTE_REVISAO` representam condições que não podem ser inferidas somente das datas.
+O cancelamento é persistido pelo instante `cancelada_em` e pelo evento de auditoria que identifica o funcionário responsável; não precisa de um segundo estado textual que possa divergir desse evento.
+
+Os resultados da revisão de legados (`VINCULO_CONFIRMADO`, `LEGADO_SEM_VIGENCIA` e `PENDENTE_REVISAO`) **não são situações da matrícula operacional**. São conclusões de um processo de revisão legado e devem ser armazenadas no registro próprio desse processo, com sua auditoria. Um legado só origina uma matrícula operacional quando as condições necessárias para determinar a vigência forem comprovadas. Um legado confirmado sem matrícula vigente não cria uma matrícula fictícia.
+
+Essa separação evita tarefas periódicas apenas para atualizar estados temporais e impede que uma conclusão administrativa sobre dados antigos seja confundida com a vigência de um contrato.
 
 ## 5. Regras de negócio propostas
 
@@ -217,7 +220,7 @@ Regras aprovadas:
 - A regra de renovação contínua permanece automática: início no dia seguinte ao último dia incluído da matrícula vigente, salvo quando o funcionário optar por agendar outro início futuro válido.
 - Preservar matrículas anteriores no histórico; renovar não significa editar ou substituir o registro anterior.
 - Matrículas canceladas permanecem no histórico e não devem bloquear novos períodos depois de efetivamente canceladas.
-- Registros legados sem datas ficam como `PENDENTE_REVISAO`. Enquanto existir vínculo legado pendente para o aluno, nenhuma nova matrícula pode ser criada, mesmo que o sistema não consiga determinar sua vigência. A liberação só ocorre após regularização com informações reais e auditadas, conforme a seção 6.
+- Enquanto existir revisão de legado com resultado `PENDENTE_REVISAO` para o aluno, nenhuma nova matrícula pode ser criada, mesmo que o sistema não consiga determinar a vigência do vínculo antigo. Esse resultado pertence ao registro de revisão legado, não à situação temporal da matrícula operacional. A liberação só ocorre após conclusão auditada como `VINCULO_CONFIRMADO` ou `LEGADO_SEM_VIGENCIA`, conforme a seção 6.
 
 A validação deve ocorrer no servidor e ser protegida contra solicitações concorrentes. Uma consulta simples antes do INSERT não é suficiente: a implementação deverá usar transação e estratégia de bloqueio apropriada, com testes concorrentes para garantir que duas requisições simultâneas não criem períodos incompatíveis.
 
@@ -240,12 +243,12 @@ Estratégia de migração e regularização:
 1. Preservar integralmente a coluna `alunos.plano` durante a transição.
 2. Criar as novas tabelas sem exigir que dados históricos desconhecidos sejam preenchidos.
 3. Para cada aluno existente, criar um registro de histórico legado, mantendo o texto original em `plano_nome_contratado`.
-4. Inicialmente, marcar a origem como migração legada e a situação como `PENDENTE_REVISAO`.
+4. Criar para cada aluno um registro de revisão de legado com origem de migração e resultado inicial `PENDENTE_REVISAO`. Esse registro não deve ser confundido com uma matrícula operacional.
 5. Deixar `plano_id` nulo quando não houver correspondência inequívoca com um plano do catálogo.
 6. Manter preço, início, término e duração desconhecidos como `NULL`; nunca inferir preço, datas ou vigência.
 7. Não criar planos de catálogo com dados inventados apenas para satisfazer o relacionamento.
-8. Disponibilizar o fluxo de revisão com os três resultados descritos acima. Para `VINCULO_CONFIRMADO`, registrar somente os dados sustentados pela evidência e criar uma matrícula operacional apenas quando a vigência puder ser determinada com segurança.
-9. Para `LEGADO_SEM_VIGENCIA`, manter o registro legado consultável com o resultado auditado, sem criar uma matrícula ativa ou inventar condições históricas; liberar novas matrículas após a confirmação.
+8. Disponibilizar o fluxo de revisão com os três resultados descritos acima. Para `VINCULO_CONFIRMADO`, registrar somente os dados sustentados pela evidência e criar uma matrícula operacional apenas quando as condições necessárias para determinar sua vigência estiverem comprovadas.
+9. Para `LEGADO_SEM_VIGENCIA`, manter o registro de revisão consultável, sem criar matrícula operacional fictícia; liberar novas matrículas após a confirmação auditada.
 10. Para `PENDENTE_REVISAO`, manter o bloqueio de novas matrículas até que uma revisão posterior baseada em evidências permita concluir o caso.
 11. Depois da migração, comparar a quantidade de alunos antes/depois, conferir IDs e texto original, identificar duplicações e executar o teste novamente para verificar a proteção contra reprocessamento.
 
@@ -304,7 +307,7 @@ A coluna antiga será mantida durante a transição. Sua remoção só poderá s
 - [ ] Revisão de legado permite concluir somente um dos três resultados: `VINCULO_CONFIRMADO`, `LEGADO_SEM_VIGENCIA` ou `PENDENTE_REVISAO`.
 - [ ] `VINCULO_CONFIRMADO` exige evidência confiável, registra apenas dados comprovados e só libera matrícula operacional quando a vigência puder ser determinada.
 - [ ] `LEGADO_SEM_VIGENCIA` exige evidência confiável de ausência de contrato vigente, libera nova matrícula e não inventa datas, preço, duração ou matrícula histórica.
-- [ ] `PENDENTE_REVISAO` permanece como resultado quando não há evidência suficiente e continua bloqueando novas matrículas.
+- [ ] `PENDENTE_REVISAO` permanece como resultado da revisão legada quando não há evidência suficiente e continua bloqueando novas matrículas; não é tratado como estado temporal de matrícula operacional.
 - [ ] Todos os resultados registram funcionário, instante, conclusão e referência da fonte consultada.
 - [ ] A revisão nunca sobrescreve o texto original importado de `alunos.plano`.
 - [ ] Matrícula nova exige todos os dados obrigatórios.
@@ -364,11 +367,13 @@ A primeira revisão cruzada encontrou e tratou os seguintes pontos:
 - Alinhada a regra de início: a validação compara o instante escolhido com o momento atual no fuso da academia, e não apenas a data do calendário.
 - Aprovado o padrão de horário: data futura sem horário inicia às 00:00; hoje usa o instante atual; horário posterior hoje pode ser escolhido, sem permitir retroatividade.
 - Confirmado que o motivo de cancelamento é opcional, conforme decisão já aprovada.
+- Aprovado que `AGENDADA`, `ATIVA` e `VENCIDA` serão derivados em tempo de consulta; o cancelamento será representado por `cancelada_em` e auditoria.
+- Separados os resultados da revisão de legados dos estados da matrícula operacional; a revisão pendente bloqueia novas matrículas, mas não será armazenada como estado de contrato.
 
 Pontos técnicos que ainda precisam ser fechados antes das migrations:
 
 1. **Implementação operacional da revisão de legado:** projetar a tela/fluxo, definir como a referência da fonte será registrada e garantir que cada uma das três conclusões produza o estado e o desbloqueio corretos. A regra de negócio e os dados mínimos de auditoria já estão aprovados.
-2. **Estado da matrícula:** decidir quais estados serão persistidos e quais serão derivados dos instantes de início/fim; evitar divergência entre estado gravado e cálculo temporal.
+2. **Implementação dos estados da matrícula:** definir a consulta/camada de domínio que calcula `AGENDADA`, `ATIVA` e `VENCIDA`, e garantir que `CANCELADA` derive de `cancelada_em` mais auditoria. A decisão funcional de persistir versus derivar já está aprovada.
 3. **Fuso horário:** confirmar o fuso IANA configurado para a academia e padronizar a forma de persistência/consulta entre PHP e MySQL/MariaDB.
 4. **Compatibilidade do banco:** confirmar a versão real do MySQL/MariaDB no XAMPP antes de definir `CHECK`, índices, constraints e estratégia de bloqueio.
 5. **Cancelamento de matrícula futura:** definir como apresentar uma matrícula cancelada antes do início (ela permanece no histórico como cancelada, sem período efetivamente utilizado).
