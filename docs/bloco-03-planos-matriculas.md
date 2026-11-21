@@ -164,7 +164,11 @@ Em cancelamento intradiário, o limite efetivo passa a ser o próprio `cancelada
 Para durações em dias ou semanas, calcular conforme a unidade contratada e aplicar a mesma convenção de último dia inclusivo e limite exclusivo.
 
 - Usar `DATETIME` para os instantes de vigência e de cancelamento.
-- Definir um único fuso horário da academia na configuração da aplicação e usá-lo em todos os cálculos, gravações e exibições. Não depender do fuso padrão do servidor ou da sessão do banco.
+- **Decisão aprovada — fuso oficial:** usar o identificador IANA `America/Sao_Paulo` como fuso oficial da academia, centralizado na configuração da aplicação.
+- **Decisão aprovada — persistência de instantes:** manter `inicio_em`, `fim_exclusivo_em` e `cancelada_em` como `DATETIME`, armazenando neles valores UTC por convenção explícita. O tipo `DATETIME` não realiza conversão automática de fuso; essa conversão deve ser feita na aplicação. Diferentemente, o MySQL converte `TIMESTAMP` entre o fuso da sessão e UTC, por isso não misturar as duas convenções nesses campos ([documentação MySQL sobre tipos temporais](https://dev.mysql.com/doc/refman/8.0/en/datetime.html) e [suporte a fusos horários](https://dev.mysql.com/doc/refman/8.0/en/time-zone-support.html)).
+- Interpretar datas e horários informados pelos funcionários no fuso `America/Sao_Paulo`. Fazer cálculos de calendário (dias, semanas, meses e limites de meia-noite) nesse fuso local; depois converter o instante resultante para UTC antes de persistir.
+- Ao consultar, interpretar os valores armazenados como UTC e convertê-los para `America/Sao_Paulo` antes de apresentar ou aplicar regras de calendário.
+- Usar objetos de data/hora com fuso explícito na aplicação. Não depender do fuso padrão do servidor, do dispositivo do funcionário ou de conversões implícitas da sessão do banco.
 - Não usar uma data fictícia para preencher informações desconhecidas.
 - Testar virada de mês, fevereiro, ano bissexto, horário do cancelamento, início no mesmo instante do encerramento anterior e sequências de renovações.
 - Centralizar o cálculo em uma função de domínio, coberta por testes determinísticos; não espalhar a regra entre telas ou consultas.
@@ -323,7 +327,9 @@ A coluna antiga será mantida durante a transição. Sua remoção só poderá s
 - [ ] Uma nova matrícula pode começar exatamente no mesmo instante do cancelamento anterior (por exemplo, às 14:00), sem sobreposição.
 - [ ] Uma nova matrícula que começa um instante antes do limite efetivo é rejeitada.
 - [ ] Períodos adjacentes com `fim_exclusivo_em` igual ao `inicio_em` seguinte são aceitos.
-- [ ] Comparações e exibições respeitam o fuso horário configurado da academia.
+- [ ] Datas e horários informados na operação são interpretados em `America/Sao_Paulo`, e os instantes são convertidos para UTC antes de serem persistidos em `DATETIME`.
+- [ ] A leitura interpreta os valores `DATETIME` como UTC e converte para `America/Sao_Paulo` na apresentação; não ocorre conversão implícita duplicada.
+- [ ] Cálculos de calendário são executados no fuso `America/Sao_Paulo` antes da conversão do instante para UTC.
 - [ ] Inativar o aluno não cancela automaticamente suas matrículas.
 - [ ] Ao informar apenas uma data futura, a matrícula começa às 00:00 no fuso horário da academia.
 - [ ] Ao informar apenas a data de hoje, o início padrão corresponde ao instante atual.
@@ -374,7 +380,7 @@ Pontos técnicos que ainda precisam ser fechados antes das migrations:
 
 1. **Implementação operacional da revisão de legado:** projetar a tela/fluxo, definir como a referência da fonte será registrada e garantir que cada uma das três conclusões produza o estado e o desbloqueio corretos. A regra de negócio e os dados mínimos de auditoria já estão aprovados.
 2. **Implementação dos estados da matrícula:** definir a consulta/camada de domínio que calcula `AGENDADA`, `ATIVA` e `VENCIDA`, e garantir que `CANCELADA` derive de `cancelada_em` mais auditoria. A decisão funcional de persistir versus derivar já está aprovada.
-3. **Fuso horário:** confirmar o fuso IANA configurado para a academia e padronizar a forma de persistência/consulta entre PHP e MySQL/MariaDB.
+3. **Implementação e validação do fuso aprovado:** aplicar `America/Sao_Paulo` na camada de data/hora, persistir instantes UTC nos campos `DATETIME` conforme a convenção documentada e testar conversões de entrada/saída no XAMPP. A decisão funcional de fuso e armazenamento já está aprovada.
 4. **Compatibilidade do banco:** confirmar a versão real do MySQL/MariaDB no XAMPP antes de definir `CHECK`, índices, constraints e estratégia de bloqueio.
 5. **Cancelamento de matrícula futura:** definir como apresentar uma matrícula cancelada antes do início (ela permanece no histórico como cancelada, sem período efetivamente utilizado).
 6. **Migração e idempotência:** detalhar como identificar cada aluno legado já migrado e garantir reexecução segura sem duplicar matrículas.
@@ -394,7 +400,8 @@ O FitControl permanece um projeto acadêmico/local. Não usar dados reais de alu
 Documentação oficial do MySQL consultada para fundamentar as recomendações de modelagem e integridade:
 
 - [Fixed-Point Types — DECIMAL e NUMERIC](https://dev.mysql.com/doc/refman/8.0/en/fixed-point-types.html): valores numéricos exatos, apropriados para dados monetários.
-- [Date and Time Data Type Syntax](https://dev.mysql.com/doc/refman/8.0/en/date-and-time-type-syntax.html): diferenças entre `DATE`, `DATETIME` e `TIMESTAMP`.
+- [Date and Time Data Type Syntax](https://dev.mysql.com/doc/refman/8.0/en/datetime.html): diferenças entre `DATE`, `DATETIME` e `TIMESTAMP`, incluindo a conversão de fuso aplicada a `TIMESTAMP`, mas não a `DATETIME`.
+- [MySQL Server Time Zone Support](https://dev.mysql.com/doc/refman/8.0/en/time-zone-support.html): efeitos do fuso da sessão nas operações com tipos temporais.
 - [FOREIGN KEY Constraints](https://dev.mysql.com/doc/refman/8.0/en/create-table-foreign-keys.html): integridade referencial e opções de exclusão/atualização.
 - [CHECK Constraints](https://dev.mysql.com/doc/refman/8.0/en/create-table-check-constraints.html): suporte e enforcement a partir do MySQL 8.0.16.
 - [START TRANSACTION, COMMIT, and ROLLBACK](https://dev.mysql.com/doc/refman/8.0/en/commit.html): controle transacional.
