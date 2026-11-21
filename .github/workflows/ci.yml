@@ -84,6 +84,15 @@ jobs:
           DB_PASSWORD: root
         run: php tests/database-plan-lock-concurrency.php
 
+      - name: Validate transactional enrollment creation
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_NAME: academia_alunos
+          DB_USER: root
+          DB_PASSWORD: root
+        run: php tests/database-enrollment-creation.php
+
       - name: Validate transactional enrollment cancellation
         env:
           DB_HOST: 127.0.0.1
@@ -177,6 +186,8 @@ jobs:
           test -f src/Domain/Enrollment/EnrollmentStatus.php
           test -f tests/enrollment-status.php
           test -f src/Domain/Enrollment/EnrollmentCancellationService.php
+          test -f src/Domain/Enrollment/EnrollmentCreationService.php
+          test -f tests/database-enrollment-creation.php
           test -f tests/database-enrollment-cancellation.php
           test -f tests/database-plan-lock-concurrency.php
           test -f database/migrations/004_student_status.sql
