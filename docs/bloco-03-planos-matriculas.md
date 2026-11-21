@@ -239,7 +239,7 @@ Os tipos são uma proposta física simples, alinhada aos identificadores atuais 
 | `id` | `BIGINT UNSIGNED` | PK, auto incremento. |
 | `revisao_legado_id` | `BIGINT UNSIGNED` | FK para `revisoes_legado.id`. |
 | `usuario_id` | `INT UNSIGNED` | FK para `usuarios.id`; obrigatório em decisão humana. |
-| `resultado_anterior` | Mesmo ENUM dos resultados | Nulo apenas no primeiro evento humano. |
+| `resultado_anterior` | Mesmo ENUM dos resultados | Obrigatório; a revisão inicial já nasce como `PENDENTE_REVISAO`, portanto toda decisão humana tem um resultado anterior. |
 | `resultado_novo` | Mesmo ENUM dos resultados | Obrigatório. |
 | `fonte_referencia` | `VARCHAR(255)` | Referência da evidência; quando o resultado for pendente por falta de fonte, explicar isso em observações. |
 | `observacoes` | `TEXT` | Opcional. |
@@ -257,6 +257,8 @@ Usar FKs com `ON DELETE RESTRICT` nas relações históricas. Não usar exclusã
 Preço positivo, duração positiva, consistência entre duração/unidade e `fim_exclusivo_em > inicio_em` são validados no PHP. Usar `CHECK` no banco somente se a versão instalada garantir seu enforcement. Não adicionar UNIQUE ao nome do plano sem necessidade demonstrada.
 
 **Simplificação para o portfólio:** não criar tabela genérica de eventos de matrícula nem framework de auditoria próprio. Usar `auditoria` para criação/edição/cancelamento comuns de planos e matrículas. Manter `revisoes_legado_eventos` porque esse fluxo precisa registrar resultado anterior/novo, fonte e observações.
+
+Códigos de ação sugeridos para a auditoria geral: `plano_criado`, `plano_editado`, `plano_ativado`, `plano_inativado`, `matricula_criada`, `matricula_cancelada` e `matricula_corrigida`. O nome da entidade deve identificar `planos` ou `matriculas`; o `entidade_id` recebe o ID correspondente. Cada evento deve ser gravado na mesma transação da alteração que descreve.
 
 ## 5. Regras de negócio propostas
 
