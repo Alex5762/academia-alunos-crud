@@ -140,6 +140,21 @@ try {
     animations: "disabled",
   });
 
+  await mobile.getByRole("link", { name: /Ver detalhes de/ }).first().click();
+  await mobile.getByRole("heading", { name: "Informações cadastrais" }).waitFor();
+  const detailMobileWidth = await mobile.evaluate(() => ({
+    viewport: document.documentElement.clientWidth,
+    document: document.documentElement.scrollWidth,
+  }));
+  if (detailMobileWidth.document > detailMobileWidth.viewport) {
+    throw new Error("O perfil do aluno apresentou rolagem horizontal inesperada no mobile.");
+  }
+  await mobile.screenshot({
+    path: `${outputDir}/aluno-detalhes-mobile.png`,
+    fullPage: true,
+    animations: "disabled",
+  });
+
   const form = await browser.newPage({
     viewport: { width: 1280, height: 900 },
     deviceScaleFactor: 1,
