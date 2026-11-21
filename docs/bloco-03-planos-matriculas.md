@@ -64,7 +64,7 @@ Regras aprovadas e propostas:
 - Alterar o preço do catálogo afeta somente novas matrículas; matrículas existentes preservam o valor contratado.
 - **Decisão aprovada:** um plano que ainda não possua nenhuma matrícula vinculada pode ser excluído fisicamente.
 - Se existir ao menos uma matrícula vinculada ao plano, a exclusão física é proibida; o plano deve ser desativado.
-- Planos desativados permanecem consultáveis no histórico e continuam identificando as matrículas antigas, mas não podem ser selecionados em novas contratações.
+- Planos desativados permanecem consultáveis no histórico e continuam identificando as matrículas antigas, mas não podem ser selecionados em novas contratações. A desativação não cancela nem altera matrículas já criadas, inclusive as agendadas.
 - A verificação de vínculos e a exclusão/desativação devem ocorrer de forma protegida contra concorrência, para evitar que uma matrícula seja criada enquanto o plano está sendo excluído.
 
 ### 4.2 Tabela `matriculas`
@@ -79,19 +79,20 @@ Campos candidatos:
 | `aluno_id` | Referência obrigatória ao aluno. |
 | `plano_id` | Referência ao plano; poderá ser nula somente para registros legados sem correspondência segura no catálogo. |
 | `plano_nome_contratado` | Cópia do nome no momento da contratação, preservando o histórico. |
-| `valor_contratado` | Valor registrado para aquela matrícula, independente do preço atual do catálogo. |
-| `duracao_contratada_valor` / `duracao_contratada_unidade` | Cópia da duração contratada. |
+| `valor_contratado` | Valor registrado para aquela matrícula, independente do preço atual do catálogo; pode ficar nulo somente em matrícula legada quando não houver evidência do valor. |
+| `duracao_contratada_valor` / `duracao_contratada_unidade` | Cópia da duração contratada; podem ficar nulas somente em matrícula legada quando a duração original não for comprovada, desde que o intervalo efetivo exato possa ser determinado por fonte confiável. |
 | `inicio_em` | Início efetivo da vigência (`DATETIME`), incluindo horário para permitir início após cancelamento intradiário. |
 | `fim_exclusivo_em` | Limite final exclusivo (`DATETIME`): a matrícula deixa de valer exatamente neste instante. Para vigência normal, corresponde à meia-noite seguinte ao último dia de calendário inclusivo. |
-| `dia_referencia_calendario` | Dia original do mês usado no cálculo de durações mensais e preservado nas renovações contínuas. |
+| `dia_referencia_calendario` | Dia original do mês usado no cálculo de durações mensais e preservado nas renovações contínuas; fica nulo para durações em dias ou semanas. |
 | `cancelada_em` | Quando preenchido, registra o instante exato do cancelamento. O evento de auditoria associado identifica o funcionário responsável. Não é necessário persistir `AGENDADA`, `ATIVA` ou `VENCIDA`. |
-| `origem` | Distingue registros migrados dos criados pelo fluxo normal. |
+| `origem` | Distingue registros legados comprovados dos criados pelo fluxo normal; a nulidade de preço/duração só é permitida para a origem legada. |
 | `motivo_cancelamento` | Justificativa opcional. |
 | `created_at` | Momento em que o registro foi criado. |
 
 Regras propostas:
 
-- Matrículas novas exigem aluno, plano com `situacao = ATIVO`, valor, duração, início e término válidos.
+- Matrículas novas exigem aluno, plano com `situacao = ATIVO`, valor, duração, início e término válidos; preço e duração desconhecidos só podem permanecer nulos em registros legados cuja vigência tenha sido comprovada.
+- Para matrículas com duração em dias ou semanas, `dia_referencia_calendario` não se aplica e deve permanecer nulo.
 - O registro guarda uma cópia das condições contratadas. A edição posterior do catálogo não altera matrículas existentes.
 - Matrículas antigas não são apagadas ao renovar ou cancelar.
 - O relacionamento com aluno e plano deve usar chaves estrangeiras. A exclusão física de planos com histórico deve ser restringida; a desativação é o fluxo normal.
@@ -189,12 +190,14 @@ Regra de calendário aprovada para durações em meses:
 
 - Tratar mês como unidade de calendário; nunca converter um mês em 30 dias.
 - `dia_referencia_calendario` representa o dia do mês usado para determinar a data final de ciclos mensais. Em uma nova contratação independente, recebe o dia local de `inicio_em`; uma renovação contínua copia a referência anterior.
-- Para uma duração de `N` meses, contar `N` ocorrências futuras do dia de referência, começando pela primeira ocorrência estritamente posterior à data local de início. A ocorrência pode estar no próprio mês ou em um mês posterior. Em cada ciclo, limitar o dia de referência ao último dia válido do mês; depois do ajuste, continuar procurando pela referência original, sem substituí-la pelo dia ajustado.
-- O último dia inclusivo de cada ciclo é coberto integralmente. Portanto, `fim_exclusivo_em` será sempre 00:00 local do dia de calendário seguinte à última ocorrência contada, independentemente do horário em que a matrícula começou. Exemplo: início em 10/01 às 15:00, duração de um mês e referência 10 resulta em data final inclusiva 10/02 e limite exclusivo 11/02 às 00:00.
-- Se o mês da próxima ocorrência não possuir o dia de referência (por exemplo, dia 29, 30 ou 31 em fevereiro), ajustar a data final inclusiva para o último dia válido do mês e colocar o limite exclusivo à meia-noite local do dia seguinte. A referência original permanece inalterada para os ciclos seguintes.
-- Para durações de vários meses, contar as ocorrências sucessivas da referência original. Exemplo: início em 31/01 com duração de dois meses conta 28/02 e 31/03 como os dois dias finais inclusivos, terminando em 01/04 às 00:00. Isso evita que o ajuste de fevereiro altere a referência dos ciclos seguintes.
+- `dia_referencia_calendario` guarda o dia original e nunca é substituído pelo dia ajustado de um mês curto. Em uma contratação independente, recebe o dia local de início; na renovação contínua, copia o valor anterior.
+- Para calcular `N` meses, identificar o primeiro mês de ciclo: usar o próprio mês local de início quando o dia de referência ainda estiver adiante do dia local de início; caso contrário, usar o mês seguinte. A partir desse mês, avançar `N - 1` meses de calendário. No mês-alvo, a data final inclusiva é o menor valor entre o dia de referência e o último dia válido do mês.
+- O último dia inclusivo é coberto integralmente. Portanto, `fim_exclusivo_em` será sempre 00:00 local do dia seguinte à data final inclusiva, independentemente do horário em que a matrícula começou. Exemplo: início em 10/01 às 15:00, duração de um mês e referência 10 resulta em data final inclusiva 10/02 e limite exclusivo 11/02 às 00:00.
+- Se o mês-alvo não possuir o dia de referência (por exemplo, dia 29, 30 ou 31 em fevereiro), ajustar a data final inclusiva para o último dia válido do mês. A referência original permanece inalterada para os ciclos seguintes.
+- Para durações de vários meses, avançar a partir do primeiro mês de ciclo e aplicar a referência original em cada mês, sem propagar o dia ajustado de um mês curto. Exemplo: início em 31/01 com duração de dois meses conta 28/02 e 31/03 como os dois dias finais inclusivos, terminando em 01/04 às 00:00.
 - Não confiar em `DateTime::modify('+N months')` sem normalização explícita: o PHP documenta que somas a partir de 31 de janeiro podem avançar para março por overflow ([DateTime::modify](https://www.php.net/manual/pt_BR/datetime.modify.php), [exemplos de aritmética de datas](https://www.php.net/manual/pt_BR/datetime.examples-arithmetic.php)).
 - Renovações contínuas começam exatamente no limite exclusivo anterior e preservam `dia_referencia_calendario`. Uma nova contratação independente começa sua própria sequência com o dia da data inicial.
+- A renovação automática contínua não pode criar início retroativo: se `fim_exclusivo_em` já estiver no passado quando a operação for solicitada, a matrícula anterior já terminou e a nova matrícula deve seguir a regra de início hoje ou em data futura.
 - Toda a aritmética de calendário acontece no fuso `America/Sao_Paulo`; somente depois de calcular o limite local ele é convertido para UTC para persistência.
 
 Exemplos para matrículas iniciadas à meia-noite:
@@ -216,6 +219,7 @@ Para durações mensais, o início intradiário não desloca o limite mensal par
 - **Decisão aprovada — persistência de instantes:** manter `inicio_em`, `fim_exclusivo_em` e `cancelada_em` como `DATETIME`, armazenando neles valores UTC por convenção explícita. O tipo `DATETIME` não realiza conversão automática de fuso; essa conversão deve ser feita na aplicação. Diferentemente, o MySQL converte `TIMESTAMP` entre o fuso da sessão e UTC, por isso não misturar as duas convenções nesses campos ([documentação MySQL sobre tipos temporais](https://dev.mysql.com/doc/refman/8.0/en/datetime.html) e [suporte a fusos horários](https://dev.mysql.com/doc/refman/8.0/en/time-zone-support.html)).
 - Interpretar datas e horários informados pelos funcionários no fuso `America/Sao_Paulo`. Fazer cálculos de calendário (dias, semanas, meses e limites de meia-noite) nesse fuso local; depois converter o instante resultante para UTC antes de persistir.
 - Ao consultar, interpretar os valores armazenados como UTC e convertê-los para `America/Sao_Paulo` antes de apresentar ou aplicar regras de calendário.
+- Para novas colunas de criação/atualização e eventos deste bloco, usar UTC por convenção explícita e conversão na aplicação. Antes da implementação, inspecionar `auditoria.criado_em`: sua definição atual usa `DATETIME` com valor padrão do banco, portanto não presumir que o histórico existente esteja em UTC nem reinterpretar registros antigos sem uma estratégia específica.
 - Usar objetos de data/hora com fuso explícito na aplicação. Não depender do fuso padrão do servidor, do dispositivo do funcionário ou de conversões implícitas da sessão do banco.
 - Não usar uma data fictícia para preencher informações desconhecidas.
 - Testar início mensal intradiário (por exemplo, 10/01 às 15:00 + 1 mês = data final 10/02 e limite exclusivo 11/02 às 00:00), virada de mês, fevereiro, ano bissexto, duração mensal de vários meses, horário do cancelamento, início no mesmo instante do encerramento anterior e sequências de renovações.
@@ -223,13 +227,13 @@ Para durações mensais, o início intradiário não desloca o limite mensal par
 
 ### 5.3 Renovação e histórico
 
-**Decisão aprovada para renovação antecipada:** a nova matrícula começa no dia seguinte ao último dia da matrícula vigente. A renovação não consome dias que já foram contratados e não cria sobreposição com a matrícula anterior.
+**Decisão aprovada para renovação contínua antecipada:** a nova matrícula começa exatamente no `fim_exclusivo_em` da matrícula anterior. Para ciclos mensais, esse limite corresponde às 00:00 do dia seguinte ao último dia inclusivo; para ciclos em dias/semanas, pode preservar o horário intradiário. A renovação não consome dias já contratados nem cria sobreposição com a matrícula anterior.
 
 Regras:
 
 - Renovar significa criar uma nova matrícula, não sobrescrever a anterior.
 - O histórico deve manter o plano, o preço, a duração e o período de cada contratação.
-- Se a matrícula vigente termina em 30/11, por exemplo, a renovação começa em 01/12.
+- Exemplo mensal: se o último dia incluído for 30/11, o limite exclusivo será 01/12 às 00:00 e a renovação contínua começa nesse mesmo instante.
 - O sistema deve calcular a data de início da renovação a partir do limite seguinte do período e do dia de referência preservado, sem depender do dia em que o funcionário realizou a operação.
 - A renovação contínua copia o dia de referência da matrícula anterior, inclusive quando a data anterior foi ajustada por fevereiro ou outro mês curto.
 - Essa regra cobre a renovação contínua padrão, sem intervalo.
@@ -237,8 +241,8 @@ Regras:
 - **Decisão aprovada sobre horário de início:** quando o funcionário informar apenas uma data futura, a matrícula começa às 00:00 dessa data, no fuso horário da academia.
 - Quando a data escolhida for hoje, o horário padrão é o instante atual da operação. O funcionário pode escolher um horário posterior no mesmo dia, mas nunca um horário anterior ao momento atual.
 - Se o funcionário informar data e horário futuros, o instante completo deve ser validado contra o momento atual e contra os períodos de outras matrículas não canceladas.
-- Renovações contínuas não usam esse padrão de agendamento manual: começam automaticamente no limite exclusivo da matrícula anterior, equivalente ao dia seguinte ao último dia incluído.
-- O intervalo é permitido, não obrigatório. A renovação contínua continua usando automaticamente o dia seguinte ao último dia incluído da matrícula anterior.
+- Renovações contínuas não usam esse padrão de agendamento manual: começam automaticamente exatamente no limite exclusivo da matrícula anterior. Em durações mensais, isso corresponde à meia-noite seguinte ao último dia incluído; em dias/semanas, pode manter a hora do início.
+- O intervalo é permitido, não obrigatório. A renovação contínua começa no limite exclusivo da matrícula anterior, sem deslocamento adicional de um dia.
 - Uma matrícula futura pode ocupar qualquer intervalo livre entre períodos já agendados, desde que não se sobreponha a eles; não é obrigatório colocá-la sempre depois da última matrícula agendada.
 - A nova matrícula continua sujeita à regra aprovada de não sobreposição de períodos.
 
@@ -275,7 +279,7 @@ Regras aprovadas:
 - A regra de renovação contínua permanece automática: início no dia seguinte ao último dia incluído da matrícula vigente, salvo quando o funcionário optar por agendar outro início futuro válido.
 - Preservar matrículas anteriores no histórico; renovar não significa editar ou substituir o registro anterior.
 - Matrículas canceladas permanecem no histórico e não devem bloquear novos períodos depois de efetivamente canceladas.
-- Enquanto existir revisão de legado com resultado `PENDENTE_REVISAO` para o aluno, nenhuma nova matrícula pode ser criada, mesmo que o sistema não consiga determinar a vigência do vínculo antigo. Esse resultado pertence ao registro de revisão legado, não à situação temporal da matrícula operacional. A liberação só ocorre após conclusão auditada como `VINCULO_CONFIRMADO` ou `LEGADO_SEM_VIGENCIA`, conforme a seção 6.
+- Enquanto existir revisão de legado com resultado `PENDENTE_REVISAO` para o aluno, nenhuma nova matrícula pode ser criada, mesmo que o sistema não consiga determinar a vigência do vínculo antigo. Esse resultado pertence ao registro de revisão legado, não à situação temporal da matrícula operacional. A liberação só ocorre após conclusão auditada como `VINCULO_CONFIRMADO` com intervalo efetivo comprovado e registrado, ou `LEGADO_SEM_VIGENCIA` com evidência confiável de ausência de contrato vigente.
 
 A validação deve ocorrer no servidor e ser protegida contra solicitações concorrentes. Uma consulta simples antes do INSERT não é suficiente. Estratégia preferida: dentro de uma transação InnoDB, bloquear primeiro a linha do aluno com `SELECT ... FOR UPDATE`; em seguida, bloquear o plano com `SELECT ... FOR UPDATE`, verificar o estado da revisão de legado, consultar sobreposições e inserir matrícula/auditoria antes do `COMMIT`. Todas as operações que alterem matrículas ou a revisão de legado do aluno devem começar bloqueando a mesma linha-pai do aluno. Isso serializa as mudanças por aluno mesmo quando ainda não existe matrícula correspondente para bloquear. A exclusão/desativação de plano deve bloquear a linha do próprio plano e verificar os vínculos na mesma transação. Manter uma ordem de bloqueio consistente (aluno, plano, revisão) nas operações que toquem mais de uma entidade e tratar deadlocks/lock timeouts com rollback e mensagem segura. A documentação do InnoDB explica locking reads e a importância da ordem de aquisição de locks ([Locking Reads](https://dev.mysql.com/doc/refman/8.0/en/innodb-locking-reads.html), [Internal Locking Methods](https://dev.mysql.com/doc/refman/8.0/en/internal-locking.html)).
 
@@ -292,6 +296,8 @@ A migração é o ponto de maior risco do bloco, porque os registros atuais guar
 3. **Não foi possível confirmar (`PENDENTE_REVISAO`):** quando não houver evidência suficiente para concluir uma das duas situações anteriores, o vínculo continua pendente e novas matrículas permanecem bloqueadas.
 
 Em qualquer resultado, a revisão deve registrar o funcionário responsável, o instante da decisão, o resultado, uma referência da fonte consultada e observações necessárias à rastreabilidade. A ausência de informação ou a simples existência de texto em `alunos.plano` não comprova, por si só, que exista ou não exista uma matrícula vigente. Sem fonte confiável, o resultado obrigatório é `PENDENTE_REVISAO`.
+
+`VINCULO_CONFIRMADO` só libera o fluxo de novas matrículas quando a evidência também permite determinar o intervalo efetivo exato do contrato legado. Se não for possível comprovar `inicio_em` e o limite de término contratual/efetivo, o caso permanece `PENDENTE_REVISAO`; confirmar apenas que houve um contrato não é suficiente para liberar o aluno. Quando o intervalo estiver comprovado, a matrícula legada deve ser registrada para que a verificação de sobreposição considere a vigência real. Preço, duração original ou correspondência com o catálogo podem permanecer nulos quando não houver evidência; a vigência temporal, porém, não pode ser indeterminada.
 
 Estratégia de migração e regularização:
 
@@ -376,8 +382,10 @@ A coluna antiga será mantida durante a transição. Sua remoção só poderá s
 - [ ] Datas inválidas e valores negativos são rejeitados no servidor e, quando suportado, pelo banco.
 - [ ] Data final é inclusiva: uma matrícula de 01/11 até 30/11 permanece válida durante todo o dia 30/11.
 - [ ] Duração mensal iniciada nos dias 29, 30 e 31 é calculada pela sequência de aniversários de calendário, com ajuste do alvo inexistente ao último dia do mês e inclusão desse dia.
+- [ ] Duração mensal de dois meses iniciada em 31/01 inclui 28/02 e 31/03, com limite exclusivo em 01/04 às 00:00.
+- [ ] Um legado só libera nova matrícula como `VINCULO_CONFIRMADO` quando o intervalo efetivo exato foi comprovado e registrado; confirmação genérica da existência de contrato mantém o bloqueio.
 - [ ] Início em 31/01 em ano não bissexto gera limite exclusivo 01/03 00:00 e inclui 28/02; em ano bissexto gera limite exclusivo 01/03 00:00 e inclui 29/02.
-- [ ] Renovação contínua em 01/03 preservando referência 31 calcula o próximo limite em 31/03 00:00.
+- [ ] Renovação contínua em 01/03 preservando referência 31 inclui 31/03 e calcula o limite exclusivo em 01/04 às 00:00.
 - [ ] Durações de vários meses repetem o algoritmo de ciclos, sem overflow de `DateTime::modify('+N months')`.
 - [ ] Limites intradiários são exibidos com data e hora, sem apresentar uma data final inclusiva enganosa.
 - [ ] Duração de 1 dia iniciada em 10/01 às 15:00 produz limite exclusivo em 11/01 às 15:00 no fuso local.
@@ -425,7 +433,7 @@ As regras abaixo já foram aprovadas para orientar a implementação. O status n
 |---|---|---|
 | Várias matrículas por aluno | Permitir histórico de várias matrículas, sem sobreposição de períodos não cancelados. | **Aprovada** |
 | Matrículas futuras e intervalos | Permitir escolher início hoje ou em data futura válida, inclusive em intervalo entre contratos, desde que não haja sobreposição com matrícula não cancelada. | **Aprovada** |
-| Renovação antecipada | Nova matrícula contínua começa no dia seguinte ao último dia incluído da matrícula vigente. | **Aprovada** |
+| Renovação contínua | Começa exatamente no limite exclusivo anterior; mensal inclui o último dia de calendário e dias/semanas preservam a hora local. Não pode retroagir quando o limite já passou. | **Aprovada** |
 | Durações de dias e semanas | Calendário local, preservando o horário de início: 1 dia = mesmo horário no dia seguinte; 1 semana = mesmo horário sete dias de calendário depois. | **Aprovada** |
 | Data final mensal | Inclusiva; último dia calculado é coberto integralmente e o limite exclusivo é 00:00 local do dia seguinte, com ajuste ao último dia válido. | **Aprovada** |
 | Cancelamento | Efeito imediato; preservar histórico, registrar instante, funcionário responsável e motivo opcional. | **Aprovada** |
@@ -441,7 +449,7 @@ As regras marcadas como aprovadas compõem a base funcional do Bloco 03. Os pont
 
 ## 11. Revisão de consistência das decisões aprovadas
 
-A primeira revisão cruzada encontrou e tratou os seguintes pontos:
+A revisão cruzada consolidada encontrou e tratou os seguintes pontos:
 
 - Corrigida a duplicação de `cancelada_em` na lista conceitual de campos; o cancelamento é representado por um único atributo e pelo evento de auditoria.
 - Alinhado o fluxo de legados: a revisão possui três resultados explícitos e auditados (`VINCULO_CONFIRMADO`, `LEGADO_SEM_VIGENCIA` e `PENDENTE_REVISAO`). Somente os dois primeiros, quando sustentados por evidência confiável, encerram o bloqueio; ausência de comprovação mantém o bloqueio.
@@ -451,6 +459,10 @@ A primeira revisão cruzada encontrou e tratou os seguintes pontos:
 - Aprovado que `AGENDADA`, `ATIVA` e `VENCIDA` serão derivados em tempo de consulta; o cancelamento será representado por `cancelada_em` e auditoria.
 - Separados os resultados da revisão de legados dos estados da matrícula operacional; a revisão pendente bloqueia novas matrículas, mas não será armazenada como estado de contrato.
 - Aprovado o cancelamento de matrículas futuras: cancelamento antes ou exatamente no início gera intervalo efetivo vazio, mantém o histórico e não bloqueia novas matrículas.
+- Unificadas as durações mensais em uma regra explícita de mês-alvo, com referência original preservada e limite exclusivo à meia-noite seguinte ao último dia inclusivo.
+- Aprovado que durações em dias/semanas preservam a hora local do início e somam dias de calendário, sem conversão para segundos fixos.
+- Alinhada a renovação contínua para começar exatamente no limite exclusivo anterior; o teste de referência 31 agora inclui 31/03 e termina em 01/04 às 00:00.
+- Esclarecido que `VINCULO_CONFIRMADO` só libera novas matrículas quando o intervalo legado está comprovado e registrado; preço/duração desconhecidos podem permanecer nulos no registro legado.
 
 Pontos técnicos que ainda precisam ser fechados antes das migrations:
 
@@ -460,8 +472,10 @@ Pontos técnicos que ainda precisam ser fechados antes das migrations:
 4. **Compatibilidade do banco:** confirmar a versão real do MySQL/MariaDB no XAMPP antes de definir `CHECK`, índices, constraints e estratégia de bloqueio.
 5. **Cancelamento de matrícula futura:** comportamento aprovado; implementar e testar cancelamento antes do início, exatamente no início e depois do início, preservando histórico e tratando corretamente o intervalo efetivo vazio.
 6. **Implementação e validação da migration idempotente:** aplicar a referência única do aluno, transação, tratamento específico de conflito e testes de reexecução sem sobrescrever a revisão ou duplicar auditoria. A estratégia funcional já está aprovada.
+7. **Compatibilidade de timestamps de auditoria:** verificar a convenção histórica de `auditoria.criado_em` e definir como os novos eventos armazenarão UTC sem reinterpretar incorretamente logs existentes.
+8. **Cancelamento de matrícula vencida:** definir na camada de serviço se a operação de cancelamento será permitida apenas para matrículas `AGENDADA` ou `ATIVA`; impedir que uma ação posterior ao fim natural mascare uma matrícula já `VENCIDA` como `CANCELADA`.
 
-A revisão não encontrou motivo para alterar as regras de negócio já aprovadas; os itens acima são detalhes de modelagem e operação ainda em aberto. Não iniciar migrations até resolvê-los e revisar novamente a especificação completa.
+A revisão consolidada corrigiu contradições entre limites exclusivos, renovação contínua e critérios de aceite. Permanecem apenas as validações técnicas e operacionais listadas acima. Não iniciar migrations enquanto esses itens técnicos não forem verificados e os critérios de aceite finais não forem fechados.
 
 ## 12. Dependências e limites do projeto
 
