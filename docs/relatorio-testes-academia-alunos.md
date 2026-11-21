@@ -252,3 +252,25 @@ Capturas geradas e versionadas na branch:
 **Resultado da revisão das imagens:** as quatro capturas exibem os quatro eventos em ordem cronológica inversa, com data/hora e funcionário responsável. O layout mobile organiza os dados em uma coluna e apresenta os botões em largura integral. Não foi observado overflow horizontal nas verificações automatizadas. A inspeção visual das capturas foi realizada; ainda não houve teste em aparelho físico.
 
 **Pendência final:** inspecionar em celular real e navegador instalado, com atenção a toque, legibilidade, zoom, contraste percebido e tecnologias assistivas. A aprovação Playwright não substitui essa etapa.
+## 16. Bloco 02 — matriz de acessibilidade e responsividade multibrowser — 21/11/2026
+
+**CI:** [Run 44880764637 — CI #387, sucesso](https://github.com/Alex5762/academia-alunos-crud/actions/runs/44880764637). O job principal concluiu com sucesso inicialização, PHP, Node/Playwright, sintaxe, arquivos obrigatórios, importação do banco, migrações 001–004, preservação de legado, provisionamento, integração HTTP, capturas e testes multibrowser.
+
+Os logs confirmam explicitamente:
+- `Chromium: OK` — login, dashboard, larguras desktop/mobile, rolagem interna, teclado, foco visível, campos obrigatórios, tema escuro, perfil vazio/preenchido, histórico e overflow mobile.
+- `Firefox: OK` — mesmos cenários.
+- `WebKit: OK` — mesmos cenários.
+- `Compatibilidade de navegadores: OK (Chromium, Firefox e WebKit).`
+
+### 16.1 Cenários específicos do perfil
+
+- Perfil sem eventos: mensagem de histórico vazio apresentada.
+- Perfil com eventos: quatro eventos esperados apresentados na linha do tempo.
+- Hierarquia de títulos conferida dentro do conteúdo principal do perfil (`main.student-detail-page`).
+- Contatos expostos como links `mailto:` e `tel:`.
+- Botão de inativação expõe nome acessível esperado.
+- Link de retorno apresenta foco visível por teclado, com contorno mínimo de 2px.
+- Perfil testado em larguras 390px e 320px, sem overflow horizontal global.
+- Preferência de tema escuro permanece aplicada ao abrir o perfil.
+
+**Resultado:** matriz automatizada aprovada nos três motores. A evidência não substitui inspeção em aparelho físico, navegador instalado, leitor de tela ou avaliação humana completa de acessibilidade.
