@@ -102,6 +102,17 @@ function urlCadastroAluno(?int $alunoId, array $contexto): string {
     return 'cadastro.php?' . http_build_query($parametros, '', '&', PHP_QUERY_RFC3986);
 }
 
+/** Gera a URL do perfil individual com o contexto validado da listagem. */
+function urlDetalhesAluno(int $alunoId, array $contexto): string {
+    $parametros = [
+        'id' => $alunoId,
+        'busca' => $contexto['busca'],
+        'status' => $contexto['status']
+    ];
+
+    return 'detalhes-aluno.php?' . http_build_query($parametros, '', '&', PHP_QUERY_RFC3986);
+}
+
 function validarToken() {
     $token = $_POST['token'] ?? '';
     $tokenSessao = $_SESSION['token'] ?? '';
