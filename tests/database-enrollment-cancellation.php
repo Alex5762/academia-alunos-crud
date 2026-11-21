@@ -155,26 +155,6 @@ try {
         string $startLocal,
         string $endLocal,
         ?string $cancelledLocal = null
-    ) use ($createEnrollment, &$enrollmentIds): int {
-        $createEnrollment->execute([
-            'aluno_id' => $studentId,
-            'inicio_em' => utcLiteralForAcademyDate($startLocal),
-            'fim_exclusivo_em' => utcLiteralForAcademyDate($endLocal),
-            'cancelada_em' => $cancelledLocal === null
-                ? null
-                : utcLiteralForAcademyDate($cancelledLocal),
-        ]);
-        $id = (int) $createEnrollment->getConnection()->lastInsertId();
-        $enrollmentIds[] = $id;
-        return $id;
-    };
-
-    // PDOStatement não expõe getConnection() em todas as versões; usa a conexão compartilhada.
-    $insertEnrollment = static function (
-        int $studentId,
-        string $startLocal,
-        string $endLocal,
-        ?string $cancelledLocal = null
     ) use ($createEnrollment, $pdo, &$enrollmentIds): int {
         $createEnrollment->execute([
             'aluno_id' => $studentId,
