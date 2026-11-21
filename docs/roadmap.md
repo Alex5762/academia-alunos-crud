@@ -132,7 +132,7 @@ A implementação deverá proteger a regra de não sobreposição contra solicit
 
 **Horário de início aprovado:** quando for informada apenas uma data futura, o início será às 00:00 no fuso da academia; para hoje, o padrão será o instante atual, permitindo escolher horário posterior, nunca anterior. A renovação contínua começa automaticamente no limite exclusivo anterior.
 
-**Migração e auditoria aprovadas:** cada aluno do conjunto inicial terá um único registro de revisão legado, identificado por chave estrangeira com restrição `UNIQUE`. Decisões humanas terão histórico append-only próprio, além do evento geral na auditoria, com gravação transacional. A carga DML será transacional; o DDL será executado em etapas retomáveis, pois MySQL/MariaDB podem confirmar DDL implicitamente. Um registro `schema_migrations` com versão e checksum controlará migrations concluídas. Alunos criados após a carga inicial continuarão no fluxo normal.
+**Migração e auditoria aprovadas:** cada aluno do conjunto inicial terá um único registro de revisão legado, identificado por FK com restrição `UNIQUE`. Decisões humanas terão histórico próprio append-only e evento geral na auditoria, gravados na mesma transação. A carga DML será transacional; o DDL será verificado após execução, pois MySQL/MariaDB podem confirmar DDL implicitamente. As migrations serão arquivos SQL numerados e executados explicitamente na ordem documentada no README/CI; não haverá runner genérico nem tabela de checksums nesta versão de portfólio. A proposta de sequência é `005_plans_enrollments_schema.sql` para DDL e `006_import_legacy_review.sql` para a carga inicial. Alunos criados depois da carga inicial seguem o fluxo normal.
 
 **Fora do escopo aprovado:** trancamento, suspensão e congelamento.
 
