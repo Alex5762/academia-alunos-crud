@@ -10,6 +10,8 @@ As imagens abaixo são capturadas automaticamente pelo GitHub Actions com regist
 
 ![Dashboard FitControl em tema escuro](docs/screenshots/dashboard-escuro.png)
 
+![Perfil individual do aluno com dados cadastrais e histórico de atividade](docs/screenshots/aluno-detalhes-desktop.png)
+
 <p align="center">
   <img src="docs/screenshots/dashboard-mobile.png" alt="Dashboard FitControl em tela mobile" width="280">
   <img src="docs/screenshots/cadastro-desktop.png" alt="Formulário de cadastro de aluno em desktop" width="680">
@@ -30,6 +32,7 @@ As imagens abaixo são capturadas automaticamente pelo GitHub Actions com regist
 - Cadastro e edição de alunos.
 - Listagem com filtro de ativos/inativos/todos e pesquisa por nome, e-mail ou telefone.
 - Inativação e reativação lógica de alunos, preservando os registros e a auditoria.
+- Perfil individual do aluno com dados cadastrais, situação e histórico simples de auditoria (criação, edição, inativação e reativação).
 - Validação dos dados no servidor e no navegador, incluindo formato e quantidade de dígitos do telefone.
 - Consultas preparadas com PDO.
 - Token CSRF nos formulários de escrita.
@@ -92,6 +95,7 @@ academia-alunos-crud/
 ├── funcoes.php
 ├── index.php
 ├── cadastro.php
+├── detalhes-aluno.php
 ├── salvar.php
 ├── excluir.php
 ├── style.css
