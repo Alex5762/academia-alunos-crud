@@ -269,7 +269,7 @@ Trancamento, suspensão e congelamento ficam fora da primeira versão: exigem re
 
 Regras aprovadas:
 
-- Permitir que o funcionário escolha um instante de início igual ou posterior ao momento atual no fuso da academia; quando a interface coletar somente a data, aplicar o horário padrão que ainda será definido na revisão final.
+- Permitir que o funcionário escolha um instante de início igual ou posterior ao momento atual no fuso da academia; quando a interface coletar somente a data futura, aplicar 00:00, e quando coletar somente a data de hoje, aplicar o instante atual, conforme a decisão aprovada na seção 5.3.
 - Permitir intervalos livres entre contratos; a data escolhida pode ocupar um espaço entre matrículas já agendadas, desde que não haja sobreposição.
 - Não permitir que o período de uma nova matrícula se sobreponha ao de qualquer outra matrícula não cancelada do mesmo aluno, seja vigente ou futura.
 - A regra de renovação contínua permanece automática: início no dia seguinte ao último dia incluído da matrícula vigente, salvo quando o funcionário optar por agendar outro início futuro válido.
