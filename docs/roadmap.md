@@ -72,7 +72,7 @@ Entregas:
 
 ### Bloco 02 — Gestão de alunos
 
-**Estado: em implementação.** Etapa 1 (migração e preservação de legado) aprovada pela CI em push #268 e PR #269. Etapa 2 (endpoint de status, auditoria, ações na lista e aposentadoria da exclusão física) implementada em código; aguarda CI.
+**Estado: em implementação.** Etapa 1 (migração e preservação de legado) aprovada pela CI em push #268 e PR #269. Etapas 2 e 4 (endpoint de status, auditoria, ações, exclusão física aposentada e indicadores) implementadas em código; Etapa 3 (busca/filtros) implementada parcialmente, faltando preservar contexto durante edição. As novas execuções de CI ainda estão em andamento.
 
 Objetivo: evoluir o cadastro básico para gestão do ciclo de vida dos alunos, preservando registros e permitindo consulta, pesquisa, filtros e histórico operacional.
 
@@ -90,8 +90,8 @@ Decisões fechadas:
 Etapas previstas:
 1. [Aprovada] Migração 004 e camada de dados, com teste de preservação de registros legados.
 2. [Em validação] Endpoint de ativação/inativação, auditoria e aposentadoria do fluxo de exclusão física.
-3. Listagem, pesquisa e filtros.
-4. Indicadores do dashboard.
+3. [Parcial] Situação, filtro e pesquisa implementados; falta preservar contexto de consulta ao editar.
+4. [Em validação] Indicadores de ativos/inativos e distribuição de planos somente para ativos.
 5. Detalhes do aluno e histórico simples de auditoria.
 6. Regressão, documentação, CI e revisão visual.
 
