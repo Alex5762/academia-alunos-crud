@@ -60,7 +60,10 @@ Regras aprovadas e propostas:
 - Um plano sem preço, com preço zero ou com dados obrigatórios incompletos não pode ser ativado nem contratado.
 - Não preencher preço automaticamente e não criar preços fictícios para os planos atuais.
 - Alterar o preço do catálogo afeta somente novas matrículas; matrículas existentes preservam o valor contratado.
-- Desativar um plano em vez de apagá-lo quando já houver matrículas associadas. A desativação e a exclusão com histórico ainda aguardam aprovação como regra formal.
+- **Decisão aprovada:** um plano que ainda não possua nenhuma matrícula vinculada pode ser excluído fisicamente.
+- Se existir ao menos uma matrícula vinculada ao plano, a exclusão física é proibida; o plano deve ser desativado.
+- Planos desativados permanecem consultáveis no histórico e continuam identificando as matrículas antigas, mas não podem ser selecionados em novas contratações.
+- A verificação de vínculos e a exclusão/desativação devem ocorrer de forma protegida contra concorrência, para evitar que uma matrícula seja criada enquanto o plano está sendo excluído.
 
 ### 4.2 Tabela `matriculas`
 
@@ -279,6 +282,10 @@ A coluna antiga será mantida durante a transição. Sua remoção só poderá s
 - [ ] Nenhum aluno, ID ou texto original de plano é perdido.
 - [ ] Reexecutar a rotina de migração não duplica registros.
 - [ ] Planos em rascunho ou inativos não aparecem para novas matrículas.
+- [ ] Plano sem matrículas vinculadas pode ser excluído.
+- [ ] Plano com pelo menos uma matrícula vinculada não pode ser excluído fisicamente e pode ser desativado.
+- [ ] Plano desativado continua identificado e consultável no histórico das matrículas existentes.
+- [ ] Operações concorrentes não permitem excluir um plano enquanto uma matrícula vinculada está sendo criada.
 - [ ] Plano incompleto pode ser salvo como rascunho, mas não pode ser ativado nem contratado.
 - [ ] Plano com preço nulo ou igual a zero não pode ser ativado nem contratado.
 - [ ] Plano só pode ser ativado quando todos os campos obrigatórios estiverem preenchidos e o preço for maior que zero.
@@ -324,7 +331,7 @@ A coluna antiga será mantida durante a transição. Sua remoção só poderá s
 | Trancamento/suspensão | Fora do primeiro escopo. | Proposta |
 | Legados sem preço e datas | Preservar como pendentes; bloquear novas matrículas até regularização com dados reais e auditados. | **Aprovada** |
 | Plano sem preço ou cadastro incompleto | Permitir salvar como rascunho; só ativar e disponibilizar para contratação com dados obrigatórios completos e preço maior que zero. | **Aprovada** |
-| Exclusão de plano | Desativar; impedir exclusão quando houver histórico. | Proposta |
+| Exclusão de plano | Permitir exclusão física somente sem matrículas vinculadas; com histórico, bloquear exclusão e permitir desativação. | **Aprovada** |
 
 As regras aprovadas podem ser usadas como base para a especificação. Os itens pendentes ou propostos ainda precisam ser validados antes da implementação.
 
