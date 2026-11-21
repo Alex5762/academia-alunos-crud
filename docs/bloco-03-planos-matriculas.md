@@ -254,7 +254,7 @@ A coluna antiga será mantida durante a transição. Sua remoção só poderá s
 - Não confiar somente em validação de interface para impedir matrícula duplicada, plano desativado ou aluno inativo.
 - Não introduzir gateway, cobrança automática ou armazenamento de dados de pagamento neste bloco.
 
-## 8. Escopo proposto
+## 8. Escopo aprovado
 
 ### Dentro do Bloco 03
 
@@ -272,7 +272,7 @@ A coluna antiga será mantida durante a transição. Sua remoção só poderá s
 
 - Registro de pagamentos e baixas financeiras.
 - Cobrança recorrente, inadimplência e integração com gateways.
-- Trancamento, suspensão ou congelamento.
+- Trancamento, suspensão e congelamento ficam expressamente fora da primeira versão do Bloco 03.
 - Check-in, frequência, QR Code ou controle de acesso físico.
 - Múltiplas modalidades/contratos simultâneos, salvo decisão explícita que amplie o escopo.
 
@@ -318,7 +318,9 @@ A coluna antiga será mantida durante a transição. Sua remoção só poderá s
 - [ ] Documentação local e README são atualizados.
 - [ ] Revisão humana das telas é registrada separadamente da CI.
 
-## 10. Decisões que precisam ser aprovadas antes da implementação
+## 10. Decisões aprovadas e pontos pendentes
+
+As regras abaixo já foram aprovadas para orientar a implementação. O status não significa que o código esteja implementado ou testado.
 
 | Tema | Regra registrada | Situação |
 |---|---|---|
@@ -328,12 +330,12 @@ A coluna antiga será mantida durante a transição. Sua remoção só poderá s
 | Data final | Inclusiva; duração em meses usa calendário, ajuste ao último dia válido e preservação do dia de referência nas renovações contínuas. | **Aprovada** |
 | Cancelamento | Efeito imediato; preservar histórico, registrar instante, funcionário responsável e motivo opcional. | **Aprovada** |
 | Nova matrícula no dia do cancelamento | Permitir início no mesmo instante do cancelamento ou depois, com comparação por horário e sem sobreposição. | **Aprovada** |
-| Trancamento/suspensão | Fora do primeiro escopo. | Proposta |
+| Trancamento/suspensão/congelamento | Fora do escopo aprovado da primeira versão do Bloco 03. | **Fora de escopo — aprovado** |
 | Legados sem preço e datas | Preservar como pendentes; bloquear novas matrículas até regularização com dados reais e auditados. | **Aprovada** |
 | Plano sem preço ou cadastro incompleto | Permitir salvar como rascunho; só ativar e disponibilizar para contratação com dados obrigatórios completos e preço maior que zero. | **Aprovada** |
 | Exclusão de plano | Permitir exclusão física somente sem matrículas vinculadas; com histórico, bloquear exclusão e permitir desativação. | **Aprovada** |
 
-As regras aprovadas podem ser usadas como base para a especificação. Os itens pendentes ou propostos ainda precisam ser validados antes da implementação.
+As regras marcadas como aprovadas compõem a base funcional do Bloco 03. Os pontos ainda pendentes devem ser resolvidos durante a revisão final da especificação, antes da criação das migrations. Recomendações não aprovadas não devem ser tratadas como requisitos.
 
 ## 11. Dependências e limites do projeto
 
