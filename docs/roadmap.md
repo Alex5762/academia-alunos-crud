@@ -131,9 +131,11 @@ A implementação deverá proteger a regra de não sobreposição contra solicit
 
 **Horário de início aprovado:** quando for informada apenas uma data futura, o início será às 00:00 no fuso da academia; para hoje, o padrão será o instante atual, permitindo escolher horário posterior, nunca anterior. A renovação contínua começa automaticamente no limite exclusivo anterior.
 
+**Migração idempotente aprovada:** cada aluno do conjunto inicial terá um único registro de revisão legado, identificado por chave estrangeira com restrição `UNIQUE`. A carga será transacional e versionada; reexecuções não duplicarão nem sobrescreverão resultados de revisão e auditoria. Alunos criados após a carga inicial continuarão no fluxo normal.
+
 **Fora do escopo aprovado:** trancamento, suspensão e congelamento.
 
-**Revisão de consistência:** foram corrigidas a duplicação do campo de cancelamento e a ambiguidade dos legados pendentes. O fluxo de revisão de legados com três resultados e seus requisitos de auditoria foi aprovado. O fuso `America/Sao_Paulo` e a convenção de instantes UTC em `DATETIME` também foram aprovados; permanece a implementação e validação dessa conversão. O comportamento do cancelamento antes ou exatamente no início também foi aprovado: mantém histórico, produz intervalo efetivo vazio e não bloqueia novas matrículas. Ainda precisam ser fechados antes das migrations: detalhes operacionais da tela/referência de evidência, implementação da consulta dos estados derivados, versão MySQL/MariaDB e idempotência da migração.
+**Revisão de consistência:** foram corrigidas a duplicação do campo de cancelamento e a ambiguidade dos legados pendentes. O fluxo de revisão de legados com três resultados e seus requisitos de auditoria foi aprovado. O fuso `America/Sao_Paulo` e a convenção de instantes UTC em `DATETIME` também foram aprovados; permanece a implementação e validação dessa conversão. O comportamento do cancelamento antes ou exatamente no início também foi aprovado: mantém histórico, produz intervalo efetivo vazio e não bloqueia novas matrículas. Ainda precisam ser fechados antes das migrations: detalhes operacionais da tela/referência de evidência, implementação da consulta dos estados derivados, versão MySQL/MariaDB e implementação/testes da migration idempotente já aprovada.
 
 Não iniciar migrations ou implementação até revisar as decisões restantes e confirmar os critérios de aceite.
 
