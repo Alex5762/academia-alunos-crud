@@ -143,3 +143,14 @@ A alteração voluntária de senha foi validada com senha atual incorreta, senha
 O Playwright também verificou a navegação mobile por foco sequencial com Tab e rolagem automática até o último atalho, além de abrir a tela de alteração de senha e a página de funcionários. As capturas atualizadas foram publicadas no artefato da CI e sincronizadas na branch pelo commit automatizado `841983e1ff4aa9d9a4c01e2b0709269ef0ca1a11`.
 
 A inspeção das capturas identificou e motivou ajustes de contraste dos rótulos dos gráficos no tema escuro e de indicação/foco da navegação horizontal mobile. A inspeção física em dispositivo real e em navegador adicional ainda deve ser realizada.
+
+## 10. CI após a especificação do Bloco 02 — 21/11/2026
+
+Após a inclusão do escopo detalhado do Bloco 02 e a atualização do roadmap, as execuções mais recentes da CI concluíram com sucesso:
+
+- [Run 44862156886 — push #225, sucesso](https://github.com/Alex5762/academia-alunos-crud/actions/runs/44862156886): integração/captura e publicação das capturas concluídas com sucesso.
+- [Run 44862160513 — PR #226, sucesso](https://github.com/Alex5762/academia-alunos-crud/actions/runs/44862160513): integração/captura concluída com sucesso; publicação ignorada conforme esperado para evento de pull request.
+
+Essas execuções validam que as alterações documentais não quebraram o pipeline. O Bloco 02 permanece especificado, mas ainda não implementado; portanto, essas execuções não representam testes de status, inativação ou reativação de alunos.
+
+A pendência de revisão manual permanece: inspeção em celular real e em navegador adicional, com atenção à rolagem interna da tabela, contraste/legibilidade nos temas claro e escuro, foco por teclado e mensagens de campos obrigatórios vazios. Não marcar essa etapa como concluída com base apenas nas capturas e testes automatizados.
