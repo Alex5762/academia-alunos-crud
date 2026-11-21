@@ -408,7 +408,7 @@ USUARIO_ID="$(db_value "SELECT id FROM usuarios WHERE email = 'provision-ci@exam
 EVENTOS="$(db_value "SELECT COUNT(*) FROM auditoria WHERE usuario_id = $USUARIO_ID AND entidade = 'alunos' AND entidade_id = $ALUNO_ID AND acao IN ('aluno_criado', 'aluno_editado', 'aluno_excluido')")"
 [[ "$EVENTOS" == "3" ]] || fail "Esperava 3 eventos do CRUD associados ao usuário; encontrei $EVENTOS."
 LOGIN_EVENTOS="$(db_value "SELECT COUNT(*) FROM auditoria WHERE usuario_id = $USUARIO_ID AND acao = 'login'")"
-[[ "$LOGIN_EVENTOS" == "1" ]] || fail "O login não foi registrado exatamente uma vez."
+[[ "$LOGIN_EVENTOS" == "3" ]] || fail "O login não corresponde aos três logins válidos realizados até este ponto."
 
 echo "8/10 - Revogando sessão quando a conta é desativada..."
 db_exec "UPDATE usuarios SET ativo = 0 WHERE id = $USUARIO_ID"
@@ -426,7 +426,7 @@ curl -fsS -L -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/login.php" \
 assert_contains "$TMP_DIR/login-reactivated-success.html" "Visão geral"
 
 LOGIN_EVENTOS="$(db_value "SELECT COUNT(*) FROM auditoria WHERE usuario_id = $USUARIO_ID AND acao = 'login'")"
-[[ "$LOGIN_EVENTOS" == "2" ]] || fail "O segundo login após reativação não foi registrado."
+[[ "$LOGIN_EVENTOS" == "4" ]] || fail "O login após reativação não foi registrado corretamente."
 
 echo "8.9/10 - Testando renovação de sessão e proteção CSRF..."
 curl -fsS -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/index.php" -o "$TMP_DIR/heartbeat-dashboard.html"
