@@ -539,7 +539,7 @@ AINDA_EXISTE="$(db_value "SELECT COUNT(*) FROM alunos WHERE id = $ALUNO_ID")"
 echo "7/10 - Conferindo autoria dos eventos de auditoria..."
 USUARIO_ID="$(db_value "SELECT id FROM usuarios WHERE email = 'provision-ci@example.test' LIMIT 1")"
 EVENTOS="$(db_value "SELECT COUNT(*) FROM auditoria WHERE usuario_id = $USUARIO_ID AND entidade = 'alunos' AND entidade_id = $ALUNO_ID AND acao IN ('aluno_criado', 'aluno_editado', 'aluno_inativado', 'aluno_reativado')")"
-[[ "$EVENTOS" == "4" ]] || fail "Esperava 4 eventos de criação/edição/status associados ao usuário; encontrei $EVENTOS."
+[[ "$EVENTOS" == "6" ]] || fail "Esperava 6 eventos de criação/edição/status associados ao usuário, incluindo as duas ações executadas pelo perfil; encontrei $EVENTOS."
 LOGIN_EVENTOS="$(db_value "SELECT COUNT(*) FROM auditoria WHERE usuario_id = $USUARIO_ID AND acao = 'login'")"
 [[ "$LOGIN_EVENTOS" == "3" ]] || fail "O login não corresponde aos três logins válidos realizados até este ponto."
 
