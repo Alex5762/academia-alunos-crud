@@ -125,7 +125,7 @@ Manter `aluno_criado` e `aluno_editado`. Eventos históricos `aluno_excluido` ex
 - [ ] Validar a execução real do teste em CI.
 - [ ] Ajustar consultas centrais para ler o status explicitamente.
 
-**Entrega:** banco novo e banco com registros anteriores suportam o status do aluno.
+**Entrega:** banco novo e banco com registros anteriores suportam o status do aluno. A migração e o teste estão no branch; a entrega só será considerada validada após CI verde.
 
 ### Etapa 2 — Inativar e reativar
 
