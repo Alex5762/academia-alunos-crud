@@ -31,104 +31,6 @@ O desenho recomendado separa:
 
 Essa separação evita que a edição do preço ou do nome de um plano altere retroativamente o histórico dos alunos. O processo de revisão dos registros antigos terá um registro de controle próprio, separado de `matriculas`; ele não representa contrato nem gera vigência por si só.
 
-### 4.6 Relacionamentos e cardinalidade
-
-O modelo final mantém apenas os relacionamentos necessários ao escopo:
-
-| Origem | Relação | Destino | Regra |
-|---|---|---|---|
-| `alunos` | 1:N | `matriculas` | Um aluno pode ter várias matrículas históricas; os períodos efetivos não podem se sobrepor. |
-| `planos` | 1:N | `matriculas` | Um plano pode aparecer em várias matrículas; `plano_id` pode ser nulo somente quando o vínculo legado não puder ser associado com segurança ao catálogo. |
-| `alunos` | 1:0..1 | `revisoes_legado` | Cada aluno do conjunto inicial recebe um controle de revisão; alunos criados depois não recebem esse registro automaticamente. |
-| `revisoes_legado` | 1:N | `revisoes_legado_eventos` | Cada decisão humana cria um evento histórico imutável na aplicação. |
-| `usuarios` | 1:N | `revisoes_legado_eventos` | Toda decisão humana identifica o funcionário autenticado. |
-| `usuarios` | 1:N | `auditoria` | A trilha geral identifica quem criou, alterou, cancelou ou revisou; eventos automáticos podem ter autor nulo. |
-
-```text
-alunos 1 ───── N matriculas N ───── 0..1 planos
-   │
-   └────── 0..1 revisoes_legado 1 ───── N revisoes_legado_eventos
-                                             │
-usuarios 1 ──────────────────────────────────┘
-
-usuarios 1 ───── N auditoria
-```
-
-A relação opcional matrícula-plano existe apenas para legados sem correspondência segura no catálogo. Matrículas novas sempre exigem plano ativo. Não criar relação direta entre aluno e plano: o vínculo é representado por `matriculas`.
-
-### 4.7 Tipos, nulabilidade, índices e integridade sugeridos
-
-Os tipos são uma proposta física simples, alinhada aos identificadores atuais (`alunos.id` e `usuarios.id` são `INT UNSIGNED`; `auditoria.id` é `BIGINT UNSIGNED`). Confirmar a versão real do MySQL/MariaDB antes de fechar constraints.
-
-**`planos`**
-
-| Campo | Tipo sugerido | Regra |
-|---|---|---|
-| `id` | `INT UNSIGNED` | PK, auto incremento. |
-| `nome` | `VARCHAR(100)` | Obrigatório. |
-| `descricao` | `VARCHAR(255)` | Opcional. |
-| `duracao_valor` | `SMALLINT UNSIGNED` | Nulo enquanto rascunho incompleto; maior que zero para ativação. |
-| `duracao_unidade` | `ENUM('DIA','SEMANA','MES')` | Nulo enquanto rascunho incompleto. |
-| `valor_atual` | `DECIMAL(10,2)` | Nulo enquanto rascunho; maior que zero para ativação. |
-| `situacao` | `ENUM('RASCUNHO','ATIVO','INATIVO')` | Obrigatório, padrão `RASCUNHO`. |
-| `created_at`, `updated_at` | `DATETIME` | Metadados com padrão/atualização pelo banco. |
-
-**`matriculas`**
-
-| Campo | Tipo sugerido | Regra |
-|---|---|---|
-| `id` | `BIGINT UNSIGNED` | PK, compatível com `auditoria.entidade_id`. |
-| `aluno_id` | `INT UNSIGNED` | FK obrigatória para `alunos.id`. |
-| `plano_id` | `INT UNSIGNED` | FK para `planos.id`; nulo somente em legado sem correspondência segura. |
-| `plano_nome_contratado` | `VARCHAR(100)` | Cópia do nome na contratação; nulo somente se desconhecido em legado. |
-| `valor_contratado` | `DECIMAL(10,2)` | Cópia do preço; nulo somente se desconhecido em legado. |
-| `duracao_contratada_valor` | `SMALLINT UNSIGNED` | Cópia da duração; nulo somente se desconhecido em legado. |
-| `duracao_contratada_unidade` | `ENUM('DIA','SEMANA','MES')` | Cópia da unidade; nulo somente se desconhecida em legado. |
-| `inicio_em`, `fim_exclusivo_em` | `DATETIME` | Obrigatórios em UTC; `fim_exclusivo_em > inicio_em`. |
-| `dia_referencia_calendario` | `TINYINT UNSIGNED` | 1–31 para mês; nulo para dia/semana ou quando não comprovado no legado. |
-| `cancelada_em` | `DATETIME` | Nulo enquanto não cancelada; instante UTC do cancelamento. |
-| `origem` | `ENUM('SISTEMA','LEGADO')` | Obrigatório, padrão `SISTEMA`. |
-| `motivo_cancelamento` | `VARCHAR(255)` | Opcional. |
-| `created_at` | `DATETIME` | Metadado de criação. |
-
-**`revisoes_legado`**
-
-| Campo | Tipo sugerido | Regra |
-|---|---|---|
-| `id` | `BIGINT UNSIGNED` | PK, auto incremento. |
-| `aluno_id_origem` | `INT UNSIGNED` | FK para `alunos.id`, obrigatório e UNIQUE. |
-| `plano_texto_original` | `VARCHAR(40)` | Cópia exata do campo de origem. |
-| `resultado_atual` | `ENUM('VINCULO_CONFIRMADO','LEGADO_SEM_VIGENCIA','PENDENTE_REVISAO')` | Obrigatório, padrão `PENDENTE_REVISAO`. |
-| `fonte_referencia` | `VARCHAR(255)` | Fonte da última decisão; nula antes da primeira revisão. |
-| `created_at`, `updated_at` | `DATETIME` | Metadados do controle. |
-
-**`revisoes_legado_eventos`**
-
-| Campo | Tipo sugerido | Regra |
-|---|---|---|
-| `id` | `BIGINT UNSIGNED` | PK, auto incremento. |
-| `revisao_legado_id` | `BIGINT UNSIGNED` | FK para `revisoes_legado.id`. |
-| `usuario_id` | `INT UNSIGNED` | FK para `usuarios.id`; obrigatório em decisão humana. |
-| `resultado_anterior` | Mesmo ENUM dos resultados | Nulo apenas no primeiro evento humano. |
-| `resultado_novo` | Mesmo ENUM dos resultados | Obrigatório. |
-| `fonte_referencia` | `VARCHAR(255)` | Referência da evidência; quando o resultado for pendente por falta de fonte, explicar isso em observações. |
-| `observacoes` | `TEXT` | Opcional. |
-| `criado_em` | `DATETIME` | Metadado do evento, seguindo a convenção atual da auditoria geral. |
-
-Índices mínimos:
-- `planos(situacao, nome)`, para listar opções disponíveis.
-- `matriculas(aluno_id, inicio_em, fim_exclusivo_em)`, para histórico e sobreposição por aluno.
-- `matriculas(plano_id)`, para verificar vínculos antes de excluir/desativar plano.
-- `revisoes_legado(aluno_id_origem)` UNIQUE.
-- `revisoes_legado_eventos(revisao_legado_id, criado_em)`, para a linha do tempo.
-
-Usar FKs com `ON DELETE RESTRICT` nas relações históricas. Não usar exclusão em cascata para apagar contratos ou auditoria. O aluno já é inativado logicamente; plano só pode ser excluído sem matrícula vinculada, caso contrário fica inativo.
-
-Preço positivo, duração positiva, consistência entre duração/unidade e `fim_exclusivo_em > inicio_em` são validados no PHP. Usar `CHECK` no banco somente se a versão instalada garantir seu enforcement. Não adicionar UNIQUE ao nome do plano sem necessidade demonstrada.
-
-**Simplificação para o portfólio:** não criar tabela genérica de eventos de matrícula nem framework de auditoria próprio. Usar `auditoria` para criação/edição/cancelamento comuns de planos e matrículas. Manter `revisoes_legado_eventos` porque esse fluxo precisa registrar resultado anterior/novo, fonte e observações.
-
-
 ## 4. Modelo de dados proposto
 
 O modelo abaixo é conceitual. Os nomes, tamanhos, nulabilidade, índices, restrições e estratégia de migração precisam ser revisados antes da migration.
@@ -258,6 +160,103 @@ O cancelamento é persistido pelo instante `cancelada_em` e pelo evento de audit
 Os resultados da revisão de legados (`VINCULO_CONFIRMADO`, `LEGADO_SEM_VIGENCIA` e `PENDENTE_REVISAO`) **não são situações da matrícula operacional**. São conclusões de um processo de revisão legado e devem ser armazenadas no registro próprio desse processo, com sua auditoria. Um legado só origina uma matrícula operacional quando as condições necessárias para determinar a vigência forem comprovadas. Um legado confirmado sem matrícula vigente não cria uma matrícula fictícia.
 
 Essa separação evita tarefas periódicas apenas para atualizar estados temporais e impede que uma conclusão administrativa sobre dados antigos seja confundida com a vigência de um contrato.
+
+### 4.6 Relacionamentos e cardinalidade
+
+O modelo final mantém apenas os relacionamentos necessários ao escopo:
+
+| Origem | Relação | Destino | Regra |
+|---|---|---|---|
+| `alunos` | 1:N | `matriculas` | Um aluno pode ter várias matrículas históricas; os períodos efetivos não podem se sobrepor. |
+| `planos` | 1:N | `matriculas` | Um plano pode aparecer em várias matrículas; `plano_id` pode ser nulo somente quando o vínculo legado não puder ser associado com segurança ao catálogo. |
+| `alunos` | 1:0..1 | `revisoes_legado` | Cada aluno do conjunto inicial recebe um controle de revisão; alunos criados depois não recebem esse registro automaticamente. |
+| `revisoes_legado` | 1:N | `revisoes_legado_eventos` | Cada decisão humana cria um evento histórico imutável na aplicação. |
+| `usuarios` | 1:N | `revisoes_legado_eventos` | Toda decisão humana identifica o funcionário autenticado. |
+| `usuarios` | 1:N | `auditoria` | A trilha geral identifica quem criou, alterou, cancelou ou revisou; eventos automáticos podem ter autor nulo. |
+
+```text
+alunos 1 ───── N matriculas N ───── 0..1 planos
+   │
+   └────── 0..1 revisoes_legado 1 ───── N revisoes_legado_eventos
+                                             │
+usuarios 1 ──────────────────────────────────┘
+
+usuarios 1 ───── N auditoria
+```
+
+A relação opcional matrícula-plano existe apenas para legados sem correspondência segura no catálogo. Matrículas novas sempre exigem plano ativo. Não criar relação direta entre aluno e plano: o vínculo é representado por `matriculas`.
+
+### 4.7 Tipos, nulabilidade, índices e integridade sugeridos
+
+Os tipos são uma proposta física simples, alinhada aos identificadores atuais (`alunos.id` e `usuarios.id` são `INT UNSIGNED`; `auditoria.id` é `BIGINT UNSIGNED`). Confirmar a versão real do MySQL/MariaDB antes de fechar constraints.
+
+**`planos`**
+
+| Campo | Tipo sugerido | Regra |
+|---|---|---|
+| `id` | `INT UNSIGNED` | PK, auto incremento. |
+| `nome` | `VARCHAR(100)` | Obrigatório. |
+| `descricao` | `VARCHAR(255)` | Opcional. |
+| `duracao_valor` | `SMALLINT UNSIGNED` | Nulo enquanto rascunho incompleto; maior que zero para ativação. |
+| `duracao_unidade` | `ENUM('DIA','SEMANA','MES')` | Nulo enquanto rascunho incompleto. |
+| `valor_atual` | `DECIMAL(10,2)` | Nulo enquanto rascunho; maior que zero para ativação. |
+| `situacao` | `ENUM('RASCUNHO','ATIVO','INATIVO')` | Obrigatório, padrão `RASCUNHO`. |
+| `created_at`, `updated_at` | `DATETIME` | Metadados com padrão/atualização pelo banco. |
+
+**`matriculas`**
+
+| Campo | Tipo sugerido | Regra |
+|---|---|---|
+| `id` | `BIGINT UNSIGNED` | PK, compatível com `auditoria.entidade_id`. |
+| `aluno_id` | `INT UNSIGNED` | FK obrigatória para `alunos.id`. |
+| `plano_id` | `INT UNSIGNED` | FK para `planos.id`; nulo somente em legado sem correspondência segura. |
+| `plano_nome_contratado` | `VARCHAR(100)` | Cópia do nome na contratação; nulo somente se desconhecido em legado. |
+| `valor_contratado` | `DECIMAL(10,2)` | Cópia do preço; nulo somente se desconhecido em legado. |
+| `duracao_contratada_valor` | `SMALLINT UNSIGNED` | Cópia da duração; nulo somente se desconhecido em legado. |
+| `duracao_contratada_unidade` | `ENUM('DIA','SEMANA','MES')` | Cópia da unidade; nulo somente se desconhecida em legado. |
+| `inicio_em`, `fim_exclusivo_em` | `DATETIME` | Obrigatórios em UTC; `fim_exclusivo_em > inicio_em`. |
+| `dia_referencia_calendario` | `TINYINT UNSIGNED` | 1–31 para mês; nulo para dia/semana ou quando não comprovado no legado. |
+| `cancelada_em` | `DATETIME` | Nulo enquanto não cancelada; instante UTC do cancelamento. |
+| `origem` | `ENUM('SISTEMA','LEGADO')` | Obrigatório, padrão `SISTEMA`. |
+| `motivo_cancelamento` | `VARCHAR(255)` | Opcional. |
+| `created_at` | `DATETIME` | Metadado de criação. |
+
+**`revisoes_legado`**
+
+| Campo | Tipo sugerido | Regra |
+|---|---|---|
+| `id` | `BIGINT UNSIGNED` | PK, auto incremento. |
+| `aluno_id_origem` | `INT UNSIGNED` | FK para `alunos.id`, obrigatório e UNIQUE. |
+| `plano_texto_original` | `VARCHAR(40)` | Cópia exata do campo de origem. |
+| `resultado_atual` | `ENUM('VINCULO_CONFIRMADO','LEGADO_SEM_VIGENCIA','PENDENTE_REVISAO')` | Obrigatório, padrão `PENDENTE_REVISAO`. |
+| `fonte_referencia` | `VARCHAR(255)` | Fonte da última decisão; nula antes da primeira revisão. |
+| `created_at`, `updated_at` | `DATETIME` | Metadados do controle. |
+
+**`revisoes_legado_eventos`**
+
+| Campo | Tipo sugerido | Regra |
+|---|---|---|
+| `id` | `BIGINT UNSIGNED` | PK, auto incremento. |
+| `revisao_legado_id` | `BIGINT UNSIGNED` | FK para `revisoes_legado.id`. |
+| `usuario_id` | `INT UNSIGNED` | FK para `usuarios.id`; obrigatório em decisão humana. |
+| `resultado_anterior` | Mesmo ENUM dos resultados | Nulo apenas no primeiro evento humano. |
+| `resultado_novo` | Mesmo ENUM dos resultados | Obrigatório. |
+| `fonte_referencia` | `VARCHAR(255)` | Referência da evidência; quando o resultado for pendente por falta de fonte, explicar isso em observações. |
+| `observacoes` | `TEXT` | Opcional. |
+| `criado_em` | `DATETIME` | Metadado do evento, seguindo a convenção atual da auditoria geral. |
+
+Índices mínimos:
+- `planos(situacao, nome)`, para listar opções disponíveis.
+- `matriculas(aluno_id, inicio_em, fim_exclusivo_em)`, para histórico e sobreposição por aluno.
+- `matriculas(plano_id)`, para verificar vínculos antes de excluir/desativar plano.
+- `revisoes_legado(aluno_id_origem)` UNIQUE.
+- `revisoes_legado_eventos(revisao_legado_id, criado_em)`, para a linha do tempo.
+
+Usar FKs com `ON DELETE RESTRICT` nas relações históricas. Não usar exclusão em cascata para apagar contratos ou auditoria. O aluno já é inativado logicamente; plano só pode ser excluído sem matrícula vinculada, caso contrário fica inativo.
+
+Preço positivo, duração positiva, consistência entre duração/unidade e `fim_exclusivo_em > inicio_em` são validados no PHP. Usar `CHECK` no banco somente se a versão instalada garantir seu enforcement. Não adicionar UNIQUE ao nome do plano sem necessidade demonstrada.
+
+**Simplificação para o portfólio:** não criar tabela genérica de eventos de matrícula nem framework de auditoria próprio. Usar `auditoria` para criação/edição/cancelamento comuns de planos e matrículas. Manter `revisoes_legado_eventos` porque esse fluxo precisa registrar resultado anterior/novo, fonte e observações.
 
 ## 5. Regras de negócio propostas
 
