@@ -201,10 +201,21 @@ try {
     deviceScaleFactor: 1,
   });
   absoluteWarningPage.on("pageerror", (error) => pageErrors.push(error.message));
+  await absoluteWarningPage.route("**/index.php", async (route) => {
+    const response = await route.fetch();
+    const html = await response.text();
+    const adjustedHtml = html.replace(
+      /name="fitcontrol-absolute-remaining" content="\d+"/,
+      'name="fitcontrol-absolute-remaining" content="240"',
+    );
+    if (adjustedHtml === html) {
+      throw new Error("Não foi possível preparar o cenário próximo do limite absoluto.");
+    }
+    await route.fulfill({ response, body: adjustedHtml });
+  });
   await autenticar(absoluteWarningPage);
   await absoluteWarningPage.clock.install();
   await absoluteWarningPage.goto(baseUrl + "/index.php", { waitUntil: "networkidle" });
-  await absoluteWarningPage.clock.fastForward((7 * 60 + 55) * 60 * 1000);
   await absoluteWarningPage.getByRole("heading", { name: "Seu tempo máximo de acesso está terminando" }).waitFor();
   await absoluteWarningPage.getByRole("button", { name: "Entendi" }).click();
 
