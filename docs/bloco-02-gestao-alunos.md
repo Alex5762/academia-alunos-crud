@@ -2,7 +2,7 @@
 
 ## Estado
 
-**Em implementação — Etapa 1 (migração e camada de dados).** A migração `004_student_status.sql` e o teste de preservação `tests/migration-student-status.sh` foram adicionados; a validação pela CI ainda está pendente. As etapas de endpoint, listagem, dashboard e detalhes não foram iniciadas.
+**Em implementação — Etapas 1 e 2 concluídas em código, aguardando CI.** A migração 004 e seu teste de preservação foram aprovados em push/PR. O endpoint transacional, a inativação/reativação na listagem e a aposentadoria da exclusão física foram implementados; os novos testes de integração aguardam execução.
 
 Este documento fecha o escopo funcional e técnico do Bloco 02. A execução deve acontecer na branch `feat/dashboard-portfolio`, em etapas pequenas, com testes e documentação acompanhando o código. Não fazer merge em `main` sem revisão e aprovação explícita.
 
@@ -122,19 +122,20 @@ Manter `aluno_criado` e `aluno_editado`. Eventos históricos `aluno_excluido` ex
 - [x] Criar `database/migrations/004_student_status.sql` com `ativo TINYINT(1) NOT NULL DEFAULT 1` e o índice `idx_alunos_ativo_nome`.
 - [x] Atualizar a CI para executar a migração após 001–003.
 - [x] Criar `tests/migration-student-status.sh`: inserir fixture legado antes da migração, conferir ID e dados preservados, confirmar `ativo = 1` nos registros existentes, testar o padrão em novo registro e verificar o índice.
-- [ ] Validar a execução real do teste em CI.
+- [x] Validar a execução real do teste em CI (push #268 e PR #269, ambos verdes).
 - [ ] Ajustar consultas centrais para ler o status explicitamente.
 
 **Entrega:** banco novo e banco com registros anteriores suportam o status do aluno. A migração e o teste estão no branch; a entrega só será considerada validada após CI verde.
 
 ### Etapa 2 — Inativar e reativar
 
-- Implementar endpoint próprio, por exemplo `alterar-status-aluno.php`.
-- Aceitar somente POST e validar CSRF antes da alteração.
-- Exigir autenticação e validar ID/estado.
-- Bloquear estados arbitrários e garantir que a alteração e a auditoria sejam atômicas.
-- Tornar a operação idempotente para evitar auditoria duplicada quando o estado não mudar.
-- Retirar a exclusão física da interface e aposentar `excluir.php`.
+- [x] Endpoint `alterar-status-aluno.php`, exclusivo para POST.
+- [x] Autenticação, validação CSRF, ID e ações permitidas.
+- [x] Bloqueio de linha com `SELECT ... FOR UPDATE`, atualização condicional e auditoria na mesma transação.
+- [x] Idempotência: repetir o estado atual não gera novo evento.
+- [x] Interface troca exclusão por inativação/reativação.
+- [x] `excluir.php` aposentado com HTTP 410 para qualquer método.
+- [ ] Validar todos os cenários novos na CI.
 
 **Entrega:** nenhum fluxo normal da interface apaga alunos fisicamente.
 
