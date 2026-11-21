@@ -190,6 +190,7 @@ Para conferir os resultados, consulte a aba **Actions** do GitHub. Uma execuçã
 - [Roadmap e critérios de evolução por blocos](docs/roadmap.md)
 - [Planejamento do Bloco 01 — autenticação e auditoria](docs/bloco-01-autenticacao.md)
 - [Planejamento do Bloco 02 — gestão de alunos](docs/bloco-02-gestao-alunos.md)
+- [Pesquisa e proposta técnica do Bloco 03 — planos e matrículas](docs/bloco-03-planos-matriculas.md)
 - [Roadmap e critérios de evolução por blocos](docs/roadmap.md)
 - [Modelo de dados e migração de autenticação/auditoria](docs/modelo-dados-autenticacao-auditoria.md)
 
