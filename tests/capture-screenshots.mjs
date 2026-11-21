@@ -103,10 +103,17 @@ try {
   if (navDimensions.scrollWidth <= navDimensions.clientWidth) {
     throw new Error("A navegação mobile deveria indicar opções adicionais por rolagem horizontal.");
   }
+  const navLinks = mobileNav.locator(".nav-link");
+  const navLinkCount = await navLinks.count();
   await mobileNav.focus();
-  await mobileNav.press("ArrowRight");
+  for (let index = 0; index < navLinkCount; index += 1) {
+    await mobile.keyboard.press("Tab");
+  }
+  const lastNavLinkFocused = await navLinks.last().evaluate((element) => document.activeElement === element);
   const navScrollAfterKeyboard = await mobileNav.evaluate((element) => element.scrollLeft);
-  if (navScrollAfterKeyboard <= 0) throw new Error("A navegação mobile não respondeu ao teclado.");
+  if (!lastNavLinkFocused || navScrollAfterKeyboard <= 0) {
+    throw new Error("A navegação mobile não revelou o último atalho durante a navegação por teclado.");
+  }
   await mobileNav.evaluate((element) => { element.scrollLeft = 0; });
 
   await mobile.screenshot({
