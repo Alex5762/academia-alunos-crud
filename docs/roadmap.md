@@ -92,8 +92,8 @@ Etapas:
 2. [Aprovada pela CI #359] Endpoint transacional de ativação/inativação, auditoria e aposentadoria do fluxo de exclusão física.
 3. [Aprovada pela CI #359] Situação, filtros e pesquisa, com contexto preservado na edição, retorno e alteração de status.
 4. [Aprovada pela CI #359] Indicadores de ativos/inativos e distribuição de planos somente para ativos.
-5. [Aprovada pela CI #359] Detalhes do aluno e histórico simples de auditoria; testes HTTP e capturas Playwright desktop/mobile.
-6. [Parcial] Regressão automatizada e documentação aprovadas; falta revisão visual humana em aparelho físico/navegador adicional.
+5. [Aprovada pelas CI #359/#373/#375] Detalhes do aluno e histórico simples de auditoria; testes HTTP e capturas Playwright desktop/mobile nos temas claro e escuro.
+6. [Quase concluída] Regressão automatizada, documentação e revisão das capturas aprovadas; falta inspeção em aparelho físico/navegador instalado.
 
 O bloco só será concluído quando a revisão manual estiver concluída e todos os critérios de aceite de docs/bloco-02-gestao-alunos.md forem atendidos. A integração em main continua dependendo de aprovação explícita separada.
 
