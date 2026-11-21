@@ -222,3 +222,9 @@ A migração `database/migrations/003_login_rate_limit.sql` cria a tabela de con
 ### Expiração de sessão
 
 Sessões autenticadas expiram após 30 minutos sem atividade ou após 8 horas desde o login, o que ocorrer primeiro. A atividade renova apenas o prazo de inatividade; ela não reinicia o limite absoluto. Ao expirar, o acesso é encerrado e o funcionário precisa entrar novamente.
+
+## Licença
+
+O código original desenvolvido para o FitControl é disponibilizado sob a licença [MIT](LICENSE). Consulte o arquivo da licença para conhecer as permissões e condições de uso.
+
+A estrutura inicial do projeto foi adaptada a partir do material didático **Tutorial 7 — PHP e MySQL com XAMPP**, disponibilizado pelo professor na disciplina. O material foi utilizado com autorização do professor, e a referência acadêmica permanece registrada neste README. Materiais de terceiros e dependências continuam sujeitos aos respectivos direitos e licenças.
