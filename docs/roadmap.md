@@ -99,7 +99,7 @@ O encerramento formal depende da inspeção em aparelho físico/navegador instal
 
 ### Bloco 03 — Planos e matrículas
 
-**Estado: pesquisa e proposta técnica documentadas; nove regras de negócio aprovadas e escopo sem trancamento/suspensão/congelamento aprovado; implementação não iniciada.**
+**Estado: nove regras de negócio e escopo sem trancamento/suspensão/congelamento aprovados; primeira revisão de consistência registrada; implementação não iniciada.**
 
 Documento de referência: [Pesquisa e proposta técnica do Bloco 03](bloco-03-planos-matriculas.md).
 
@@ -127,7 +127,7 @@ Escopo candidato:
 
 A implementação deverá proteger a regra de não sobreposição contra solicitações concorrentes e centralizar o cálculo de datas em uma função testável. A exclusão de planos e a criação de matrículas também devem ser protegidas contra condições de corrida.
 
-**Fora do escopo aprovado:** trancamento, suspensão e congelamento. Outros itens ainda pendentes devem ser resolvidos na revisão final da especificação.
+**Fora do escopo aprovado:** trancamento, suspensão e congelamento.\n\n**Revisão de consistência:** foram corrigidas a duplicação do campo de cancelamento e a ambiguidade dos legados pendentes. Permanecem para fechar antes das migrations: horário padrão para início em data futura, fluxo auditado de regularização de legados, estados persistidos versus derivados, fuso horário IANA, versão MySQL/MariaDB, cancelamento antes do início e idempotência da migração.
 
 Não iniciar migrations ou implementação até revisar as decisões restantes e confirmar os critérios de aceite.
 
