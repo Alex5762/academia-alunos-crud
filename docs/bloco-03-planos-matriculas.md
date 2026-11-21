@@ -113,17 +113,39 @@ A decisão entre persistir todos esses estados ou derivar `AGENDADA`, `ATIVA` e 
 - O preço do catálogo é uma referência para novas contratações.
 - O valor contratado fica registrado na matrícula.
 - Duração também deve ser copiada para a matrícula, para que uma edição posterior do plano não modifique contratos históricos.
+- A matrícula deve preservar o dia de referência do calendário para calcular os limites de períodos mensais e renovações contínuas sem deriva após meses curtos.
 - Para dinheiro, usar `DECIMAL` em vez de `FLOAT` ou `DOUBLE`. `DECIMAL(10,2)` é uma candidata inicial, sujeita à validação da faixa de valores necessária ao projeto.
 - Não presumir que todo mês possui 30 dias. A unidade de duração deve ser explícita.
 
 ### 5.2 Datas
 
-- Usar `DATE` para início e término se a regra comercial trabalhar com dias de calendário.
+**Decisão aprovada:** a data final da matrícula (`data_fim`) é inclusiva. O aluno permanece coberto durante todo esse dia; uma renovação contínua começa no dia seguinte.
+
+Regra de calendário aprovada para durações em meses:
+
+- Tratar mês como unidade de calendário, nunca converter automaticamente um mês em 30 dias.
+- Calcular a próxima data de início (limite do período seguinte) avançando a quantidade de meses contratada a partir do dia de referência.
+- Se o mês de destino não possuir o dia de referência (por exemplo, dia 29, 30 ou 31 em fevereiro), usar o último dia válido daquele mês.
+- Definir `data_fim` como o dia imediatamente anterior à próxima data de início. Assim, os períodos inclusivos são contínuos e não se sobrepõem.
+- Preservar o dia de referência original nas renovações contínuas, mesmo quando ele precisou ser ajustado em um mês curto. Isso evita que uma matrícula iniciada no dia 29, 30 ou 31 passe a vencer permanentemente em outro dia depois de fevereiro.
+- A modelagem deverá guardar ou conseguir recuperar esse dia de referência de forma inequívoca (campo conceitual candidato: `dia_referencia_calendario`), copiando-o para renovações contínuas. Uma nova contratação sem vínculo de renovação começa com o dia da sua própria data de início.
+
+Exemplos:
+
+| Início / dia de referência | Próximo início calculado | Último dia incluído (`data_fim`) |
+|---|---|---|
+| 01/11, referência 1 | 01/12 | 30/11 |
+| 31/01, referência 31, ano não bissexto | 28/02 | 27/02 |
+| 31/01, referência 31, ano bissexto | 29/02 | 28/02 |
+| Renovação contínua em 28/02, preservando referência 31 | 31/03 | 30/03 |
+
+Para durações em dias ou semanas, calcular conforme a unidade contratada e aplicar a mesma convenção de data final inclusiva.
+
+- Usar `DATE` para início e término quando a regra comercial trabalhar com dias de calendário.
 - Usar `DATETIME` para registrar eventos que exigem data e horário, como criação e cancelamento.
 - Não usar uma data fictícia para preencher informações desconhecidas.
-- Definir se a data final é inclusiva e qual regra de calendário será usada em casos como uma matrícula iniciada no dia 29, 30 ou 31.
-- Testar virada de mês, fevereiro e ano bissexto.
-- O cálculo da data final deve ficar centralizado na aplicação, coberto por testes e reproduzível.
+- Testar virada de mês, fevereiro, ano bissexto e sequências de renovações.
+- Centralizar o cálculo em uma função de domínio, coberta por testes determinísticos; não espalhar a regra entre telas ou consultas.
 
 ### 5.3 Renovação e histórico
 
@@ -134,7 +156,8 @@ Regras:
 - Renovar significa criar uma nova matrícula, não sobrescrever a anterior.
 - O histórico deve manter o plano, o preço, a duração e o período de cada contratação.
 - Se a matrícula vigente termina em 30/11, por exemplo, a renovação começa em 01/12.
-- O sistema deve calcular a data de início da renovação a partir da data final registrada, sem depender do dia em que o funcionário realizou a operação.
+- O sistema deve calcular a data de início da renovação a partir do limite seguinte do período e do dia de referência preservado, sem depender do dia em que o funcionário realizou a operação.
+- A renovação contínua copia o dia de referência da matrícula anterior, inclusive quando a data anterior foi ajustada por fevereiro ou outro mês curto.
 - Essa regra cobre renovação antecipada contínua, sem intervalo solicitado. A possibilidade de escolher uma data futura com intervalo será uma regra separada, ainda não definida.
 - A nova matrícula continua sujeita à regra aprovada de não sobreposição de períodos.
 
@@ -221,6 +244,10 @@ A estratégia definitiva deve decidir se a coluna antiga será mantida por um pe
 - [ ] Aluno inativo não recebe nova matrícula.
 - [ ] Matrícula nova exige todos os dados obrigatórios.
 - [ ] Datas inválidas e valores negativos são rejeitados no servidor e, quando suportado, pelo banco.
+- [ ] Data final é inclusiva: uma matrícula de 01/11 até 30/11 permanece válida durante todo o dia 30/11.
+- [ ] Duração mensal iniciada nos dias 29, 30 e 31 é calculada por mês de calendário, com ajuste para o último dia válido do mês de destino.
+- [ ] Ano bissexto é tratado corretamente.
+- [ ] Renovações contínuas preservam o dia de referência e não sofrem deriva permanente após fevereiro.
 - [ ] Renovação preserva o registro anterior e aplica a regra de calendário definida.
 - [ ] Cancelamento preserva o histórico e respeita a regra de efeito aprovada.
 - [ ] Solicitações concorrentes não criam vínculos incompatíveis.
@@ -235,8 +262,8 @@ A estratégia definitiva deve decidir se a coluna antiga será mantida por um pe
 |---|---|---|
 | Várias matrículas por aluno | Permitir histórico de várias matrículas, sem sobreposição de períodos não cancelados. | **Aprovada** |
 | Matrículas futuras | Permitir matrícula futura quando começar após o término da última matrícula não cancelada. | **Aprovada** |
-| Renovação antecipada | Nova matrícula começa no dia seguinte ao último dia da matrícula vigente. | **Aprovada** |
-| Data final | Definir inclusão do último dia e regra de calendário para fins de mês. | Pendente |
+| Renovação antecipada | Nova matrícula contínua começa no dia seguinte ao último dia incluído da matrícula vigente. | **Aprovada** |
+| Data final | Inclusiva; duração em meses usa calendário, ajuste ao último dia válido e preservação do dia de referência nas renovações contínuas. | **Aprovada** |
 | Cancelamento | Preservar o registro; definir efeito e momento em que deixa de bloquear novos períodos. | Parcialmente definida |
 | Trancamento/suspensão | Fora do primeiro escopo. | Proposta |
 | Legados sem preço e datas | Preservar como pendentes de revisão, sem inventar dados. | Proposta |
