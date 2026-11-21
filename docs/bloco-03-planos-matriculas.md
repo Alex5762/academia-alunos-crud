@@ -158,7 +158,10 @@ Regras:
 - Se a matrícula vigente termina em 30/11, por exemplo, a renovação começa em 01/12.
 - O sistema deve calcular a data de início da renovação a partir do limite seguinte do período e do dia de referência preservado, sem depender do dia em que o funcionário realizou a operação.
 - A renovação contínua copia o dia de referência da matrícula anterior, inclusive quando a data anterior foi ajustada por fevereiro ou outro mês curto.
-- Essa regra cobre renovação antecipada contínua, sem intervalo solicitado. A possibilidade de escolher uma data futura com intervalo será uma regra separada, ainda não definida.
+- Essa regra cobre a renovação contínua padrão, sem intervalo.
+- **Decisão aprovada:** o funcionário também pode escolher manualmente uma data de início futura para uma nova matrícula, criando um intervalo entre contratos quando necessário. A data escolhida deve ser hoje ou posterior, ser válida para o calendário e não provocar sobreposição com qualquer outra matrícula não cancelada do mesmo aluno.
+- O intervalo é permitido, não obrigatório. A renovação contínua continua usando automaticamente o dia seguinte ao último dia incluído da matrícula anterior.
+- Uma matrícula futura pode ocupar qualquer intervalo livre entre períodos já agendados, desde que não se sobreponha a eles; não é obrigatório colocá-la sempre depois da última matrícula agendada.
 - A nova matrícula continua sujeita à regra aprovada de não sobreposição de períodos.
 
 ### 5.4 Cancelamento e inativação
@@ -184,8 +187,10 @@ Trancamento, suspensão e congelamento ficam fora da primeira versão: exigem re
 
 Regras aprovadas:
 
-- Permitir novas matrículas futuras, desde que o início seja posterior ao término da matrícula vigente ou da última matrícula agendada.
-- Não permitir que o período de uma nova matrícula se sobreponha ao de outra matrícula não cancelada do mesmo aluno.
+- Permitir que o funcionário escolha uma data de início para uma nova matrícula, desde que seja hoje ou uma data futura válida.
+- Permitir intervalos livres entre contratos; a data escolhida pode ocupar um espaço entre matrículas já agendadas, desde que não haja sobreposição.
+- Não permitir que o período de uma nova matrícula se sobreponha ao de qualquer outra matrícula não cancelada do mesmo aluno, seja vigente ou futura.
+- A regra de renovação contínua permanece automática: início no dia seguinte ao último dia incluído da matrícula vigente, salvo quando o funcionário optar por agendar outro início futuro válido.
 - Preservar matrículas anteriores no histórico; renovar não significa editar ou substituir o registro anterior.
 - Matrículas canceladas permanecem no histórico e não devem bloquear novos períodos depois de efetivamente canceladas.
 - Registros legados sem datas ficam como pendentes de revisão. Como não é possível determinar sua vigência, eles não devem ser tratados automaticamente como períodos livres nem como contratos vigentes; a regra para liberar novas matrículas nesses casos precisa ser definida no tratamento dos legados.
@@ -270,6 +275,9 @@ A coluna antiga será mantida durante a transição. Sua remoção só poderá s
 - [ ] Motivo de cancelamento é opcional e, quando informado, permanece consultável.
 - [ ] Nova matrícula não começa antes do encerramento efetivo de uma matrícula cancelada nem retroage sobre período utilizado.
 - [ ] Inativar o aluno não cancela automaticamente suas matrículas.
+- [ ] O sistema permite escolher uma data futura válida e não retroativa para nova matrícula.
+- [ ] O sistema permite inserir uma matrícula em um intervalo livre entre duas matrículas futuras já agendadas.
+- [ ] O sistema rejeita datas inválidas, datas passadas e qualquer período que se sobreponha a uma matrícula não cancelada.
 - [ ] Solicitações concorrentes não criam vínculos incompatíveis.
 - [ ] Todas as operações de escrita exigem autenticação, autorização e CSRF.
 - [ ] Testes automatizados e regressão dos módulos existentes passam.
@@ -281,7 +289,7 @@ A coluna antiga será mantida durante a transição. Sua remoção só poderá s
 | Tema | Regra registrada | Situação |
 |---|---|---|
 | Várias matrículas por aluno | Permitir histórico de várias matrículas, sem sobreposição de períodos não cancelados. | **Aprovada** |
-| Matrículas futuras | Permitir matrícula futura quando começar após o término da última matrícula não cancelada. | **Aprovada** |
+| Matrículas futuras e intervalos | Permitir escolher início hoje ou em data futura válida, inclusive em intervalo entre contratos, desde que não haja sobreposição com matrícula não cancelada. | **Aprovada** |
 | Renovação antecipada | Nova matrícula contínua começa no dia seguinte ao último dia incluído da matrícula vigente. | **Aprovada** |
 | Data final | Inclusiva; duração em meses usa calendário, ajuste ao último dia válido e preservação do dia de referência nas renovações contínuas. | **Aprovada** |
 | Cancelamento | Efeito imediato; preservar histórico, registrar instante, funcionário responsável e motivo opcional. Nova matrícula deve iniciar após o encerramento efetivo. | **Aprovada** |
