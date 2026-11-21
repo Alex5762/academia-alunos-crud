@@ -375,6 +375,51 @@ HTTP_CODE="$(curl -sS -o "$TMP_DIR/after-logout.html" -w '%{http_code}' -c "$COO
 LOGOUT_EVENTOS="$(db_value "SELECT COUNT(*) FROM auditoria WHERE usuario_id = $USUARIO_ID AND acao = 'logout'")"
 [[ "$LOGOUT_EVENTOS" == "1" ]] || fail "O logout não foi registrado."
 
+echo "9.1/10 - Expirando sessão após 30 minutos de inatividade..."
+IDLE_JAR="$TMP_DIR/idle-session-cookies.txt"
+curl -fsS -c "$IDLE_JAR" -b "$IDLE_JAR" "$BASE_URL/login.php" -o "$TMP_DIR/idle-login.html"
+IDLE_TOKEN="$(get_token "$TMP_DIR/idle-login.html")"
+curl -fsS -L -c "$IDLE_JAR" -b "$IDLE_JAR" "$BASE_URL/login.php" \
+    --data-urlencode "token=$IDLE_TOKEN" \
+    --data-urlencode "email=provision-ci@example.test" \
+    --data-urlencode "senha=$FITCONTROL_NEW_PASSWORD" \
+    -o "$TMP_DIR/idle-login-success.html"
+assert_contains "$TMP_DIR/idle-login-success.html" "Visão geral"
+IDLE_SESSION_ID="$(awk '$6 == "FITCONTROLSESSID" {print $7}' "$IDLE_JAR" | tail -n 1)"
+[[ -n "$IDLE_SESSION_ID" ]] || fail "Não foi possível identificar a sessão de teste por inatividade."
+SESSION_ID="$IDLE_SESSION_ID" php -r '
+    session_name("FITCONTROLSESSID");
+    session_id(getenv("SESSION_ID"));
+    session_start();
+    $_SESSION["usuario_ultimo_acesso"] = time() - 1801;
+    session_write_close();
+'
+curl -sS -L -c "$IDLE_JAR" -b "$IDLE_JAR" "$BASE_URL/index.php" -o "$TMP_DIR/idle-expired.html"
+assert_contains "$TMP_DIR/idle-expired.html" "Sua sessão expirou por inatividade ou pelo tempo máximo de acesso."
+
+echo "9.2/10 - Aplicando limite absoluto de oito horas..."
+ABSOLUTE_JAR="$TMP_DIR/absolute-session-cookies.txt"
+curl -fsS -c "$ABSOLUTE_JAR" -b "$ABSOLUTE_JAR" "$BASE_URL/login.php" -o "$TMP_DIR/absolute-login.html"
+ABSOLUTE_TOKEN="$(get_token "$TMP_DIR/absolute-login.html")"
+curl -fsS -L -c "$ABSOLUTE_JAR" -b "$ABSOLUTE_JAR" "$BASE_URL/login.php" \
+    --data-urlencode "token=$ABSOLUTE_TOKEN" \
+    --data-urlencode "email=provision-ci@example.test" \
+    --data-urlencode "senha=$FITCONTROL_NEW_PASSWORD" \
+    -o "$TMP_DIR/absolute-login-success.html"
+assert_contains "$TMP_DIR/absolute-login-success.html" "Visão geral"
+ABSOLUTE_SESSION_ID="$(awk '$6 == "FITCONTROLSESSID" {print $7}' "$ABSOLUTE_JAR" | tail -n 1)"
+[[ -n "$ABSOLUTE_SESSION_ID" ]] || fail "Não foi possível identificar a sessão de teste absoluto."
+SESSION_ID="$ABSOLUTE_SESSION_ID" php -r '
+    session_name("FITCONTROLSESSID");
+    session_id(getenv("SESSION_ID"));
+    session_start();
+    $_SESSION["usuario_autenticado_em"] = time() - 28801;
+    $_SESSION["usuario_ultimo_acesso"] = time() - 60;
+    session_write_close();
+'
+curl -sS -L -c "$ABSOLUTE_JAR" -b "$ABSOLUTE_JAR" "$BASE_URL/index.php" -o "$TMP_DIR/absolute-expired.html"
+assert_contains "$TMP_DIR/absolute-expired.html" "Sua sessão expirou por inatividade ou pelo tempo máximo de acesso."
+
 
 echo "10/10 - Verificando que o endpoint de gravação rejeita GET..."
 HTTP_CODE="$(curl -sS -o "$TMP_DIR/method.html" -w '%{http_code}' "$BASE_URL/salvar.php")"
