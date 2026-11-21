@@ -182,6 +182,20 @@ for (const engine of engines) {
     const persistedTheme = await page.locator("html").getAttribute("data-theme");
     ensure(persistedTheme === "dark", engine.name + ": a preferência de tema não persistiu.");
 
+    // Estados vazios da listagem: filtro sem inativos e pesquisa sem correspondência.
+    await page.goto(baseUrl + "/index.php?status=inativos", { waitUntil: "domcontentloaded" });
+    await page.getByRole("heading", { name: "Nenhum aluno inativo" }).waitFor();
+    await page.getByRole("link", { name: "Ver todos os alunos" }).waitFor();
+
+    await page.goto(
+      baseUrl + "/index.php?status=ativos&busca=fitcontrol-sem-correspondencia-987654",
+      { waitUntil: "domcontentloaded" },
+    );
+    await page.getByRole("heading", { name: "Nenhum aluno encontrado" }).waitFor();
+    await page.getByRole("link", { name: "Limpar pesquisa" }).waitFor();
+
+    await page.goto(baseUrl + "/index.php", { waitUntil: "domcontentloaded" });
+
     // Perfil sem eventos: valida o estado vazio e a semântica da página em todos os motores.
     await page.getByRole("link", { name: "Ver detalhes de Ana Beatriz Costa" }).click();
     await page.getByRole("heading", { name: "Informações cadastrais" }).waitFor();
@@ -259,7 +273,7 @@ for (const engine of engines) {
     console.log(
       engine.name +
         ": OK — login, dashboard, larguras desktop/mobile, rolagem interna, teclado, " +
-        "foco visível, campos obrigatórios, tema escuro, perfil vazio/preenchido, histórico e overflow mobile.",
+        "foco visível, campos obrigatórios, tema escuro, estados vazios da listagem, perfil vazio/preenchido, histórico e overflow mobile.",
     );
   } finally {
     await browser.close();
