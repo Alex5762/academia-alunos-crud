@@ -50,7 +50,7 @@ Entregas:
 - Resolver pendências visuais ou documentá-las com clareza.
 - Atualizar a descrição da PR para refletir o estado real.
 
-**Estado:** base funcional, autenticação, gestão de funcionários, auditoria, política de sessão e alteração voluntária de senha implementadas. Os workflows de push e PR passaram; as execuções mais recentes após a atualização documental também estão verdes. A revisão das capturas desktop/mobile e os ajustes visuais automatizados foram realizados. Permanece pendente a inspeção humana em dispositivo físico e navegador adicional, incluindo rolagem da tabela, contraste/legibilidade, foco por teclado e mensagens de campos obrigatórios.
+**Estado:** base funcional, autenticação, gestão de funcionários, auditoria, política de sessão e alteração voluntária de senha implementadas. A CI foi ampliada para verificar Chromium, Firefox e WebKit, viewports desktop/mobile estreito, overflow, rolagem interna, teclado, foco visível e validação nativa de campos obrigatórios. O resultado dessa nova cobertura depende das execuções disparadas pelo commit. Permanece pendente apenas a inspeção humana em dispositivo físico e a avaliação de percepção visual/uso real, incluindo gesto de toque e tecnologias assistivas.
 
 ### Bloco 01 — Autenticação e proteção do painel
 
