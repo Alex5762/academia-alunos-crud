@@ -2,7 +2,7 @@
 
 ## Estado
 
-**Implementação e regressão automatizada aprovadas pela CI #359 em 21/11/2026; revisão visual humana pendente.** A execução 44876515363 (https://github.com/Alex5762/academia-alunos-crud/actions/runs/44876515363) concluiu com sucesso a sintaxe PHP, arquivos obrigatórios, migrações 001–004, preservação de legado, provisionamento, testes HTTP do CRUD, filtros, ações de status, perfil individual, histórico de auditoria e capturas Playwright. O workflow também publicou as capturas geradas pelo Playwright na branch. A PR continua aberta e a integração em main depende de revisão e aprovação explícitas.
+**Implementação e regressão automatizada aprovadas pelas CI #359 e #375 em 21/11/2026; revisão visual das capturas concluída, inspeção em aparelho físico pendente.** A execução 44876515363 (https://github.com/Alex5762/academia-alunos-crud/actions/runs/44876515363) validou a gestão, o perfil e o histórico. As execuções 44877723150 (https://github.com/Alex5762/academia-alunos-crud/actions/runs/44877723150) e 44877943853 (https://github.com/Alex5762/academia-alunos-crud/actions/runs/44877943853) também concluíram com sucesso a regressão e as novas capturas. As imagens atuais mostram quatro eventos de auditoria em desktop e mobile, nos temas claro e escuro. A inspeção visual dessas quatro capturas foi realizada; permanece pendente apenas a conferência em aparelho físico/navegador instalado. A PR continua aberta em Draft e não foi integrada em main.
 
 Este documento fecha o escopo funcional e técnico do Bloco 02. A execução deve acontecer na branch `feat/dashboard-portfolio`, em etapas pequenas, com testes e documentação acompanhando o código. Não fazer merge em `main` sem revisão e aprovação explícita.
 
@@ -181,8 +181,8 @@ Manter `aluno_criado` e `aluno_editado`. Eventos históricos `aluno_excluido` ex
 - [x] Atualizar testes HTTP e Playwright para o perfil, histórico e preservação de filtros.
 - [x] Atualizar README, roadmap, relatório de testes e este documento com os resultados da CI #359.
 - [x] Executar e inspecionar a CI #359: job principal de integração e capturas concluído com sucesso.
-- [ ] Revisar manualmente capturas em desktop/mobile, temas claro/escuro, foco por teclado, contraste, textos e estados vazios.
-- [ ] Fazer inspeção em aparelho físico e navegador adicional.
+- [x] Revisar as quatro capturas automatizadas de perfil: desktop/mobile e temas claro/escuro; conferir linha do tempo com quatro eventos.
+- [ ] Fazer inspeção em aparelho físico e navegador instalado adicional, incluindo gesto de toque e leitura real.
 - [x] Manter a PR aberta sem merge automático; main permanece intacta.
 
 ## 6. Arquivos e áreas provavelmente afetados
