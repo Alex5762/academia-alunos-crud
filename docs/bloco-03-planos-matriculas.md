@@ -74,7 +74,10 @@ Campos candidatos:
 | `plano_nome_contratado` | Cópia do nome no momento da contratação, preservando o histórico. |
 | `valor_contratado` | Valor registrado para aquela matrícula, independente do preço atual do catálogo. |
 | `duracao_contratada_valor` / `duracao_contratada_unidade` | Cópia da duração contratada. |
-| `data_inicio` / `data_fim` | Período de vigência; valores ausentes nos registros legados não devem ser inventados. |
+| `inicio_em` | Início efetivo da vigência (`DATETIME`), incluindo horário para permitir início após cancelamento intradiário. |
+| `fim_exclusivo_em` | Limite final exclusivo (`DATETIME`): a matrícula deixa de valer exatamente neste instante. Para vigência normal, corresponde à meia-noite seguinte ao último dia de calendário inclusivo. |
+| `dia_referencia_calendario` | Dia original do mês usado no cálculo de durações mensais e preservado nas renovações contínuas. |
+| `cancelada_em` | Instante exato em que o cancelamento produziu efeito, quando aplicável. |
 | `situacao` | Estado operacional ou de revisão da matrícula. |
 | `origem` | Distingue registros migrados dos criados pelo fluxo normal. |
 | `cancelada_em` | Momento do cancelamento, quando aplicável. |
@@ -117,34 +120,44 @@ A decisão entre persistir todos esses estados ou derivar `AGENDADA`, `ATIVA` e 
 - Para dinheiro, usar `DECIMAL` em vez de `FLOAT` ou `DOUBLE`. `DECIMAL(10,2)` é uma candidata inicial, sujeita à validação da faixa de valores necessária ao projeto.
 - Não presumir que todo mês possui 30 dias. A unidade de duração deve ser explícita.
 
-### 5.2 Datas
+### 5.2 Datas e representação temporal
 
-**Decisão aprovada:** a data final da matrícula (`data_fim`) é inclusiva. O aluno permanece coberto durante todo esse dia; uma renovação contínua começa no dia seguinte.
+**Decisão aprovada:** a data final apresentada ao usuário é inclusiva. O aluno permanece coberto durante todo o último dia de calendário, exceto quando a matrícula é cancelada antes disso; nesse caso, o cancelamento encerra a vigência no instante exato registrado.
+
+Para suportar cancelamento e nova matrícula no mesmo dia, a recomendação técnica aprovada é armazenar os limites de vigência como instantes:
+
+- `inicio_em DATETIME`: instante em que a matrícula passa a valer.
+- `fim_exclusivo_em DATETIME`: instante em que deixa de valer. Esse instante não faz parte do período.
+- `cancelada_em DATETIME`: instante efetivo do cancelamento, quando houver.
+
+O intervalo efetivo será tratado como semiaberto: `[inicio_em, fim_exclusivo_em)`. Se houver cancelamento, o limite efetivo será o menor entre `fim_exclusivo_em` e `cancelada_em`. Assim, uma matrícula pode terminar às 14:00 e a seguinte começar exatamente às 14:00, sem sobreposição. A data final inclusiva exibida na interface será derivada do limite exclusivo da vigência normal; matrículas canceladas também exibirão o instante exato do cancelamento.
 
 Regra de calendário aprovada para durações em meses:
 
 - Tratar mês como unidade de calendário, nunca converter automaticamente um mês em 30 dias.
-- Calcular a próxima data de início (limite do período seguinte) avançando a quantidade de meses contratada a partir do dia de referência.
+- Calcular a próxima data-limite avançando a quantidade de meses contratada a partir do dia de referência.
 - Se o mês de destino não possuir o dia de referência (por exemplo, dia 29, 30 ou 31 em fevereiro), usar o último dia válido daquele mês.
-- Definir `data_fim` como o dia imediatamente anterior à próxima data de início. Assim, os períodos inclusivos são contínuos e não se sobrepõem.
+- Para uma matrícula contratada por dias de calendário, o limite exclusivo normal é a meia-noite seguinte ao último dia inclusivo calculado.
 - Preservar o dia de referência original nas renovações contínuas, mesmo quando ele precisou ser ajustado em um mês curto. Isso evita que uma matrícula iniciada no dia 29, 30 ou 31 passe a vencer permanentemente em outro dia depois de fevereiro.
-- A modelagem deverá guardar ou conseguir recuperar esse dia de referência de forma inequívoca (campo conceitual candidato: `dia_referencia_calendario`), copiando-o para renovações contínuas. Uma nova contratação sem vínculo de renovação começa com o dia da sua própria data de início.
+- Guardar `dia_referencia_calendario` na matrícula e copiá-lo para renovações contínuas. Uma nova contratação sem vínculo de renovação usa o dia da sua própria data inicial.
 
-Exemplos:
+Exemplos para matrículas iniciadas à meia-noite:
 
-| Início / dia de referência | Próximo início calculado | Último dia incluído (`data_fim`) |
+| Início / dia de referência | Próximo limite de ciclo | Último dia incluído |
 |---|---|---|
-| 01/11, referência 1 | 01/12 | 30/11 |
-| 31/01, referência 31, ano não bissexto | 28/02 | 27/02 |
-| 31/01, referência 31, ano bissexto | 29/02 | 28/02 |
-| Renovação contínua em 28/02, preservando referência 31 | 31/03 | 30/03 |
+| 01/11, referência 1 | 01/12 às 00:00 | 30/11 |
+| 31/01, referência 31, ano não bissexto | 28/02 às 00:00 | 27/02 |
+| 31/01, referência 31, ano bissexto | 29/02 às 00:00 | 28/02 |
+| Renovação contínua em 28/02, preservando referência 31 | 31/03 às 00:00 | 30/03 |
 
-Para durações em dias ou semanas, calcular conforme a unidade contratada e aplicar a mesma convenção de data final inclusiva.
+Em cancelamento intradiário, o limite efetivo passa a ser o próprio `cancelada_em`, por exemplo 21/11 às 14:00. Uma nova matrícula pode começar nesse mesmo instante ou depois, nunca antes.
 
-- Usar `DATE` para início e término quando a regra comercial trabalhar com dias de calendário.
-- Usar `DATETIME` para registrar eventos que exigem data e horário, como criação e cancelamento.
+Para durações em dias ou semanas, calcular conforme a unidade contratada e aplicar a mesma convenção de último dia inclusivo e limite exclusivo.
+
+- Usar `DATETIME` para os instantes de vigência e de cancelamento.
+- Definir um único fuso horário da academia na configuração da aplicação e usá-lo em todos os cálculos, gravações e exibições. Não depender do fuso padrão do servidor ou da sessão do banco.
 - Não usar uma data fictícia para preencher informações desconhecidas.
-- Testar virada de mês, fevereiro, ano bissexto e sequências de renovações.
+- Testar virada de mês, fevereiro, ano bissexto, horário do cancelamento, início no mesmo instante do encerramento anterior e sequências de renovações.
 - Centralizar o cálculo em uma função de domínio, coberta por testes determinísticos; não espalhar a regra entre telas ou consultas.
 
 ### 5.3 Renovação e histórico
@@ -173,8 +186,9 @@ Regras aprovadas:
 - O sistema registra o instante efetivo do cancelamento em `cancelada_em`, com precisão de data e horário (`DATETIME`).
 - O evento deve identificar o funcionário responsável pela operação, usando o mecanismo de auditoria já existente no projeto.
 - O motivo do cancelamento pode ser registrado como justificativa opcional; não deve ser obrigatório para concluir a operação.
-- Depois do cancelamento efetivo, a matrícula deixa de representar uma vigência ativa e não deve bloquear uma nova matrícula cujo início seja posterior ao encerramento efetivo.
-- A nova matrícula não pode ter início retroativo nem se sobrepor ao período efetivamente utilizado da matrícula cancelada. Como o modelo candidato usa datas de calendário (`DATE`) para início e término, a representação exata de uma nova matrícula no mesmo dia de um cancelamento intradiário precisa ser definida na modelagem final. Não presumir que uma coluna `DATE` consiga representar horário.
+- Depois do cancelamento efetivo, a matrícula deixa de representar uma vigência ativa.
+- **Decisão aprovada:** uma nova matrícula pode começar no mesmo dia e exatamente no instante do cancelamento, ou em instante posterior. Não pode começar antes desse instante nem retroagir sobre período utilizado.
+- O início e o fim precisam ser comparados como instantes (`DATETIME`), não apenas como datas, para permitir essa transição intradiária sem sobreposição.
 - A consulta histórica deve continuar exibindo a matrícula cancelada, seu período originalmente contratado, o momento efetivo do cancelamento e o responsável.
 - Cancelar uma matrícula não apaga nem altera os dados cadastrais do aluno.
 - Inativar o cadastro do aluno não cancela automaticamente suas matrículas; são ações diferentes e auditadas separadamente.
@@ -196,6 +210,8 @@ Regras aprovadas:
 - Registros legados sem datas ficam como pendentes de revisão. Como não é possível determinar sua vigência, eles não devem ser tratados automaticamente como períodos livres nem como contratos vigentes; a regra para liberar novas matrículas nesses casos precisa ser definida no tratamento dos legados.
 
 A validação deve ocorrer no servidor e ser protegida contra solicitações concorrentes. Uma consulta simples antes do INSERT não é suficiente: a implementação deverá usar transação e estratégia de bloqueio apropriada, com testes concorrentes para garantir que duas requisições simultâneas não criem períodos incompatíveis.
+
+Com intervalos semiabertos, dois períodos se sobrepõem quando `inicio_A < fim_efetivo_B` e `inicio_B < fim_efetivo_A`. Se o início do novo contrato for exatamente igual ao limite efetivo do anterior, os períodos são adjacentes e válidos, não sobrepostos.
 
 ## 6. Migração dos alunos existentes
 
@@ -274,6 +290,10 @@ A coluna antiga será mantida durante a transição. Sua remoção só poderá s
 - [ ] Cancelamento encerra imediatamente a vigência, registra instante e funcionário responsável, e preserva o histórico.
 - [ ] Motivo de cancelamento é opcional e, quando informado, permanece consultável.
 - [ ] Nova matrícula não começa antes do encerramento efetivo de uma matrícula cancelada nem retroage sobre período utilizado.
+- [ ] Uma nova matrícula pode começar exatamente no mesmo instante do cancelamento anterior (por exemplo, às 14:00), sem sobreposição.
+- [ ] Uma nova matrícula que começa um instante antes do limite efetivo é rejeitada.
+- [ ] Períodos adjacentes com `fim_exclusivo_em` igual ao `inicio_em` seguinte são aceitos.
+- [ ] Comparações e exibições respeitam o fuso horário configurado da academia.
 - [ ] Inativar o aluno não cancela automaticamente suas matrículas.
 - [ ] O sistema permite escolher uma data futura válida e não retroativa para nova matrícula.
 - [ ] O sistema permite inserir uma matrícula em um intervalo livre entre duas matrículas futuras já agendadas.
@@ -292,7 +312,8 @@ A coluna antiga será mantida durante a transição. Sua remoção só poderá s
 | Matrículas futuras e intervalos | Permitir escolher início hoje ou em data futura válida, inclusive em intervalo entre contratos, desde que não haja sobreposição com matrícula não cancelada. | **Aprovada** |
 | Renovação antecipada | Nova matrícula contínua começa no dia seguinte ao último dia incluído da matrícula vigente. | **Aprovada** |
 | Data final | Inclusiva; duração em meses usa calendário, ajuste ao último dia válido e preservação do dia de referência nas renovações contínuas. | **Aprovada** |
-| Cancelamento | Efeito imediato; preservar histórico, registrar instante, funcionário responsável e motivo opcional. Nova matrícula deve iniciar após o encerramento efetivo. | **Aprovada** |
+| Cancelamento | Efeito imediato; preservar histórico, registrar instante, funcionário responsável e motivo opcional. | **Aprovada** |
+| Nova matrícula no dia do cancelamento | Permitir início no mesmo instante do cancelamento ou depois, com comparação por horário e sem sobreposição. | **Aprovada** |
 | Trancamento/suspensão | Fora do primeiro escopo. | Proposta |
 | Legados sem preço e datas | Preservar como pendentes; bloquear novas matrículas até regularização com dados reais e auditados. | **Aprovada** |
 | Plano sem preço definido | Não permitir nova contratação até completar o cadastro. | Proposta |
