@@ -161,6 +161,19 @@ try {
     animations: "disabled",
   });
 
+  await mobile.evaluate(() => localStorage.setItem("fitcontrol-theme", "dark"));
+  await mobile.reload({ waitUntil: "networkidle" });
+  const mobileDetailTheme = await mobile.locator("html").getAttribute("data-theme");
+  if (mobileDetailTheme !== "dark") {
+    throw new Error("O tema escuro não foi aplicado ao perfil do aluno no mobile.");
+  }
+  await mobile.getByText("Cadastro criado").waitFor();
+  await mobile.screenshot({
+    path: `${outputDir}/aluno-detalhes-mobile-escuro.png`,
+    fullPage: true,
+    animations: "disabled",
+  });
+
   const form = await browser.newPage({
     viewport: { width: 1280, height: 900 },
     deviceScaleFactor: 1,
@@ -225,6 +238,19 @@ try {
 
   await settings.screenshot({
     path: `${outputDir}/dashboard-escuro.png`,
+    fullPage: true,
+    animations: "disabled",
+  });
+
+  await settings.getByRole("link", { name: /Ver detalhes de/ }).first().click();
+  await settings.getByRole("heading", { name: "Informações cadastrais" }).waitFor();
+  const profileTheme = await settings.locator("html").getAttribute("data-theme");
+  if (profileTheme !== "dark") {
+    throw new Error("O tema escuro não persistiu ao abrir o perfil do aluno.");
+  }
+  await settings.getByText("Cadastro criado").waitFor();
+  await settings.screenshot({
+    path: `${outputDir}/aluno-detalhes-desktop-escuro.png`,
     fullPage: true,
     animations: "disabled",
   });
