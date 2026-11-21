@@ -74,8 +74,13 @@ final class LegacyReviewDecisionService
         $sourceReference = self::normalizeText($sourceReference);
         $observations = self::normalizeText($observations);
 
-        if ($sourceReference !== null && mb_strlen($sourceReference) > 255) {
-            throw new InvalidArgumentException('A referência da fonte deve ter no máximo 255 caracteres.');
+        if ($sourceReference !== null) {
+            $sourceLength = preg_match_all('/./us', $sourceReference);
+            if ($sourceLength === false || $sourceLength > 255) {
+                throw new InvalidArgumentException(
+                    'A referência da fonte deve conter texto UTF-8 válido com no máximo 255 caracteres.'
+                );
+            }
         }
 
         if (in_array($newResult, ['VINCULO_CONFIRMADO', 'LEGADO_SEM_VIGENCIA'], true) && $sourceReference === null) {
