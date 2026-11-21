@@ -154,3 +154,22 @@ Após a inclusão do escopo detalhado do Bloco 02 e a atualização do roadmap, 
 Essas execuções validam que as alterações documentais não quebraram o pipeline. O Bloco 02 permanece especificado, mas ainda não implementado; portanto, essas execuções não representam testes de status, inativação ou reativação de alunos.
 
 A pendência de revisão manual permanece: inspeção em celular real e em navegador adicional, com atenção à rolagem interna da tabela, contraste/legibilidade nos temas claro e escuro, foco por teclado e mensagens de campos obrigatórios vazios. Não marcar essa etapa como concluída com base apenas nas capturas e testes automatizados.
+
+## 11. Verificações multibrowser automatizadas — 21/11/2026
+
+Foi adicionado o script `tests/browser-compatibility.mjs`, executado pela CI com Chromium, Firefox e WebKit (Playwright 1.65.1).
+
+O teste percorre os fluxos autenticados em cada motor e verifica:
+- abertura do login e dashboard;
+- presença dos registros fictícios no dashboard;
+- ausência de overflow horizontal global em desktop (1440px), mobile (390px) e mobile estreito (320px);
+- existência de rolagem interna na tabela e na navegação mobile;
+- alcance do último atalho da navegação por teclado e rolagem automática correspondente;
+- validação nativa dos campos obrigatórios vazios (nome, telefone e e-mail);
+- foco visível no primeiro campo do formulário após navegação por Tab;
+- abertura das configurações, aplicação do tema escuro e persistência ao voltar ao dashboard;
+- ausência de erros JavaScript não tratados.
+
+Esta ampliação testa três motores de navegador em emulação de viewport. Ela não representa teste em aparelhos físicos, não valida a sensação do gesto de toque, não equivale a Safari/iOS ou Chrome/Android instalados no aparelho e não substitui inspeção humana de contraste, legibilidade, leitores de tela e acessibilidade completa.
+
+**Resultado:** pendente até a CI executar o commit que adicionou este teste. Não registrar como aprovado antes de inspecionar as execuções de push e PR.
