@@ -11,11 +11,12 @@ mysql_cli() {
         --host="$MYSQL_HOST" \
         --port="$MYSQL_PORT" \
         --user="$MYSQL_USER" \
+        --database="$MYSQL_DATABASE" \
         "$@"
 }
 
 db_value() {
-    mysql_cli --batch --skip-column-names "$MYSQL_DATABASE" -e "$1"
+    mysql_cli --batch --skip-column-names -e "$1"
 }
 
 LEGACY_EMAIL="legacy-migration-004@example.test"
@@ -37,7 +38,7 @@ EXISTING_FIXTURE="$(db_value "SELECT COUNT(*) FROM alunos WHERE email = '$LEGACY
     exit 1
 }
 
-mysql_cli "$MYSQL_DATABASE" -e "
+mysql_cli -e "
     INSERT INTO alunos (nome, telefone, email, plano)
     VALUES ('Aluno legado da migração', '(21) 90000-0041', '$LEGACY_EMAIL', 'Mensal')
 "
@@ -67,7 +68,7 @@ EXPECTED_ROW="$LEGACY_ID|Aluno legado da migração|(21) 90000-0041|$LEGACY_EMAI
 }
 
 echo "4/4 - Conferindo valor padrão e índice..."
-mysql_cli "$MYSQL_DATABASE" -e "
+mysql_cli -e "
     INSERT INTO alunos (nome, telefone, email, plano)
     VALUES ('Aluno com status padrão', '(21) 90000-0042', '$NEW_EMAIL', 'Mensal')
 "
