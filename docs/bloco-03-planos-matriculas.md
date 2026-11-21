@@ -209,7 +209,7 @@ Exemplos para matrículas iniciadas à meia-noite:
 
 Para durações mensais, o início intradiário não desloca o limite mensal para o mesmo horário: o último dia de calendário é coberto até o fim e o limite exclusivo ocorre à meia-noite local seguinte. Para durações em dias/semanas, quando o cálculo resultar em limite intradiário, a interface mostra a data e a hora exatas. Em cancelamento intradiário, o limite efetivo passa a ser o próprio `cancelada_em`, por exemplo 21/11 às 14:00. Uma nova matrícula pode começar nesse mesmo instante ou depois, nunca antes.
 
-Para durações em dias ou semanas, tratar as unidades como dias/semanas de calendário no fuso local, preservando a hora local do início e calculando um limite exclusivo. Não converter semanas em segundos fixos nem dias em 86.400 segundos; a transição entre horários civis deve ser calculada com o fuso IANA. Quando o limite for intradiário, exibir o instante exato.
+**Decisão aprovada — durações em dias e semanas:** tratar as unidades como dias/semanas de calendário no fuso `America/Sao_Paulo`, preservando a hora local do início e calculando um limite exclusivo. Um dia corresponde à mesma hora local no dia de calendário seguinte; uma semana corresponde à mesma hora local sete dias de calendário depois. Exemplos: início em 10/01 às 15:00 + 1 dia = limite exclusivo em 11/01 às 15:00; + 1 semana (ou 7 dias) = 17/01 às 15:00. Não converter dias em 86.400 segundos nem semanas em segundos fixos; a transição entre horários civis deve ser calculada com o fuso IANA. Quando o limite for intradiário, exibir o instante exato.
 
 - Usar `DATETIME` para os instantes de vigência e de cancelamento.
 - **Decisão aprovada — fuso oficial:** usar o identificador IANA `America/Sao_Paulo` como fuso oficial da academia, centralizado na configuração da aplicação.
@@ -380,6 +380,8 @@ A coluna antiga será mantida durante a transição. Sua remoção só poderá s
 - [ ] Renovação contínua em 01/03 preservando referência 31 calcula o próximo limite em 31/03 00:00.
 - [ ] Durações de vários meses repetem o algoritmo de ciclos, sem overflow de `DateTime::modify('+N months')`.
 - [ ] Limites intradiários são exibidos com data e hora, sem apresentar uma data final inclusiva enganosa.
+- [ ] Duração de 1 dia iniciada em 10/01 às 15:00 produz limite exclusivo em 11/01 às 15:00 no fuso local.
+- [ ] Duração de 1 semana (ou 7 dias) iniciada em 10/01 às 15:00 produz limite exclusivo em 17/01 às 15:00 no fuso local.
 - [ ] Dias e semanas usam calendário local e preservam a hora local, sem conversão para segundos fixos.
 - [ ] Ano bissexto e conversões de fuso são tratados corretamente.
 - [ ] Renovações contínuas preservam o dia de referência e não sofrem deriva involuntária após fevereiro.
@@ -424,7 +426,8 @@ As regras abaixo já foram aprovadas para orientar a implementação. O status n
 | Várias matrículas por aluno | Permitir histórico de várias matrículas, sem sobreposição de períodos não cancelados. | **Aprovada** |
 | Matrículas futuras e intervalos | Permitir escolher início hoje ou em data futura válida, inclusive em intervalo entre contratos, desde que não haja sobreposição com matrícula não cancelada. | **Aprovada** |
 | Renovação antecipada | Nova matrícula contínua começa no dia seguinte ao último dia incluído da matrícula vigente. | **Aprovada** |
-| Data final | Inclusiva; duração em meses usa calendário, ajuste ao último dia válido e preservação do dia de referência nas renovações contínuas. | **Aprovada** |
+| Durações de dias e semanas | Calendário local, preservando o horário de início: 1 dia = mesmo horário no dia seguinte; 1 semana = mesmo horário sete dias de calendário depois. | **Aprovada** |
+| Data final mensal | Inclusiva; último dia calculado é coberto integralmente e o limite exclusivo é 00:00 local do dia seguinte, com ajuste ao último dia válido. | **Aprovada** |
 | Cancelamento | Efeito imediato; preservar histórico, registrar instante, funcionário responsável e motivo opcional. | **Aprovada** |
 | Nova matrícula no dia do cancelamento | Permitir início no mesmo instante do cancelamento ou depois, com comparação por horário e sem sobreposição. | **Aprovada** |
 | Trancamento/suspensão/congelamento | Fora do escopo aprovado da primeira versão do Bloco 03. | **Fora de escopo — aprovado** |
