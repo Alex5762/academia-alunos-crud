@@ -422,7 +422,7 @@ O DDL do MySQL/MariaDB pode confirmar implicitamente; após 005, conferir as tab
 9. Para `LEGADO_SEM_VIGENCIA`, manter o registro de revisão consultável, sem criar matrícula operacional fictícia; liberar novas matrículas após a confirmação auditada.
 10. Para `PENDENTE_REVISAO`, manter o bloqueio de novas matrículas até que uma revisão posterior baseada em evidências permita concluir o caso.
 11. Executar a carga de dados em transação. Se qualquer etapa falhar, desfazer a transação; se a execução for repetida, identificar a colisão especificamente como duplicidade da chave única e preservar o resultado, a fonte e a auditoria já existentes. Outros erros não devem ser mascarados como duplicidade.
-12. Tratar a carga como migration versionada e de execução única sobre o conjunto inicial de alunos. Não executar essa rotina como varredura recorrente de todos os alunos, pois alunos criados posteriormente seguem o fluxo normal e não são legados da carga inicial.
+12. Tratar a carga como migration SQL numerada e de execução única sobre o conjunto inicial de alunos. Não executar essa rotina como varredura recorrente de todos os alunos, pois alunos criados posteriormente seguem o fluxo normal e não são legados da carga inicial.
 13. Depois da migração, comparar o conjunto de IDs de alunos da origem com as referências em `revisoes_legado`, conferir a quantidade de registros, verificar os textos originais, confirmar ausência de duplicações e executar novamente a rotina em teste para provar que nenhum registro ou decisão existente é recriado ou sobrescrito.
 
 A coluna antiga será mantida durante a transição. Sua remoção só poderá ser considerada em uma migration posterior, depois de todos os leitores e escritores terem sido atualizados e a preservação dos dados ter sido verificada.
@@ -430,7 +430,7 @@ A coluna antiga será mantida durante a transição. Sua remoção só poderá s
 ## 7. Integridade, transações e segurança
 
 - Usar InnoDB nas tabelas envolvidas, para que operações relacionadas possam ser transacionais.
-- Criar chaves estrangeiras para aluno e plano; avaliar `ON DELETE RESTRICT` para preservar histórico.
+- Criar FKs para aluno, plano, revisão e funcionário, usando `ON DELETE RESTRICT` nas relações históricas; não usar exclusão em cascata para matrículas, revisões ou auditoria.
 - Usar `CHECK` para condições simples quando a versão efetivamente instalada suportar e aplicar a restrição. No MySQL, restrições `CHECK` passaram a ser aplicadas a partir da versão 8.0.16; versões anteriores apenas as analisavam e ignoravam.
 - Repetir as validações relevantes na aplicação PHP; a validação do navegador não é uma barreira de segurança.
 - Usar consultas preparadas via PDO, autenticação, autorização e CSRF nos endpoints de escrita.
@@ -488,7 +488,8 @@ A coluna antiga será mantida durante a transição. Sua remoção só poderá s
 - [ ] Atualização do resultado atual, evento especializado e evento geral em `auditoria` ocorrem na mesma transação.
 - [ ] A criação inicial automática como `PENDENTE_REVISAO` não inventa funcionário nem cria falsa decisão humana.
 - [ ] A revisão nunca sobrescreve o texto original importado de `alunos.plano`.
-- [ ] Matrícula nova exige todos os dados obrigatórios.
+- [ ] Matrícula nova exige todos os dados obrigatórios e copia nome, preço e duração do plano no instante da contratação.
+- [ ] Matrículas históricas permanecem consultáveis mesmo se o aluno ou plano for posteriormente inativado.
 - [ ] Datas inválidas e valores negativos são rejeitados no servidor e, quando suportado, pelo banco.
 - [ ] Data final é inclusiva: uma matrícula de 01/11 até 30/11 permanece válida durante todo o dia 30/11.
 - [ ] Duração mensal iniciada nos dias 29, 30 e 31 é calculada pela sequência de aniversários de calendário, com ajuste do alvo inexistente ao último dia do mês e inclusão desse dia.
