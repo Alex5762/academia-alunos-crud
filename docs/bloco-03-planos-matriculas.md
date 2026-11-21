@@ -163,11 +163,20 @@ Regras:
 
 ### 5.4 Cancelamento e inativação
 
-- Cancelar uma matrícula não deve apagar o registro.
-- O sistema deve registrar quando ocorreu o cancelamento e, se aprovado, o motivo.
-- Ainda precisa ser definido se o cancelamento encerra a vigência imediatamente ou se pode ter efeito futuro.
-- Inativar o cadastro do aluno não deve apagar nem cancelar automaticamente suas matrículas.
-- Trancamento, suspensão e congelamento ficam fora da primeira versão: exigem regras próprias para acesso, prazo, extensão de vigência e eventual cobrança.
+**Decisão aprovada:** o cancelamento tem efeito imediato no momento em que é confirmado pelo sistema. A matrícula permanece no histórico e não é apagada.
+
+Regras aprovadas:
+
+- O sistema registra o instante efetivo do cancelamento em `cancelada_em`, com precisão de data e horário (`DATETIME`).
+- O evento deve identificar o funcionário responsável pela operação, usando o mecanismo de auditoria já existente no projeto.
+- O motivo do cancelamento pode ser registrado como justificativa opcional; não deve ser obrigatório para concluir a operação.
+- Depois do cancelamento efetivo, a matrícula deixa de representar uma vigência ativa e não deve bloquear uma nova matrícula cujo início seja posterior ao encerramento efetivo.
+- A nova matrícula não pode ter início retroativo nem se sobrepor ao período efetivamente utilizado da matrícula cancelada. Como o modelo candidato usa datas de calendário (`DATE`) para início e término, a representação exata de uma nova matrícula no mesmo dia de um cancelamento intradiário precisa ser definida na modelagem final. Não presumir que uma coluna `DATE` consiga representar horário.
+- A consulta histórica deve continuar exibindo a matrícula cancelada, seu período originalmente contratado, o momento efetivo do cancelamento e o responsável.
+- Cancelar uma matrícula não apaga nem altera os dados cadastrais do aluno.
+- Inativar o cadastro do aluno não cancela automaticamente suas matrículas; são ações diferentes e auditadas separadamente.
+
+Trancamento, suspensão e congelamento ficam fora da primeira versão: exigem regras próprias para acesso, prazo, extensão de vigência e eventual cobrança.
 
 ### 5.5 Uma ou várias matrículas simultâneas
 
@@ -249,7 +258,10 @@ A estratégia definitiva deve decidir se a coluna antiga será mantida por um pe
 - [ ] Ano bissexto é tratado corretamente.
 - [ ] Renovações contínuas preservam o dia de referência e não sofrem deriva permanente após fevereiro.
 - [ ] Renovação preserva o registro anterior e aplica a regra de calendário definida.
-- [ ] Cancelamento preserva o histórico e respeita a regra de efeito aprovada.
+- [ ] Cancelamento encerra imediatamente a vigência, registra instante e funcionário responsável, e preserva o histórico.
+- [ ] Motivo de cancelamento é opcional e, quando informado, permanece consultável.
+- [ ] Nova matrícula não começa antes do encerramento efetivo de uma matrícula cancelada nem retroage sobre período utilizado.
+- [ ] Inativar o aluno não cancela automaticamente suas matrículas.
 - [ ] Solicitações concorrentes não criam vínculos incompatíveis.
 - [ ] Todas as operações de escrita exigem autenticação, autorização e CSRF.
 - [ ] Testes automatizados e regressão dos módulos existentes passam.
@@ -264,7 +276,7 @@ A estratégia definitiva deve decidir se a coluna antiga será mantida por um pe
 | Matrículas futuras | Permitir matrícula futura quando começar após o término da última matrícula não cancelada. | **Aprovada** |
 | Renovação antecipada | Nova matrícula contínua começa no dia seguinte ao último dia incluído da matrícula vigente. | **Aprovada** |
 | Data final | Inclusiva; duração em meses usa calendário, ajuste ao último dia válido e preservação do dia de referência nas renovações contínuas. | **Aprovada** |
-| Cancelamento | Preservar o registro; definir efeito e momento em que deixa de bloquear novos períodos. | Parcialmente definida |
+| Cancelamento | Efeito imediato; preservar histórico, registrar instante, funcionário responsável e motivo opcional. Nova matrícula deve iniciar após o encerramento efetivo. | **Aprovada** |
 | Trancamento/suspensão | Fora do primeiro escopo. | Proposta |
 | Legados sem preço e datas | Preservar como pendentes de revisão, sem inventar dados. | Proposta |
 | Plano sem preço definido | Não permitir nova contratação até completar o cadastro. | Proposta |
