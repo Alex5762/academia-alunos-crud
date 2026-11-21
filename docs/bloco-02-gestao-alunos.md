@@ -2,7 +2,7 @@
 
 ## Estado
 
-**Em implementação — perfil individual e histórico implementados em código; aguardando CI.** A migração 004 e seu teste de preservação passaram em CI anterior. O endpoint transacional, inativação/reativação, aposentadoria da exclusão física, filtros e dashboard estão implementados. A preservação de busca e situação foi coberta por novos testes de integração. A Etapa 5 agora inclui página individual com dados atuais, situação, eventos de auditoria e ações de edição/status; esta entrega e a regressão correspondente aguardam CI.
+**Implementação e regressão automatizada aprovadas pela CI #359 em 21/11/2026; revisão visual humana pendente.** A execução 44876515363 (https://github.com/Alex5762/academia-alunos-crud/actions/runs/44876515363) concluiu com sucesso a sintaxe PHP, arquivos obrigatórios, migrações 001–004, preservação de legado, provisionamento, testes HTTP do CRUD, filtros, ações de status, perfil individual, histórico de auditoria e capturas Playwright. O workflow também publicou as capturas geradas pelo Playwright na branch. A PR continua aberta e a integração em main depende de revisão e aprovação explícitas.
 
 Este documento fecha o escopo funcional e técnico do Bloco 02. A execução deve acontecer na branch `feat/dashboard-portfolio`, em etapas pequenas, com testes e documentação acompanhando o código. Não fazer merge em `main` sem revisão e aprovação explícita.
 
@@ -135,7 +135,7 @@ Manter `aluno_criado` e `aluno_editado`. Eventos históricos `aluno_excluido` ex
 - [x] Idempotência: repetir o estado atual não gera novo evento.
 - [x] Interface troca exclusão por inativação/reativação.
 - [x] `excluir.php` aposentado com HTTP 410 para qualquer método.
-- [ ] Validar todos os cenários novos na CI.
+- [x] Validar os cenários novos na CI #359 (POST/CSRF, transação, idempotência, auditoria e aposentadoria da exclusão física).
 
 **Entrega:** nenhum fluxo normal da interface apaga alunos fisicamente.
 
@@ -147,7 +147,7 @@ Manter `aluno_criado` e `aluno_editado`. Eventos históricos `aluno_excluido` ex
 - [x] Pesquisar por nome, e-mail e telefone.
 - [x] Preservar os filtros ao abrir a edição, voltar à listagem e salvar o cadastro.
 - [x] Preservar os filtros ao inativar/reativar um aluno.
-- [ ] Validar todos os cenários de consulta e preservação de contexto na CI.
+- [x] Validar os cenários de consulta e preservação de contexto na CI #359.
 
 **Entrega:** equipe localiza registros e administra a situação. A preservação do contexto está implementada e aguarda validação na CI.
 
@@ -157,7 +157,8 @@ Manter `aluno_criado` e `aluno_editado`. Eventos históricos `aluno_excluido` ex
 - [x] Atualizar distribuição por plano para considerar somente ativos.
 - [x] Calcular indicadores independentemente da pesquisa e do filtro da lista.
 - [ ] Revisar textos acessíveis, estados vazios e capturas visuais após a nova tabela.
-- [ ] Validar o dashboard na CI.
+- [x] Validar o dashboard e a regressão na CI #359.
+- [ ] Fazer revisão humana dos textos, estados vazios e hierarquia visual.
 
 **Entrega:** os indicadores refletem claramente a população ativa.
 
@@ -170,17 +171,19 @@ Manter `aluno_criado` e `aluno_editado`. Eventos históricos `aluno_excluido` ex
 - [x] Preservar filtros ao retornar à listagem e ao alterar status pelo perfil.
 - [x] Adicionar testes HTTP para acesso anônimo, IDs inválidos/inexistentes, dados, eventos e ações pelo perfil.
 - [x] Adicionar capturas Playwright desktop e mobile do perfil, com verificação de overflow horizontal.
-- [ ] Validar os novos testes na CI e revisar a captura.
+- [x] Validar os novos testes HTTP e a captura automatizada desktop/mobile na CI #359.
+- [ ] Fazer inspeção visual humana das capturas em desktop e mobile.
 
 **Entrega:** consulta individual e histórico operacional básico sem implementar histórico campo a campo.
 
 ### Etapa 6 — Regressão, documentação e revisão visual
 
-- Atualizar testes HTTP e Playwright.
-- Atualizar README, roadmap, relatório de testes e este documento com resultados reais.
-- Revisar capturas em desktop/mobile, temas claro/escuro, foco por teclado e estados vazios.
-- Executar CI de push e PR e inspecionar os resultados.
-- Manter a PR em Draft até revisão manual; não fazer merge automaticamente.
+- [x] Atualizar testes HTTP e Playwright para o perfil, histórico e preservação de filtros.
+- [x] Atualizar README, roadmap, relatório de testes e este documento com os resultados da CI #359.
+- [x] Executar e inspecionar a CI #359: job principal de integração e capturas concluído com sucesso.
+- [ ] Revisar manualmente capturas em desktop/mobile, temas claro/escuro, foco por teclado, contraste, textos e estados vazios.
+- [ ] Fazer inspeção em aparelho físico e navegador adicional.
+- [x] Manter a PR aberta sem merge automático; main permanece intacta.
 
 ## 6. Arquivos e áreas provavelmente afetados
 
