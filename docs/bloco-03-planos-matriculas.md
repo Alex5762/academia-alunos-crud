@@ -255,6 +255,12 @@ Regras aprovadas:
 - O evento deve identificar o funcionário responsável pela operação, usando o mecanismo de auditoria já existente no projeto.
 - O motivo do cancelamento é opcional; sua ausência não impede a conclusão da operação.
 - Depois do cancelamento efetivo, a matrícula deixa de representar uma vigência ativa.
+- **Decisão aprovada — elegibilidade do cancelamento:** somente matrículas `AGENDADA` ou `ATIVA` podem ser canceladas. O serviço deve recalcular a situação no instante da confirmação, dentro da transação e sob o bloqueio da linha do aluno, para evitar que uma matrícula vença entre a exibição da tela e o envio da operação.
+- Uma matrícula `AGENDADA` pode ser cancelada antes de `inicio_em`; o intervalo efetivo permanece vazio e o registro passa a ser apresentado como `CANCELADA`.
+- Uma matrícula `ATIVA` pode ser cancelada; `cancelada_em` recebe o instante atual da confirmação e encerra imediatamente a vigência.
+- Uma matrícula `VENCIDA` não pode ser cancelada. Seu encerramento já ocorreu naturalmente em `fim_exclusivo_em`; não preencher `cancelada_em` nem criar evento que represente um cancelamento inexistente.
+- Uma matrícula já `CANCELADA` não pode ser cancelada novamente. Repetições da solicitação não devem criar eventos de cancelamento duplicados.
+- **Correção administrativa de registro vencido:** quando houver erro nos dados de uma matrícula vencida, a correção deve ser uma operação separada, com trilha de auditoria que registre a alteração e sua justificativa. Ela não deve preencher `cancelada_em` nem reclassificar o vencimento natural como cancelamento.
 - **Decisão aprovada — cancelamento antes do início:** se `cancelada_em` for anterior a `inicio_em`, a matrícula permanece no histórico como `CANCELADA`, mas seu intervalo efetivo é vazio. Ela nunca chegou a produzir vigência utilizada e não bloqueia uma nova matrícula.
 - Se o cancelamento ocorrer exatamente em `inicio_em`, o intervalo efetivo também será vazio: a matrícula é mantida como cancelada, sem período utilizado.
 - Se o cancelamento ocorrer depois de `inicio_em`, a vigência efetiva termina no próprio instante de cancelamento ou em `fim_exclusivo_em`, o que ocorrer primeiro.
@@ -393,7 +399,12 @@ A coluna antiga será mantida durante a transição. Sua remoção só poderá s
 - [ ] Ano bissexto e conversões de fuso são tratados corretamente.
 - [ ] Renovações contínuas preservam o dia de referência e não sofrem deriva involuntária após fevereiro.
 - [ ] Renovação preserva o registro anterior e aplica a regra de calendário definida.
-- [ ] Cancelamento encerra imediatamente a vigência, registra instante e funcionário responsável, e preserva o histórico.
+- [ ] Cancelamento encerra imediatamente a vigência de matrícula `ATIVA`, registra instante e funcionário responsável, e preserva o histórico.
+- [ ] Matrícula `AGENDADA` pode ser cancelada antes do início, permanecendo no histórico como `CANCELADA` e sem intervalo efetivo utilizado.
+- [ ] Matrícula `VENCIDA` não pode ser cancelada; permanece vencida, sem preenchimento de `cancelada_em` ou evento falso de cancelamento.
+- [ ] Matrícula `CANCELADA` não aceita novo cancelamento nem gera evento duplicado.
+- [ ] Situação é recalculada no servidor no instante da confirmação, dentro da transação, evitando cancelar como ativa uma matrícula que já venceu.
+- [ ] Correção administrativa de dados de matrícula vencida é separada de cancelamento e registra alteração, funcionário e justificativa.
 - [ ] Cancelamento antes do início mantém a matrícula como `CANCELADA`, com intervalo efetivo vazio, sem criar período utilizado e sem bloquear outra matrícula.
 - [ ] Cancelamento exatamente no instante de início também produz intervalo efetivo vazio e não bloqueia outra matrícula.
 - [ ] Cancelamento depois do início encerra a vigência no instante do cancelamento (ou no limite normal, se ocorrer primeiro) e preserva como período utilizado somente o intervalo anterior ao cancelamento.
@@ -435,7 +446,7 @@ As regras abaixo já foram aprovadas para orientar a implementação. O status n
 | Renovação contínua | Começa exatamente no limite exclusivo anterior; mensal inclui o último dia de calendário e dias/semanas preservam a hora local. Não pode retroagir quando o limite já passou. | **Aprovada** |
 | Durações de dias e semanas | Calendário local, preservando o horário de início: 1 dia = mesmo horário no dia seguinte; 1 semana = mesmo horário sete dias de calendário depois. | **Aprovada** |
 | Data final mensal | Inclusiva; último dia calculado é coberto integralmente e o limite exclusivo é 00:00 local do dia seguinte, com ajuste ao último dia válido. | **Aprovada** |
-| Cancelamento | Efeito imediato; preservar histórico, registrar instante, funcionário responsável e motivo opcional. | **Aprovada** |
+| Cancelamento | Somente `AGENDADA` ou `ATIVA`; efeito imediato, preservar histórico, registrar instante e funcionário, motivo opcional. `VENCIDA` não pode ser cancelada; `CANCELADA` não aceita repetição. Correção de registro vencido é operação auditada separada. | **Aprovada** |
 | Nova matrícula no dia do cancelamento | Permitir início no mesmo instante do cancelamento ou depois, com comparação por horário e sem sobreposição. | **Aprovada** |
 | Trancamento/suspensão/congelamento | Fora do escopo aprovado da primeira versão do Bloco 03. | **Fora de escopo — aprovado** |
 | Revisão de legados | Exigir um resultado auditado: `VINCULO_CONFIRMADO` com dados comprovados; `LEGADO_SEM_VIGENCIA` com evidência de ausência de contrato vigente; ou `PENDENTE_REVISAO` quando não for possível confirmar. Preservar o texto original e nunca inventar condições. | **Aprovada** |
@@ -460,6 +471,7 @@ A revisão cruzada consolidada encontrou e tratou os seguintes pontos:
 - Aprovado o cancelamento de matrículas futuras: cancelamento antes ou exatamente no início gera intervalo efetivo vazio, mantém o histórico e não bloqueia novas matrículas.
 - Unificadas as durações mensais em uma regra explícita de mês-alvo, com referência original preservada e limite exclusivo à meia-noite seguinte ao último dia inclusivo.
 - Aprovado que durações em dias/semanas preservam a hora local do início e somam dias de calendário, sem conversão para segundos fixos.
+- Aprovada a elegibilidade de cancelamento: permitir somente para matrículas agendadas ou ativas; impedir cancelamento de vencidas e repetição em canceladas; corrigir registros vencidos por operação auditada separada.
 - Alinhada a renovação contínua para começar exatamente no limite exclusivo anterior; o teste de referência 31 agora inclui 31/03 e termina em 01/04 às 00:00.
 - Esclarecido que `VINCULO_CONFIRMADO` só libera novas matrículas quando o intervalo legado está comprovado e registrado; preço/duração desconhecidos podem permanecer nulos no registro legado.
 
@@ -472,9 +484,9 @@ Pontos técnicos que ainda precisam ser fechados antes das migrations:
 5. **Cancelamento de matrícula futura:** comportamento aprovado; implementar e testar cancelamento antes do início, exatamente no início e depois do início, preservando histórico e tratando corretamente o intervalo efetivo vazio.
 6. **Implementação e validação da migration idempotente:** aplicar a referência única do aluno, transação, tratamento específico de conflito e testes de reexecução sem sobrescrever a revisão ou duplicar auditoria. A estratégia funcional já está aprovada.
 7. **Compatibilidade de timestamps de auditoria:** verificar a convenção histórica de `auditoria.criado_em` e definir como os novos eventos armazenarão UTC sem reinterpretar incorretamente logs existentes.
-8. **Cancelamento de matrícula vencida:** definir na camada de serviço se a operação de cancelamento será permitida apenas para matrículas `AGENDADA` ou `ATIVA`; impedir que uma ação posterior ao fim natural mascare uma matrícula já `VENCIDA` como `CANCELADA`.
+8. **Aplicação da elegibilidade de cancelamento:** a regra está aprovada; implementar a revalidação da situação dentro da transação e testar concorrência entre cancelamento e vencimento natural.
 
-A revisão consolidada corrigiu contradições entre limites exclusivos, renovação contínua, regras de dias/semanas, legado comprovado e critérios de aceite. Permanecem validações técnicas e uma decisão operacional sobre cancelamento após o vencimento, descritas acima. Não iniciar migrations enquanto esses itens não forem verificados e os critérios de aceite finais não forem fechados.
+A revisão consolidada corrigiu contradições entre limites exclusivos, renovação contínua, regras de dias/semanas, legado comprovado e critérios de aceite. A elegibilidade do cancelamento também está decidida; permanecem apenas sua implementação/testes e as validações técnicas listadas acima. Não iniciar migrations enquanto esses itens não forem verificados e os critérios de aceite finais não forem fechados.
 
 ## 12. Dependências e limites do projeto
 
