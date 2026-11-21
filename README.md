@@ -110,6 +110,7 @@ academia-alunos-crud/
    - \`database/migrations/001_authentication_audit.sql\`
    - \`database/migrations/002_force_password_change.sql\`
    - \`database/migrations/003_login_rate_limit.sql\`
+   - \`database/migrations/004_student_status.sql\`
 7. No terminal, a partir da pasta do projeto, execute \`php scripts/provisionar-usuario.php\`, informe nome e e-mail e copie a senha temporária exibida uma única vez. No XAMPP, se necessário, use \`C:\\xampp\\php\\php.exe scripts\\provisionar-usuario.php\`.
 8. Acesse [http://localhost/academia-alunos-crud/login.php](http://localhost/academia-alunos-crud/login.php) e entre com a conta criada. Entregue a senha temporária por canal seguro.
 9. No primeiro acesso, substitua a senha temporária por uma senha pessoal com pelo menos 12 caracteres.
@@ -136,11 +137,13 @@ O pipeline:
 
 1. prepara PHP 8.2, Node.js 24, MySQL 8 e os motores Chromium, Firefox e WebKit;
 2. verifica a sintaxe de todos os arquivos PHP e a presença dos arquivos essenciais;
-3. importa \`banco.sql\` e executa as migrações 001, 002 e 003 em um banco MySQL limpo;
+3. importa \`banco.sql\`, executa as migrações 001, 002 e 003 e testa a migração 004 com um aluno legado inserido antes da alteração;
 4. provisiona uma conta fictícia e verifica hash, auditoria e unicidade do e-mail;
 5. inicia a aplicação com o servidor embutido do PHP e executa os testes HTTP reais;
 6. prepara registros fictícios no banco temporário e executa as verificações Playwright;
 7. publica as capturas como artefato e, em pushes para a branch de desenvolvimento, atualiza os arquivos versionados em \`docs/screenshots/\`.
+
+Antes dos testes HTTP, `tests/migration-student-status.sh` insere um aluno usando o esquema anterior, executa a migração 004 e confere a preservação do ID e dos dados, o status ativo por padrão, o status de novos registros e o índice composto.
 
 Os testes de integração cobrem:
 
