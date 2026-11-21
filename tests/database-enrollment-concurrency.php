@@ -52,7 +52,7 @@ function assertProbePrefix(string $prefix): void
     }
 }
 
-function runWorker(string $mode, string $prefix): never
+function runWorker(string $mode, string $prefix): void
 {
     assertProbePrefix($prefix);
     $pdo = openDatabaseConnection();
