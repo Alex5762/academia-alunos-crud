@@ -10,6 +10,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 validarToken();
 require_once __DIR__ . '/conexao.php';
 $usuario = exigirAutenticacao($pdo);
+$contextoLista = obterContextoListaAlunos($_POST);
 
 // Aceita somente textos nos campos esperados.
 $dados = [];
@@ -63,7 +64,7 @@ if (!in_array($dados['plano'], $planosPermitidos, true)) {
 if (count($erros) > 0) {
     $_SESSION['erros'] = $erros;
     $_SESSION['dados'] = $dados;
-    $destino = $id === null ? 'cadastro.php' : 'cadastro.php?id=' . $id;
+    $destino = urlCadastroAluno($id === null ? null : (int) $id, $contextoLista);
     redirecionar($destino);
 }
 
@@ -110,5 +111,5 @@ try {
 
 unset($_SESSION['erros'], $_SESSION['dados']);
 $_SESSION['mensagem'] = $mensagem;
-// Volta à lista: atualizar a página não repete o INSERT ou o UPDATE.
-redirecionar('index.php');
+// Volta à mesma pesquisa e ao mesmo filtro sem repetir o INSERT/UPDATE.
+redirecionar(urlListaAlunos($contextoLista));
