@@ -438,8 +438,8 @@ try {
             $actorId,
             'Fonte corrigida, referência 99',
             'O intervalo foi atualizado antes da falha de auditoria simulada.',
-            rectificationLocalDate('2025-11-01 00:00:00'),
-            rectificationLocalDate('2026-04-01 00:00:00')
+            rectificationLocalDate('2025-10-01 00:00:00'),
+            rectificationLocalDate('2025-11-01 00:00:00')
         );
     } catch (PDOException) {
         $auditFailed = true;
