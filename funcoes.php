@@ -17,6 +17,7 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
     ini_set('session.use_strict_mode', '1');
     ini_set('session.use_only_cookies', '1');
     ini_set('session.use_trans_sid', '0');
+    ini_set('session.gc_maxlifetime', '28800');
 
     session_name('FITCONTROLSESSID');
     session_set_cookie_params([
@@ -59,9 +60,26 @@ function validarToken() {
 }
 
 /**
- * Retorna o usuário atual somente se a conta continuar ativa.
- * A situação é consultada no banco em cada requisição protegida,
- * permitindo revogar sessões quando uma conta é desativada.
+ * Encerra o contexto autenticado e renova o identificador da sessão.
+ * O token CSRF é recriado para que formulários antigos não sejam reutilizados.
+ */
+function invalidarSessaoAutenticada(bool $porExpiracao = false): void {
+    $_SESSION = [];
+
+    // Se a regeneração falhar, a sessão atual ainda fica sem qualquer dado autenticado.
+    session_regenerate_id(true);
+    $_SESSION['token'] = bin2hex(random_bytes(32));
+
+    if ($porExpiracao) {
+        $_SESSION['sessao_expirada'] = true;
+    }
+}
+
+/**
+ * Retorna o usuário atual somente se a conta continuar ativa e a sessão
+ * estiver dentro dos limites de inatividade e duração total.
+ *
+ * Política: 30 minutos sem atividade ou 8 horas desde o login.
  */
 function usuarioAtual(PDO $pdo): ?array {
     $usuarioId = filter_var(
@@ -71,6 +89,34 @@ function usuarioAtual(PDO $pdo): ?array {
     );
 
     if ($usuarioId === false || $usuarioId === null) {
+        return null;
+    }
+
+    $agora = time();
+    $ultimoAcesso = filter_var(
+        $_SESSION['usuario_ultimo_acesso'] ?? null,
+        FILTER_VALIDATE_INT,
+        ['options' => ['min_range' => 1]]
+    );
+    $autenticadoEm = filter_var(
+        $_SESSION['usuario_autenticado_em'] ?? null,
+        FILTER_VALIDATE_INT,
+        ['options' => ['min_range' => 1]]
+    );
+
+    $limiteInatividade = 30 * 60;
+    $limiteAbsoluto = 8 * 60 * 60;
+
+    // Sessões antigas sem os marcadores, timestamps futuros ou fora dos limites
+    // exigem autenticação novamente.
+    if (
+        $ultimoAcesso === false || $ultimoAcesso === null ||
+        $autenticadoEm === false || $autenticadoEm === null ||
+        $ultimoAcesso > $agora || $autenticadoEm > $agora ||
+        ($agora - $ultimoAcesso) >= $limiteInatividade ||
+        ($agora - $autenticadoEm) >= $limiteAbsoluto
+    ) {
+        invalidarSessaoAutenticada(true);
         return null;
     }
 
@@ -84,11 +130,12 @@ function usuarioAtual(PDO $pdo): ?array {
     $usuario = $consulta->fetch();
 
     if (!$usuario) {
-        unset($_SESSION['usuario_id']);
-        session_regenerate_id(true);
-        $_SESSION['token'] = bin2hex(random_bytes(32));
+        invalidarSessaoAutenticada();
         return null;
     }
+
+    // A atividade é renovada somente após confirmar a conta ativa no banco.
+    $_SESSION['usuario_ultimo_acesso'] = $agora;
 
     return $usuario;
 }
