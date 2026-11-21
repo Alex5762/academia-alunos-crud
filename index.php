@@ -3,44 +3,61 @@ require_once __DIR__ . '/funcoes.php';
 require_once __DIR__ . '/conexao.php';
 $usuario = exigirAutenticacao($pdo);
 
-// Pesquisa opcional pelo nome. O valor é enviado como parâmetro preparado.
+// Pesquisa por nome, e-mail ou telefone; filtro padrão mostra apenas alunos ativos.
 $busca = $_GET['busca'] ?? '';
 if (!is_string($busca)) {
     $busca = '';
 }
 $busca = trim($busca);
 
-if ($busca !== '') {
-    $consulta = $pdo->prepare(
-        'SELECT id, nome, telefone, email, plano
-         FROM alunos
-         WHERE nome LIKE :busca
-         ORDER BY id DESC'
-    );
-    $consulta->execute(['busca' => "%{$busca}%"]);
-} else {
-    $consulta = $pdo->query(
-        'SELECT id, nome, telefone, email, plano
-         FROM alunos
-         ORDER BY id DESC'
-    );
+$filtroStatus = $_GET['status'] ?? 'ativos';
+if (!is_string($filtroStatus) || !in_array($filtroStatus, ['ativos', 'inativos', 'todos'], true)) {
+    $filtroStatus = 'ativos';
 }
+
+$condicoes = [];
+$parametros = [];
+if ($busca !== '') {
+    $condicoes[] = '(nome LIKE :busca_nome OR email LIKE :busca_email OR telefone LIKE :busca_telefone)';
+    $termoBusca = "%{$busca}%";
+    $parametros['busca_nome'] = $termoBusca;
+    $parametros['busca_email'] = $termoBusca;
+    $parametros['busca_telefone'] = $termoBusca;
+}
+if ($filtroStatus === 'ativos') {
+    $condicoes[] = 'ativo = 1';
+} elseif ($filtroStatus === 'inativos') {
+    $condicoes[] = 'ativo = 0';
+}
+
+$sqlAlunos = 'SELECT id, nome, telefone, email, plano, ativo FROM alunos';
+if ($condicoes !== []) {
+    $sqlAlunos .= ' WHERE ' . implode(' AND ', $condicoes);
+}
+$sqlAlunos .= ' ORDER BY id DESC';
+$consulta = $pdo->prepare($sqlAlunos);
+$consulta->execute($parametros);
 $alunos = $consulta->fetchAll();
 
-// Os indicadores representam todos os registros, independentemente da busca.
+// Indicadores globais: contagem por status e planos calculados somente para ativos.
 $estatisticas = $pdo->query(
     'SELECT
         COUNT(*) AS total_alunos,
-        COUNT(DISTINCT plano) AS total_planos
+        COALESCE(SUM(ativo = 1), 0) AS alunos_ativos,
+        COALESCE(SUM(ativo = 0), 0) AS alunos_inativos,
+        COUNT(DISTINCT CASE WHEN ativo = 1 THEN plano END) AS total_planos
      FROM alunos'
 )->fetch();
 
 $totalAlunos = (int) ($estatisticas['total_alunos'] ?? 0);
+$alunosAtivos = (int) ($estatisticas['alunos_ativos'] ?? 0);
+$alunosInativos = (int) ($estatisticas['alunos_inativos'] ?? 0);
 $totalPlanos = (int) ($estatisticas['total_planos'] ?? 0);
 
 $distribuicaoPlanos = $pdo->query(
     'SELECT plano, COUNT(*) AS quantidade
      FROM alunos
+     WHERE ativo = 1
      GROUP BY plano
      ORDER BY quantidade DESC, plano ASC'
 )->fetchAll();
@@ -197,13 +214,13 @@ function iniciaisNome($nome) {
             <section class="stats-grid" aria-label="Indicadores gerais">
                 <article class="stat-card">
                     <div class="stat-topline">
-                        <span class="stat-label">Alunos cadastrados</span>
+                        <span class="stat-label">Alunos ativos</span>
                         <span class="stat-icon stat-icon-blue" aria-hidden="true">
                             <svg viewBox="0 0 24 24"><path d="M16 20v-1.5a3.5 3.5 0 0 0-3.5-3.5h-5A3.5 3.5 0 0 0 4 18.5V20"/><circle cx="10" cy="7.5" r="3.5"/><path d="M17 8h4M19 6v4"/></svg>
                         </span>
                     </div>
-                    <div class="stat-value"><?= $totalAlunos ?></div>
-                    <p class="stat-footnote">Total de registros na base</p>
+                    <div class="stat-value"><?= $alunosAtivos ?></div>
+                    <p class="stat-footnote"><?= $alunosInativos ?> aluno(s) inativo(s)</p>
                 </article>
 
                 <article class="stat-card">
@@ -296,6 +313,12 @@ function iniciaisNome($nome) {
                         <p><?= count($alunos) ?> <?= count($alunos) === 1 ? 'registro encontrado' : 'registros encontrados' ?><?= $busca !== '' ? ' para sua pesquisa' : '' ?></p>
                     </div>
                     <form action="index.php#alunos" method="get" class="search-form">
+                        <label class="sr-only" for="filtro-status">Situação dos alunos</label>
+                        <select id="filtro-status" name="status" class="search-status">
+                            <option value="ativos" <?= $filtroStatus === 'ativos' ? 'selected' : '' ?>>Ativos</option>
+                            <option value="inativos" <?= $filtroStatus === 'inativos' ? 'selected' : '' ?>>Inativos</option>
+                            <option value="todos" <?= $filtroStatus === 'todos' ? 'selected' : '' ?>>Todos</option>
+                        </select>
                         <label class="search-field" for="busca">
                             <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4.5 4.5"/></svg>
                             <input type="search" id="busca" name="busca"
@@ -334,6 +357,7 @@ function iniciaisNome($nome) {
                                     <th scope="col">Aluno</th>
                                     <th scope="col">Contato</th>
                                     <th scope="col">Plano</th>
+                                    <th scope="col">Status</th>
                                     <th scope="col" class="actions-heading">Ações</th>
                                 </tr>
                             </thead>
@@ -356,9 +380,20 @@ function iniciaisNome($nome) {
                                             <span class="contact-phone"><?= escapar($aluno['telefone']) ?></span>
                                         </td>
                                         <td><span class="plan-badge plan-badge-<?= escapar($classe) ?>"><?= escapar($aluno['plano']) ?></span></td>
+                                        <td><span class="student-status <?= (int) $aluno['ativo'] === 1 ? 'is-active' : 'is-inactive' ?>"><?= (int) $aluno['ativo'] === 1 ? 'Ativo' : 'Inativo' ?></span></td>
                                         <td class="row-actions">
                                             <a class="action-link" href="cadastro.php?id=<?= escapar($aluno['id']) ?>" aria-label="Editar <?= escapar($aluno['nome']) ?>">Editar</a>
-                                            <a class="action-link action-delete" href="excluir.php?id=<?= escapar($aluno['id']) ?>" aria-label="Excluir <?= escapar($aluno['nome']) ?>">Excluir</a>
+                                            <form action="alterar-status-aluno.php" method="post" class="student-status-form">
+                                                <input type="hidden" name="token" value="<?= escapar($_SESSION['token']) ?>">
+                                                <input type="hidden" name="id" value="<?= escapar($aluno['id']) ?>">
+                                                <?php if ((int) $aluno['ativo'] === 1) { ?>
+                                                    <input type="hidden" name="acao" value="inativar">
+                                                    <button type="submit" class="action-link action-delete" aria-label="Inativar <?= escapar($aluno['nome']) ?>">Inativar</button>
+                                                <?php } else { ?>
+                                                    <input type="hidden" name="acao" value="reativar">
+                                                    <button type="submit" class="action-link action-reactivate" aria-label="Reativar <?= escapar($aluno['nome']) ?>">Reativar</button>
+                                                <?php } ?>
+                                            </form>
                                         </td>
                                     </tr>
                                 <?php } ?>
