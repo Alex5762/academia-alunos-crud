@@ -126,6 +126,9 @@ jobs:
       - name: Test enrollment calendar calculations
         run: php tests/enrollment-period-calculator.php
 
+      - name: Test enrollment interval rules
+        run: php tests/enrollment-interval.php
+
       - name: Check required project files
         run: |
           test -f index.php
@@ -139,6 +142,8 @@ jobs:
           test -f tests/migration-student-status.sh
           test -f src/Domain/Enrollment/EnrollmentPeriodCalculator.php
           test -f tests/enrollment-period-calculator.php
+          test -f src/Domain/Enrollment/EnrollmentInterval.php
+          test -f tests/enrollment-interval.php
           test -f database/migrations/004_student_status.sql
           test -f tests/capture-screenshots.mjs
           test -f tests/browser-compatibility.mjs
