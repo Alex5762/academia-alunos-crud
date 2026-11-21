@@ -3,9 +3,11 @@ declare(strict_types=1);
 
 use FitControl\Domain\Enrollment\EnrollmentPeriodCalculator;
 use FitControl\Domain\Enrollment\LegacyEnrollmentRectificationService;
+use FitControl\Domain\Enrollment\LegacyReviewDecisionService;
 
 require_once dirname(__DIR__) . '/src/Domain/Enrollment/EnrollmentPeriodCalculator.php';
 require_once dirname(__DIR__) . '/src/Domain/Enrollment/EnrollmentInterval.php';
+require_once dirname(__DIR__) . '/src/Domain/Enrollment/LegacyReviewDecisionService.php';
 require_once dirname(__DIR__) . '/src/Domain/Enrollment/LegacyEnrollmentRectificationService.php';
 
 function rectificationTestConnection(): PDO
@@ -267,6 +269,19 @@ try {
     ]);
     $enrollmentIds[] = (int) $pdo->lastInsertId();
 
+    // Para o aluno 4, uma matrícula SISTEMA começa exatamente no instante do
+    // cancelamento do vínculo LEGADO. O intervalo efetivo antigo termina nesse
+    // instante, então a retificação contratual posterior deve continuar adjacente.
+    $createEnrollment->execute([
+        'student_id' => $studentIds[3],
+        'plan_name' => 'Contrato após cancelamento',
+        'start_at' => rectificationUtc('2026-01-10 12:00:00'),
+        'end_at' => rectificationUtc('2026-02-10 12:00:00'),
+        'cancelled_at' => null,
+        'origin' => 'SISTEMA',
+    ]);
+    $enrollmentIds[] = (int) $pdo->lastInsertId();
+
     $service = new LegacyEnrollmentRectificationService($pdo);
 
     // 1. Retificação válida grava UTC antigo/novo, fonte, justificativa e auditoria.
@@ -343,6 +358,116 @@ try {
         'Repetição idêntica não pode duplicar auditoria.'
     );
 
+    // 2b. Reabrir a revisão após uma retificação não apaga o histórico nem a matrícula.
+    // A reconfirmação do mesmo intervalo reutiliza o mesmo ID, e a retificação
+    // seguinte continua vinculada à matrícula LEGADO original.
+    $reviewDecisionService = new LegacyReviewDecisionService(
+        $pdo,
+        static fn (): DateTimeImmutable => rectificationLocalDate('2026-01-01 09:00:00')
+    );
+
+    $reviewDecisionService->decide(
+        $studentIds[0],
+        $reviewIds[0],
+        $actorId,
+        'PENDENTE_REVISAO',
+        null,
+        'Evidência complementar exige nova conferência do mesmo vínculo.'
+    );
+
+    assertRectification(
+        (string) $pdo->query(
+            'SELECT resultado_atual FROM revisoes_legado WHERE id = ' . $reviewIds[0]
+        )->fetchColumn() === 'PENDENTE_REVISAO',
+        'Reabertura deve manter revisão pendente.'
+    );
+    assertRectification(
+        (int) $pdo->query(
+            "SELECT COUNT(*) FROM matriculas
+             WHERE aluno_id = {$studentIds[0]} AND origem = 'LEGADO'"
+        )->fetchColumn() === 1,
+        'Reabertura não pode apagar nem duplicar a matrícula LEGADO.'
+    );
+
+    $reconfirmedId = $reviewDecisionService->decide(
+        $studentIds[0],
+        $reviewIds[0],
+        $actorId,
+        'VINCULO_CONFIRMADO',
+        'Contrato revalidado, documento 18 e adendo 2',
+        'Intervalo já materializado foi reconfirmado com nova evidência.',
+        rectificationLocalDate('2025-12-15 00:00:00'),
+        rectificationLocalDate('2026-03-01 00:00:00')
+    );
+
+    assertRectification(
+        $reconfirmedId === $enrollmentIds[0],
+        'Reconfirmação deve reutilizar o ID da matrícula LEGADO existente.'
+    );
+    assertRectification(
+        (int) $pdo->query(
+            "SELECT COUNT(*) FROM matriculas
+             WHERE aluno_id = {$studentIds[0]} AND origem = 'LEGADO'"
+        )->fetchColumn() === 1,
+        'Reconfirmação não pode criar uma matrícula LEGADO duplicada.'
+    );
+
+    $service->rectify(
+        $studentIds[0],
+        $reviewIds[0],
+        $enrollmentIds[0],
+        $actorId,
+        'Adendo contratual, documento 18-A',
+        'Segunda correção após reabertura e reconfirmação do vínculo.',
+        rectificationLocalDate('2025-12-20 00:00:00'),
+        rectificationLocalDate('2026-03-15 00:00:00')
+    );
+
+    $secondRectificationEvent = $pdo->query(
+        'SELECT tipo_evento, matricula_id, inicio_anterior, fim_exclusivo_anterior,
+                inicio_novo, fim_exclusivo_novo
+         FROM revisoes_legado_eventos
+         WHERE revisao_legado_id = ' . $reviewIds[0] . '
+         ORDER BY id DESC LIMIT 1'
+    )->fetch();
+
+    assertRectification(
+        $secondRectificationEvent['tipo_evento'] === 'RETIFICACAO_VIGENCIA',
+        'Retificação após reconfirmação deve criar evento especializado.'
+    );
+    assertRectification(
+        (int) $secondRectificationEvent['matricula_id'] === $enrollmentIds[0],
+        'Novo evento deve continuar vinculado à matrícula original.'
+    );
+    assertRectification(
+        $secondRectificationEvent['inicio_anterior'] === rectificationUtc('2025-12-15 00:00:00')
+        && $secondRectificationEvent['fim_exclusivo_anterior'] === rectificationUtc('2026-03-01 00:00:00'),
+        'Segunda retificação deve preservar o intervalo corrigido anterior.'
+    );
+    assertRectification(
+        $secondRectificationEvent['inicio_novo'] === rectificationUtc('2025-12-20 00:00:00')
+        && $secondRectificationEvent['fim_exclusivo_novo'] === rectificationUtc('2026-03-15 00:00:00'),
+        'Segunda retificação deve registrar o novo intervalo.'
+    );
+
+    $service->rectify(
+        $studentIds[0],
+        $reviewIds[0],
+        $enrollmentIds[0],
+        $actorId,
+        'Adendo contratual, documento 18-A',
+        'Segunda correção após reabertura e reconfirmação do vínculo.',
+        rectificationLocalDate('2025-12-20 00:00:00'),
+        rectificationLocalDate('2026-03-15 00:00:00')
+    );
+
+    assertRectification(
+        (int) $pdo->query(
+            'SELECT COUNT(*) FROM revisoes_legado_eventos WHERE revisao_legado_id = ' . $reviewIds[0]
+        )->fetchColumn() === 5,
+        'Repetir retificação após reconfirmação não deve duplicar evento.'
+    );
+
     // 3. Sobreposição com matrícula SISTEMA deve abortar sem alterar estado/histórico.
     assertRectificationRejected(
         fn () => $service->rectify(
@@ -401,6 +526,13 @@ try {
     assertRectification(
         $cancelledAfterRectification === rectificationUtc('2026-01-10 12:00:00'),
         'Retificação precisa preservar cancelada_em.'
+    );
+    assertRectification(
+        (int) $pdo->query(
+            "SELECT COUNT(*) FROM matriculas
+             WHERE aluno_id = {$studentIds[3]} AND origem = 'SISTEMA'"
+        )->fetchColumn() === 1,
+        'A matrícula SISTEMA adjacente deve permanecer registrada.'
     );
 
     // 6. Falha da auditoria depois de atualizar matrícula/revisão e inserir evento
