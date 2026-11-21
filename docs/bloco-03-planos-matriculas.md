@@ -475,7 +475,6 @@ A coluna antiga será mantida durante a transição. Sua remoção só poderá s
 
 ## 9. Plano de validação
 
-
 - [ ] A migration funciona em banco limpo e em banco com alunos legados.
 - [ ] Nenhum aluno, ID ou texto original de plano é perdido.
 - [ ] A carga inicial cria exatamente um registro em `revisoes_legado` para cada aluno do conjunto inicial, com `aluno_id_origem` único e chave estrangeira válida.
@@ -628,8 +627,8 @@ A revisão cruzada consolidada encontrou e tratou os seguintes pontos:
 
 Pontos técnicos que ainda precisam ser fechados antes das migrations:
 
-1. **Implementação operacional da revisão de legado:** projetar a tela/fluxo, definir como a referência da fonte será registrada e garantir que cada uma das três conclusões produza o estado e o desbloqueio corretos. A regra de negócio e os dados mínimos de auditoria já estão aprovados.
-2. **Implementação dos estados da matrícula:** definir a consulta/camada de domínio que calcula `AGENDADA`, `ATIVA` e `VENCIDA`, e garantir que `CANCELADA` derive de `cancelada_em` mais auditoria. A decisão funcional de persistir versus derivar já está aprovada.
+1. **Implementação operacional da revisão de legado:** construir a fila, filtros, tela de decisão, histórico no perfil e endpoint POST conforme o fluxo já especificado na seção 11; validar os três resultados, idempotência, bloqueio/liberação e auditoria transacional.
+2. **Implementação dos estados da matrícula:** criar a consulta/camada de domínio que calcula `AGENDADA`, `ATIVA` e `VENCIDA`, e garantir que `CANCELADA` derive de `cancelada_em` mais auditoria.
 3. **Implementação e validação do fuso aprovado:** aplicar `America/Sao_Paulo` na camada de data/hora, persistir instantes UTC nos campos `DATETIME` conforme a convenção documentada e testar conversões de entrada/saída no XAMPP. A decisão funcional de fuso e armazenamento já está aprovada.
 4. **Compatibilidade do banco:** confirmar a versão real do MySQL/MariaDB no XAMPP antes de definir `CHECK`, índices, constraints e estratégia de bloqueio.
 5. **Cancelamento de matrícula futura:** comportamento aprovado; implementar e testar cancelamento antes do início, exatamente no início e depois do início, preservando histórico e tratando corretamente o intervalo efetivo vazio.
@@ -637,9 +636,9 @@ Pontos técnicos que ainda precisam ser fechados antes das migrations:
 7. **Compatibilidade de timestamps de auditoria:** verificar o fuso da sessão do banco no XAMPP e manter `criado_em`/`atualizado_em` das tabelas administrativas e eventos na convenção já existente; somente os instantes contratuais serão UTC.
 8. **Aplicação da elegibilidade de cancelamento:** a regra está aprovada; implementar a revalidação da situação dentro da transação e testar concorrência entre cancelamento e vencimento natural.
 
-A revisão consolidada corrigiu contradições entre limites exclusivos, renovação contínua, regras de dias/semanas, legado comprovado e critérios de aceite. A elegibilidade do cancelamento também está decidida; permanecem apenas sua implementação/testes e as validações técnicas listadas acima. Não iniciar migrations enquanto esses itens não forem verificados e os critérios de aceite finais não forem fechados.
+A revisão consolidada corrigiu contradições entre limites exclusivos, renovação contínua, regras de dias/semanas, legado comprovado e critérios de aceite. O fluxo de revisão e retificação também está especificado; permanecem a implementação, os testes e as validações técnicas listadas acima. Não iniciar migrations enquanto esses itens não forem verificados e os critérios de aceite finais não forem fechados.
 
-## 12. Dependências e limites do projeto
+## 13. Dependências e limites do projeto
 
 O Bloco 02 já implementou situação cadastral e inativação lógica, mas a inspeção em aparelho físico/navegador instalado continua pendente. A preparação deste documento não encerra formalmente o Bloco 02 e não autoriza merge da PR #1.
 
@@ -647,7 +646,7 @@ Este documento registra planejamento. O Bloco 03 só deve entrar em implementaç
 
 O FitControl permanece um projeto acadêmico/local. Não usar dados reais de alunos nem expor a aplicação publicamente.
 
-## 13. Referências técnicas
+## 14. Referências técnicas
 
 Documentação oficial do MySQL consultada para fundamentar as recomendações de modelagem e integridade:
 
