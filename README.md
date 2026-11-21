@@ -57,7 +57,7 @@ Cada aluno possui nome, telefone, e-mail e plano (Mensal, Trimestral, Semestral 
 - MySQL 8 ou MariaDB.
 - HTML5, CSS3 e JavaScript.
 - GitHub Actions para integração contínua.
-- Playwright e Chromium para capturas e verificações visuais automatizadas.
+- Playwright com Chromium, Firefox e WebKit para verificações automatizadas em múltiplos motores de navegador e viewports.
 - JavaScript e localStorage para persistência da preferência de tema no navegador.
 - Shell script, curl e servidor embutido do PHP para testes de integração.
 
@@ -146,7 +146,7 @@ Os testes de integração cobrem:
 - expiração após 30 minutos de inatividade e após 8 horas de duração absoluta;
 - renovação autenticada da sessão, rejeição de CSRF inválido e rejeição de método GET.
 
-A captura visual também verifica a presença dos registros de demonstração, ausência de rolagem horizontal inesperada no desktop/mobile, rolagem interna da tabela no mobile, aplicação e persistência do tema escuro, ausência de erros JavaScript e exibição dos avisos de expiração de sessão.
+A captura visual em Chromium verifica a presença dos registros de demonstração, ausência de rolagem horizontal inesperada no desktop/mobile, rolagem interna da tabela no mobile, navegação mobile por teclado, aplicação e persistência do tema escuro, ausência de erros JavaScript e exibição dos avisos de expiração de sessão. O teste `tests/browser-compatibility.mjs` repete verificações essenciais em Chromium, Firefox e WebKit, em larguras desktop, mobile e mobile estreito, incluindo overflow, rolagem interna, navegação por teclado, foco visível, validação nativa dos campos obrigatórios e persistência do tema.
 
 Para conferir os resultados, consulte a aba **Actions** do GitHub. Uma execução verde confirma apenas os cenários incluídos no workflow; não substitui inspeção visual humana em dispositivos e navegadores reais nem uma revisão independente de segurança.
 
