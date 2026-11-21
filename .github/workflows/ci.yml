@@ -66,6 +66,15 @@ jobs:
           mysql --host=127.0.0.1 --port=3306 --user=root < database/migrations/003_login_rate_limit.sql
           mysql --host=127.0.0.1 --port=3306 --user=root < database/migrations/004_student_status.sql
 
+      - name: Validate enrollment concurrency with parent row lock
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_NAME: academia_alunos
+          DB_USER: root
+          DB_PASSWORD: root
+        run: php tests/database-enrollment-concurrency.php
+
       - name: Validate InnoDB, DATETIME and timezone contract
         env:
           DB_HOST: 127.0.0.1
