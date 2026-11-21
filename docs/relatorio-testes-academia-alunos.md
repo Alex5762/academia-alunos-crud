@@ -172,4 +172,15 @@ O teste percorre os fluxos autenticados em cada motor e verifica:
 
 Esta ampliação testa três motores de navegador em emulação de viewport. Ela não representa teste em aparelhos físicos, não valida a sensação do gesto de toque, não equivale a Safari/iOS ou Chrome/Android instalados no aparelho e não substitui inspeção humana de contraste, legibilidade, leitores de tela e acessibilidade completa.
 
-**Resultado:** pendente até a CI executar o commit que adicionou este teste. Não registrar como aprovado antes de inspecionar as execuções de push e PR.
+**Resultado:** aprovado em 21/11/2026. [Run 44864733253 — push #245, sucesso](https://github.com/Alex5762/academia-alunos-crud/actions/runs/44864733253) e [Run 44864727119 — PR #244, sucesso](https://github.com/Alex5762/academia-alunos-crud/actions/runs/44864727119). Os logs do push confirmam explicitamente `Chromium: OK`, `Firefox: OK`, `WebKit: OK` e `Compatibilidade de navegadores: OK`. A aprovação refere-se aos testes automatizados em motores de navegador com viewports simulados; não substitui a inspeção em aparelhos físicos.
+
+## 12. Início do Bloco 02 — migração de situação dos alunos — 21/11/2026
+
+Foram adicionados à branch de desenvolvimento:
+
+- `database/migrations/004_student_status.sql`: cria `alunos.ativo TINYINT(1) NOT NULL DEFAULT 1` e o índice `idx_alunos_ativo_nome`.
+- `tests/migration-student-status.sh`: insere um aluno legado antes da migração, aplica a migração 004, verifica preservação do ID e dos campos cadastrais, confirma que o registro legado recebe `ativo = 1`, insere um novo aluno sem informar o status e verifica o valor padrão, além de conferir a criação do índice.
+- `.github/workflows/ci.yml`: passa a exigir os dois arquivos e executar o teste da migração após as migrações 001–003 e antes do provisionamento do usuário de CI. Também foram removidas repetições acidentais na instalação dos navegadores e na execução do teste multibrowser.
+- README, roadmap e especificação do Bloco 02 atualizados para refletir a etapa em andamento.
+
+**Resultado da migração:** pendente de execução e inspeção da CI. Nenhuma tela, endpoint de alteração de status, consulta do dashboard ou fluxo de exclusão foi modificado nesta etapa. A aplicação ainda mantém o comportamento anterior até a implementação das próximas etapas.
