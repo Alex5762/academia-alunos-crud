@@ -139,7 +139,7 @@ Para suportar cancelamento e nova matrícula no mesmo dia, a recomendação téc
 - `fim_exclusivo_em DATETIME`: instante em que deixa de valer. Esse instante não faz parte do período.
 - `cancelada_em DATETIME`: instante efetivo do cancelamento, quando houver.
 
-O intervalo efetivo será tratado como semiaberto: `[inicio_em, fim_exclusivo_em)`. Se houver cancelamento, o limite efetivo será o menor entre `fim_exclusivo_em` e `cancelada_em`. Assim, uma matrícula pode terminar às 14:00 e a seguinte começar exatamente às 14:00, sem sobreposição. A data final inclusiva exibida na interface será derivada do limite exclusivo da vigência normal; matrículas canceladas também exibirão o instante exato do cancelamento.
+O intervalo efetivo será tratado como semiaberto: `[inicio_em, fim_exclusivo_em)`. Se houver cancelamento depois do início, o limite efetivo será o menor entre `fim_exclusivo_em` e `cancelada_em`. **Se `cancelada_em` for anterior ou igual a `inicio_em`, a matrícula terá intervalo efetivo vazio:** não houve vigência utilizada e ela não bloqueará nenhum outro período. Assim, uma matrícula pode terminar às 14:00 e a seguinte começar exatamente às 14:00, sem sobreposição. A data final inclusiva exibida na interface será derivada do limite exclusivo da vigência normal; matrículas canceladas também exibirão o instante exato do cancelamento.
 
 Regra de calendário aprovada para durações em meses:
 
@@ -204,9 +204,12 @@ Regras aprovadas:
 - O evento deve identificar o funcionário responsável pela operação, usando o mecanismo de auditoria já existente no projeto.
 - O motivo do cancelamento é opcional; sua ausência não impede a conclusão da operação.
 - Depois do cancelamento efetivo, a matrícula deixa de representar uma vigência ativa.
-- **Decisão aprovada:** uma nova matrícula pode começar no mesmo dia e exatamente no instante do cancelamento, ou em instante posterior. Não pode começar antes desse instante nem retroagir sobre período utilizado.
-- O início e o fim precisam ser comparados como instantes (`DATETIME`), não apenas como datas, para permitir essa transição intradiária sem sobreposição.
-- A consulta histórica deve continuar exibindo a matrícula cancelada, seu período originalmente contratado, o momento efetivo do cancelamento e o responsável.
+- **Decisão aprovada — cancelamento antes do início:** se `cancelada_em` for anterior a `inicio_em`, a matrícula permanece no histórico como `CANCELADA`, mas seu intervalo efetivo é vazio. Ela nunca chegou a produzir vigência utilizada e não bloqueia uma nova matrícula.
+- Se o cancelamento ocorrer exatamente em `inicio_em`, o intervalo efetivo também será vazio: a matrícula é mantida como cancelada, sem período utilizado.
+- Se o cancelamento ocorrer depois de `inicio_em`, a vigência efetiva termina no próprio instante de cancelamento ou em `fim_exclusivo_em`, o que ocorrer primeiro.
+- **Decisão aprovada:** uma nova matrícula pode começar no mesmo instante do cancelamento ou depois, desde que não se sobreponha a qualquer período efetivamente utilizado. Quando o cancelamento ocorrer antes ou exatamente no início, não existe período utilizado a bloquear.
+- O início e o fim precisam ser comparados como instantes (`DATETIME`), não apenas como datas, para permitir essa transição sem sobreposição.
+- A consulta histórica deve continuar exibindo a matrícula cancelada, seu período originalmente contratado, o momento efetivo do cancelamento e o responsável, inclusive quando foi cancelada antes de começar.
 - Cancelar uma matrícula não apaga nem altera os dados cadastrais do aluno.
 - Inativar o cadastro do aluno não cancela automaticamente suas matrículas; são ações diferentes e auditadas separadamente.
 
@@ -228,7 +231,7 @@ Regras aprovadas:
 
 A validação deve ocorrer no servidor e ser protegida contra solicitações concorrentes. Uma consulta simples antes do INSERT não é suficiente: a implementação deverá usar transação e estratégia de bloqueio apropriada, com testes concorrentes para garantir que duas requisições simultâneas não criem períodos incompatíveis.
 
-Com intervalos semiabertos, dois períodos se sobrepõem quando `inicio_A < fim_efetivo_B` e `inicio_B < fim_efetivo_A`. Se o início do novo contrato for exatamente igual ao limite efetivo do anterior, os períodos são adjacentes e válidos, não sobrepostos.
+Com intervalos semiabertos, dois períodos não vazios se sobrepõem quando `inicio_A < fim_efetivo_B` e `inicio_B < fim_efetivo_A`. Uma matrícula cancelada em instante anterior ou igual ao início tem intervalo efetivo vazio e deve ser excluída da verificação de sobreposição, sem ser apagada do histórico. Se o início do novo contrato for exatamente igual ao limite efetivo do anterior, os períodos são adjacentes e válidos, não sobrepostos.
 
 ## 6. Migração dos alunos existentes
 
@@ -322,6 +325,10 @@ A coluna antiga será mantida durante a transição. Sua remoção só poderá s
 - [ ] Renovações contínuas preservam o dia de referência e não sofrem deriva permanente após fevereiro.
 - [ ] Renovação preserva o registro anterior e aplica a regra de calendário definida.
 - [ ] Cancelamento encerra imediatamente a vigência, registra instante e funcionário responsável, e preserva o histórico.
+- [ ] Cancelamento antes do início mantém a matrícula como `CANCELADA`, com intervalo efetivo vazio, sem criar período utilizado e sem bloquear outra matrícula.
+- [ ] Cancelamento exatamente no instante de início também produz intervalo efetivo vazio e não bloqueia outra matrícula.
+- [ ] Cancelamento depois do início encerra a vigência no instante do cancelamento (ou no limite normal, se ocorrer primeiro) e preserva como período utilizado somente o intervalo anterior ao cancelamento.
+- [ ] A consulta histórica diferencia a data/horário originalmente contratado do instante real em que a matrícula foi cancelada.
 - [ ] Motivo de cancelamento é opcional e, quando informado, permanece consultável.
 - [ ] Nova matrícula não começa antes do encerramento efetivo de uma matrícula cancelada nem retroage sobre período utilizado.
 - [ ] Uma nova matrícula pode começar exatamente no mesmo instante do cancelamento anterior (por exemplo, às 14:00), sem sobreposição.
@@ -375,6 +382,7 @@ A primeira revisão cruzada encontrou e tratou os seguintes pontos:
 - Confirmado que o motivo de cancelamento é opcional, conforme decisão já aprovada.
 - Aprovado que `AGENDADA`, `ATIVA` e `VENCIDA` serão derivados em tempo de consulta; o cancelamento será representado por `cancelada_em` e auditoria.
 - Separados os resultados da revisão de legados dos estados da matrícula operacional; a revisão pendente bloqueia novas matrículas, mas não será armazenada como estado de contrato.
+- Aprovado o cancelamento de matrículas futuras: cancelamento antes ou exatamente no início gera intervalo efetivo vazio, mantém o histórico e não bloqueia novas matrículas.
 
 Pontos técnicos que ainda precisam ser fechados antes das migrations:
 
@@ -382,7 +390,7 @@ Pontos técnicos que ainda precisam ser fechados antes das migrations:
 2. **Implementação dos estados da matrícula:** definir a consulta/camada de domínio que calcula `AGENDADA`, `ATIVA` e `VENCIDA`, e garantir que `CANCELADA` derive de `cancelada_em` mais auditoria. A decisão funcional de persistir versus derivar já está aprovada.
 3. **Implementação e validação do fuso aprovado:** aplicar `America/Sao_Paulo` na camada de data/hora, persistir instantes UTC nos campos `DATETIME` conforme a convenção documentada e testar conversões de entrada/saída no XAMPP. A decisão funcional de fuso e armazenamento já está aprovada.
 4. **Compatibilidade do banco:** confirmar a versão real do MySQL/MariaDB no XAMPP antes de definir `CHECK`, índices, constraints e estratégia de bloqueio.
-5. **Cancelamento de matrícula futura:** definir como apresentar uma matrícula cancelada antes do início (ela permanece no histórico como cancelada, sem período efetivamente utilizado).
+5. **Cancelamento de matrícula futura:** comportamento aprovado; implementar e testar cancelamento antes do início, exatamente no início e depois do início, preservando histórico e tratando corretamente o intervalo efetivo vazio.
 6. **Migração e idempotência:** detalhar como identificar cada aluno legado já migrado e garantir reexecução segura sem duplicar matrículas.
 
 A revisão não encontrou motivo para alterar as regras de negócio já aprovadas; os itens acima são detalhes de modelagem e operação ainda em aberto. Não iniciar migrations até resolvê-los e revisar novamente a especificação completa.
