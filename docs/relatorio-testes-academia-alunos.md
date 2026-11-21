@@ -274,3 +274,15 @@ Os logs confirmam explicitamente:
 - Preferência de tema escuro permanece aplicada ao abrir o perfil.
 
 **Resultado:** matriz automatizada aprovada nos três motores. A evidência não substitui inspeção em aparelho físico, navegador instalado, leitor de tela ou avaliação humana completa de acessibilidade.
+## 17. Bloco 02 — estados vazios da listagem nos três navegadores — 21/11/2026
+
+**CI:** [Run 44882082854 — CI #395, sucesso](https://github.com/Alex5762/academia-alunos-crud/actions/runs/44882082854). O job PHP/MySQL, migrações, provisionamento, integração HTTP, capturas e testes Playwright concluiu com sucesso.
+
+Os logs registram `Chromium: OK`, `Firefox: OK`, `WebKit: OK` e `Compatibilidade de navegadores: OK (Chromium, Firefox e WebKit)`.
+
+Novos cenários multibrowser aprovados:
+- Filtro `status=inativos` sem registros: título “Nenhum aluno inativo” e link “Ver todos os alunos”.
+- Pesquisa sem correspondência no filtro de ativos: título “Nenhum aluno encontrado” e link “Limpar pesquisa”.
+- Retorno à listagem com os registros após os estados vazios, seguido da validação dos perfis sem e com histórico.
+
+**Resultado:** os estados vazios da listagem e os caminhos de recuperação foram validados nos três motores. A CI #395 não substitui inspeção física, mas fecha a cobertura automatizada dos estados vazios previstos no Bloco 02.
