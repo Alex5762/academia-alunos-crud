@@ -175,6 +175,39 @@ try {
     animations: "disabled",
   });
 
+  const sessionWarningPage = await browser.newPage({
+    viewport: { width: 1280, height: 900 },
+    deviceScaleFactor: 1,
+  });
+  sessionWarningPage.on("pageerror", (error) => pageErrors.push(error.message));
+  await autenticar(sessionWarningPage);
+  await sessionWarningPage.clock.install();
+  await sessionWarningPage.goto(baseUrl + "/index.php", { waitUntil: "networkidle" });
+
+  const sessionWarning = sessionWarningPage.locator("#fitcontrol-session-warning");
+  await sessionWarning.waitFor();
+  if (!(await sessionWarning.isHidden())) {
+    throw new Error("O aviso de sessão não deveria aparecer logo após o login.");
+  }
+
+  await sessionWarningPage.clock.fastForward(25 * 60 * 1000);
+  await sessionWarningPage.getByRole("alertdialog").waitFor({ state: "visible" });
+  await sessionWarningPage.getByRole("heading", { name: "Sua sessão está prestes a expirar" }).waitFor();
+  await sessionWarningPage.getByRole("button", { name: "Continuar conectado" }).click();
+  await sessionWarning.waitFor({ state: "hidden" });
+
+  const absoluteWarningPage = await browser.newPage({
+    viewport: { width: 1280, height: 900 },
+    deviceScaleFactor: 1,
+  });
+  absoluteWarningPage.on("pageerror", (error) => pageErrors.push(error.message));
+  await autenticar(absoluteWarningPage);
+  await absoluteWarningPage.clock.install();
+  await absoluteWarningPage.goto(baseUrl + "/index.php", { waitUntil: "networkidle" });
+  await absoluteWarningPage.clock.fastForward((7 * 60 + 55) * 60 * 1000);
+  await absoluteWarningPage.getByRole("heading", { name: "Seu tempo máximo de acesso está terminando" }).waitFor();
+  await absoluteWarningPage.getByRole("button", { name: "Entendi" }).click();
+
   if (pageErrors.length > 0) {
     throw new Error(`Erros JavaScript encontrados: ${pageErrors.join(" | ")}`);
   }

@@ -108,6 +108,7 @@ $token = escapar($_SESSION['token']);
     <meta name="description" content="Defina uma senha pessoal para sua conta FitControl.">
     <title>Trocar senha | FitControl</title>
     <link rel="stylesheet" href="style.css">
+    <?= renderizarMonitorSessao() ?>
     <script src="theme.js"></script>
 </head>
 <body class="login-body">

@@ -28,6 +28,7 @@ foreach ($usuarios as $conta) {
     <meta name="description" content="Gerencie as contas individuais dos funcionários do FitControl.">
     <title>Funcionários | FitControl</title>
     <link rel="stylesheet" href="style.css">
+    <?= renderizarMonitorSessao() ?>
     <script src="theme.js"></script>
 </head>
 <body class="settings-body">

@@ -82,6 +82,8 @@ jobs:
           test -f database/migrations/001_authentication_audit.sql
           test -f scripts/provisionar-usuario.php
           test -f usuarios.php
+          test -f sessao.js
+          test -f renovar-sessao.php
           test -f salvar-usuario.php
           test -f alterar-status-usuario.php
           test -f tests/assert-user-provisioned.php

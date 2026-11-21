@@ -95,6 +95,7 @@ function iniciaisNome($nome) {
     <meta name="description" content="Painel de gestão e cadastro de alunos da academia.">
     <title>Visão geral | FitControl</title>
     <link rel="stylesheet" href="style.css">
+    <?= renderizarMonitorSessao() ?>
     <script src="theme.js"></script>
 </head>
 <body class="dashboard-body">

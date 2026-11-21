@@ -40,6 +40,19 @@ function escapar($texto) {
     return htmlspecialchars((string) $texto, ENT_QUOTES, 'UTF-8');
 }
 
+/**
+ * Inclui o monitor de sessão nas páginas autenticadas.
+ * O navegador recebe somente o token CSRF e o tempo restante da sessão.
+ */
+function renderizarMonitorSessao(): string {
+    $autenticadoEm = (int) ($_SESSION['usuario_autenticado_em'] ?? 0);
+    $tempoAbsolutoRestante = max(0, (8 * 60 * 60) - (time() - $autenticadoEm));
+
+    return '<meta name="fitcontrol-csrf-token" content="' . escapar($_SESSION['token']) . '">' . "\n"
+        . '<meta name="fitcontrol-absolute-remaining" content="' . $tempoAbsolutoRestante . '">' . "\n"
+        . '<script src="sessao.js" defer></script>';
+}
+
 function redirecionar($pagina) {
     header('Location: ' . $pagina, true, 303);
     exit;

@@ -11,6 +11,7 @@ $usuario = exigirAutenticacao($pdo);
     <meta name="description" content="Preferências de aparência do FitControl.">
     <title>Configurações | FitControl</title>
     <link rel="stylesheet" href="style.css">
+    <?= renderizarMonitorSessao() ?>
     <script src="theme.js"></script>
 </head>
 <body class="settings-body">

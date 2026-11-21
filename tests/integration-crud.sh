@@ -366,6 +366,36 @@ assert_contains "$TMP_DIR/login-reactivated-success.html" "Visão geral"
 LOGIN_EVENTOS="$(db_value "SELECT COUNT(*) FROM auditoria WHERE usuario_id = $USUARIO_ID AND acao = 'login'")"
 [[ "$LOGIN_EVENTOS" == "2" ]] || fail "O segundo login após reativação não foi registrado."
 
+echo "8.9/10 - Testando renovação de sessão e proteção CSRF..."
+curl -fsS -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/index.php" -o "$TMP_DIR/heartbeat-dashboard.html"
+HEARTBEAT_TOKEN="$(grep -oE 'name="fitcontrol-csrf-token" content="[^"]+"' "$TMP_DIR/heartbeat-dashboard.html" | sed -E 's/.*content="([^"]+)"/\1/')"
+[[ -n "$HEARTBEAT_TOKEN" ]] || fail "O dashboard não disponibilizou o token para o monitor de sessão."
+HEARTBEAT_SESSION_ID="$(awk '$6 == "FITCONTROLSESSID" {print $7}' "$COOKIE_JAR" | tail -n 1)"
+[[ -n "$HEARTBEAT_SESSION_ID" ]] || fail "Não foi possível identificar a sessão para renovação."
+SESSION_ID="$HEARTBEAT_SESSION_ID" php -r '
+    session_name("FITCONTROLSESSID");
+    session_id(getenv("SESSION_ID"));
+    session_start();
+    $_SESSION["usuario_ultimo_acesso"] = time() - 1780;
+    session_write_close();
+'
+HTTP_CODE="$(curl -sS -o "$TMP_DIR/heartbeat-success.json" -w '%{http_code}' \
+    -c "$COOKIE_JAR" -b "$COOKIE_JAR" \
+    -X POST "$BASE_URL/renovar-sessao.php" \
+    --data-urlencode "token=$HEARTBEAT_TOKEN")"
+[[ "$HTTP_CODE" == "200" ]] || fail "A renovação válida deveria retornar HTTP 200; retornou $HTTP_CODE."
+assert_contains "$TMP_DIR/heartbeat-success.json" '"ok":true'
+HTTP_CODE="$(curl -sS -o "$TMP_DIR/heartbeat-invalid-csrf.json" -w '%{http_code}' \
+    -c "$COOKIE_JAR" -b "$COOKIE_JAR" \
+    -X POST "$BASE_URL/renovar-sessao.php" \
+    --data-urlencode "token=token-invalido")"
+[[ "$HTTP_CODE" == "403" ]] || fail "A renovação deveria rejeitar CSRF inválido com HTTP 403; retornou $HTTP_CODE."
+HTTP_CODE="$(curl -sS -o "$TMP_DIR/heartbeat-method.json" -w '%{http_code}' "$BASE_URL/renovar-sessao.php")"
+[[ "$HTTP_CODE" == "405" ]] || fail "GET em renovar-sessao.php deveria retornar HTTP 405; retornou $HTTP_CODE."
+HTTP_CODE="$(curl -sS -o "$TMP_DIR/heartbeat-dashboard-after.html" -w '%{http_code}' \
+    -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/index.php")"
+[[ "$HTTP_CODE" == "200" ]] || fail "A sessão renovada não continuou acessando o dashboard."
+
 echo "9/10 - Encerrando sessão por POST com CSRF..."
 curl -fsS -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/index.php" -o "$TMP_DIR/dashboard-before-logout.html"
 LOGOUT_TOKEN="$(get_token "$TMP_DIR/dashboard-before-logout.html")"

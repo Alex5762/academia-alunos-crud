@@ -2111,3 +2111,90 @@ body:not(.dashboard-body) .theme-option[aria-pressed="true"] {
         justify-self: stretch;
     }
 }
+
+
+/* Avisos de expiração da sessão */
+.session-warning-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 3000;
+    display: grid;
+    place-items: center;
+    padding: 20px;
+    background: rgba(12, 20, 34, .62);
+    backdrop-filter: blur(3px);
+}
+.session-warning-overlay[hidden] { display: none; }
+.session-warning-card {
+    width: min(100%, 440px);
+    padding: clamp(22px, 5vw, 32px);
+    color: #243047;
+    background: #fff;
+    border: 1px solid #e0e6f0;
+    border-radius: 18px;
+    box-shadow: 0 24px 70px rgba(0, 0, 0, .24);
+    text-align: center;
+}
+.session-warning-icon {
+    display: grid;
+    width: 42px;
+    height: 42px;
+    place-items: center;
+    margin: 0 auto 14px;
+    color: #855b16;
+    background: #fff4d9;
+    border-radius: 50%;
+    font-size: 1.35rem;
+    font-weight: 800;
+}
+.session-warning-card h2 {
+    margin: 0 0 9px;
+    color: inherit;
+    font-size: 1.2rem;
+    letter-spacing: -.025em;
+}
+.session-warning-message {
+    margin: 0;
+    color: #5c687b;
+    font-size: .88rem;
+    line-height: 1.6;
+}
+.session-warning-countdown {
+    margin: 16px 0 0;
+    color: #5c687b;
+    font-size: .82rem;
+}
+.session-warning-countdown strong {
+    color: #243047;
+    font-variant-numeric: tabular-nums;
+}
+.session-warning-status {
+    min-height: 1.2em;
+    margin: 9px 0 0;
+    color: #9a3c36;
+    font-size: .78rem;
+}
+.session-warning-card .button {
+    width: 100%;
+    justify-content: center;
+    margin-top: 13px;
+}
+:root[data-theme="dark"] .session-warning-card {
+    color: #e8edf7;
+    background: #182235;
+    border-color: #35435a;
+}
+:root[data-theme="dark"] .session-warning-message,
+:root[data-theme="dark"] .session-warning-countdown { color: #aab7cb; }
+:root[data-theme="dark"] .session-warning-countdown strong { color: #f3f6fc; }
+:root[data-theme="dark"] .session-warning-icon {
+    color: #f3d69c;
+    background: #453722;
+}
+@media (prefers-reduced-motion: no-preference) {
+    .session-warning-card { animation: session-warning-enter .16s ease-out; }
+    @keyframes session-warning-enter {
+        from { opacity: 0; transform: translateY(8px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+}

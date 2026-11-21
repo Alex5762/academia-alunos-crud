@@ -215,3 +215,14 @@ O timestamp de autenticação é definido no login e não é renovado por ativid
 Quando expira, os dados autenticados são limpos, o identificador de sessão é regenerado, um novo token CSRF é criado e a tela de login informa que será necessário entrar novamente. O cookie continua sendo de sessão, HttpOnly, SameSite=Lax e Secure quando HTTPS é detectado. O \`session.gc_maxlifetime\` foi alinhado ao limite absoluto de oito horas; a expiração efetiva é feita pela validação da aplicação, não depende apenas da coleta de lixo do PHP.
 
 A CI testa os dois limites com sessões de teste independentes, sem alterar a sessão usada pelos testes de CRUD.
+
+
+### Aviso antecipado e renovação da sessão
+
+O monitor da interface apresenta um aviso após 25 minutos sem interação, com uma contagem regressiva de cinco minutos e a ação **Continuar conectado**. A confirmação envia uma requisição POST protegida por CSRF ao endpoint renovar-sessao.php; o servidor renova o prazo de inatividade somente depois de validar a sessão e confirmar que a conta continua ativa.
+
+Durante a utilização, eventos reais de interação na página atualizam o marcador local de atividade. No máximo uma vez por minuto, enquanto a pessoa continua interagindo, o navegador envia uma confirmação autenticada ao servidor. Isso evita expiração durante o preenchimento prolongado de formulários. Deixar uma página aberta sem interação não renova a sessão.
+
+Cinco minutos antes do limite absoluto de oito horas, a interface exibe um aviso separado para salvar o trabalho. A confirmação desse aviso apenas o dispensa; ela não estende o limite absoluto. A expiração continua sendo aplicada no servidor, independentemente do JavaScript.
+
+Os testes de integração verificam renovação válida, rejeição de CSRF inválido, rejeição de método GET e continuidade do acesso após renovação. O Playwright avança o relógio para verificar os avisos de inatividade e de duração absoluta.
