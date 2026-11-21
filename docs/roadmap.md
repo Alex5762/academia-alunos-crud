@@ -89,11 +89,11 @@ Decisões fechadas:
 
 Etapas previstas:
 1. [Aprovada] Migração 004 e camada de dados, com teste de preservação de registros legados.
-2. [Em validação] Endpoint de ativação/inativação, auditoria e aposentadoria do fluxo de exclusão física.
-3. [Parcial] Situação, filtro e pesquisa implementados; falta preservar contexto de consulta ao editar.
-4. [Em validação] Indicadores de ativos/inativos e distribuição de planos somente para ativos.
-5. [Implementada em código, aguardando CI] Detalhes do aluno e histórico simples de auditoria.
-6. [Em validação] Regressão, documentação, CI e revisão visual.
+2. [Implementada em código, aguardando CI da revisão atual] Endpoint transacional de ativação/inativação, auditoria e aposentadoria do fluxo de exclusão física.
+3. [Implementada em código, aguardando CI da revisão atual] Situação, filtros e pesquisa, com contexto preservado na edição, retorno e alteração de status.
+4. [Implementada em código, aguardando CI da revisão atual] Indicadores de ativos/inativos e distribuição de planos somente para ativos.
+5. [Implementada em código, aguardando CI da revisão atual] Detalhes do aluno e histórico simples de auditoria.
+6. [Em validação] Regressão automatizada, documentação, CI e revisão visual.
 
 O bloco só será concluído quando todos os critérios de aceite de `docs/bloco-02-gestao-alunos.md` forem atendidos e a revisão manual estiver concluída.
 
