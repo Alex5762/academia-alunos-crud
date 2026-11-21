@@ -50,7 +50,7 @@ Entregas:
 - Resolver pendências visuais ou documentá-las com clareza.
 - Atualizar a descrição da PR para refletir o estado real.
 
-**Estado:** base funcional, autenticação, gestão de funcionários, auditoria, política de sessão e alteração voluntária de senha implementadas. Os workflows de push e PR do commit `72b43761378a1a5a8c2b3bd2a5ccb335207f7109` passaram em 21/11/2026. Permanece pendente a inspeção em dispositivo físico e navegador adicional.
+**Estado:** base funcional, autenticação, gestão de funcionários, auditoria, política de sessão e alteração voluntária de senha implementadas. Os workflows de push e PR passaram; as execuções mais recentes após a atualização documental também estão verdes. A revisão das capturas desktop/mobile e os ajustes visuais automatizados foram realizados. Permanece pendente a inspeção humana em dispositivo físico e navegador adicional, incluindo rolagem da tabela, contraste/legibilidade, foco por teclado e mensagens de campos obrigatórios.
 
 ### Bloco 01 — Autenticação e proteção do painel
 
