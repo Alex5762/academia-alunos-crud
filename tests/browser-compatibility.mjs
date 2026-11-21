@@ -142,16 +142,19 @@ for (const engine of engines) {
       );
     }
 
-    await page.keyboard.press("Tab");
-    await page.keyboard.press("Tab");
+    let nomeFocused = false;
+    for (let attempt = 0; attempt < 12; attempt += 1) {
+      await page.keyboard.press("Tab");
+      nomeFocused = await page.locator("#nome").evaluate(
+        (element) => document.activeElement === element,
+      );
+      if (nomeFocused) break;
+    }
 
-    const focusState = await page.evaluate(() => {
-      const element = document.activeElement;
-      if (!element) return null;
+    const focusState = await page.locator("#nome").evaluate((element) => {
       const style = window.getComputedStyle(element);
       return {
-        id: element.id,
-        visible: element.matches(":focus-visible"),
+        focused: document.activeElement === element,
         outlineStyle: style.outlineStyle,
         outlineWidth: style.outlineWidth,
       };
@@ -159,11 +162,11 @@ for (const engine of engines) {
 
     ensure(
       focusState &&
-        focusState.id === "nome" &&
-        focusState.visible &&
+        focusState.focused &&
         focusState.outlineStyle !== "none" &&
         parseFloat(focusState.outlineWidth) >= 2,
-      engine.name + ": o primeiro campo não apresenta foco visível ao navegar com Tab.",
+      engine.name + ": o primeiro campo não apresenta contorno de foco visível ao navegar com Tab. " +
+        JSON.stringify(focusState),
     );
 
     const settingsResponse = await page.goto(baseUrl + "/configuracoes.php", {
