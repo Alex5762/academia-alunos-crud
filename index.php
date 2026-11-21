@@ -313,7 +313,7 @@ function iniciaisNome($nome) {
                         <p><?= count($alunos) ?> <?= count($alunos) === 1 ? 'registro encontrado' : 'registros encontrados' ?><?= $busca !== '' ? ' para sua pesquisa' : '' ?></p>
                     </div>
                     <form action="index.php#alunos" method="get" class="search-form">
-                        <label class="sr-only" for="filtro-status">Situação dos alunos</label>
+                        <label class="visually-hidden" for="filtro-status">Situação dos alunos</label>
                         <select id="filtro-status" name="status" class="search-status">
                             <option value="ativos" <?= $filtroStatus === 'ativos' ? 'selected' : '' ?>>Ativos</option>
                             <option value="inativos" <?= $filtroStatus === 'inativos' ? 'selected' : '' ?>>Inativos</option>
