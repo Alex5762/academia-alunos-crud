@@ -99,7 +99,7 @@ O encerramento formal depende da inspeção em aparelho físico/navegador instal
 
 ### Bloco 03 — Planos e matrículas
 
-**Estado: pesquisa e proposta técnica documentadas; duas regras de negócio aprovadas; implementação não iniciada.**
+**Estado: pesquisa e proposta técnica documentadas; três regras de negócio aprovadas; implementação não iniciada.**
 
 Documento de referência: [Pesquisa e proposta técnica do Bloco 03](bloco-03-planos-matriculas.md).
 
@@ -114,11 +114,12 @@ Escopo candidato:
 
 **Regras aprovadas:**
 - Um aluno pode ter várias matrículas no histórico, mas não pode ter períodos sobrepostos em matrículas não canceladas. Matrículas futuras são permitidas quando começam após o término da última matrícula não cancelada.
-- Na renovação antecipada contínua, a nova matrícula começa no dia seguinte ao último dia da matrícula vigente, preservando todos os dias já contratados.
+- Na renovação antecipada contínua, a nova matrícula começa no dia seguinte ao último dia incluído da matrícula vigente, preservando todos os dias já contratados.
+- A data final é inclusiva. Durações em meses usam meses de calendário; dias inexistentes no mês de destino são ajustados para o último dia válido. O dia de referência original é preservado nas renovações contínuas, evitando deriva depois de fevereiro.
 
-A implementação deverá proteger a regra de não sobreposição contra solicitações concorrentes.
+A implementação deverá proteger a regra de não sobreposição contra solicitações concorrentes e centralizar o cálculo de datas em uma função testável.
 
-**Decisões ainda pendentes:** inclusão da data final e regra de calendário para fins de mês; efeito e momento do cancelamento; tratamento de novas matrículas quando há legado sem datas; possibilidade de intervalos escolhidos entre contratos. Outras recomendações do documento ainda não foram aprovadas.
+**Decisões ainda pendentes:** efeito e momento do cancelamento; tratamento de novas matrículas quando há legado sem datas; possibilidade de intervalos escolhidos entre contratos. Outras recomendações do documento ainda não foram aprovadas.
 
 Não iniciar migrations ou implementação até revisar as decisões restantes e confirmar os critérios de aceite.
 
