@@ -338,8 +338,20 @@ function iniciaisNome($nome) {
                         </span>
                         <?php if ($busca !== '') { ?>
                             <h3>Nenhum aluno encontrado</h3>
-                            <p>Não encontramos cadastros com “<?= escapar($busca) ?>”. Tente outro nome.</p>
-                            <a class="button button-secondary" href="index.php#alunos">Limpar pesquisa</a>
+                            <p>Não encontramos alunos com “<?= escapar($busca) ?>” no filtro selecionado. Ajuste a pesquisa ou altere a situação.</p>
+                            <a class="button button-secondary" href="index.php?status=<?= escapar($filtroStatus) ?>#alunos">Limpar pesquisa</a>
+                        <?php } elseif ($filtroStatus === 'inativos') { ?>
+                            <h3>Nenhum aluno inativo</h3>
+                            <p>Não há cadastros inativos neste momento.</p>
+                            <a class="button button-secondary" href="index.php?status=todos#alunos">Ver todos os alunos</a>
+                        <?php } elseif ($filtroStatus === 'todos' && $totalAlunos === 0) { ?>
+                            <h3>Sua lista começa aqui</h3>
+                            <p>Quando você cadastrar alunos, eles aparecerão nesta área.</p>
+                            <a class="button button-primary" href="cadastro.php">Cadastrar primeiro aluno</a>
+                        <?php } elseif ($filtroStatus === 'ativos' && $alunosInativos > 0) { ?>
+                            <h3>Nenhum aluno ativo</h3>
+                            <p>Não há alunos ativos. Consulte os inativos para reativar um cadastro.</p>
+                            <a class="button button-secondary" href="index.php?status=inativos#alunos">Ver alunos inativos</a>
                         <?php } else { ?>
                             <h3>Sua lista começa aqui</h3>
                             <p>Quando você cadastrar alunos, eles aparecerão nesta área.</p>
