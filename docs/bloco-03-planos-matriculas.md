@@ -1,6 +1,6 @@
 # Bloco 03 — Planos e matrículas
 
-> **Estado: pesquisa e proposta técnica.** Este documento registra o estudo inicial e recomendações para o Bloco 03. As decisões marcadas como propostas ainda precisam ser validadas; nenhuma tabela, migration, tela ou fluxo deste bloco foi implementado por este documento.
+> **Estado: especificação funcional aprovada e revisão técnica em andamento.** As regras de negócio, os limites temporais, os três resultados da revisão de legados e os critérios centrais de integridade foram consolidados. O modelo físico ainda depende da confirmação do MySQL/MariaDB e do InnoDB no XAMPP. Nenhuma tabela, migration, tela ou fluxo do Bloco 03 foi implementado.
 
 ## 1. Objetivo
 
@@ -114,7 +114,7 @@ Campos candidatos:
 | `fonte_referencia` | Referência da fonte que sustenta a última conclusão humana; fica sem valor na criação automática inicial até a revisão. |
 | `criado_em` / `atualizado_em` | Metadados de criação e atualização do controle de revisão. |
 
-Cada decisão humana deve gerar auditoria com funcionário, instante, resultado e referência da fonte. A criação automática inicial como `PENDENTE_REVISAO` deve ser distinguível de uma decisão humana (por exemplo, como evento de importação/migração). A definição física final de tipos, nomes, chaves e índices ainda será validada antes da migration.
+Cada decisão humana deve gerar auditoria com funcionário, instante, resultado e referência da fonte. A criação automática inicial como `PENDENTE_REVISAO` deve ser distinguível de uma decisão humana: não cria `revisoes_legado_eventos` com funcionário fictício. A definição física final de tipos, nomes, chaves e índices ainda será validada antes da migration.
 
 **Regra importante:** a existência de `revisoes_legado` não significa que exista uma matrícula. Não criar linhas artificiais em `matriculas` apenas para representar o legado pendente ou sem vigência. Criar uma matrícula operacional somente quando existir contratação comprovada com os dados necessários para determinar sua vigência.
 
@@ -136,8 +136,13 @@ Campos candidatos:
 | `criado_em` | Instante da decisão. |
 
 Regras:
-- Cada revisão humana insere um novo evento; não atualiza nem apaga eventos anteriores.
-- A mesma transação atualiza `revisoes_legado.resultado_atual`, grava o evento especializado e insere o evento correspondente na tabela geral `auditoria`.
+- Cada decisão ou retificação humana insere um novo evento; não atualiza nem apaga eventos anteriores.
+- A mesma transação atualiza o resultado/fonte atual em `revisoes_legado`, grava o evento especializado e insere o evento correspondente na tabela geral `auditoria`.
+- `DECISAO` registra a conclusão humana. `RETIFICACAO_VIGENCIA` registra a correção do intervalo de uma matrícula de origem `LEGADO`, mantendo `resultado_anterior` e `resultado_novo` como `VINCULO_CONFIRMADO` e armazenando os instantes antigos e novos.
+- A retificação de vigência altera somente `inicio_em` e `fim_exclusivo_em` nesta primeira versão. Preço, duração e correspondência com o catálogo não são inferidos nem corrigidos por esse fluxo; valores sem prova continuam nulos.
+- Antes da retificação, bloquear o aluno e a matrícula na transação, validar `fim_exclusivo_em > inicio_em` e recalcular sobreposição com as demais matrículas não canceladas, excluindo apenas a matrícula que está sendo corrigida.
+- Se uma evidência nova colocar em dúvida a vigência, mas ainda não permitir determinar o intervalo correto, registrar nova decisão `PENDENTE_REVISAO`, bloquear novas matrículas e manter a última linha legada como histórico provisório, claramente sinalizada como sob revisão. Não cancelar, apagar nem alterar datas sem evidência suficiente.
+- Ao concluir uma retificação com evidência suficiente, atualizar o intervalo da matrícula, registrar o evento com os valores anteriores e novos e atualizar a referência da revisão na mesma transação. Em falha, fazer rollback integral.
 - A transação só confirma se as três gravações forem concluídas. Em falha, fazer rollback para que o estado atual e os dois históricos não divirjam.
 - A linha inicial criada automaticamente pela migração como `PENDENTE_REVISAO` não deve inventar funcionário nem gerar uma falsa decisão humana. A origem fica identificada pela migration SQL numerada e, se necessário, por um evento automático em `auditoria` com `usuario_id = NULL`.
 - A aplicação não oferece edição ou exclusão de eventos históricos. Correções são novos eventos de revisão, preservando a trilha anterior.
@@ -237,12 +242,16 @@ Os tipos são uma proposta física simples, alinhada aos identificadores atuais 
 | Campo | Tipo sugerido | Regra |
 |---|---|---|
 | `id` | `BIGINT UNSIGNED` | PK, auto incremento. |
-| `revisao_legado_id` | `BIGINT UNSIGNED` | FK para `revisoes_legado.id`. |
-| `usuario_id` | `INT UNSIGNED` | FK para `usuarios.id`; obrigatório em decisão humana. |
+| `revisao_legado_id` | `BIGINT UNSIGNED` | FK obrigatória para `revisoes_legado.id`. |
+| `usuario_id` | `INT UNSIGNED` | FK para `usuarios.id`; obrigatório em todo evento humano. |
+| `tipo_evento` | `ENUM('DECISAO','RETIFICACAO_VIGENCIA')` | Distingue uma decisão sobre o legado de uma correção do intervalo já confirmado. |
 | `resultado_anterior` | Mesmo ENUM dos resultados | Obrigatório; a revisão inicial já nasce como `PENDENTE_REVISAO`, portanto toda decisão humana tem um resultado anterior. |
-| `resultado_novo` | Mesmo ENUM dos resultados | Obrigatório. |
-| `fonte_referencia` | `VARCHAR(255)` | Nula somente quando não houver fonte; nesse caso, `observacoes` deve explicar a insuficiência. Para `VINCULO_CONFIRMADO` e `LEGADO_SEM_VIGENCIA`, é obrigatória. |
-| `observacoes` | `TEXT` | Opcional. |
+| `resultado_novo` | Mesmo ENUM dos resultados | Obrigatório. Na retificação de vigência, permanece `VINCULO_CONFIRMADO`. |
+| `matricula_id` | `BIGINT UNSIGNED` | FK opcional para `matriculas.id`; obrigatório em `RETIFICACAO_VIGENCIA` e quando uma decisão cria/associa uma matrícula legada. |
+| `inicio_anterior`, `fim_exclusivo_anterior` | `DATETIME` | Nulos em decisões comuns; obrigatórios em retificação de vigência. Valores UTC antes da correção. |
+| `inicio_novo`, `fim_exclusivo_novo` | `DATETIME` | Nulos em decisões comuns; obrigatórios em retificação de vigência. Valores UTC após a correção. |
+| `fonte_referencia` | `VARCHAR(255)` | Referência da evidência que sustenta a decisão ou retificação; obrigatória em `VINCULO_CONFIRMADO`, `LEGADO_SEM_VIGENCIA` e `RETIFICACAO_VIGENCIA`. |
+| `observacoes` | `TEXT` | Opcional em decisões comuns; obrigatória em `PENDENTE_REVISAO` e em retificações, para registrar a insuficiência ou a justificativa da correção. |
 | `criado_em` | `DATETIME` | Metadado do evento, gerado na mesma convenção de `auditoria.criado_em`; não é usado para calcular vigência. |
 
 Índices mínimos:
@@ -251,6 +260,7 @@ Os tipos são uma proposta física simples, alinhada aos identificadores atuais 
 - `matriculas(plano_id)`, para verificar vínculos antes de excluir/desativar plano.
 - `revisoes_legado(aluno_id_origem)` UNIQUE.
 - `revisoes_legado_eventos(revisao_legado_id, criado_em)`, para a linha do tempo.
+- `revisoes_legado_eventos(matricula_id, criado_em)`, para consultar retificações de uma matrícula legada.
 
 Usar FKs com `ON DELETE RESTRICT` nas relações históricas. Não usar exclusão em cascata para apagar contratos ou auditoria. O aluno já é inativado logicamente; plano só pode ser excluído sem matrícula vinculada, caso contrário fica inativo.
 
@@ -463,7 +473,8 @@ A coluna antiga será mantida durante a transição. Sua remoção só poderá s
 - Check-in, frequência, QR Code ou controle de acesso físico.
 - Múltiplas modalidades/contratos simultâneos, salvo decisão explícita que amplie o escopo.
 
-## 9. Plano de validação proposto
+## 9. Plano de validação
+
 
 - [ ] A migration funciona em banco limpo e em banco com alunos legados.
 - [ ] Nenhum aluno, ID ou texto original de plano é perdido.
@@ -486,7 +497,12 @@ A coluna antiga será mantida durante a transição. Sua remoção só poderá s
 - [ ] `VINCULO_CONFIRMADO` exige evidência confiável, registra apenas dados comprovados e só libera matrícula operacional quando a vigência puder ser determinada.
 - [ ] `LEGADO_SEM_VIGENCIA` exige evidência confiável de ausência de contrato vigente, libera nova matrícula e não inventa datas, preço, duração ou matrícula histórica.
 - [ ] `PENDENTE_REVISAO` permanece como resultado da revisão legada quando não há evidência suficiente e continua bloqueando novas matrículas; não é tratado como estado temporal de matrícula operacional.
-- [ ] Toda decisão humana grava evento append-only em `revisoes_legado_eventos`, com funcionário, instante, resultado anterior/novo, referência da fonte e observações.
+- [ ] Toda decisão humana grava evento append-only em `revisoes_legado_eventos`, com funcionário, instante, tipo, resultado anterior/novo, referência da fonte e observações.
+- [ ] Uma retificação de vigência registra `matricula_id`, início/fim anteriores e início/fim novos, com fonte e justificativa; o evento anterior nunca é sobrescrito.
+- [ ] A retificação só altera intervalos de matrículas `LEGADO` e exige resultado anterior/novo `VINCULO_CONFIRMADO`; não altera preço ou duração não comprovados.
+- [ ] A retificação valida sobreposição e consistência temporal dentro da transação, sem comparar a matrícula contra ela própria.
+- [ ] Uma evidência insuficiente após confirmação move a revisão para `PENDENTE_REVISAO`, sinaliza o registro anterior como sob revisão e bloqueia novas matrículas; não apaga nem cancela o registro.
+- [ ] Uma tentativa de repetir exatamente a mesma decisão/retificação sem dado novo não duplica evento nem auditoria.
 - [ ] Atualização do resultado atual, evento especializado e evento geral em `auditoria` ocorrem na mesma transação.
 - [ ] A criação inicial automática como `PENDENTE_REVISAO` não inventa funcionário nem cria falsa decisão humana.
 - [ ] A revisão nunca sobrescreve o texto original importado de `alunos.plano`.
@@ -558,15 +574,41 @@ As regras abaixo já foram aprovadas para orientar a implementação. O status n
 | Cancelamento | Somente `AGENDADA` ou `ATIVA`; efeito imediato, preservar histórico, registrar instante e funcionário, motivo opcional. `VENCIDA` não pode ser cancelada; `CANCELADA` não aceita repetição. Correção de registro vencido é operação auditada separada. | **Aprovada** |
 | Nova matrícula no dia do cancelamento | Permitir início no mesmo instante do cancelamento ou depois, com comparação por horário e sem sobreposição. | **Aprovada** |
 | Trancamento/suspensão/congelamento | Fora do escopo aprovado da primeira versão do Bloco 03. | **Fora de escopo — aprovado** |
-| Revisão de legados | Exigir um resultado auditado: `VINCULO_CONFIRMADO` com dados comprovados; `LEGADO_SEM_VIGENCIA` com evidência de ausência de contrato vigente; ou `PENDENTE_REVISAO` quando não for possível confirmar. Preservar o texto original e nunca inventar condições. | **Aprovada** |
+| Revisão de legados | Exigir um resultado auditado: `VINCULO_CONFIRMADO` com intervalo efetivo exato comprovado; `LEGADO_SEM_VIGENCIA` com evidência de ausência de contrato vigente; ou `PENDENTE_REVISAO` quando não for possível confirmar. Preservar o texto original e nunca inventar condições. | **Aprovada** |
+| Retificação de vigência legada | Corrigir somente o intervalo com nova evidência, mantendo evento append-only com valores anteriores/novos. Sem intervalo novo comprovado, voltar a pendente, bloquear novas matrículas e preservar o registro anterior como provisório. | **Aprovada** |
+| Fluxo de revisão | Fila administrativa com pendentes por padrão, filtros/pesquisa, formulário de decisão com fonte e histórico visível no perfil. Escritas via POST autenticado, CSRF e transação. | **Aprovada** |
 | Migração de legados | Carga inicial identificada pelo aluno de origem, protegida por UNIQUE e executada em transação; reexecução não duplica nem sobrescreve revisão/auditoria. | **Aprovada** |
 | Plano sem preço ou cadastro incompleto | Permitir salvar como rascunho; só ativar e disponibilizar para contratação com dados obrigatórios completos e preço maior que zero. | **Aprovada** |
 | Exclusão de plano | Permitir exclusão física somente sem matrículas vinculadas; com histórico, bloquear exclusão e permitir desativação. | **Aprovada** |
 | Horário padrão de início | Data futura sem horário: 00:00; hoje sem horário: instante atual; permitir horário posterior hoje, nunca anterior ao momento atual. | **Aprovada** |
 
-As regras marcadas como aprovadas compõem a base funcional do Bloco 03. Os pontos ainda pendentes devem ser resolvidos durante a revisão final da especificação, antes da criação das migrations. Recomendações não aprovadas não devem ser tratadas como requisitos.
+As regras marcadas como aprovadas compõem a base funcional do Bloco 03. O fluxo de revisão e de retificação descrito neste documento também integra os critérios de implementação. A confirmação do ambiente local e a revisão final de compatibilidade continuam pendentes antes das migrations.
 
-## 11. Revisão de consistência das decisões aprovadas
+## 11. Fluxo operacional de revisão de legados
+
+### Fila e consulta
+
+- Criar uma área administrativa de revisão, com pendentes como filtro inicial e opções para consultar confirmados e casos sem vigência.
+- Permitir pesquisa por nome, e-mail e texto original do plano; apresentar aluno, `plano_texto_original`, resultado atual e data da última revisão.
+- No perfil do aluno, exibir o resultado atual, a indicação de bloqueio/liberação de novas matrículas e a linha do tempo das decisões/retificações.
+- A tela de revisão apenas coleta a decisão e a evidência; a fonte deve ser uma referência verificável (documento, contrato, arquivo ou registro consultado), não uma afirmação genérica.
+
+### Decisões disponíveis
+
+- **`VINCULO_CONFIRMADO`:** exigir fonte e início/fim exatos da vigência. Criar ou associar uma matrícula `origem = 'LEGADO'` somente quando o intervalo efetivo estiver comprovado. Se não houver correspondência segura no catálogo, manter `plano_id` nulo; copiar o texto original para identificação histórica e deixar preço/duração nulos quando desconhecidos.
+- **`LEGADO_SEM_VIGENCIA`:** exigir fonte confiável que sustente a ausência de contrato vigente. Não criar matrícula fictícia nem preencher preço, duração ou datas por estimativa; liberar novas matrículas.
+- **`PENDENTE_REVISAO`:** exigir observação explicando o que falta confirmar. Não criar matrícula operacional por suposição e bloquear novas matrículas até nova decisão fundamentada.
+
+### Segurança, histórico e reavaliação
+
+- Implementar a fila em página autenticada e a gravação em endpoint exclusivamente POST, protegidos por `exigirAutenticacao()`, `validarToken()` e consultas preparadas.
+- Obter `usuario_id` apenas da sessão autenticada; nunca aceitar autoria enviada pelo formulário.
+- Exigir `fonte_referencia` em `VINCULO_CONFIRMADO` e `LEGADO_SEM_VIGENCIA`; para `PENDENTE_REVISAO`, exigir observações que expliquem a insuficiência, registrando a fonte consultada quando houver.
+- Registrar resultado atual, evento especializado e auditoria geral na mesma transação. A importação inicial não gera decisão humana nem usuário fictício.
+- Reavaliação com resultado igual só gera novo evento quando houver nova evidência ou retificação material; submissão idêntica é idempotente.
+- Uma matrícula legada confirmada que passe a ser questionada deve ficar sinalizada como sob revisão. Enquanto o resultado for `PENDENTE_REVISAO`, nenhuma nova matrícula será permitida, ainda que o intervalo anteriormente registrado não se sobreponha ao novo período pretendido.
+
+## 12. Revisão de consistência das decisões aprovadas
 
 A revisão cruzada consolidada encontrou e tratou os seguintes pontos:
 
