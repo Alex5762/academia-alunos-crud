@@ -174,6 +174,19 @@ jobs:
             ('Felipe Almeida', '(21) 90000-0006', 'felipe.almeida@example.test', 'Semestral'),
             ('Gabriela Lima', '(21) 90000-0007', 'gabriela.lima@example.test', 'Semestral'),
             ('Henrique Rocha', '(21) 90000-0008', 'henrique.rocha@example.test', 'Anual');
+
+          -- Eventos fictícios para que a captura do perfil demonstre a linha do tempo.
+          INSERT INTO auditoria (usuario_id, acao, entidade, entidade_id, criado_em)
+          SELECT usuarios.id, eventos.acao, 'alunos', alunos.id, eventos.criado_em
+          FROM usuarios
+          JOIN alunos ON alunos.email = 'henrique.rocha@example.test'
+          CROSS JOIN (
+            SELECT 'aluno_criado' AS acao, CURRENT_TIMESTAMP - INTERVAL 4 DAY AS criado_em
+            UNION ALL SELECT 'aluno_editado', CURRENT_TIMESTAMP - INTERVAL 3 DAY
+            UNION ALL SELECT 'aluno_inativado', CURRENT_TIMESTAMP - INTERVAL 2 DAY
+            UNION ALL SELECT 'aluno_reativado', CURRENT_TIMESTAMP - INTERVAL 1 DAY
+          ) AS eventos
+          WHERE usuarios.email = 'provision-ci@example.test';
           SQL
 
           export FITCONTROL_TEST_PASSWORD="$(cat "$RUNNER_TEMP/fitcontrol-test-password")"
