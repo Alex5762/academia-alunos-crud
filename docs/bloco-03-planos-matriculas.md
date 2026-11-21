@@ -175,7 +175,7 @@ Essa separação evita tarefas periódicas apenas para atualizar estados tempora
 
 ### 5.2 Datas e representação temporal
 
-**Decisão aprovada:** quando uma vigência termina em um limite à meia-noite local, a data final apresentada é o dia de calendário imediatamente anterior ao limite exclusivo e é inclusiva. Um cancelamento pode encerrar a vigência antes desse limite, no instante exato registrado. Quando o limite de uma matrícula iniciada em horário intradiário também ocorrer em horário intradiário, a interface deverá mostrar o instante exato de término, sem sugerir que o dia inteiro está coberto.
+**Decisão aprovada:** para durações mensais, o último dia de calendário calculado é integralmente incluído, mesmo quando a matrícula começa em horário intradiário. A vigência termina às 00:00 locais do dia seguinte ao último dia incluído (`fim_exclusivo_em`). Assim, um início em 10/01 às 15:00 com duração de um mês cobre todo o dia 10/02 e termina em 11/02 às 00:00. Um cancelamento pode encerrar a vigência antes desse limite, no instante exato registrado. Quando o limite efetivo de uma duração em dias/semanas ou de um cancelamento ocorrer em horário intradiário, a interface deverá mostrar o instante exato, sem sugerir que o dia inteiro está coberto.
 
 Para suportar cancelamento e nova matrícula no mesmo dia, a recomendação técnica aprovada é armazenar os limites de vigência como instantes:
 
@@ -188,11 +188,12 @@ O intervalo efetivo será tratado como semiaberto: `[inicio_em, fim_exclusivo_em
 Regra de calendário aprovada para durações em meses:
 
 - Tratar mês como unidade de calendário; nunca converter um mês em 30 dias.
-- `dia_referencia_calendario` representa o dia de aniversário usado pela sequência de ciclos. Em uma nova contratação independente, recebe o dia local de `inicio_em`; uma renovação contínua copia a referência anterior.
-- Calcular os limites mês a mês, em vez de aplicar diretamente `+N months` ao objeto de data. Para cada ciclo, encontrar a próxima ocorrência futura do dia de referência: usar esse dia no mês corrente se ainda estiver adiante do limite atual; caso contrário, procurar no mês seguinte.
-- Se o mês-alvo não possuir o dia de referência (por exemplo, dia 29, 30 ou 31 em fevereiro), ajustar para o último dia válido e incluir esse dia. O limite exclusivo passa para o dia local seguinte, preservando a hora local do limite quando a contratação não começar à meia-noite.
-- Quando o dia de referência existir no mês-alvo, esse dia é o limite exclusivo, mantendo a hora local do ciclo. Em limites à meia-noite, o dia anterior é o último dia incluído.
-- Para durações de vários meses, repetir o cálculo de ciclo pela quantidade contratada. Não confiar em `DateTime::modify('+N months')` sem normalização explícita: o PHP documenta que somas a partir de 31 de janeiro podem avançar para março por overflow ([DateTime::modify](https://www.php.net/manual/pt_BR/datetime.modify.php), [exemplos de aritmética de datas](https://www.php.net/manual/pt_BR/datetime.examples-arithmetic.php)).
+- `dia_referencia_calendario` representa o dia do mês usado para determinar a data final de ciclos mensais. Em uma nova contratação independente, recebe o dia local de `inicio_em`; uma renovação contínua copia a referência anterior.
+- Para uma duração de `N` meses, calcular o mês-alvo avançando `N` meses de calendário a partir do mês local de início, sem somar meses diretamente ao objeto de data. No mês-alvo, a data final inclusiva será o dia de referência, limitado ao último dia válido daquele mês.
+- O último dia inclusivo é coberto integralmente. Portanto, `fim_exclusivo_em` será sempre 00:00 local do dia de calendário seguinte à data final inclusiva, independentemente do horário em que a matrícula começou. Exemplo: início em 10/01 às 15:00, duração de um mês e referência 10 resulta em data final inclusiva 10/02 e limite exclusivo 11/02 às 00:00.
+- Se o mês-alvo não possuir o dia de referência (por exemplo, dia 29, 30 ou 31 em fevereiro), ajustar a data final inclusiva para o último dia válido do mês e colocar o limite exclusivo à meia-noite local do dia seguinte.
+- Para durações de vários meses, calcular o mês-alvo diretamente a partir do mês inicial e da quantidade contratada, preservando o dia de referência e aplicando o ajuste apenas no mês-alvo. Isso evita que um ajuste intermediário em fevereiro altere indevidamente o resultado de uma duração maior.
+- Não confiar em `DateTime::modify('+N months')` sem normalização explícita: o PHP documenta que somas a partir de 31 de janeiro podem avançar para março por overflow ([DateTime::modify](https://www.php.net/manual/pt_BR/datetime.modify.php), [exemplos de aritmética de datas](https://www.php.net/manual/pt_BR/datetime.examples-arithmetic.php)).
 - Renovações contínuas começam exatamente no limite exclusivo anterior e preservam `dia_referencia_calendario`. Uma nova contratação independente começa sua própria sequência com o dia da data inicial.
 - Toda a aritmética de calendário acontece no fuso `America/Sao_Paulo`; somente depois de calcular o limite local ele é convertido para UTC para persistência.
 
@@ -200,12 +201,13 @@ Exemplos para matrículas iniciadas à meia-noite:
 
 | Início / dia de referência | Próximo limite exclusivo | Último dia incluído |
 |---|---|---|
-| 01/11, referência 1 | 01/12 às 00:00 | 30/11 |
-| 31/01, referência 31, ano não bissexto | 01/03 às 00:00 | 28/02 |
-| 31/01, referência 31, ano bissexto | 01/03 às 00:00 | 29/02 |
-| Renovação contínua em 01/03, preservando referência 31 | 31/03 às 00:00 | 30/03 |
+| 01/11, referência 1, duração de 1 mês | 02/12 às 00:00 | 01/12 |
+| 31/01, referência 31, duração de 1 mês, ano não bissexto | 01/03 às 00:00 | 28/02 |
+| 31/01, referência 31, duração de 1 mês, ano bissexto | 01/03 às 00:00 | 29/02 |
+| Renovação contínua em 01/03, preservando referência 31, duração de 1 mês | 01/04 às 00:00 | 31/03 |
+| 10/01 às 15:00, referência 10, duração de 1 mês | 11/02 às 00:00 | 10/02 |
 
-Para um início intradiário, a interface mostra o limite exclusivo com data e hora local; não deve transformar um instante como `01/03 às 15:30` em uma data final que pareça cobrir o dia inteiro. Em cancelamento intradiário, o limite efetivo passa a ser o próprio `cancelada_em`, por exemplo 21/11 às 14:00. Uma nova matrícula pode começar nesse mesmo instante ou depois, nunca antes.
+Para durações mensais, o início intradiário não desloca o limite mensal para o mesmo horário: o último dia de calendário é coberto até o fim e o limite exclusivo ocorre à meia-noite local seguinte. Para durações em dias/semanas, quando o cálculo resultar em limite intradiário, a interface mostra a data e a hora exatas. Em cancelamento intradiário, o limite efetivo passa a ser o próprio `cancelada_em`, por exemplo 21/11 às 14:00. Uma nova matrícula pode começar nesse mesmo instante ou depois, nunca antes.
 
 Para durações em dias ou semanas, tratar as unidades como dias/semanas de calendário no fuso local, preservando a hora local do início e calculando um limite exclusivo. Não converter semanas em segundos fixos nem dias em 86.400 segundos; a transição entre horários civis deve ser calculada com o fuso IANA. Quando o limite for intradiário, exibir o instante exato.
 
@@ -216,7 +218,7 @@ Para durações em dias ou semanas, tratar as unidades como dias/semanas de cale
 - Ao consultar, interpretar os valores armazenados como UTC e convertê-los para `America/Sao_Paulo` antes de apresentar ou aplicar regras de calendário.
 - Usar objetos de data/hora com fuso explícito na aplicação. Não depender do fuso padrão do servidor, do dispositivo do funcionário ou de conversões implícitas da sessão do banco.
 - Não usar uma data fictícia para preencher informações desconhecidas.
-- Testar virada de mês, fevereiro, ano bissexto, horário do cancelamento, início no mesmo instante do encerramento anterior e sequências de renovações.
+- Testar início mensal intradiário (por exemplo, 10/01 às 15:00 + 1 mês = data final 10/02 e limite exclusivo 11/02 às 00:00), virada de mês, fevereiro, ano bissexto, duração mensal de vários meses, horário do cancelamento, início no mesmo instante do encerramento anterior e sequências de renovações.
 - Centralizar o cálculo em uma função de domínio, coberta por testes determinísticos; não espalhar a regra entre telas ou consultas.
 
 ### 5.3 Renovação e histórico
