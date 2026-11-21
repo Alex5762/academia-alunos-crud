@@ -125,16 +125,6 @@ jobs:
           MYSQL_PWD: root
         run: bash tests/migration-student-status.sh
 
-      - name: Validate student status migration and legacy data preservation
-        env:
-          DB_HOST: 127.0.0.1
-          DB_PORT: 3306
-          DB_NAME: academia_alunos
-          DB_USER: root
-          DB_PASSWORD: root
-          MYSQL_PWD: root
-        run: bash tests/migration-student-status.sh
-
       - name: Test secure CLI user provisioning
         env:
           DB_HOST: 127.0.0.1
