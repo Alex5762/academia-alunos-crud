@@ -366,10 +366,15 @@ curl -fsS -G -c "$COOKIE_JAR" -b "$COOKIE_JAR" \
     "$BASE_URL/index.php" -o "$TMP_DIR/search.html"
 assert_contains "$TMP_DIR/search.html" "<strong>Aluno CI CRUD</strong>"
 
-curl -fsS -c "$COOKIE_JAR" -b "$COOKIE_JAR" \
-    "$BASE_URL/cadastro.php?id=$ALUNO_ID" -o "$TMP_DIR/edit-form.html"
+curl -fsS -G -c "$COOKIE_JAR" -b "$COOKIE_JAR" \
+    --data-urlencode "id=$ALUNO_ID" \
+    --data-urlencode "busca=Aluno CI CRUD" \
+    --data-urlencode "status=ativos" \
+    "$BASE_URL/cadastro.php" -o "$TMP_DIR/edit-form.html"
 EDIT_TOKEN="$(get_token "$TMP_DIR/edit-form.html")"
 assert_contains "$TMP_DIR/edit-form.html" 'value="Aluno CI CRUD"'
+assert_contains "$TMP_DIR/edit-form.html" 'name="busca" value="Aluno CI CRUD"'
+assert_contains "$TMP_DIR/edit-form.html" 'name="status" value="ativos"'
 
 curl -fsS -L -c "$COOKIE_JAR" -b "$COOKIE_JAR" \
     -X POST "$BASE_URL/salvar.php" \
@@ -379,8 +384,12 @@ curl -fsS -L -c "$COOKIE_JAR" -b "$COOKIE_JAR" \
     --data-urlencode "telefone=21999990001" \
     --data-urlencode "email=crud-ci-update@example.test" \
     --data-urlencode "plano=Anual" \
+    --data-urlencode "busca=Aluno CI CRUD" \
+    --data-urlencode "status=ativos" \
     -o "$TMP_DIR/update.html"
 assert_contains "$TMP_DIR/update.html" "Aluno atualizado com sucesso!"
+assert_contains "$TMP_DIR/update.html" 'name="busca" value="Aluno CI CRUD"'
+assert_contains "$TMP_DIR/update.html" 'value="ativos"'
 
 ATUALIZADO="$(db_value "SELECT COUNT(*) FROM alunos WHERE id = $ALUNO_ID AND nome = 'Aluno CI Atualizado' AND email = 'crud-ci-update@example.test' AND plano = 'Anual'")"
 [[ "$ATUALIZADO" == "1" ]] || fail "A edição não foi persistida corretamente."
@@ -411,8 +420,11 @@ HTTP_CODE="$(curl -sS -o "$TMP_DIR/status-invalid-action.html" -w '%{http_code}'
 
 curl -fsS -L -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/alterar-status-aluno.php" \
     --data-urlencode "token=$EDIT_TOKEN" --data-urlencode "id=$ALUNO_ID" --data-urlencode "acao=inativar" \
+    --data-urlencode "busca=Aluno CI Atualizado" --data-urlencode "status=ativos" \
     -o "$TMP_DIR/student-inactivated.html"
 assert_contains "$TMP_DIR/student-inactivated.html" "Aluno inativado com sucesso."
+assert_contains "$TMP_DIR/student-inactivated.html" 'name="busca" value="Aluno CI Atualizado"'
+assert_contains "$TMP_DIR/student-inactivated.html" 'value="ativos"'
 
 curl -fsS -G -c "$COOKIE_JAR" -b "$COOKIE_JAR" \
     --data-urlencode "busca=Aluno CI Atualizado" \
@@ -442,6 +454,7 @@ AUDIT_INATIVACAO="$(db_value "SELECT COUNT(*) FROM auditoria WHERE usuario_id = 
 
 curl -fsS -L -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/alterar-status-aluno.php" \
     --data-urlencode "token=$EDIT_TOKEN" --data-urlencode "id=$ALUNO_ID" --data-urlencode "acao=inativar" \
+    --data-urlencode "busca=Aluno CI Atualizado" --data-urlencode "status=ativos" \
     -o "$TMP_DIR/student-inactivated-again.html"
 assert_contains "$TMP_DIR/student-inactivated-again.html" "O aluno já estava inativo."
 AUDIT_INATIVACAO_REPETIDA="$(db_value "SELECT COUNT(*) FROM auditoria WHERE usuario_id = $USUARIO_ID AND entidade = 'alunos' AND entidade_id = $ALUNO_ID AND acao = 'aluno_inativado'")"
@@ -449,7 +462,10 @@ AUDIT_INATIVACAO_REPETIDA="$(db_value "SELECT COUNT(*) FROM auditoria WHERE usua
 
 curl -fsS -L -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/alterar-status-aluno.php" \
     --data-urlencode "token=$EDIT_TOKEN" --data-urlencode "id=$ALUNO_ID" --data-urlencode "acao=reativar" \
+    --data-urlencode "busca=Aluno CI Atualizado" --data-urlencode "status=inativos" \
     -o "$TMP_DIR/student-reactivated.html"
+assert_contains "$TMP_DIR/student-reactivated.html" 'name="busca" value="Aluno CI Atualizado"'
+assert_contains "$TMP_DIR/student-reactivated.html" 'value="inativos"'
 assert_contains "$TMP_DIR/student-reactivated.html" "Aluno reativado com sucesso."
 ATIVO="$(db_value "SELECT COUNT(*) FROM alunos WHERE id = $ALUNO_ID AND ativo = 1")"
 [[ "$ATIVO" == "1" ]] || fail "A reativação não foi persistida."
