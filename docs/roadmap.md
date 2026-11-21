@@ -99,7 +99,7 @@ O encerramento formal depende da inspeção em aparelho físico/navegador instal
 
 ### Bloco 03 — Planos e matrículas
 
-**Estado: pesquisa e proposta técnica documentadas; implementação não iniciada.**
+**Estado: pesquisa e proposta técnica documentadas; uma regra de negócio aprovada; implementação não iniciada.**
 
 Documento de referência: [Pesquisa e proposta técnica do Bloco 03](bloco-03-planos-matriculas.md).
 
@@ -112,9 +112,11 @@ Escopo candidato:
 - Consulta de vencimentos e histórico no perfil do aluno.
 - Migração preservadora dos valores atuais de `alunos.plano`.
 
-**Recomendações registradas, ainda pendentes de aprovação:** separar aluno, plano e matrícula; guardar cópia do nome, valor e duração contratados; desativar planos em vez de apagar histórico; preservar registros legados sem inventar preço ou datas; tratar renovações como novas matrículas.
+**Regra aprovada:** um aluno pode ter várias matrículas no histórico, mas não pode ter períodos sobrepostos em matrículas não canceladas. Matrículas futuras são permitidas quando começam após o término da última matrícula não cancelada. Matrículas anteriores permanecem no histórico. A implementação deverá proteger essa regra contra solicitações concorrentes.
 
-**Decisões de negócio pendentes:** permitir matrículas simultâneas ou períodos sobrepostos, regra de renovação antecipada, inclusão da data final, efeito do cancelamento e compatibilidade da unidade de duração. Não iniciar migrations ou implementação até revisar essas decisões.
+**Decisões ainda pendentes:** cálculo e início da renovação antecipada, inclusão da data final, efeito e momento do cancelamento e tratamento de novas matrículas quando há legado sem datas. Outras recomendações do documento ainda não foram aprovadas.
+
+Não iniciar migrations ou implementação até revisar as decisões restantes e confirmar os critérios de aceite.
 
 **Dependência:** Bloco 02. A inspeção física do Bloco 02 continua pendente; este planejamento não o encerra e não autoriza merge da PR #1 em `main`.
 
