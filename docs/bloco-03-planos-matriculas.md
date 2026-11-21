@@ -50,7 +50,7 @@ Campos candidatos:
 | `duracao_unidade` | Unidade permitida, inicialmente dia, semana ou mês. |
 | `valor_atual` | Preço vigente para novas matrículas, usando tipo monetário exato. |
 | `situacao` | Estado do ciclo de vida: `RASCUNHO`, `ATIVO` ou `INATIVO`. |
-| `created_at` / `updated_at` | Datas de criação e atualização. |
+| `criado_em` / `atualizado_em` | Metadados de criação e atualização, seguindo a nomenclatura existente no banco. |
 
 Regras aprovadas e propostas:
 
@@ -87,7 +87,7 @@ Campos candidatos:
 | `cancelada_em` | Quando preenchido, registra o instante exato do cancelamento. O evento de auditoria associado identifica o funcionário responsável. Não é necessário persistir `AGENDADA`, `ATIVA` ou `VENCIDA`. |
 | `origem` | Distingue registros legados comprovados dos criados pelo fluxo normal; a nulidade de preço/duração só é permitida para a origem legada. |
 | `motivo_cancelamento` | Justificativa opcional. |
-| `created_at` | Momento em que o registro foi criado. |
+| `criado_em` | Momento em que o registro foi criado. |
 
 Regras propostas:
 
@@ -112,7 +112,7 @@ Campos candidatos:
 | `plano_texto_original` | Cópia exata do valor de `alunos.plano` no momento da migração, apenas para rastreabilidade; a coluna original não será alterada. |
 | `resultado_atual` | Um dos resultados `VINCULO_CONFIRMADO`, `LEGADO_SEM_VIGENCIA` ou `PENDENTE_REVISAO`. |
 | `fonte_referencia` | Referência da fonte que sustenta a última conclusão humana; fica sem valor na criação automática inicial até a revisão. |
-| `created_at` / `updated_at` | Datas de criação e atualização do controle de revisão. |
+| `criado_em` / `atualizado_em` | Metadados de criação e atualização do controle de revisão. |
 
 Cada decisão humana deve gerar auditoria com funcionário, instante, resultado e referência da fonte. A criação automática inicial como `PENDENTE_REVISAO` deve ser distinguível de uma decisão humana (por exemplo, como evento de importação/migração). A definição física final de tipos, nomes, chaves e índices ainda será validada antes da migration.
 
@@ -129,7 +129,7 @@ Campos candidatos:
 | `id` | Identificador do evento de revisão. |
 | `revisao_legado_id` | FK para `revisoes_legado.id`. |
 | `usuario_id` | FK obrigatória para `usuarios.id`; decisões humanas sempre identificam o funcionário responsável. |
-| `resultado_anterior` | Resultado vigente antes da decisão, quando houver. |
+| `resultado_anterior` | Resultado vigente antes da decisão; será `PENDENTE_REVISAO` no primeiro evento humano, pois a carga inicial já cria o controle nesse resultado. |
 | `resultado_novo` | Um dos três resultados aprovados. |
 | `fonte_referencia` | Referência da fonte consultada para sustentar a decisão. |
 | `observacoes` | Contexto complementar, sem substituir a referência da fonte. |
@@ -188,7 +188,7 @@ A relação opcional matrícula-plano existe apenas para legados sem correspond�
 
 ### 4.7 Tipos, nulabilidade, índices e integridade sugeridos
 
-Os tipos são uma proposta física simples, alinhada aos identificadores atuais (`alunos.id` e `usuarios.id` são `INT UNSIGNED`; `auditoria.id` é `BIGINT UNSIGNED`). Confirmar a versão real do MySQL/MariaDB antes de fechar constraints.
+Os tipos são uma proposta física simples, alinhada aos identificadores atuais (`alunos.id` e `usuarios.id` são `INT UNSIGNED`; `auditoria.id` é `BIGINT UNSIGNED`). Confirmar a versão real do MySQL/MariaDB antes de fechar constraints. O `banco.sql` atual não declara explicitamente `ENGINE` na tabela `alunos`; antes de criar FKs, verificar `information_schema.TABLES.ENGINE` e garantir que `alunos` use InnoDB. Se o ambiente local estiver usando outro mecanismo, converter a tabela preservando os dados antes de criar as relações.
 
 **`planos`**
 
@@ -201,7 +201,7 @@ Os tipos são uma proposta física simples, alinhada aos identificadores atuais 
 | `duracao_unidade` | `ENUM('DIA','SEMANA','MES')` | Nulo enquanto rascunho incompleto. |
 | `valor_atual` | `DECIMAL(10,2)` | Nulo enquanto rascunho; maior que zero para ativação. |
 | `situacao` | `ENUM('RASCUNHO','ATIVO','INATIVO')` | Obrigatório, padrão `RASCUNHO`. |
-| `created_at`, `updated_at` | `DATETIME` | Metadados com padrão/atualização pelo banco. |
+| `criado_em`, `atualizado_em` | `DATETIME` | Metadados gerados pelo banco, na mesma convenção dos registros existentes; não usados em cálculos de vigência. |
 
 **`matriculas`**
 
@@ -219,7 +219,7 @@ Os tipos são uma proposta física simples, alinhada aos identificadores atuais 
 | `cancelada_em` | `DATETIME` | Nulo enquanto não cancelada; instante UTC do cancelamento. |
 | `origem` | `ENUM('SISTEMA','LEGADO')` | Obrigatório, padrão `SISTEMA`. |
 | `motivo_cancelamento` | `VARCHAR(255)` | Opcional. |
-| `created_at` | `DATETIME` | Metadado de criação. |
+| `criado_em` | `DATETIME` | Metadado de criação, na convenção existente da aplicação/banco. |
 
 **`revisoes_legado`**
 
@@ -230,7 +230,7 @@ Os tipos são uma proposta física simples, alinhada aos identificadores atuais 
 | `plano_texto_original` | `VARCHAR(40)` | Cópia exata do campo de origem. |
 | `resultado_atual` | `ENUM('VINCULO_CONFIRMADO','LEGADO_SEM_VIGENCIA','PENDENTE_REVISAO')` | Obrigatório, padrão `PENDENTE_REVISAO`. |
 | `fonte_referencia` | `VARCHAR(255)` | Fonte da última decisão; nula antes da primeira revisão. |
-| `created_at`, `updated_at` | `DATETIME` | Metadados do controle. |
+| `criado_em`, `atualizado_em` | `DATETIME` | Metadados do controle, na convenção existente da aplicação/banco. |
 
 **`revisoes_legado_eventos`**
 
@@ -241,9 +241,9 @@ Os tipos são uma proposta física simples, alinhada aos identificadores atuais 
 | `usuario_id` | `INT UNSIGNED` | FK para `usuarios.id`; obrigatório em decisão humana. |
 | `resultado_anterior` | Mesmo ENUM dos resultados | Obrigatório; a revisão inicial já nasce como `PENDENTE_REVISAO`, portanto toda decisão humana tem um resultado anterior. |
 | `resultado_novo` | Mesmo ENUM dos resultados | Obrigatório. |
-| `fonte_referencia` | `VARCHAR(255)` | Referência da evidência; quando o resultado for pendente por falta de fonte, explicar isso em observações. |
+| `fonte_referencia` | `VARCHAR(255)` | Nula somente quando não houver fonte; nesse caso, `observacoes` deve explicar a insuficiência. Para `VINCULO_CONFIRMADO` e `LEGADO_SEM_VIGENCIA`, é obrigatória. |
 | `observacoes` | `TEXT` | Opcional. |
-| `criado_em` | `DATETIME` | Metadado do evento, seguindo a convenção atual da auditoria geral. |
+| `criado_em` | `DATETIME` | Metadado do evento, gerado na mesma convenção de `auditoria.criado_em`; não é usado para calcular vigência. |
 
 Índices mínimos:
 - `planos(situacao, nome)`, para listar opções disponíveis.
@@ -317,7 +317,7 @@ Para durações mensais, o início intradiário não desloca o limite mensal par
 - **Decisão aprovada — persistência de instantes:** manter `inicio_em`, `fim_exclusivo_em` e `cancelada_em` como `DATETIME`, armazenando neles valores UTC por convenção explícita. O tipo `DATETIME` não realiza conversão automática de fuso; essa conversão deve ser feita na aplicação. Diferentemente, o MySQL converte `TIMESTAMP` entre o fuso da sessão e UTC, por isso não misturar as duas convenções nesses campos ([documentação MySQL sobre tipos temporais](https://dev.mysql.com/doc/refman/8.0/en/datetime.html) e [suporte a fusos horários](https://dev.mysql.com/doc/refman/8.0/en/time-zone-support.html)).
 - Interpretar datas e horários informados pelos funcionários no fuso `America/Sao_Paulo`. Fazer cálculos de calendário (dias, semanas, meses e limites de meia-noite) nesse fuso local; depois converter o instante resultante para UTC antes de persistir.
 - Ao consultar, interpretar os valores armazenados como UTC e convertê-los para `America/Sao_Paulo` antes de apresentar ou aplicar regras de calendário.
-- Para novas colunas de criação/atualização e eventos deste bloco, usar UTC por convenção explícita e conversão na aplicação. Antes da implementação, inspecionar `auditoria.criado_em`: sua definição atual usa `DATETIME` com valor padrão do banco, portanto não presumir que o histórico existente esteja em UTC nem reinterpretar registros antigos sem uma estratégia específica.
+- Os instantes contratuais (`inicio_em`, `fim_exclusivo_em` e `cancelada_em`) são os únicos campos deste modelo que seguem obrigatoriamente UTC. Os metadados administrativos `criado_em`/`atualizado_em` e os horários da auditoria geral seguem a convenção já existente do banco, gerada por `CURRENT_TIMESTAMP`; não são usados para calcular vigência. Não reinterpretar registros antigos como UTC sem uma estratégia própria.
 - Usar objetos de data/hora com fuso explícito na aplicação. Não depender do fuso padrão do servidor, do dispositivo do funcionário ou de conversões implícitas da sessão do banco.
 - Não usar uma data fictícia para preencher informações desconhecidas.
 - Testar início mensal intradiário (por exemplo, 10/01 às 15:00 + 1 mês = data final 10/02 e limite exclusivo 11/02 às 00:00), virada de mês, fevereiro, ano bissexto, duração mensal de vários meses, horário do cancelamento, início no mesmo instante do encerramento anterior e sequências de renovações.
@@ -592,7 +592,7 @@ Pontos técnicos que ainda precisam ser fechados antes das migrations:
 4. **Compatibilidade do banco:** confirmar a versão real do MySQL/MariaDB no XAMPP antes de definir `CHECK`, índices, constraints e estratégia de bloqueio.
 5. **Cancelamento de matrícula futura:** comportamento aprovado; implementar e testar cancelamento antes do início, exatamente no início e depois do início, preservando histórico e tratando corretamente o intervalo efetivo vazio.
 6. **Implementação e validação da carga inicial de legados:** aplicar a referência única do aluno, transação e testes de reexecução sem sobrescrever revisões ou duplicar auditoria. Usar migrations SQL numeradas na ordem da CI/README; não construir runner próprio ou tabela de checksums nesta versão.
-7. **Compatibilidade de timestamps de auditoria:** verificar a convenção histórica de `auditoria.criado_em` e definir como os novos eventos armazenarão UTC sem reinterpretar incorretamente logs existentes.
+7. **Compatibilidade de timestamps de auditoria:** verificar o fuso da sessão do banco no XAMPP e manter `criado_em`/`atualizado_em` das tabelas administrativas e eventos na convenção já existente; somente os instantes contratuais serão UTC.
 8. **Aplicação da elegibilidade de cancelamento:** a regra está aprovada; implementar a revalidação da situação dentro da transação e testar concorrência entre cancelamento e vencimento natural.
 
 A revisão consolidada corrigiu contradições entre limites exclusivos, renovação contínua, regras de dias/semanas, legado comprovado e critérios de aceite. A elegibilidade do cancelamento também está decidida; permanecem apenas sua implementação/testes e as validações técnicas listadas acima. Não iniciar migrations enquanto esses itens não forem verificados e os critérios de aceite finais não forem fechados.
