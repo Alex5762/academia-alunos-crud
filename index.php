@@ -394,10 +394,12 @@ function iniciaisNome($nome) {
                                         <td><span class="plan-badge plan-badge-<?= escapar($classe) ?>"><?= escapar($aluno['plano']) ?></span></td>
                                         <td><span class="student-status <?= (int) $aluno['ativo'] === 1 ? 'is-active' : 'is-inactive' ?>"><?= (int) $aluno['ativo'] === 1 ? 'Ativo' : 'Inativo' ?></span></td>
                                         <td class="row-actions">
-                                            <a class="action-link" href="cadastro.php?id=<?= escapar($aluno['id']) ?>" aria-label="Editar <?= escapar($aluno['nome']) ?>">Editar</a>
+                                            <a class="action-link" href="<?= escapar(urlCadastroAluno((int) $aluno['id'], ['busca' => $busca, 'status' => $filtroStatus])) ?>" aria-label="Editar <?= escapar($aluno['nome']) ?>">Editar</a>
                                             <form action="alterar-status-aluno.php" method="post" class="student-status-form">
                                                 <input type="hidden" name="token" value="<?= escapar($_SESSION['token']) ?>">
                                                 <input type="hidden" name="id" value="<?= escapar($aluno['id']) ?>">
+                                                <input type="hidden" name="busca" value="<?= escapar($busca) ?>">
+                                                <input type="hidden" name="status" value="<?= escapar($filtroStatus) ?>">
                                                 <?php if ((int) $aluno['ativo'] === 1) { ?>
                                                     <input type="hidden" name="acao" value="inativar">
                                                     <button type="submit" class="action-link action-delete" aria-label="Inativar <?= escapar($aluno['nome']) ?>">Inativar</button>
