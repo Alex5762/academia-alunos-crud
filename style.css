@@ -2228,3 +2228,53 @@ body:not(.dashboard-body) .theme-option[aria-pressed="true"] {
     :root[data-theme="dark"] .main-nav::-webkit-scrollbar-track { background: #202c40; }
     :root[data-theme="dark"] .main-nav::-webkit-scrollbar-thumb { background: #6c7d99; }
 }
+
+
+/* Situação e ações do ciclo de vida dos alunos */
+.student-status {
+    display: inline-flex;
+    align-items: center;
+    min-height: 25px;
+    padding: 4px 9px;
+    border-radius: 999px;
+    font-size: .68rem;
+    font-weight: 750;
+    white-space: nowrap;
+}
+.student-status.is-active {
+    color: #176c55;
+    background: #eaf8f2;
+}
+.student-status.is-inactive {
+    color: #8a4650;
+    background: #fff0f1;
+}
+.student-status-form { display: inline; margin: 0; }
+.student-status-form button { border: 0; background: transparent; cursor: pointer; font: inherit; }
+.action-reactivate { margin-left: 3px; color: #176c55; }
+.action-reactivate:hover { color: #105640; background: #eaf8f2; }
+.search-status {
+    min-height: 42px;
+    padding: 0 10px;
+    color: var(--ink);
+    background: var(--surface, #fff);
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    font: inherit;
+    font-size: .78rem;
+}
+:root[data-theme="dark"] .student-status.is-active {
+    color: #9ce4ce;
+    background: #183b36;
+}
+:root[data-theme="dark"] .student-status.is-inactive {
+    color: #ffb4bd;
+    background: #492a36;
+}
+:root[data-theme="dark"] .action-reactivate { color: #9ce4ce; }
+:root[data-theme="dark"] .action-reactivate:hover { color: #c8f7e8; background: #183b36; }
+:root[data-theme="dark"] .search-status {
+    color: #e8edf7;
+    background: #111c2d;
+    border-color: #35435a;
+}
