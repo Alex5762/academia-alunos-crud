@@ -237,16 +237,16 @@ final class LegacyReviewDecisionService
                 $legacyStartUtc = $legacyStartLocal->setTimezone($this->utcTimezone)->format('Y-m-d H:i:s');
                 $legacyEndUtc = $legacyEndExclusiveLocal->setTimezone($this->utcTimezone)->format('Y-m-d H:i:s');
 
-                // Não duplicar uma matrícula LEGADO já materializada.
+                // Uma revisão pode voltar a PENDENTE após uma confirmação anterior.
+                // Nesse caso, preservar e reutilizar a matrícula LEGADO já materializada;
+                // nunca criar uma segunda linha nem alterar seu intervalo por DECISAO.
                 $existingLegacyRows = array_values(array_filter(
                     $existingEnrollments,
                     static fn (array $row): bool => $row['origem'] === 'LEGADO'
                 ));
 
-                if ($existingLegacyRows !== []) {
-                    throw new DomainException(
-                        'Já existe uma matrícula LEGADO para este aluno; alterações de vigência exigem retificação.'
-                    );
+                if (count($existingLegacyRows) > 1) {
+                    throw new LogicException('Há mais de uma matrícula LEGADO para o mesmo aluno; revisar integridade.');
                 }
 
                 $newInterval = EnrollmentInterval::fromContract(
@@ -255,6 +255,11 @@ final class LegacyReviewDecisionService
                 );
 
                 foreach ($existingEnrollments as $existing) {
+                    if ($existing['origem'] === 'LEGADO' && $existingLegacyRows !== []) {
+                        // O registro LEGADO existente é validado separadamente abaixo.
+                        continue;
+                    }
+
                     $existingInterval = EnrollmentInterval::fromContract(
                         $this->storedUtcToAcademyTime((string) $existing['inicio_em']),
                         $this->storedUtcToAcademyTime((string) $existing['fim_exclusivo_em']),
@@ -270,38 +275,55 @@ final class LegacyReviewDecisionService
                     }
                 }
 
-                $originalPlanText = (string) $review['plano_texto_original'];
-                if ($originalPlanText === '') {
-                    $originalPlanText = (string) $student['plano'];
-                }
+                if ($existingLegacyRows !== []) {
+                    $existingLegacy = $existingLegacyRows[0];
+                    $existingStart = $this->storedUtcToAcademyTime((string) $existingLegacy['inicio_em']);
+                    $existingEnd = $this->storedUtcToAcademyTime((string) $existingLegacy['fim_exclusivo_em']);
 
-                $insertLegacy = $this->pdo->prepare(
-                    "INSERT INTO matriculas (
-                        aluno_id, plano_id, plano_nome_contratado, valor_contratado,
-                        duracao_contratada_valor, duracao_contratada_unidade,
-                        inicio_em, fim_exclusivo_em, dia_referencia_calendario,
-                        cancelada_em, origem
-                    ) VALUES (
-                        :student_id, NULL, :plan_name, :price,
-                        :duration, :duration_unit, :start_at, :end_at,
-                        :calendar_reference_day, NULL, 'LEGADO'
-                    )"
-                );
-                $insertLegacy->execute([
-                    'student_id' => $studentId,
-                    'plan_name' => $originalPlanText,
-                    'price' => $provenPrice,
-                    'duration' => $provenDuration,
-                    'duration_unit' => $provenDurationUnit,
-                    'start_at' => $legacyStartUtc,
-                    'end_at' => $legacyEndUtc,
-                    'calendar_reference_day' => $provenCalendarReferenceDay,
-                ]);
+                    if (
+                        $existingStart != $legacyStartLocal
+                        || $existingEnd != $legacyEndExclusiveLocal
+                    ) {
+                        throw new DomainException(
+                            'O intervalo já materializado não pode ser alterado por uma decisão comum; use a retificação de vigência.'
+                        );
+                    }
 
-                $legacyEnrollmentId = (int) $this->pdo->lastInsertId();
+                    $legacyEnrollmentId = (int) $existingLegacy['id'];
+                } else {
+                    $originalPlanText = (string) $review['plano_texto_original'];
+                    if ($originalPlanText === '') {
+                        $originalPlanText = (string) $student['plano'];
+                    }
 
-                if ($legacyEnrollmentId < 1) {
-                    throw new UnexpectedValueException('O banco não retornou o ID da matrícula LEGADO.');
+                    $insertLegacy = $this->pdo->prepare(
+                        "INSERT INTO matriculas (
+                            aluno_id, plano_id, plano_nome_contratado, valor_contratado,
+                            duracao_contratada_valor, duracao_contratada_unidade,
+                            inicio_em, fim_exclusivo_em, dia_referencia_calendario,
+                            cancelada_em, origem
+                        ) VALUES (
+                            :student_id, NULL, :plan_name, :price,
+                            :duration, :duration_unit, :start_at, :end_at,
+                            :calendar_reference_day, NULL, 'LEGADO'
+                        )"
+                    );
+                    $insertLegacy->execute([
+                        'student_id' => $studentId,
+                        'plan_name' => $originalPlanText,
+                        'price' => $provenPrice,
+                        'duration' => $provenDuration,
+                        'duration_unit' => $provenDurationUnit,
+                        'start_at' => $legacyStartUtc,
+                        'end_at' => $legacyEndUtc,
+                        'calendar_reference_day' => $provenCalendarReferenceDay,
+                    ]);
+
+                    $legacyEnrollmentId = (int) $this->pdo->lastInsertId();
+
+                    if ($legacyEnrollmentId < 1) {
+                        throw new UnexpectedValueException('O banco não retornou o ID da matrícula LEGADO.');
+                    }
                 }
             } elseif ($newResult === 'LEGADO_SEM_VIGENCIA') {
                 foreach ($existingEnrollments as $existing) {
@@ -339,10 +361,6 @@ final class LegacyReviewDecisionService
                 'review_id' => $reviewId,
                 'student_id' => $studentId,
             ]);
-
-            if ($updateReview->rowCount() !== 1) {
-                throw new UnexpectedValueException('O registro de revisão não foi atualizado.');
-            }
 
             // 6. Histórico especializado append-only.
             $insertEvent = $this->pdo->prepare(
