@@ -128,17 +128,22 @@ assertSameValue(
 );
 
 // Limite exclusivo: um instante anterior pertence ao período; o próprio limite não pertence.
+function intervalContains(DateTimeImmutable $start, DateTimeImmutable $endExclusive, DateTimeImmutable $instant): bool
+{
+    return $instant >= $start && $instant < $endExclusive;
+}
+
 $periodStart = localDateTime('2026-01-10 15:00:00');
 $periodEnd = EnrollmentPeriodCalculator::calculateEndExclusive($periodStart, 1, 'DIA');
 $lastSecond = $periodEnd->sub(new DateInterval('PT1S'));
 assertSameValue(
     true,
-    $lastSecond >= $periodStart && $lastSecond < $periodEnd,
+    intervalContains($periodStart, $periodEnd, $lastSecond),
     'O instante anterior ao fim deve estar dentro do intervalo'
 );
 assertSameValue(
     false,
-    $periodEnd >= $periodStart && $periodEnd < $periodEnd,
+    intervalContains($periodStart, $periodEnd, $periodEnd),
     'O próprio fim exclusivo não deve estar dentro do intervalo'
 );
 
