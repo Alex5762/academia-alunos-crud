@@ -2,7 +2,7 @@
 
 ## Estado
 
-**Em implementação — Etapas 1 e 2 concluídas em código, aguardando CI.** A migração 004 e seu teste de preservação foram aprovados em push/PR. O endpoint transacional, a inativação/reativação na listagem e a aposentadoria da exclusão física foram implementados; os novos testes de integração aguardam execução.
+**Em implementação — Etapas 1 e 2 aprovadas em CI anterior; preservação do contexto da listagem implementada, aguardando nova CI.** A migração 004 e seu teste de preservação passaram em push/PR #268/#269. O endpoint transacional, a inativação/reativação, a aposentadoria da exclusão física, os filtros e o dashboard estão implementados. Esta atualização preserva busca e situação ao abrir a edição, salvar, voltar e alterar o status. A validação integrada desta atualização ainda está pendente.
 
 Este documento fecha o escopo funcional e técnico do Bloco 02. A execução deve acontecer na branch `feat/dashboard-portfolio`, em etapas pequenas, com testes e documentação acompanhando o código. Não fazer merge em `main` sem revisão e aprovação explícita.
 
@@ -145,10 +145,11 @@ Manter `aluno_criado` e `aluno_editado`. Eventos históricos `aluno_excluido` ex
 - [x] Mostrar ativos por padrão.
 - [x] Adicionar filtro Ativos/Inativos/Todos.
 - [x] Pesquisar por nome, e-mail e telefone.
-- [ ] Preservar os filtros ao editar e retornar à listagem.
-- [ ] Validar todos os cenários de consulta na CI.
+- [x] Preservar os filtros ao abrir a edição, voltar à listagem e salvar o cadastro.
+- [x] Preservar os filtros ao inativar/reativar um aluno.
+- [ ] Validar todos os cenários de consulta e preservação de contexto na CI.
 
-**Entrega:** equipe localiza registros e administra a situação. A preservação completa do contexto de busca durante edição fica como ajuste pendente desta etapa.
+**Entrega:** equipe localiza registros e administra a situação. A preservação do contexto está implementada e aguarda validação na CI.
 
 ### Etapa 4 — Dashboard
 
