@@ -385,28 +385,57 @@ assert_contains "$TMP_DIR/update.html" "Aluno atualizado com sucesso!"
 ATUALIZADO="$(db_value "SELECT COUNT(*) FROM alunos WHERE id = $ALUNO_ID AND nome = 'Aluno CI Atualizado' AND email = 'crud-ci-update@example.test' AND plano = 'Anual'")"
 [[ "$ATUALIZADO" == "1" ]] || fail "A edição não foi persistida corretamente."
 
-echo "5/10 - Confirmando que abrir a tela de exclusão não apaga dados..."
-curl -fsS -c "$COOKIE_JAR" -b "$COOKIE_JAR" \
-    "$BASE_URL/excluir.php?id=$ALUNO_ID" -o "$TMP_DIR/delete-confirmation.html"
-assert_contains "$TMP_DIR/delete-confirmation.html" "Deseja excluir"
+echo "5/10 - Inativando e reativando sem excluir o cadastro..."
+HTTP_CODE="$(curl -sS -o "$TMP_DIR/status-get.html" -w '%{http_code}' -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/alterar-status-aluno.php")"
+[[ "$HTTP_CODE" == "405" ]] || fail "GET em alterar-status-aluno.php deveria retornar 405; retornou $HTTP_CODE."
+
+HTTP_CODE="$(curl -sS -o "$TMP_DIR/status-csrf.html" -w '%{http_code}' -c "$COOKIE_JAR" -b "$COOKIE_JAR" -X POST "$BASE_URL/alterar-status-aluno.php" \
+    --data-urlencode "token=token-invalido" --data-urlencode "id=$ALUNO_ID" --data-urlencode "acao=inativar")"
+[[ "$HTTP_CODE" == "403" ]] || fail "Status de aluno sem CSRF válido deveria retornar 403; retornou $HTTP_CODE."
+
+HTTP_CODE="$(curl -sS -o "$TMP_DIR/status-invalid-action.html" -w '%{http_code}' -c "$COOKIE_JAR" -b "$COOKIE_JAR" -X POST "$BASE_URL/alterar-status-aluno.php" \
+    --data-urlencode "token=$EDIT_TOKEN" --data-urlencode "id=$ALUNO_ID" --data-urlencode "acao=excluir")"
+[[ "$HTTP_CODE" == "400" ]] || fail "Ação de status inválida deveria retornar 400; retornou $HTTP_CODE."
+
+curl -fsS -L -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/alterar-status-aluno.php" \
+    --data-urlencode "token=$EDIT_TOKEN" --data-urlencode "id=$ALUNO_ID" --data-urlencode "acao=inativar" \
+    -o "$TMP_DIR/student-inactivated.html"
+assert_contains "$TMP_DIR/student-inactivated.html" "Aluno inativado com sucesso."
+INATIVO="$(db_value "SELECT COUNT(*) FROM alunos WHERE id = $ALUNO_ID AND ativo = 0")"
+[[ "$INATIVO" == "1" ]] || fail "A inativação não foi persistida."
+
+AUDIT_INATIVACAO="$(db_value "SELECT COUNT(*) FROM auditoria WHERE usuario_id = $USUARIO_ID AND entidade = 'alunos' AND entidade_id = $ALUNO_ID AND acao = 'aluno_inativado'")"
+[[ "$AUDIT_INATIVACAO" == "1" ]] || fail "A inativação não gerou exatamente um evento de auditoria."
+
+curl -fsS -L -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/alterar-status-aluno.php" \
+    --data-urlencode "token=$EDIT_TOKEN" --data-urlencode "id=$ALUNO_ID" --data-urlencode "acao=inativar" \
+    -o "$TMP_DIR/student-inactivated-again.html"
+assert_contains "$TMP_DIR/student-inactivated-again.html" "O aluno já estava inativo."
+AUDIT_INATIVACAO_REPETIDA="$(db_value "SELECT COUNT(*) FROM auditoria WHERE usuario_id = $USUARIO_ID AND entidade = 'alunos' AND entidade_id = $ALUNO_ID AND acao = 'aluno_inativado'")"
+[[ "$AUDIT_INATIVACAO_REPETIDA" == "1" ]] || fail "A repetição da inativação duplicou o evento de auditoria."
+
+curl -fsS -L -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/alterar-status-aluno.php" \
+    --data-urlencode "token=$EDIT_TOKEN" --data-urlencode "id=$ALUNO_ID" --data-urlencode "acao=reativar" \
+    -o "$TMP_DIR/student-reactivated.html"
+assert_contains "$TMP_DIR/student-reactivated.html" "Aluno reativado com sucesso."
+ATIVO="$(db_value "SELECT COUNT(*) FROM alunos WHERE id = $ALUNO_ID AND ativo = 1")"
+[[ "$ATIVO" == "1" ]] || fail "A reativação não foi persistida."
+AUDIT_REATIVACAO="$(db_value "SELECT COUNT(*) FROM auditoria WHERE usuario_id = $USUARIO_ID AND entidade = 'alunos' AND entidade_id = $ALUNO_ID AND acao = 'aluno_reativado'")"
+[[ "$AUDIT_REATIVACAO" == "1" ]] || fail "A reativação não gerou exatamente um evento de auditoria."
+
+echo "6/10 - Confirmando que a exclusão física foi aposentada..."
+HTTP_CODE="$(curl -sS -o "$TMP_DIR/legacy-delete-get.html" -w '%{http_code}' -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/excluir.php?id=$ALUNO_ID")"
+[[ "$HTTP_CODE" == "410" ]] || fail "GET em excluir.php deveria retornar 410; retornou $HTTP_CODE."
+HTTP_CODE="$(curl -sS -o "$TMP_DIR/legacy-delete-post.html" -w '%{http_code}' -c "$COOKIE_JAR" -b "$COOKIE_JAR" -X POST "$BASE_URL/excluir.php" \
+    --data-urlencode "token=$EDIT_TOKEN" --data-urlencode "id=$ALUNO_ID")"
+[[ "$HTTP_CODE" == "410" ]] || fail "POST em excluir.php deveria retornar 410; retornou $HTTP_CODE."
 AINDA_EXISTE="$(db_value "SELECT COUNT(*) FROM alunos WHERE id = $ALUNO_ID")"
-[[ "$AINDA_EXISTE" == "1" ]] || fail "Uma requisição GET alterou ou removeu o registro."
-
-echo "6/10 - Excluindo pelo endpoint real..."
-curl -fsS -L -c "$COOKIE_JAR" -b "$COOKIE_JAR" \
-    -X POST "$BASE_URL/excluir.php" \
-    --data-urlencode "token=$EDIT_TOKEN" \
-    --data-urlencode "id=$ALUNO_ID" \
-    -o "$TMP_DIR/delete.html"
-assert_contains "$TMP_DIR/delete.html" "Aluno excluído com sucesso!"
-
-RESTANTE="$(db_value "SELECT COUNT(*) FROM alunos WHERE id = $ALUNO_ID")"
-[[ "$RESTANTE" == "0" ]] || fail "O registro continuou no banco após a exclusão."
+[[ "$AINDA_EXISTE" == "1" ]] || fail "O endpoint legado removeu ou perdeu o registro."
 
 echo "7/10 - Conferindo autoria dos eventos de auditoria..."
 USUARIO_ID="$(db_value "SELECT id FROM usuarios WHERE email = 'provision-ci@example.test' LIMIT 1")"
-EVENTOS="$(db_value "SELECT COUNT(*) FROM auditoria WHERE usuario_id = $USUARIO_ID AND entidade = 'alunos' AND entidade_id = $ALUNO_ID AND acao IN ('aluno_criado', 'aluno_editado', 'aluno_excluido')")"
-[[ "$EVENTOS" == "3" ]] || fail "Esperava 3 eventos do CRUD associados ao usuário; encontrei $EVENTOS."
+EVENTOS="$(db_value "SELECT COUNT(*) FROM auditoria WHERE usuario_id = $USUARIO_ID AND entidade = 'alunos' AND entidade_id = $ALUNO_ID AND acao IN ('aluno_criado', 'aluno_editado', 'aluno_inativado', 'aluno_reativado')")"
+[[ "$EVENTOS" == "4" ]] || fail "Esperava 4 eventos de criação/edição/status associados ao usuário; encontrei $EVENTOS."
 LOGIN_EVENTOS="$(db_value "SELECT COUNT(*) FROM auditoria WHERE usuario_id = $USUARIO_ID AND acao = 'login'")"
 [[ "$LOGIN_EVENTOS" == "3" ]] || fail "O login não corresponde aos três logins válidos realizados até este ponto."
 
