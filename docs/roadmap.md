@@ -72,7 +72,7 @@ Entregas:
 
 ### Bloco 02 — Gestão de alunos
 
-**Estado: implementação e regressão automatizada aprovadas pela CI #359 em 21/11/2026; revisão visual humana pendente.** A execução 44876515363 (https://github.com/Alex5762/academia-alunos-crud/actions/runs/44876515363) validou migrações, preservação de dados, endpoint transacional, inativação/reativação, filtros, preservação do contexto, perfil individual, histórico de auditoria e capturas automatizadas Playwright. As capturas de detalhes desktop/mobile foram geradas e versionadas pelo workflow. A PR #1 permanece aberta e não foi integrada à main.
+**Estado: implementação, regressão automatizada, revisão visual das capturas e matriz multibrowser aprovadas.** As CI [#359](https://github.com/Alex5762/academia-alunos-crud/actions/runs/44876515363), [#373](https://github.com/Alex5762/academia-alunos-crud/actions/runs/44877723150), [#375](https://github.com/Alex5762/academia-alunos-crud/actions/runs/44877943853) e [#387](https://github.com/Alex5762/academia-alunos-crud/actions/runs/44880764637) passaram. Os logs da CI #387 confirmam Chromium, Firefox e WebKit, incluindo perfil vazio/preenchido, foco visível, teclado, links de contato e overflow mobile em 390px/320px. As quatro capturas do perfil estão versionadas para desktop/mobile nos temas claro/escuro. Falta inspeção em aparelho físico/navegador instalado. A PR #1 permanece aberta em Draft e não foi integrada à `main`.
 
 Objetivo: evoluir o cadastro básico para gestão do ciclo de vida dos alunos, preservando registros e permitindo consulta, pesquisa, filtros e histórico operacional.
 
@@ -82,7 +82,7 @@ Decisões fechadas:
 - Alterações de status serão feitas por POST autenticado, com CSRF, transação e auditoria.
 - Pesquisa por nome, e-mail e telefone; filtro Ativos/Inativos/Todos, com Ativos como padrão.
 - Alunos inativos continuarão consultáveis e editáveis.
-- Dashboard contará ativos e inativos separadamente; distribuição de planos considerará somente ativos.
+- Dashboard contará ativos/inativos separadamente; distribuição de planos considerará somente ativos.
 - Detalhes do aluno terão histórico simples dos eventos registrados na auditoria.
 - Não haverá UNIQUE novo para telefone ou e-mail nesta etapa.
 - Exclusão física excepcional, histórico campo a campo, planos/matrículas e financeiro ficam fora do escopo.
@@ -93,9 +93,9 @@ Etapas:
 3. [Aprovada pela CI #359] Situação, filtros e pesquisa, com contexto preservado na edição, retorno e alteração de status.
 4. [Aprovada pela CI #359] Indicadores de ativos/inativos e distribuição de planos somente para ativos.
 5. [Aprovada pelas CI #359/#373/#375] Detalhes do aluno e histórico simples de auditoria; testes HTTP e capturas Playwright desktop/mobile nos temas claro e escuro.
-6. [Quase concluída] Regressão automatizada, documentação e revisão das capturas aprovadas; falta inspeção em aparelho físico/navegador instalado.
+6. [Quase concluída] Regressão PHP/MySQL, Playwright, Chromium/Firefox/WebKit, documentação e revisão das capturas aprovadas; falta inspeção em aparelho físico/navegador instalado.
 
-O bloco só será concluído quando a revisão manual estiver concluída e todos os critérios de aceite de docs/bloco-02-gestao-alunos.md forem atendidos. A integração em main continua dependendo de aprovação explícita separada.
+O encerramento formal depende da inspeção em aparelho físico/navegador instalado e da aprovação explícita para integrar a PR #1 em `main`. Não fazer merge automaticamente.
 
 ### Bloco 03 — Planos e matrículas
 
