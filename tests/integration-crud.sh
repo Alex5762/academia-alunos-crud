@@ -153,6 +153,68 @@ curl -fsS -c "$TMP_DIR/old-password-cookies.txt" -b "$TMP_DIR/old-password-cooki
     -o "$TMP_DIR/old-password-rejected.html"
 assert_contains "$TMP_DIR/old-password-rejected.html" "E-mail ou senha inválidos."
 
+echo "1.15/10 - Alteração voluntária de senha após o primeiro acesso..."
+CHANGE_JAR="$TMP_DIR/password-change-cookies.txt"
+curl -fsS -c "$CHANGE_JAR" -b "$CHANGE_JAR" "$BASE_URL/login.php" -o "$TMP_DIR/change-login.html"
+CHANGE_LOGIN_TOKEN="$(get_token "$TMP_DIR/change-login.html")"
+curl -fsS -L -c "$CHANGE_JAR" -b "$CHANGE_JAR" "$BASE_URL/login.php" \
+    --data-urlencode "token=$CHANGE_LOGIN_TOKEN" --data-urlencode "email=provision-ci@example.test" \
+    --data-urlencode "senha=$FITCONTROL_NEW_PASSWORD" -o "$TMP_DIR/change-login-success.html"
+assert_contains "$TMP_DIR/change-login-success.html" "Visão geral"
+curl -fsS -c "$CHANGE_JAR" -b "$CHANGE_JAR" "$BASE_URL/alterar-senha.php" -o "$TMP_DIR/change-password-form.html"
+assert_contains "$TMP_DIR/change-password-form.html" "Alterar senha"
+CHANGE_TOKEN="$(get_token "$TMP_DIR/change-password-form.html")"
+FITCONTROL_UPDATED_PASSWORD="SenhaAtualizada-FitControl-2026!"
+
+curl -sS -o "$TMP_DIR/change-wrong-current.html" -c "$CHANGE_JAR" -b "$CHANGE_JAR" -X POST "$BASE_URL/alterar-senha.php" \
+    --data-urlencode "token=$CHANGE_TOKEN" --data-urlencode "senha_atual=senha-atual-incorreta" \
+    --data-urlencode "nova_senha=$FITCONTROL_UPDATED_PASSWORD" --data-urlencode "confirmacao=$FITCONTROL_UPDATED_PASSWORD"
+assert_contains "$TMP_DIR/change-wrong-current.html" "A senha atual está incorreta."
+
+curl -sS -o "$TMP_DIR/change-short-password.html" -c "$CHANGE_JAR" -b "$CHANGE_JAR" -X POST "$BASE_URL/alterar-senha.php" \
+    --data-urlencode "token=$CHANGE_TOKEN" --data-urlencode "senha_atual=$FITCONTROL_NEW_PASSWORD" \
+    --data-urlencode "nova_senha=curta" --data-urlencode "confirmacao=curta"
+assert_contains "$TMP_DIR/change-short-password.html" "A nova senha deve ter pelo menos 12 caracteres."
+
+curl -sS -o "$TMP_DIR/change-mismatch.html" -c "$CHANGE_JAR" -b "$CHANGE_JAR" -X POST "$BASE_URL/alterar-senha.php" \
+    --data-urlencode "token=$CHANGE_TOKEN" --data-urlencode "senha_atual=$FITCONTROL_NEW_PASSWORD" \
+    --data-urlencode "nova_senha=$FITCONTROL_UPDATED_PASSWORD" --data-urlencode "confirmacao=OutraSenhaDiferente-2026!"
+assert_contains "$TMP_DIR/change-mismatch.html" "A confirmação não corresponde à nova senha."
+
+curl -sS -o "$TMP_DIR/change-reused-password.html" -c "$CHANGE_JAR" -b "$CHANGE_JAR" -X POST "$BASE_URL/alterar-senha.php" \
+    --data-urlencode "token=$CHANGE_TOKEN" --data-urlencode "senha_atual=$FITCONTROL_NEW_PASSWORD" \
+    --data-urlencode "nova_senha=$FITCONTROL_NEW_PASSWORD" --data-urlencode "confirmacao=$FITCONTROL_NEW_PASSWORD"
+assert_contains "$TMP_DIR/change-reused-password.html" "Escolha uma senha diferente da senha atual."
+
+curl -fsS -L -c "$CHANGE_JAR" -b "$CHANGE_JAR" "$BASE_URL/alterar-senha.php" \
+    --data-urlencode "token=$CHANGE_TOKEN" --data-urlencode "senha_atual=$FITCONTROL_NEW_PASSWORD" \
+    --data-urlencode "nova_senha=$FITCONTROL_UPDATED_PASSWORD" --data-urlencode "confirmacao=$FITCONTROL_UPDATED_PASSWORD" \
+    -o "$TMP_DIR/change-password-success.html"
+assert_contains "$TMP_DIR/change-password-success.html" "Senha alterada com sucesso."
+PASSWORD_CHANGE_AUDIT="$(db_value "SELECT COUNT(*) FROM auditoria WHERE usuario_id = (SELECT id FROM usuarios WHERE email = 'provision-ci@example.test') AND acao = 'senha_alterada'")"
+[[ "$PASSWORD_CHANGE_AUDIT" == "1" ]] || fail "A alteração voluntária da senha não foi auditada."
+
+OLD_CHANGE_JAR="$TMP_DIR/old-changed-password-cookies.txt"
+curl -fsS -c "$OLD_CHANGE_JAR" -b "$OLD_CHANGE_JAR" "$BASE_URL/login.php" -o "$TMP_DIR/login-old-changed-password.html"
+OLD_CHANGE_TOKEN="$(get_token "$TMP_DIR/login-old-changed-password.html")"
+curl -sS -o "$TMP_DIR/login-old-changed-password-rejected.html" -c "$OLD_CHANGE_JAR" -b "$OLD_CHANGE_JAR" -X POST "$BASE_URL/login.php" \
+    --data-urlencode "token=$OLD_CHANGE_TOKEN" --data-urlencode "email=provision-ci@example.test" \
+    --data-urlencode "senha=$FITCONTROL_NEW_PASSWORD"
+assert_contains "$TMP_DIR/login-old-changed-password-rejected.html" "E-mail ou senha inválidos."
+
+NEW_CHANGE_JAR="$TMP_DIR/new-changed-password-cookies.txt"
+curl -fsS -c "$NEW_CHANGE_JAR" -b "$NEW_CHANGE_JAR" "$BASE_URL/login.php" -o "$TMP_DIR/login-new-changed-password.html"
+NEW_CHANGE_TOKEN="$(get_token "$TMP_DIR/login-new-changed-password.html")"
+curl -fsS -L -c "$NEW_CHANGE_JAR" -b "$NEW_CHANGE_JAR" "$BASE_URL/login.php" \
+    --data-urlencode "token=$NEW_CHANGE_TOKEN" --data-urlencode "email=provision-ci@example.test" \
+    --data-urlencode "senha=$FITCONTROL_UPDATED_PASSWORD" -o "$TMP_DIR/login-new-changed-password-success.html"
+assert_contains "$TMP_DIR/login-new-changed-password-success.html" "Visão geral"
+FITCONTROL_NEW_PASSWORD="$FITCONTROL_UPDATED_PASSWORD"
+if [[ -n "$RUNNER_TEMP" ]]; then
+    printf '%s' "$FITCONTROL_NEW_PASSWORD" > "$RUNNER_TEMP/fitcontrol-test-password"
+    chmod 600 "$RUNNER_TEMP/fitcontrol-test-password"
+fi
+
 USUARIO_ID="$(db_value "SELECT id FROM usuarios WHERE email = 'provision-ci@example.test' LIMIT 1")"
 
 echo "1.2/10 - Criando, desativando e reativando uma conta pela interface..."

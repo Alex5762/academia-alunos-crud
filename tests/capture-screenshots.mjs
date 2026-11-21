@@ -96,6 +96,19 @@ try {
     throw new Error("A tabela não apresentou a área de rolagem horizontal esperada no mobile.");
   }
 
+  const mobileNav = mobile.locator(".main-nav");
+  const navDimensions = await mobileNav.evaluate((element) => ({
+    clientWidth: element.clientWidth, scrollWidth: element.scrollWidth,
+  }));
+  if (navDimensions.scrollWidth <= navDimensions.clientWidth) {
+    throw new Error("A navegação mobile deveria indicar opções adicionais por rolagem horizontal.");
+  }
+  await mobileNav.focus();
+  await mobileNav.press("ArrowRight");
+  const navScrollAfterKeyboard = await mobileNav.evaluate((element) => element.scrollLeft);
+  if (navScrollAfterKeyboard <= 0) throw new Error("A navegação mobile não respondeu ao teclado.");
+  await mobileNav.evaluate((element) => { element.scrollLeft = 0; });
+
   await mobile.screenshot({
     path: `${outputDir}/dashboard-mobile.png`,
     fullPage: true,
@@ -219,6 +232,23 @@ try {
   await absoluteWarningPage.getByRole("heading", { name: "Seu tempo máximo de acesso está terminando" }).waitFor();
   await absoluteWarningPage.getByRole("button", { name: "Entendi" }).click();
 
+  const passwordPage = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+  passwordPage.on("pageerror", (error) => pageErrors.push(error.message));
+  await autenticar(passwordPage);
+  await passwordPage.goto(baseUrl + "/configuracoes.php", { waitUntil: "networkidle" });
+  await passwordPage.getByRole("heading", { name: "Segurança da conta" }).waitFor();
+  await passwordPage.getByRole("link", { name: "Alterar senha" }).click();
+  await passwordPage.getByRole("heading", { name: "Alterar senha" }).waitFor();
+  await passwordPage.getByLabel("Senha atual").waitFor();
+  await passwordPage.screenshot({ path: outputDir + "/alterar-senha-desktop.png", fullPage: true, animations: "disabled" });
+
+  const employeesPage = await browser.newPage({ viewport: { width: 1280, height: 1000 } });
+  employeesPage.on("pageerror", (error) => pageErrors.push(error.message));
+  await autenticar(employeesPage);
+  await employeesPage.goto(baseUrl + "/usuarios.php", { waitUntil: "networkidle" });
+  await employeesPage.getByRole("heading", { name: "Funcionários" }).waitFor();
+  await employeesPage.screenshot({ path: outputDir + "/funcionarios-desktop.png", fullPage: true, animations: "disabled" });
+
   if (pageErrors.length > 0) {
     throw new Error(`Erros JavaScript encontrados: ${pageErrors.join(" | ")}`);
   }
@@ -230,6 +260,8 @@ try {
   console.log("- docs/screenshots/cadastro-desktop.png");
   console.log("- docs/screenshots/configuracoes-escuro.png");
   console.log("- docs/screenshots/dashboard-escuro.png");
+  console.log("- docs/screenshots/alterar-senha-desktop.png");
+  console.log("- docs/screenshots/funcionarios-desktop.png");
   console.log("Validação visual automatizada: OK");
 } finally {
   await browser.close();

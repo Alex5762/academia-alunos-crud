@@ -114,7 +114,7 @@ function iniciaisNome($nome) {
         </a>
 
         <div class="sidebar-label">MENU PRINCIPAL</div>
-        <nav class="main-nav">
+        <nav class="main-nav" tabindex="0" aria-label="Navegação principal. Role horizontalmente para acessar todas as opções.">
             <a class="nav-link active" href="#topo" aria-current="page">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/></svg>
                 <span>Visão geral</span>

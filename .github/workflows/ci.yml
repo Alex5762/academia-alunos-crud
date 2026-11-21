@@ -77,6 +77,7 @@ jobs:
           test -f login.php
           test -f logout.php
           test -f trocar-senha.php
+          test -f alterar-senha.php
           test -f database/migrations/002_force_password_change.sql
           test -f database/migrations/003_login_rate_limit.sql
           test -f database/migrations/001_authentication_audit.sql

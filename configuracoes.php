@@ -49,6 +49,14 @@ $usuario = exigirAutenticacao($pdo);
         <p class="settings-feedback" id="theme-feedback" role="status" aria-live="polite">A preferência é aplicada imediatamente.</p>
     </section>
 
+    <section class="settings-card" aria-labelledby="account-security-title">
+        <div class="settings-card-heading">
+            <span class="settings-icon" aria-hidden="true">⌑</span>
+            <div><h2 id="account-security-title">Segurança da conta</h2><p>Atualize sua senha quando precisar.</p></div>
+        </div>
+        <a class="button button-primary" href="alterar-senha.php">Alterar senha</a>
+    </section>
+
     <footer class="settings-footer">FitControl · Configurações locais</footer>
 </main>
 </body>

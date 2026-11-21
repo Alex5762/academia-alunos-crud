@@ -2198,3 +2198,25 @@ body:not(.dashboard-body) .theme-option[aria-pressed="true"] {
         to { opacity: 1; transform: translateY(0); }
     }
 }
+
+
+/* Ajustes da revisão visual */
+:root[data-theme="dark"] .plan-name { color: #d0d9e8; }
+:root[data-theme="dark"] .plan-amount { color: #e8edf7; }
+:root[data-theme="dark"] .plan-amount small { color: #aab6ca; }
+:root[data-theme="dark"] .panel-caption { color: #c4cee0; background: #26344a; }
+
+@media (max-width: 760px) {
+    .main-nav {
+        scrollbar-width: thin;
+        scrollbar-color: #9aa8bf #e9edf5;
+        overscroll-behavior-x: contain;
+    }
+    .main-nav::-webkit-scrollbar { height: 5px; }
+    .main-nav::-webkit-scrollbar-track { background: #e9edf5; border-radius: 999px; }
+    .main-nav::-webkit-scrollbar-thumb { background: #9aa8bf; border-radius: 999px; }
+    .main-nav:focus-visible { outline: 3px solid rgba(49, 95, 232, .35); outline-offset: 3px; }
+    :root[data-theme="dark"] .main-nav { scrollbar-color: #6c7d99 #202c40; }
+    :root[data-theme="dark"] .main-nav::-webkit-scrollbar-track { background: #202c40; }
+    :root[data-theme="dark"] .main-nav::-webkit-scrollbar-thumb { background: #6c7d99; }
+}
