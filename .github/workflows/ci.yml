@@ -1,0 +1,236 @@
+name: CI - Academia Alunos CRUD
+
+on:
+  push:
+    branches:
+      - main
+      - feat/dashboard-portfolio
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  php-and-mysql:
+    name: PHP, CRUD integration and visual capture
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: academia_alunos
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: pdo_mysql
+          coverage: none
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+
+      - name: Install Playwright browsers
+        run: |
+          npm install --no-save --no-package-lock playwright@1.65.1
+          npx playwright install --with-deps chromium firefox webkit
+
+      - name: Check PHP syntax
+        shell: bash
+        run: |
+          set -e
+          while IFS= read -r -d '' file; do
+            echo "Checking $file"
+            php -l "$file"
+          done < <(find . -type f -name '*.php' -not -path './vendor/*' -print0)
+
+      - name: Check required project files
+        run: |
+          test -f index.php
+          test -f cadastro.php
+          test -f salvar.php
+          test -f excluir.php
+          test -f conexao.php
+          test -f banco.sql
+          test -f style.css
+          test -f tests/integration-crud.sh
+          test -f tests/migration-student-status.sh
+          test -f database/migrations/004_student_status.sql
+          test -f tests/capture-screenshots.mjs
+          test -f tests/browser-compatibility.mjs
+          test -f theme.js
+          test -f configuracoes.php
+          test -f login.php
+          test -f logout.php
+          test -f trocar-senha.php
+          test -f alterar-senha.php
+          test -f database/migrations/002_force_password_change.sql
+          test -f database/migrations/003_login_rate_limit.sql
+          test -f database/migrations/004_student_status.sql
+          test -f tests/migration-student-status.sh
+          test -f database/migrations/001_authentication_audit.sql
+          test -f scripts/provisionar-usuario.php
+          test -f usuarios.php
+          test -f sessao.js
+          test -f renovar-sessao.php
+          test -f salvar-usuario.php
+          test -f alterar-status-usuario.php
+          test -f alterar-status-aluno.php
+          test -f detalhes-aluno.php
+          test -f tests/assert-user-provisioned.php
+          test -f tests/provision-user.sh
+
+      - name: Import database schema
+        env:
+          MYSQL_PWD: root
+        run: mysql --host=127.0.0.1 --port=3306 --user=root < banco.sql
+
+      - name: Validate authentication and audit migration
+        env:
+          MYSQL_PWD: root
+        run: mysql --host=127.0.0.1 --port=3306 --user=root < database/migrations/001_authentication_audit.sql
+
+      - name: Validate forced password change migration
+        env:
+          MYSQL_PWD: root
+        run: mysql --host=127.0.0.1 --port=3306 --user=root < database/migrations/002_force_password_change.sql
+
+      - name: Validate login rate-limit migration
+        env:
+          MYSQL_PWD: root
+        run: mysql --host=127.0.0.1 --port=3306 --user=root < database/migrations/003_login_rate_limit.sql
+
+      - name: Validate student status migration and legacy data preservation
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_NAME: academia_alunos
+          DB_USER: root
+          DB_PASSWORD: root
+          MYSQL_PWD: root
+        run: bash tests/migration-student-status.sh
+
+      - name: Test secure CLI user provisioning
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_NAME: academia_alunos
+          DB_USER: root
+          DB_PASSWORD: root
+          MYSQL_PWD: root
+        run: bash tests/provision-user.sh
+
+      - name: Run CRUD integration tests and capture screenshots
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_NAME: academia_alunos
+          DB_USER: root
+          DB_PASSWORD: root
+          MYSQL_PWD: root
+          BASE_URL: http://127.0.0.1:8080
+        run: |
+          set -e
+          php -S 127.0.0.1:8080 -t . > /tmp/academia-php-server.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill "$SERVER_PID" 2>/dev/null || true' EXIT
+
+          for attempt in $(seq 1 20); do
+            if curl --silent --fail http://127.0.0.1:8080/cadastro.php >/dev/null; then
+              break
+            fi
+            sleep 1
+          done
+
+          curl --fail --silent http://127.0.0.1:8080/cadastro.php >/dev/null
+          bash tests/integration-crud.sh
+
+          echo "Preparing fictional records for visual capture..."
+          mysql --host=127.0.0.1 --port=3306 --user=root academia_alunos <<'SQL'
+          DELETE FROM alunos;
+          INSERT INTO alunos (nome, telefone, email, plano) VALUES
+            ('Ana Beatriz Costa', '(21) 90000-0001', 'ana.costa@example.test', 'Mensal'),
+            ('Bruno Martins', '(21) 90000-0002', 'bruno.martins@example.test', 'Mensal'),
+            ('Camila Oliveira', '(21) 90000-0003', 'camila.oliveira@example.test', 'Mensal'),
+            ('Diego Ferreira', '(21) 90000-0004', 'diego.ferreira@example.test', 'Trimestral'),
+            ('Elisa Santos', '(21) 90000-0005', 'elisa.santos@example.test', 'Trimestral'),
+            ('Felipe Almeida', '(21) 90000-0006', 'felipe.almeida@example.test', 'Semestral'),
+            ('Gabriela Lima', '(21) 90000-0007', 'gabriela.lima@example.test', 'Semestral'),
+            ('Henrique Rocha', '(21) 90000-0008', 'henrique.rocha@example.test', 'Anual');
+
+          -- Eventos fictícios para que a captura do perfil demonstre a linha do tempo.
+          INSERT INTO auditoria (usuario_id, acao, entidade, entidade_id, criado_em)
+          SELECT usuarios.id, eventos.acao, 'alunos', alunos.id, eventos.criado_em
+          FROM usuarios
+          JOIN alunos ON alunos.email = 'henrique.rocha@example.test'
+          CROSS JOIN (
+            SELECT 'aluno_criado' AS acao, CURRENT_TIMESTAMP - INTERVAL 4 DAY AS criado_em
+            UNION ALL SELECT 'aluno_editado', CURRENT_TIMESTAMP - INTERVAL 3 DAY
+            UNION ALL SELECT 'aluno_inativado', CURRENT_TIMESTAMP - INTERVAL 2 DAY
+            UNION ALL SELECT 'aluno_reativado', CURRENT_TIMESTAMP - INTERVAL 1 DAY
+          ) AS eventos
+          WHERE usuarios.email = 'provision-ci@example.test';
+          SQL
+
+          export FITCONTROL_TEST_PASSWORD="$(cat "$RUNNER_TEMP/fitcontrol-test-password")"
+          rm -f "$RUNNER_TEMP/fitcontrol-test-password"
+          node tests/capture-screenshots.mjs
+          node tests/browser-compatibility.mjs
+
+      - name: Upload screenshots
+        uses: actions/upload-artifact@v4
+        with:
+          name: fitcontrol-screenshots
+          path: docs/screenshots/*.png
+          if-no-files-found: error
+          retention-days: 14
+
+  publish-visual-assets:
+    name: Publish screenshots to repository
+    needs: php-and-mysql
+    if: github.event_name == 'push' && github.ref == 'refs/heads/feat/dashboard-portfolio'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download generated screenshots
+        uses: actions/download-artifact@v4
+        with:
+          name: fitcontrol-screenshots
+          path: docs/screenshots
+
+      - name: Commit screenshots when changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/screenshots/*.png
+
+          if git diff --cached --quiet; then
+            echo "Screenshots are already up to date."
+            exit 0
+          fi
+
+          git commit -m "chore: atualiza screenshots do FitControl [skip ci]"
+          git push origin "HEAD:$GITHUB_REF_NAME"
