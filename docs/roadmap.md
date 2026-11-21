@@ -70,7 +70,7 @@ Entregas:
 
 **Pendências que não impedem a continuidade acadêmica/local, mas impedem considerar o sistema pronto para produção:** MFA, recuperação de senha por e-mail, revisão independente de segurança, HTTPS de produção, backups, monitoramento e revisão de privacidade.
 
-### Bloco 02 — Gestão de alunos
+**Estado: implementação, regressão automatizada, revisão das capturas, matriz multibrowser e estados vazios aprovados.** As CI [#359](https://github.com/Alex5762/academia-alunos-crud/actions/runs/44876515363), [#375](https://github.com/Alex5762/academia-alunos-crud/actions/runs/44877943853), [#387](https://github.com/Alex5762/academia-alunos-crud/actions/runs/44880764637) e [#395](https://github.com/Alex5762/academia-alunos-crud/actions/runs/44882082854) passaram. A #395 confirmou nos logs Chromium, Firefox e WebKit para estados vazios da listagem, perfil vazio/preenchido, histórico, foco, teclado e responsividade. As quatro capturas desktop/mobile do perfil nos temas claro/escuro estão versionadas e revisadas. Falta somente inspeção em aparelho físico/navegador instalado. A PR #1 permanece aberta em Draft e não foi integrada à `main`.
 
 **Estado: implementação, regressão automatizada, revisão visual das capturas e matriz multibrowser aprovadas.** As CI [#359](https://github.com/Alex5762/academia-alunos-crud/actions/runs/44876515363), [#373](https://github.com/Alex5762/academia-alunos-crud/actions/runs/44877723150), [#375](https://github.com/Alex5762/academia-alunos-crud/actions/runs/44877943853) e [#387](https://github.com/Alex5762/academia-alunos-crud/actions/runs/44880764637) passaram. Os logs da CI #387 confirmam Chromium, Firefox e WebKit, incluindo perfil vazio/preenchido, foco visível, teclado, links de contato e overflow mobile em 390px/320px. As quatro capturas do perfil estão versionadas para desktop/mobile nos temas claro/escuro. Falta inspeção em aparelho físico/navegador instalado. A PR #1 permanece aberta em Draft e não foi integrada à `main`.
 
@@ -93,7 +93,7 @@ Etapas:
 3. [Aprovada pela CI #359] Situação, filtros e pesquisa, com contexto preservado na edição, retorno e alteração de status.
 4. [Aprovada pela CI #359] Indicadores de ativos/inativos e distribuição de planos somente para ativos.
 5. [Aprovada pelas CI #359/#373/#375] Detalhes do aluno e histórico simples de auditoria; testes HTTP e capturas Playwright desktop/mobile nos temas claro e escuro.
-6. [Quase concluída] Regressão PHP/MySQL, Playwright, Chromium/Firefox/WebKit, documentação e revisão das capturas aprovadas; falta inspeção em aparelho físico/navegador instalado.
+6. [Quase concluída] Regressão PHP/MySQL, Playwright, Chromium/Firefox/WebKit, estados vazios, documentação e revisão das capturas aprovadas; falta inspeção em aparelho físico/navegador instalado.
 
 O encerramento formal depende da inspeção em aparelho físico/navegador instalado e da aprovação explícita para integrar a PR #1 em `main`. Não fazer merge automaticamente.
 
