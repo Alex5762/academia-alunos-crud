@@ -72,12 +72,12 @@ Entregas:
 
 ### Bloco 02 — Gestão de alunos
 
-**Estado: em implementação, aguardando CI da atualização atual.** Etapa 1 (migração e preservação de legado) aprovada em CI anterior. Etapas 2 e 4 (endpoint transacional de status, auditoria, aposentadoria da exclusão física e indicadores) implementadas. Etapa 3 preserva busca e situação ao editar, salvar, voltar e alterar status. Etapa 5 agora tem `detalhes-aluno.php` com dados cadastrais, status, histórico de eventos/responsável e ações de edição/inativação/reativação; testes HTTP e captura Playwright foram adicionados, mas ainda aguardam CI.
+**Estado: implementação e regressão automatizada aprovadas pela CI #359 em 21/11/2026; revisão visual humana pendente.** A execução 44876515363 (https://github.com/Alex5762/academia-alunos-crud/actions/runs/44876515363) validou migrações, preservação de dados, endpoint transacional, inativação/reativação, filtros, preservação do contexto, perfil individual, histórico de auditoria e capturas automatizadas Playwright. As capturas de detalhes desktop/mobile foram geradas e versionadas pelo workflow. A PR #1 permanece aberta e não foi integrada à main.
 
 Objetivo: evoluir o cadastro básico para gestão do ciclo de vida dos alunos, preservando registros e permitindo consulta, pesquisa, filtros e histórico operacional.
 
 Decisões fechadas:
-- Adicionar `alunos.ativo`, com padrão `1`; todos os registros existentes serão considerados ativos.
+- Adicionar alunos.ativo, com padrão 1; todos os registros existentes serão considerados ativos.
 - Substituir a exclusão física pela inativação/reativação lógica.
 - Alterações de status serão feitas por POST autenticado, com CSRF, transação e auditoria.
 - Pesquisa por nome, e-mail e telefone; filtro Ativos/Inativos/Todos, com Ativos como padrão.
@@ -87,15 +87,15 @@ Decisões fechadas:
 - Não haverá UNIQUE novo para telefone ou e-mail nesta etapa.
 - Exclusão física excepcional, histórico campo a campo, planos/matrículas e financeiro ficam fora do escopo.
 
-Etapas previstas:
+Etapas:
 1. [Aprovada] Migração 004 e camada de dados, com teste de preservação de registros legados.
-2. [Implementada em código, aguardando CI da revisão atual] Endpoint transacional de ativação/inativação, auditoria e aposentadoria do fluxo de exclusão física.
-3. [Implementada em código, aguardando CI da revisão atual] Situação, filtros e pesquisa, com contexto preservado na edição, retorno e alteração de status.
-4. [Implementada em código, aguardando CI da revisão atual] Indicadores de ativos/inativos e distribuição de planos somente para ativos.
-5. [Implementada em código, aguardando CI da revisão atual] Detalhes do aluno e histórico simples de auditoria.
-6. [Em validação] Regressão automatizada, documentação, CI e revisão visual.
+2. [Aprovada pela CI #359] Endpoint transacional de ativação/inativação, auditoria e aposentadoria do fluxo de exclusão física.
+3. [Aprovada pela CI #359] Situação, filtros e pesquisa, com contexto preservado na edição, retorno e alteração de status.
+4. [Aprovada pela CI #359] Indicadores de ativos/inativos e distribuição de planos somente para ativos.
+5. [Aprovada pela CI #359] Detalhes do aluno e histórico simples de auditoria; testes HTTP e capturas Playwright desktop/mobile.
+6. [Parcial] Regressão automatizada e documentação aprovadas; falta revisão visual humana em aparelho físico/navegador adicional.
 
-O bloco só será concluído quando todos os critérios de aceite de `docs/bloco-02-gestao-alunos.md` forem atendidos e a revisão manual estiver concluída.
+O bloco só será concluído quando a revisão manual estiver concluída e todos os critérios de aceite de docs/bloco-02-gestao-alunos.md forem atendidos. A integração em main continua dependendo de aprovação explícita separada.
 
 ### Bloco 03 — Planos e matrículas
 
