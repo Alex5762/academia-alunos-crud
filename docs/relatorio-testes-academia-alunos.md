@@ -81,28 +81,49 @@ Os registros são inseridos apenas no banco efêmero do CI. As capturas e verifi
 3. Conferir navegação por teclado, foco visível e mensagens de campos obrigatórios vazios.
 4. Repetir a inspeção visual em outro navegador, se disponível.
 
-## 6. Autenticação e auditoria — validação pendente
+## 6. Autenticação, contas, auditoria e sessões — 20/11/2026
 
-A branch recebeu a primeira implementação de login/logout, proteção das páginas administrativas, contas individuais provisionadas por CLI e auditoria das operações do CRUD.
+**Commit validado:** [\`7ff2a9da84a20e0fe160d43fd9f30b681e0023d6\`](https://github.com/Alex5762/academia-alunos-crud/commit/7ff2a9da84a20e0fe160d43fd9f30b681e0023d6).
 
-O teste de integração foi ampliado para validar acesso anônimo, credenciais inválidas/válidas, CRUD autenticado, autoria dos eventos, revogação de sessão após desativar uma conta e logout. O Playwright também autentica antes de capturar as telas.
+Execuções do commit:
+- [Run 44855484995 — push, sucesso](https://github.com/Alex5762/academia-alunos-crud/actions/runs/44855484995): integração, captura visual e publicação das capturas concluídas.
+- [Run 44855491003 — pull request, sucesso](https://github.com/Alex5762/academia-alunos-crud/actions/runs/44855491003): integração e captura visual concluídas; o job de publicação é ignorado em eventos de PR conforme a condição do workflow.
 
-**Atenção:** esses cenários ainda não possuem uma execução CI verde confirmada nesta revisão. Não registrar os novos testes como aprovados até consultar o resultado do workflow.
+### 6.1 Cenários cobertos pela CI
+
+| Área | Verificações | Resultado |
+|---|---|---|
+| Preparação | Sintaxe PHP, arquivos obrigatórios, schema MySQL e migrações 001/002/003 | Aprovado |
+| Provisionamento | Conta fictícia, hash, auditoria e e-mail duplicado | Aprovado |
+| Login | Credenciais inválidas/válidas, conta inativa, troca obrigatória da senha temporária e rejeição da senha antiga | Aprovado |
+| Limite de login | Quatro falhas, bloqueio na quinta, manutenção do bloqueio e limpeza após login válido | Aprovado |
+| Gestão de funcionários | Criação, desativação, reativação, auditoria e bloqueio de autodesativação | Aprovado |
+| CRUD e auditoria | Cadastro, pesquisa, edição, exclusão e autoria dos eventos | Aprovado |
+| Sessão | Revogação após desativação, logout, expiração aos 30 minutos e limite absoluto de 8 horas | Aprovado |
+| Renovação | Endpoint autenticado, CSRF inválido (403), método GET (405) e continuidade após renovação | Aprovado |
+| Interface | Capturas desktop/mobile, temas, erros JavaScript e avisos de expiração via Playwright | Aprovado |
+
+### 6.2 Avisos de sessão validados
+
+O Playwright avança o relógio do navegador para confirmar que o aviso por inatividade aparece aos 25 minutos e que o aviso do limite absoluto aparece antes das 8 horas. O teste também aciona **Continuar conectado** e verifica que o aviso de inatividade é fechado após a renovação autenticada.
+
+Esses testes automatizados validam os cenários programados. Eles não substituem inspeção humana da usabilidade, contraste, foco e interação em dispositivos reais.
 
 ## 7. Limites atuais do sistema
 
-- Ainda não há tela administrativa para criar/desativar contas; o provisionamento inicial e de novas contas é feito pelo terminal.
-- Ainda não há troca obrigatória da senha temporária nem limitação persistente de tentativas de login.
-- O banco contém apenas a tabela `alunos`; `plano` é texto, sem relação com tabela própria.
-- Não existem módulos de matrícula/contrato, pagamentos, frequência, agenda ou aulas.
+- Todas as contas ativas possuem a mesma permissão administrativa; não existe separação por cargo.
+- Não há MFA nem recuperação de senha por e-mail.
+- A tabela \`alunos\` ainda guarda o plano como texto; não existe relação com uma tabela própria de planos.
+- Não existem módulos de matrícula/contrato, pagamentos, frequência/check-in, aulas, agenda ou relatórios operacionais.
+- O projeto permanece acadêmico/local. A CI não comprova prontidão para produção, uso público ou tratamento de dados reais.
 
-O FitControl permanece uma aplicação acadêmica/local. Não deve ser exposto como painel administrativo público nem receber dados reais de alunos antes da implementação e revisão das proteções necessárias.
+Antes de qualquer uso em produção, ainda são necessários revisão independente de segurança, HTTPS no ambiente de hospedagem, gestão de segredos, backups com teste de restauração, monitoramento, revisão de privacidade/LGPD e inspeção visual/acessibilidade.
 
 ## 8. Conclusão
 
-Os testes manuais registraram o funcionamento básico do CRUD no ambiente XAMPP. Em 20/11/2026, a CI aprovou as nove verificações funcionais descritas e gerou capturas automatizadas desktop/mobile para os temas claro e escuro.
+Em 20/11/2026, os workflows de push e pull request do commit \`7ff2a9da84a20e0fe160d43fd9f30b681e0023d6\` concluíram com sucesso. A validação automatizada cobriu o CRUD, autenticação, gestão de funcionários, auditoria, limite de tentativas, expiração/renovação de sessão e verificações de interface.
 
-**Conclusão:** o CRUD e as verificações visuais anteriores passaram pelas execuções registradas. A primeira implementação de autenticação foi adicionada posteriormente e aguarda validação automatizada. A revisão visual manual continua pendente, assim como os módulos futuros descritos em [`docs/roadmap.md`](roadmap.md).
+**Estado:** a implementação e a CI estão aprovadas. A inspeção visual manual em navegador/dispositivo real continua pendente antes de considerar o Bloco 00 totalmente revisado. As limitações de segurança para produção permanecem explícitas e fora do escopo desta etapa.
 
 ---
 

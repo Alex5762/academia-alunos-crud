@@ -6,23 +6,25 @@ Evoluir o CRUD acadêmico de alunos para um painel de gestão de academia, mante
 
 ## Ponto de partida
 
-**Estado atual:** aplicação PHP com PDO e MySQL, executada localmente com XAMPP.
+**Estado atual:** aplicação acadêmica/local em PHP com PDO e MySQL, executada com XAMPP.
 
 Já existe:
 - Dashboard com indicadores básicos, distribuição por plano e listagem pesquisável.
-- Cadastro, consulta, edição e exclusão de alunos.
-- Validação de e-mail e telefone no servidor.
-- Consultas preparadas com PDO e proteção CSRF nos formulários de escrita.
-- Verificação de método HTTP nos endpoints de escrita.
+- Cadastro, consulta, edição e exclusão de alunos, com validação no servidor e consultas preparadas.
+- Proteção CSRF e verificação de método HTTP nas operações de escrita.
 - Layout responsivo e preferência de tema claro/escuro persistida no navegador.
-- Integração contínua com testes HTTP reais e captura automatizada de telas.
+- Contas individuais, login/logout, proteção centralizada de rotas e gestão básica de funcionários.
+- Troca obrigatória de senha temporária, desativação/reativação de contas e auditoria.
+- Limitação persistente de tentativas de login.
+- Sessões com 30 minutos de inatividade, duração absoluta de 8 horas, aviso antecipado e renovação autenticada durante interação.
+- CI com MySQL, testes HTTP de integração, Playwright e capturas automatizadas.
 
 Limites conhecidos:
-- Não existe login, autenticação ou controle de acesso por usuário.
-- O banco possui somente a tabela `alunos`; o campo `plano` é texto, não uma relação com uma tabela de planos.
-- Não existem contratos/matrículas, pagamentos, check-in, aulas, agenda ou relatórios operacionais.
-- Os indicadores do dashboard refletem apenas os dados disponíveis na tabela atual.
-- A aplicação permanece acadêmica/local e não deve ser exposta como painel administrativo público.
+- Todas as contas ativas têm a mesma permissão administrativa; não existe separação por cargo.
+- Não há recuperação de senha por e-mail nem MFA.
+- O campo \`alunos.plano\` ainda é texto, sem relação com uma tabela de planos.
+- Não existem módulos de matrículas/contratos, pagamentos, check-in, aulas, agenda ou relatórios operacionais.
+- A aplicação permanece acadêmica/local; não está preparada para uso público ou dados reais.
 
 ## Regras de execução
 
@@ -48,29 +50,24 @@ Entregas:
 - Resolver pendências visuais ou documentá-las com clareza.
 - Atualizar a descrição da PR para refletir o estado real.
 
-**Estado:** autenticação, contas individuais, troca obrigatória de senha e gestão básica de funcionários implementadas na branch. A validação da nova gestão pela CI e a inspeção visual manual ainda precisam ser concluídas.
+**Estado:** base funcional, autenticação, gestão de funcionários, auditoria e política de sessão implementadas. A CI do commit atual passou em 20/11/2026; permanece pendente a inspeção visual manual em navegador/dispositivo real.
 
 ### Bloco 01 — Autenticação e proteção do painel
 
-**Objetivo:** impedir acesso administrativo sem autenticação.
+**Estado: implementado e validado pela CI em 20/11/2026.**
 
-Escopo inicial:
-- Login e logout.
-- Armazenamento seguro de senha com as funções apropriadas do PHP.
-- Sessão com configurações seguras e renovação do identificador após autenticação.
-- Proteção das páginas e endpoints administrativos.
-- Mensagens de erro que não revelem detalhes internos.
-- Testes para acesso sem sessão, login válido/inválido e logout.
+Entregas:
+- Login/logout com senha armazenada por hash e mensagens genéricas.
+- Sessões protegidas, CSRF e proteção centralizada das páginas e endpoints administrativos.
+- Contas individuais, provisionamento seguro, troca obrigatória da senha temporária e gestão de funcionários.
+- Desativação/reativação sem apagar histórico; bloqueio de autodesativação e da desativação da última conta ativa.
+- Auditoria de login/logout, operações de alunos e operações de contas.
+- Limitação de tentativas de login: cinco falhas por combinação de e-mail/origem em 15 minutos geram bloqueio temporário de 15 minutos.
+- Expiração por 30 minutos de inatividade ou 8 horas absolutas, aviso antecipado e renovação autenticada durante interação.
 
-**Decisão antes de implementar:** confirmar se o projeto precisa somente de um perfil administrador ou de vários níveis de permissão. Não criar um sistema complexo de papéis sem requisito.
+**Decisão funcional:** todas as contas ativas possuem a mesma permissão administrativa nesta versão. Perfis diferentes ficam fora do escopo até existir uma necessidade concreta.
 
-### Bloco 01 — complemento implementado
-
-- Tela de funcionários com criação, listagem, desativação e reativação.
-- Senha temporária gerada no servidor e troca obrigatória no primeiro acesso.
-- Auditoria das operações de conta.
-- Proteção contra desativar a própria conta e contra desativar a última conta ativa.
-- Todas as contas permanecem com permissões iguais nesta primeira versão.
+**Pendências que não impedem a continuidade acadêmica/local, mas impedem considerar o sistema pronto para produção:** MFA, recuperação de senha por e-mail, revisão independente de segurança, HTTPS de produção, backups, monitoramento e revisão de privacidade.
 
 ### Bloco 02 — Gestão de alunos
 

@@ -4,7 +4,7 @@
 
 Exigir autenticação antes de permitir acesso ao painel e às operações administrativas do FitControl. Cada funcionário terá sua própria conta, permitindo atribuir ações a uma pessoa específica e consultar um histórico básico de atividade.
 
-**Estado:** contas individuais, login/logout, proteção de rotas, auditoria do CRUD, troca obrigatória de senha e gestão de contas implementados. Os workflows push #175 e PR #176 passaram na CI para o commit de código `ab0a29f`; a publicação posterior atualizou somente duas capturas versionadas.
+**Estado:** implementado e validado pela CI em 20/11/2026 no commit `7ff2a9da84a20e0fe160d43fd9f30b681e0023d6`. [Run de Push #211 — sucesso](https://github.com/Alex5762/academia-alunos-crud/actions/runs/44855484995) e [Run da PR #212 — sucesso](https://github.com/Alex5762/academia-alunos-crud/actions/runs/44855491003).
 
 ## Diagnóstico da base atual
 
@@ -12,8 +12,8 @@ Exigir autenticação antes de permitir acesso ao painel e às operações admin
 - Dashboard, cadastro, configurações e endpoints de escrita agora exigem autenticação.
 - `configuracoes.php` também está protegida pela sessão.
 - As operações de escrita já validam método HTTP e token CSRF.
-- O banco atual contém somente a tabela `alunos`; não existe estrutura de usuários nem de auditoria.
-- A CI foi ampliada para cobrir autenticação, revogação de sessão e autoria das ações; o novo fluxo aguarda execução verde.
+- O banco mantém a tabela `alunos` e adiciona `usuarios`, `auditoria` e `login_tentativas` pelas migrações 001, 002 e 003.
+- A CI cobre autenticação, gestão de contas, revogação de sessão, autoria das ações, expiração, renovação e interface; a execução do commit atual passou.
 
 ## Decisão funcional confirmada
 
@@ -172,14 +172,13 @@ A CI executa a migração 003 e os testes cobrem quatro falhas, bloqueio na quin
 - A CI executa os cenários de autenticação, auditoria e regressão com sucesso.
 - A documentação explica como provisionar contas sem publicar credenciais.
 
-## Próximas etapas
+## Estado de validação e pendências
 
-1. Implementar e revisar o provisionamento seguro de contas (primeira conta e contas adicionais) — primeira versão implementada e coberta na CI.
-2. Revisar a camada de sessão, login/logout e proteção de rotas com a CI.
-3. Completar gestão segura de contas, desativação e troca de senha temporária.
-4. Expandir a auditoria e os testes de regressão.
-6. Revisar o comportamento, atualizar documentação e validar a PR.
+A CI do commit \`7ff2a9da84a20e0fe160d43fd9f30b681e0023d6\` passou em 20/11/2026. Foram aprovados os testes PHP, migrações, provisionamento, integração HTTP, autenticação, auditoria, gestão de contas, expiração/renovação de sessão e Playwright.
 
+Antes de concluir a revisão da PR, ainda falta a inspeção visual manual das telas em navegador e dispositivo real, incluindo foco por teclado, contraste e legibilidade nos temas claro/escuro.
+
+Limitações mantidas fora do escopo desta versão: todas as contas têm a mesma permissão administrativa; não há MFA nem recuperação de senha por e-mail. A aplicação não deve ser considerada pronta para produção sem revisão independente de segurança, HTTPS, backups, monitoramento e revisão de privacidade.
 
 ## Gestão de contas — implementação
 

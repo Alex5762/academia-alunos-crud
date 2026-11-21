@@ -20,7 +20,7 @@ As imagens abaixo são capturadas automaticamente pelo GitHub Actions com regist
   <img src="docs/screenshots/alunos-mobile.png" alt="Área de alunos cadastrados em tela mobile" width="360">
 </p>
 
-> **Escopo atual:** aplicação acadêmica/local com primeira versão de autenticação individual e auditoria. Ainda faltam revisão de segurança para produção, HTTPS de produção, monitoramento e controles adicionais. Não exponha o painel à internet nem use dados reais de alunos. Não exponha o painel à internet nem use dados reais de alunos.
+> **Escopo atual:** aplicação acadêmica/local com primeira versão de autenticação individual, gestão de funcionários, auditoria e controle de sessão. Ainda faltam revisão de segurança para produção, HTTPS de produção, monitoramento, backups e controles adicionais. Não exponha o painel à internet nem use dados reais de alunos.
 
 ## Funcionalidades
 
@@ -45,6 +45,8 @@ As imagens abaixo são capturadas automaticamente pelo GitHub Actions com regist
 - Limitação persistente de tentativas: após 5 falhas na combinação de e-mail e origem em uma janela de 15 minutos, o acesso dessa combinação fica bloqueado por 15 minutos.
 - Troca obrigatória da senha temporária no primeiro acesso, com mínimo de 12 caracteres.
 - Bloqueio das páginas administrativas para visitantes não autenticados e contas desativadas.
+- Expiração após 30 minutos sem interação ou 8 horas desde o login, com aviso antecipado e opção de continuar conectado.
+- Sincronização autenticada da sessão enquanto o funcionário interage com a página, sem renovar sessões abandonadas.
 - Auditoria de login/logout e das operações de cadastro, edição e exclusão de alunos.
 
 Cada aluno possui nome, telefone, e-mail e plano (Mensal, Trimestral, Semestral ou Anual).
@@ -91,14 +93,18 @@ academia-alunos-crud/
 
 ## Como executar localmente com XAMPP
 
-1. Copie ou clone a pasta do projeto em `C:\\xampp\\htdocs\\academia-alunos-crud`.
+1. Copie ou clone a pasta do projeto em \`C:\\xampp\\htdocs\\academia-alunos-crud\`.
 2. Inicie Apache e MySQL no painel do XAMPP.
 3. Acesse o phpMyAdmin em [http://localhost/phpmyadmin/](http://localhost/phpmyadmin/).
-4. Importe o arquivo `banco.sql`. Ele cria o banco `academia_alunos` e a tabela `alunos`.
-5. Confira as configurações de conexão em `conexao.php`, caso seu XAMPP utilize host, porta, usuário ou senha diferentes.
-6. Execute a migração `database/migrations/001_authentication_audit.sql` no banco `academia_alunos` pelo phpMyAdmin (aba SQL).
-7. Execute também `database/migrations/002_force_password_change.sql` para exigir a troca da senha temporária no primeiro acesso.\n8. No terminal, a partir da pasta do projeto, execute `php scripts/provisionar-usuario.php`, informe nome e e-mail e copie a senha temporária exibida uma única vez. No XAMPP, se necessário, use `C:\\xampp\\php\\php.exe scripts\\provisionar-usuario.php`.
-10. Acesse [http://localhost/academia-alunos-crud/login.php](http://localhost/academia-alunos-crud/login.php) e entre com a conta criada. Entregue a senha temporária por canal seguro.
+4. Importe o arquivo \`banco.sql\`. Ele cria o banco \`academia_alunos\` e a tabela \`alunos\`.
+5. Confira as configurações de conexão em \`conexao.php\`, caso seu XAMPP utilize host, porta, usuário ou senha diferentes.
+6. No banco \`academia_alunos\`, execute pelo phpMyAdmin (aba SQL), nesta ordem:
+   - \`database/migrations/001_authentication_audit.sql\`
+   - \`database/migrations/002_force_password_change.sql\`
+   - \`database/migrations/003_login_rate_limit.sql\`
+7. No terminal, a partir da pasta do projeto, execute \`php scripts/provisionar-usuario.php\`, informe nome e e-mail e copie a senha temporária exibida uma única vez. No XAMPP, se necessário, use \`C:\\xampp\\php\\php.exe scripts\\provisionar-usuario.php\`.
+8. Acesse [http://localhost/academia-alunos-crud/login.php](http://localhost/academia-alunos-crud/login.php) e entre com a conta criada. Entregue a senha temporária por canal seguro.
+9. No primeiro acesso, substitua a senha temporária por uma senha pessoal com pelo menos 12 caracteres.
 
 ### Configuração do banco por variáveis de ambiente
 
@@ -116,32 +122,33 @@ Não coloque credenciais reais no repositório. Em ambientes compartilhados, con
 
 ## Testes automatizados
 
-O workflow [CI - Academia Alunos CRUD](https://github.com/Alex5762/academia-alunos-crud/actions/workflows/ci.yml) é executado em pushes para `main` e `feat/dashboard-portfolio`, além de pull requests destinados a `main`.
+O workflow [CI - Academia Alunos CRUD](https://github.com/Alex5762/academia-alunos-crud/actions/workflows/ci.yml) é executado em pushes para \`main\` e \`feat/dashboard-portfolio\`, além de pull requests destinados a \`main\`.
 
 O pipeline:
 
 1. prepara PHP 8.2, Node.js 24, MySQL 8 e Chromium;
-2. verifica a sintaxe de todos os arquivos PHP;
-3. confere a presença dos arquivos essenciais;
-4. importa o schema de `banco.sql` e executa as migrações de autenticação, troca obrigatória de senha e limitação de tentativas;
-5. provisiona uma conta fictícia e valida hash, auditoria e unicidade do e-mail;\n6. inicia a aplicação com o servidor embutido do PHP;
-7. executa `tests/integration-crud.sh` contra os endpoints reais;
-8. prepara registros fictícios no banco temporário e captura as telas desktop e mobile com Playwright;
-9. disponibiliza as imagens como artefato e, em pushes para a branch de desenvolvimento, atualiza os arquivos versionados em `docs/screenshots/`.
+2. verifica a sintaxe de todos os arquivos PHP e a presença dos arquivos essenciais;
+3. importa \`banco.sql\` e executa as migrações 001, 002 e 003 em um banco MySQL limpo;
+4. provisiona uma conta fictícia e verifica hash, auditoria e unicidade do e-mail;
+5. inicia a aplicação com o servidor embutido do PHP e executa os testes HTTP reais;
+6. prepara registros fictícios no banco temporário e executa as verificações Playwright;
+7. publica as capturas como artefato e, em pushes para a branch de desenvolvimento, atualiza os arquivos versionados em \`docs/screenshots/\`.
 
 Os testes de integração cobrem:
-- rejeição de token CSRF inválido (HTTP 403);
-- validação de e-mail e telefone inválidos, com preservação dos dados do formulário;
-- cadastro de aluno;
-- pesquisa pelo nome;
-- edição e conferência da persistência no MySQL;
-- abertura da confirmação por GET sem excluir o registro;
-- exclusão por POST e verificação da remoção no banco;
-- rejeição de método GET no endpoint de gravação (HTTP 405).
 
-A captura visual também verifica a presença dos registros de demonstração, a ausência de rolagem horizontal na página mobile, a rolagem horizontal contida na tabela de alunos e a persistência da preferência de tema escuro entre páginas.
+- acesso anônimo, login inválido/válido e rejeição de conta desativada;
+- troca obrigatória da senha temporária, rejeição da senha antiga e auditoria;
+- limite de tentativas de login e liberação após autenticação válida;
+- criação, desativação e reativação de funcionários, incluindo bloqueio de autodesativação;
+- cadastro, pesquisa, edição e exclusão de alunos com persistência no MySQL;
+- associação dos eventos de auditoria ao funcionário autenticado;
+- logout, revogação de sessão após desativação de conta e proteção CSRF;
+- expiração após 30 minutos de inatividade e após 8 horas de duração absoluta;
+- renovação autenticada da sessão, rejeição de CSRF inválido e rejeição de método GET.
 
-Para conferir os resultados, consulte a aba **Actions** do GitHub. Uma execução verde confirma apenas os cenários incluídos no workflow; não substitui os testes exploratórios em navegadores e dispositivos físicos.
+A captura visual também verifica a presença dos registros de demonstração, ausência de rolagem horizontal inesperada no desktop/mobile, rolagem interna da tabela no mobile, aplicação e persistência do tema escuro, ausência de erros JavaScript e exibição dos avisos de expiração de sessão.
+
+Para conferir os resultados, consulte a aba **Actions** do GitHub. Uma execução verde confirma apenas os cenários incluídos no workflow; não substitui inspeção visual humana em dispositivos e navegadores reais nem uma revisão independente de segurança.
 
 ## Documentação
 
