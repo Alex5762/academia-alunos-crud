@@ -47,10 +47,10 @@ jobs:
         with:
           node-version: '24'
 
-      - name: Install Playwright and Chromium
+      - name: Install Playwright browsers
         run: |
           npm install --no-save --no-package-lock playwright@1.65.1
-          npx playwright install --with-deps chromium
+          npx playwright install --with-deps chromium firefox webkit
 
       - name: Check PHP syntax
         shell: bash
@@ -162,6 +162,7 @@ jobs:
           export FITCONTROL_TEST_PASSWORD="$(cat "$RUNNER_TEMP/fitcontrol-test-password")"
           rm -f "$RUNNER_TEMP/fitcontrol-test-password"
           node tests/capture-screenshots.mjs
+          node tests/browser-compatibility.mjs
 
       - name: Upload screenshots
         uses: actions/upload-artifact@v4
