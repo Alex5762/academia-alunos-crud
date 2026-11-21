@@ -28,8 +28,8 @@ As imagens abaixo são capturadas automaticamente pelo GitHub Actions com regist
 - Indicador de planos em uso e plano mais frequente.
 - Distribuição de alunos por plano.
 - Cadastro e edição de alunos.
-- Listagem e pesquisa por nome.
-- Exclusão com tela de confirmação.
+- Listagem com filtro de ativos/inativos/todos e pesquisa por nome, e-mail ou telefone.
+- Inativação e reativação lógica de alunos, preservando os registros e a auditoria.
 - Validação dos dados no servidor e no navegador, incluindo formato e quantidade de dígitos do telefone.
 - Consultas preparadas com PDO.
 - Token CSRF nos formulários de escrita.
@@ -47,9 +47,9 @@ As imagens abaixo são capturadas automaticamente pelo GitHub Actions com regist
 - Bloqueio das páginas administrativas para visitantes não autenticados e contas desativadas.
 - Expiração após 30 minutos sem interação ou 8 horas desde o login, com aviso antecipado e opção de continuar conectado.
 - Sincronização autenticada da sessão enquanto o funcionário interage com a página, sem renovar sessões abandonadas.
-- Auditoria de login/logout e das operações de cadastro, edição e exclusão de alunos.
+- Auditoria de login/logout e das operações de cadastro, edição, inativação e reativação de alunos.
 
-Cada aluno possui nome, telefone, e-mail e plano (Mensal, Trimestral, Semestral ou Anual).
+Cada aluno possui nome, telefone, e-mail, plano (Mensal, Trimestral, Semestral ou Anual) e situação ativa/inativa. Registros inativos permanecem consultáveis e editáveis.
 
 ## Tecnologias
 
@@ -143,7 +143,7 @@ O pipeline:
 6. prepara registros fictícios no banco temporário e executa as verificações Playwright;
 7. publica as capturas como artefato e, em pushes para a branch de desenvolvimento, atualiza os arquivos versionados em \`docs/screenshots/\`.
 
-Antes dos testes HTTP, `tests/migration-student-status.sh` insere um aluno usando o esquema anterior, executa a migração 004 e confere a preservação do ID e dos dados, o status ativo por padrão, o status de novos registros e o índice composto.
+Antes dos testes HTTP, `tests/migration-student-status.sh` insere um aluno usando o esquema anterior, executa a migração 004 e confere a preservação do ID e dos dados, o status ativo por padrão, o status de novos registros e o índice composto. O teste HTTP cobre também a mudança transacional de status, proteção CSRF, idempotência e aposentadoria da exclusão física.
 
 Os testes de integração cobrem:
 
@@ -151,7 +151,9 @@ Os testes de integração cobrem:
 - troca obrigatória da senha temporária, rejeição da senha antiga e auditoria;
 - limite de tentativas de login e liberação após autenticação válida;
 - criação, desativação e reativação de funcionários, incluindo bloqueio de autodesativação;
-- cadastro, pesquisa, edição e exclusão física de alunos (fluxo legado ainda ativo até a etapa 2 do Bloco 02), com persistência no MySQL;
+- cadastro, pesquisa, edição, inativação e reativação de alunos, com persistência no MySQL;
+- rejeição do endpoint legado `excluir.php` com HTTP 410, sem remover o registro;
+- idempotência da alteração de status, sem duplicação de auditoria em solicitações repetidas;
 - associação dos eventos de auditoria ao funcionário autenticado;
 - logout, revogação de sessão após desativação de conta e proteção CSRF;
 - expiração após 30 minutos de inatividade e após 8 horas de duração absoluta;
