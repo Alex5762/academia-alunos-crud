@@ -2,6 +2,7 @@
 require_once __DIR__ . '/funcoes.php';
 require_once __DIR__ . '/conexao.php';
 $usuario = exigirAutenticacao($pdo);
+$contextoLista = obterContextoListaAlunos($_GET);
 
 // Sem ID: formulário novo. Com ID: formulário de edição.
 $aluno = ['id' => '', 'nome' => '', 'telefone' => '', 'email' => '', 'plano' => 'Mensal'];
@@ -40,7 +41,7 @@ $titulo = $editando ? 'Editar aluno' : 'Cadastrar aluno';
 <body>
 <main>
     <h1><?= escapar($titulo) ?></h1>
-    <p><a href="index.php">Voltar à lista</a></p>
+    <p><a href="<?= escapar(urlListaAlunos($contextoLista)) ?>">Voltar à lista</a></p>
 
     <?php if (count($erros) > 0) { ?>
         <ul class="erros" role="alert">
@@ -55,6 +56,8 @@ $titulo = $editando ? 'Editar aluno' : 'Cadastrar aluno';
     <form action="salvar.php" method="post" id="form-aluno">
         <input type="hidden" name="token" value="<?= escapar($_SESSION['token']) ?>">
         <input type="hidden" name="id" value="<?= escapar($aluno['id']) ?>">
+        <input type="hidden" name="busca" value="<?= escapar($contextoLista['busca']) ?>">
+        <input type="hidden" name="status" value="<?= escapar($contextoLista['status']) ?>">
 
         <label for="nome">Nome completo:</label>
         <input type="text" id="nome" name="nome" maxlength="100" required
