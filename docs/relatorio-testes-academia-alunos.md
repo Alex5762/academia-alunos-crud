@@ -184,3 +184,17 @@ Foram adicionados à branch de desenvolvimento:
 - README, roadmap e especificação do Bloco 02 atualizados para refletir a etapa em andamento.
 
 **Resultado da migração:** pendente de execução e inspeção da CI. Nenhuma tela, endpoint de alteração de status, consulta do dashboard ou fluxo de exclusão foi modificado nesta etapa. A aplicação ainda mantém o comportamento anterior até a implementação das próximas etapas.
+
+## 13. Bloco 02 — endpoint e ações de status dos alunos — 21/11/2026
+
+Após a aprovação da migração 004 nas execuções de push #268 e PR #269, foram implementados na branch:
+
+- `alterar-status-aluno.php`: endpoint exclusivo para POST, com autenticação, CSRF, validação de ID/ação, bloqueio da linha (`SELECT ... FOR UPDATE`), atualização condicional e auditoria na mesma transação. Repetir uma solicitação que já corresponde ao status atual não cria evento duplicado.
+- `index.php`: substituição da ação de exclusão por formulários de inativação/reativação, exibição do status e filtro inicial de ativos.
+- `excluir.php`: aposentado com resposta HTTP 410, sem executar consultas ou comandos de exclusão.
+- `tests/integration-crud.sh`: cenários para método GET (405), CSRF inválido (403), ação inválida (400), inativação, reativação, idempotência, auditoria e preservação do cadastro após chamadas ao endpoint antigo.
+- `style.css` e workflow CI atualizados.
+
+A pesquisa por nome/e-mail/telefone e o filtro Ativos/Inativos/Todos já foram incluídos na consulta da listagem nesta mesma implementação; os indicadores agora contam ativos/inativos separadamente e a distribuição de planos considera somente ativos.
+
+**Resultado:** código implementado; aguarda as execuções de CI do novo commit. Não marcar a etapa como aprovada antes de verificar os logs de push e pull request.
