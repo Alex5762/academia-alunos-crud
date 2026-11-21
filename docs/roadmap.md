@@ -50,7 +50,7 @@ Entregas:
 - Resolver pendências visuais ou documentá-las com clareza.
 - Atualizar a descrição da PR para refletir o estado real.
 
-**Estado:** base funcional, autenticação, gestão de funcionários, auditoria, política de sessão e alteração voluntária de senha implementadas. A CI foi ampliada para verificar Chromium, Firefox e WebKit, viewports desktop/mobile estreito, overflow, rolagem interna, teclado, foco visível e validação nativa de campos obrigatórios. O resultado dessa nova cobertura depende das execuções disparadas pelo commit. Permanece pendente apenas a inspeção humana em dispositivo físico e a avaliação de percepção visual/uso real, incluindo gesto de toque e tecnologias assistivas.
+**Estado:** base funcional, autenticação, gestão de funcionários, auditoria, política de sessão e alteração voluntária de senha implementadas. A CI foi ampliada para verificar Chromium, Firefox e WebKit, viewports desktop/mobile estreito, overflow, rolagem interna, teclado, foco visível e validação nativa de campos obrigatórios. Os workflows de push #245 e PR #244 passaram, e os logs confirmam aprovação nos três motores. Permanece pendente apenas a inspeção humana em dispositivo físico e a avaliação de percepção visual/uso real, incluindo gesto de toque e tecnologias assistivas.
 
 ### Bloco 01 — Autenticação e proteção do painel
 
@@ -72,7 +72,7 @@ Entregas:
 
 ### Bloco 02 — Gestão de alunos
 
-**Estado: planejado e especificado em `docs/bloco-02-gestao-alunos.md`; implementação ainda não iniciada.**
+**Estado: em implementação.** A Etapa 1 já tem a migração 004, o teste automatizado de preservação de registros legados e a integração na CI; falta validar as novas execuções. As etapas funcionais seguintes ainda não começaram.
 
 Objetivo: evoluir o cadastro básico para gestão do ciclo de vida dos alunos, preservando registros e permitindo consulta, pesquisa, filtros e histórico operacional.
 
@@ -88,7 +88,7 @@ Decisões fechadas:
 - Exclusão física excepcional, histórico campo a campo, planos/matrículas e financeiro ficam fora do escopo.
 
 Etapas previstas:
-1. Migração 004 e camada de dados, com teste de preservação de registros legados.
+1. [Em validação] Migração 004 e camada de dados, com teste de preservação de registros legados.
 2. Endpoint de ativação/inativação e aposentadoria do fluxo de exclusão física.
 3. Listagem, pesquisa e filtros.
 4. Indicadores do dashboard.
