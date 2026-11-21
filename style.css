@@ -1150,6 +1150,14 @@ body:not(.dashboard-body) select:focus {
     box-shadow: 0 0 0 3px rgba(49, 95, 232, 0.09);
 }
 
+/* Mantém um indicador explícito de foco para navegação por teclado. */
+body:not(.dashboard-body) input:not([type="hidden"]):focus-visible,
+body:not(.dashboard-body) select:focus-visible {
+    outline: 3px solid rgba(49, 95, 232, 0.42);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 3px rgba(49, 95, 232, 0.09);
+}
+
 body:not(.dashboard-body) button {
     display: inline-flex;
     min-height: 42px;
