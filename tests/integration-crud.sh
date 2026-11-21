@@ -366,6 +366,16 @@ curl -fsS -G -c "$COOKIE_JAR" -b "$COOKIE_JAR" \
     "$BASE_URL/index.php" -o "$TMP_DIR/search.html"
 assert_contains "$TMP_DIR/search.html" "Aluno CI CRUD"
 
+curl -fsS -G -c "$COOKIE_JAR" -b "$COOKIE_JAR" \
+    --data-urlencode "busca=crud-ci-create@example.test" \
+    "$BASE_URL/index.php" -o "$TMP_DIR/search-email.html"
+assert_contains "$TMP_DIR/search-email.html" "Aluno CI Atualizado"
+
+curl -fsS -G -c "$COOKIE_JAR" -b "$COOKIE_JAR" \
+    --data-urlencode "busca=21999990001" \
+    "$BASE_URL/index.php" -o "$TMP_DIR/search-phone.html"
+assert_contains "$TMP_DIR/search-phone.html" "Aluno CI Atualizado"
+
 curl -fsS -c "$COOKIE_JAR" -b "$COOKIE_JAR" \
     "$BASE_URL/cadastro.php?id=$ALUNO_ID" -o "$TMP_DIR/edit-form.html"
 EDIT_TOKEN="$(get_token "$TMP_DIR/edit-form.html")"
@@ -403,6 +413,27 @@ curl -fsS -L -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/alterar-status-aluno.p
     --data-urlencode "token=$EDIT_TOKEN" --data-urlencode "id=$ALUNO_ID" --data-urlencode "acao=inativar" \
     -o "$TMP_DIR/student-inactivated.html"
 assert_contains "$TMP_DIR/student-inactivated.html" "Aluno inativado com sucesso."
+
+curl -fsS -G -c "$COOKIE_JAR" -b "$COOKIE_JAR" \
+    --data-urlencode "busca=Aluno CI Atualizado" \
+    --data-urlencode "status=ativos" \
+    "$BASE_URL/index.php" -o "$TMP_DIR/inactive-hidden-from-default.html"
+if grep -Fq "Aluno CI Atualizado" "$TMP_DIR/inactive-hidden-from-default.html"; then
+    fail "Aluno inativo apareceu no filtro padrão de ativos."
+fi
+
+curl -fsS -G -c "$COOKIE_JAR" -b "$COOKIE_JAR" \
+    --data-urlencode "busca=Aluno CI Atualizado" \
+    --data-urlencode "status=inativos" \
+    "$BASE_URL/index.php" -o "$TMP_DIR/inactive-filter.html"
+assert_contains "$TMP_DIR/inactive-filter.html" "Aluno CI Atualizado"
+
+curl -fsS -G -c "$COOKIE_JAR" -b "$COOKIE_JAR" \
+    --data-urlencode "busca=Aluno CI Atualizado" \
+    --data-urlencode "status=todos" \
+    "$BASE_URL/index.php" -o "$TMP_DIR/all-statuses-filter.html"
+assert_contains "$TMP_DIR/all-statuses-filter.html" "Aluno CI Atualizado"
+
 INATIVO="$(db_value "SELECT COUNT(*) FROM alunos WHERE id = $ALUNO_ID AND ativo = 0")"
 [[ "$INATIVO" == "1" ]] || fail "A inativação não foi persistida."
 
