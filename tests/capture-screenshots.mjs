@@ -59,6 +59,19 @@ try {
     animations: "disabled",
   });
 
+  await desktop.getByRole("link", { name: /Ver detalhes de/ }).first().click();
+  await desktop.getByRole("heading", { level: 1 }).waitFor();
+  if (!desktop.url().includes("detalhes-aluno.php")) {
+    throw new Error("O atalho de detalhes não abriu o perfil individual do aluno.");
+  }
+  await desktop.getByRole("heading", { name: "Informações cadastrais" }).waitFor();
+  await desktop.getByRole("heading", { name: "Histórico de atividade" }).waitFor();
+  await desktop.screenshot({
+    path: `${outputDir}/aluno-detalhes-desktop.png`,
+    fullPage: true,
+    animations: "disabled",
+  });
+
   const mobile = await browser.newPage({
     viewport: { width: 390, height: 960 },
     deviceScaleFactor: 1,
