@@ -506,6 +506,27 @@ assert_contains "$TMP_DIR/detail-history.html" "Aluno inativado"
 assert_contains "$TMP_DIR/detail-history.html" "Aluno reativado"
 assert_contains "$TMP_DIR/detail-history.html" "Por Provisionamento CI"
 
+echo "5.5/10 - Alterando status diretamente pelo perfil..."
+curl -fsS -L -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/alterar-status-aluno.php" \
+    --data-urlencode "token=$EDIT_TOKEN" --data-urlencode "id=$ALUNO_ID" \
+    --data-urlencode "acao=inativar" --data-urlencode "retorno=detalhes" \
+    --data-urlencode "busca=Aluno CI Atualizado" --data-urlencode "status=ativos" \
+    -o "$TMP_DIR/detail-inactivated.html"
+assert_contains "$TMP_DIR/detail-inactivated.html" "Aluno inativado com sucesso."
+assert_contains "$TMP_DIR/detail-inactivated.html" "Inativo"
+DETAIL_INACTIVE_COUNT="$(db_value "SELECT COUNT(*) FROM alunos WHERE id = $ALUNO_ID AND ativo = 0")"
+[[ "$DETAIL_INACTIVE_COUNT" == "1" ]] || fail "A ação de status pelo perfil não inativou o aluno."
+
+curl -fsS -L -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/alterar-status-aluno.php" \
+    --data-urlencode "token=$EDIT_TOKEN" --data-urlencode "id=$ALUNO_ID" \
+    --data-urlencode "acao=reativar" --data-urlencode "retorno=detalhes" \
+    --data-urlencode "busca=Aluno CI Atualizado" --data-urlencode "status=inativos" \
+    -o "$TMP_DIR/detail-reactivated.html"
+assert_contains "$TMP_DIR/detail-reactivated.html" "Aluno reativado com sucesso."
+assert_contains "$TMP_DIR/detail-reactivated.html" "Ativo"
+DETAIL_ACTIVE_COUNT="$(db_value "SELECT COUNT(*) FROM alunos WHERE id = $ALUNO_ID AND ativo = 1")"
+[[ "$DETAIL_ACTIVE_COUNT" == "1" ]] || fail "A ação de reativação pelo perfil não reativou o aluno."
+
 echo "6/10 - Confirmando que a exclusão física foi aposentada..."
 HTTP_CODE="$(curl -sS -o "$TMP_DIR/legacy-delete-get.html" -w '%{http_code}' -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/excluir.php?id=$ALUNO_ID")"
 [[ "$HTTP_CODE" == "410" ]] || fail "GET em excluir.php deveria retornar 410; retornou $HTTP_CODE."
