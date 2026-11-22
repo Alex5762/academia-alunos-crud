@@ -3058,3 +3058,57 @@ body:not(.dashboard-body) .theme-option[aria-pressed="true"] {
     .enrollment-cancel-form { grid-template-columns: 1fr; }
     .enrollment-cancel-form .button { width: 100%; }
 }
+
+
+/* Contexto e intervalo atual do fluxo de retificação de vigência legada */
+.legacy-rectification-current-period {
+    margin-top: 16px;
+    padding: 16px;
+    background: var(--canvas);
+    border: 1px solid var(--line);
+    border-radius: 11px;
+}
+.legacy-rectification-current-period > strong {
+    display: block;
+    margin-bottom: 12px;
+}
+.legacy-rectification-current-period dl {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    margin: 0 0 10px;
+}
+.legacy-rectification-current-period dl > div {
+    display: grid;
+    gap: 5px;
+}
+.legacy-rectification-current-period dt {
+    color: var(--muted);
+    font-size: .76rem;
+    font-weight: 700;
+}
+.legacy-rectification-current-period dd {
+    margin: 0;
+    font-weight: 750;
+    font-variant-numeric: tabular-nums;
+    overflow-wrap: anywhere;
+}
+.legacy-rectification-current-period > small {
+    color: var(--muted);
+    font-size: .75rem;
+}
+.legacy-rectification-form {
+    margin-top: 18px;
+}
+.legacy-rectification-form .legacy-review-period input {
+    font-variant-numeric: tabular-nums;
+}
+:root[data-theme="dark"] .legacy-rectification-current-period {
+    background: #111c2d;
+    border-color: #35435a;
+}
+@media (max-width: 560px) {
+    .legacy-rectification-current-period dl {
+        grid-template-columns: 1fr;
+    }
+}
