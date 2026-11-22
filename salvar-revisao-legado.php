@@ -15,6 +15,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 $usuario = exigirAutenticacao($pdo);
+exigirPermissao($usuario, 'legacy.review');
 validarToken();
 
 $reviewIdRecebido = $_POST['review_id'] ?? '';
