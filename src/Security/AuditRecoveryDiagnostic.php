@@ -92,6 +92,7 @@ final class AuditRecoveryDiagnostic
                             'file' => basename($path),
                             'event_id' => $checkpointId,
                             'checkpoint_hash' => $payload['checkpoint_hash'],
+                            'created_at_utc' => $payload['created_at_utc'],
                         ];
                         continue;
                     }
@@ -137,6 +138,16 @@ final class AuditRecoveryDiagnostic
             $latestValid = $valid !== [] ? $valid[array_key_last($valid)] : null;
             $earliestAhead = $ahead !== [] ? $ahead[0] : null;
             $latestAhead = $ahead !== [] ? $ahead[array_key_last($ahead)] : null;
+            $potentialLossWindow = $earliestAhead === null ? null : [
+                'restored_through_event_id' => $currentId,
+                'event_id_bounds' => [
+                    'exclusive_lower_bound' => $currentId,
+                    'inclusive_upper_bound' => $earliestAhead['event_id'],
+                ],
+                'supporting_checkpoint' => $earliestAhead,
+                'exact_missing_event_count' => null,
+                'count_limitation' => 'Identificadores podem conter lacunas; o checkpoint assina um hash de ponta, não um inventário completo dos eventos intermediários. Não estime a quantidade de eventos perdidos a partir da diferença entre IDs.',
+            ];
 
             $status = 'insufficient_evidence';
             $message = 'Nenhum checkpoint externo compatível foi encontrado; não é possível concluir se houve perda de eventos.';
@@ -156,7 +167,7 @@ final class AuditRecoveryDiagnostic
             }
 
             $report = [
-                'report_version' => 1,
+                'report_version' => 2,
                 'generated_at_utc' => gmdate('Y-m-d\TH:i:s\Z'),
                 'read_only' => true,
                 'status' => $status,
@@ -179,6 +190,13 @@ final class AuditRecoveryDiagnostic
                 'latest_checkpoint_ahead' => $latestAhead,
                 'matching_checkpoints' => $valid,
                 'checkpoints_ahead_of_restore' => $ahead,
+                'potential_loss_window' => $potentialLossWindow,
+                'checkpoint_evidence_summary' => [
+                    'matching_count' => count($valid),
+                    'ahead_of_restore_count' => count($ahead),
+                    'divergent_count' => count($divergent),
+                    'rejected_count' => count($rejected),
+                ],
                 'divergent_checkpoints' => $divergent,
                 'rejected_checkpoints' => $rejected,
                 'limitations' => [
