@@ -198,7 +198,7 @@ try {
 
     $invalidSecretRejected = false;
     try {
-        \FitControl\Security\${cls}::readSignedPayload(
+        \FitControl\Security\AuditIntegrityCheckpoint::readSignedPayload(
             $databaseName,
             str_repeat('g', 64),
             $checkpointPath
@@ -208,7 +208,7 @@ try {
     }
     assertCheckpoint($invalidSecretRejected, 'A chave HMAC deve seguir o contrato hexadecimal de pelo menos 64 caracteres.');
 
-    $invalidDiagnostic = \FitControl\Security\${cls}::diagnose(
+    $invalidDiagnostic = \FitControl\Security\AuditRecoveryDiagnostic::diagnose(
         $pdo,
         $databaseName,
         str_repeat('g', 64),
