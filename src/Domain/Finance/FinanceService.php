@@ -192,7 +192,8 @@ final class FinanceService
         }
     }
 
-    /** Cancela somente cobrança sem pagamentos e após o cancelamento do contrato.    public function cancelUnpaidCharge(int $chargeId, int $actorUserId, string $reason): void
+    /** Cancela somente cobrança sem pagamentos e após o cancelamento do contrato. */
+    public function cancelUnpaidCharge(int $chargeId, int $actorUserId, string $reason): void
     {
         if ($chargeId < 1 || $actorUserId < 1) {
             throw new InvalidArgumentException('Os identificadores precisam ser positivos.');
