@@ -54,3 +54,13 @@ A quantidade de commits é apenas contexto. Não é critério isolado de aprova�
 - Criar commits artificiais só para produzir um gráfico mais movimentado.
 - Tratar cada microedição como uma unidade de commit.
 - Considerar todos os commits automatizados como evidência de produtividade individual.
+
+## Nota operacional — 22/11/2026
+
+Na implementação do Bloco 04, as alterações de vários arquivos foram publicadas por operações individuais da API de conteúdo do GitHub, que geram um commit por arquivo. Isso produziu mais commits do que seria desejável para uma única unidade funcional e **não deve ser interpretado como o padrão recomendado nesta ADR**.
+
+Para futuras entregas com vários arquivos:
+- preparar e revisar o conjunto de mudanças antes de publicar;
+- agrupar arquivos relacionados em um commit lógico sempre que o fluxo de trabalho permitir;
+- evitar atualizações arquivo a arquivo apenas por conveniência;
+- não reescrever retroativamente o histórico já publicado desta branch para corrigir a contagem.
