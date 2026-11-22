@@ -250,6 +250,12 @@ MANAGER_ROLE="$(db_value "SELECT perfil FROM usuarios WHERE id = $NOVO_USUARIO_I
 [[ "$MANAGER_ROLE" == "GESTOR" ]] || fail "O perfil de gestor não foi persistido."
 ROLE_AUDIT="$(db_value "SELECT COUNT(*) FROM auditoria WHERE usuario_id = $USUARIO_ID AND acao = 'usuario_perfil_alterado' AND entidade_id = $NOVO_USUARIO_ID")"
 [[ "$ROLE_AUDIT" == "1" ]] || fail "A alteração de perfil não foi auditada."
+ROLE_HISTORY="$(db_value "SELECT COUNT(*) FROM usuarios_perfis_eventos
+    WHERE usuario_id = $NOVO_USUARIO_ID
+      AND responsavel_id = $USUARIO_ID
+      AND perfil_anterior = 'OPERADOR'
+      AND perfil_novo = 'GESTOR'")"
+[[ "$ROLE_HISTORY" == "1" ]] || fail "O histórico especializado não preservou perfil anterior, novo e responsável."
 
 ROLE_TOKEN="$(get_token "$TMP_DIR/user-role-manager.html")"
 curl -fsS -L -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/alterar-perfil-usuario.php" \
@@ -258,6 +264,8 @@ curl -fsS -L -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/alterar-perfil-usuario
     --data-urlencode "perfil=OPERADOR" \
     -o "$TMP_DIR/user-role-operator.html"
 assert_contains "$TMP_DIR/user-role-operator.html" "Perfil do funcionário atualizado com sucesso."
+ROLE_HISTORY_COUNT="$(db_value "SELECT COUNT(*) FROM usuarios_perfis_eventos WHERE usuario_id = $NOVO_USUARIO_ID")"
+[[ "$ROLE_HISTORY_COUNT" == "2" ]] || fail "As duas alterações de perfil não foram preservadas no histórico."
 
 ROLE_TOKEN="$(get_token "$TMP_DIR/user-role-operator.html")"
 curl -fsS -L -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/alterar-perfil-usuario.php" \
