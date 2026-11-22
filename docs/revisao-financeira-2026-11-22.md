@@ -46,19 +46,20 @@ Essas escolhas estão alinhadas com as recomendações de transações PDO, leit
 
 **Validação observada:** no run CI #1266, o job financeiro em MariaDB 10.11 concluiu com sucesso, incluindo migration 011 e o teste concorrente. O job equivalente em MySQL 8.0 ainda estava em execução na última consulta. A confirmação final depende dos dois motores.
 
-### F-02 — Alto: o histórico de pagamentos não é imutável no banco
+### F-02 — Alto: histórico de pagamentos append-only
 
-**Evidência:** a migration 010 não cria proteções contra UPDATE/DELETE em `pagamentos`. Não há serviço de edição/exclusão, o que é bom, mas a tabela aceita alterações diretas. A cadeia geral de auditoria encadeia os metadados do evento (ator, ação, entidade, ID e instante), não um snapshot criptográfico de `pagamentos.valor`, `forma_pagamento` ou `data_pagamento`.
+**Estado: implementação na branch `feat/dashboard-portfolio`; CI da migration 012 pendente.**
 
-**Risco concreto:** uma alteração direta do valor de um pagamento pode mudar o saldo calculado pela tela sem invalidar o hash do evento de auditoria que apenas aponta para o ID do pagamento.
+**Correção entregue:**
+- Migration 012 adiciona um guard de INSERT que exige a variável de sessão controlada por `FinanceService`.
+- Gatilhos bloqueiam UPDATE e DELETE de pagamentos confirmados.
+- `FinanceService::registerPayment()` ativa o guard somente durante o INSERT e o limpa em bloco `finally`, inclusive no caminho de falha.
+- Testes tentam INSERT, UPDATE e DELETE diretamente e exigem rejeição; a limpeza das fixtures usa uma variável de sessão reservada ao teardown automatizado.
+- Correções futuras devem ser lançamentos compensatórios (estorno/devolução), com referência ao pagamento original, motivo, ator, instante e auditoria.
 
-**Correção recomendada:**
-- Tratar pagamentos como lançamentos append-only: não editar nem apagar registros confirmados.
-- Planejar proteção de UPDATE/DELETE no banco, compatível com a estratégia de testes e manutenção.
-- Para correções futuras, criar lançamentos compensatórios (estorno/devolução) que referenciem o pagamento original, com motivo, ator, instante e auditoria.
-- Considerar vincular o evento de auditoria a um resumo/hash dos campos críticos do lançamento, para detectar alteração do conteúdo.
+**Limite importante:** os guards por variável de sessão protegem contra caminhos SQL acidentais da aplicação, não contra um administrador do banco que controle a própria sessão ou os gatilhos. O ambiente real deve usar uma conta SQL de menor privilégio; acesso administrativo ao banco permanece uma fronteira de confiança.
 
-**Observação:** não existe endpoint de edição/exclusão de pagamento hoje. O achado é uma lacuna de integridade em nível de banco e de verificabilidade do conteúdo, não a afirmação de que a interface atual oferece essa ação.
+**Ponto ainda não coberto:** o evento geral de auditoria continua encadeando metadados e ID, não um snapshot criptográfico independente dos campos financeiros. Um verificador de conteúdo pode ser considerado em etapa posterior, se o escopo justificar.
 
 ### F-03 — Médio: cobranças de matrículas canceladas são apresentadas como abertas
 
@@ -114,11 +115,12 @@ Essas escolhas estão alinhadas com as recomendações de transações PDO, leit
 ## Plano de correção recomendado
 
 1. **F-01:** implementado; aguardar confirmação final em MySQL 8.0 além do MariaDB 10.11.
-2. **F-02 e F-05:** proteção de imutabilidade e invariantes no schema.
-3. **F-03:** separar valores cobraveis de valores em revisão por cancelamento contratual.
-4. **F-04:** disponibilizar o histórico de pagamentos por cobrança.
-5. **F-06:** adicionar testes reais de concorrência e HTTP para registro de pagamento/cancelamento.
-6. **F-07 e F-08:** acabamento da apresentação e explicitação da política de datas.
+2. **F-02:** implementado com guards append-only; aguardar CI e avaliar snapshot criptográfico independente em etapa posterior.
+3. **F-05:** adicionar constraints positivas no schema.
+4. **F-03:** separar valores cobraveis de valores em revisão por cancelamento contratual.
+5. **F-04:** disponibilizar o histórico de pagamentos por cobrança.
+6. **F-06:** adicionar testes de concorrência do limite de saldo e HTTP para registro de pagamento/cancelamento.
+7. **F-07 e F-08:** acabamento da apresentação e explicitação da política de datas.
 
 Não recomendo adicionar agora um razão contábil de partidas dobradas, conciliação bancária ou integração com gateway. Para o escopo local/acadêmico, um registro de contas a receber e pagamentos com histórico imutável, idempotência, saldo exato, transações e auditoria é proporcional.
 
