@@ -15,6 +15,8 @@ A autorização é aplicada no servidor por `exigirPermissao()`; ocultar um link
 | Decidir revisão e retificar vigência legada | ✓ | ✓ | — |
 | Criar/desativar funcionários e alterar perfis | ✓ | — | — |
 | Consultar central de auditoria | ✓ | ✓ | — |
+| Consultar histórico e indicadores de frequência | ✓ | ✓ | ✓ |
+| Registrar check-in manual | ✓ | ✓ | ✓ |
 | Preferências locais e alteração da própria senha | ✓ | ✓ | ✓ |
 
 ## Regras de segurança
@@ -34,6 +36,7 @@ A autorização é aplicada no servidor por `exigirPermissao()`; ocultar um link
 - Não há permissões customizadas por funcionário nem escopo por unidade/filial.
 - Todos os administradores têm acesso integral.
 - O operador pode criar e editar dados cadastrais de alunos, mas não alterar seu status.
+- Gestor e Operador podem consultar frequência e registrar check-in; a elegibilidade do aluno e a matrícula vigente são verificadas no serviço transacional, independentemente da interface.
 - A matriz não substitui a validação de sessão, CSRF, regras de domínio ou transações.
 
 
