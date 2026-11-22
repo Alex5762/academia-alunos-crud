@@ -76,7 +76,7 @@ Não haverá divisão automática do preço em parcelas. Se a academia quiser co
 - \`EnrollmentCreationService\` cria a cobrança única pelo preço total do plano, vencendo na data de início, dentro da transação da matrícula e da auditoria.
 - \`FinanceService\` registra pagamentos parciais, bloqueia concorrência na cobrança, rejeita excesso de saldo e grava eventos na cadeia de auditoria.
 - \`FinanceService\` permite cancelar somente cobrança sem pagamentos após cancelamento contratual.
-- Interface e permissões RBAC financeiras ainda não foram entregues; o Bloco 05 não está concluído.
+- A tela `financeiro.php` e as permissões RBAC `finance.*` foram entregues e cobertas pela CI. Permanecem pendentes os achados da revisão técnica registrada em `docs/revisao-financeira-2026-11-22.md`, além da validação manual/local.
 
 A migration 010 deve ser executada somente após backup e conferência da versão/engine, seguindo o guia local.
 
@@ -92,4 +92,4 @@ A migration 010 deve ser executada somente após backup e conferência da versã
 
 ## Estado
 
-**Núcleo transacional e primeira interface implementados.** CI #1243–#1245 aprovada; o Bloco 05 continua aberto para revisão e inspeção local após backup/migration.
+**Núcleo transacional e primeira interface implementados.** CI #1243–#1245 aprovada; revisão técnica registrada em `docs/revisao-financeira-2026-11-22.md`. O bloco continua aberto para correções priorizadas e inspeção local após backup/migration.
