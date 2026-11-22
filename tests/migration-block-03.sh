@@ -49,7 +49,7 @@ assert_equals() {
 assert_equals "2" "$(mysql_cmd -e "SELECT COUNT(*) FROM revisoes_legado")" "deve criar uma revisão por aluno legado"
 assert_equals "2" "$(mysql_cmd -e "SELECT COUNT(*) FROM revisoes_legado WHERE resultado_atual = 'PENDENTE_REVISAO' AND fonte_referencia IS NULL")" "revisões iniciais devem ficar pendentes e sem evidência inventada"
 assert_equals "0" "$(mysql_cmd -e "SELECT COUNT(*) FROM matriculas")" "a carga não pode inventar matrículas"
-assert_equals "2" "$(mysql_cmd -e "SELECT COUNT(*) FROM revisoes_legado r INNER JOIN alunos a ON a.id = r.aluno_id_origem AND a.plano = r.plano_texto_original")" "texto original do plano deve ser preservado"
+assert_equals "2" "$(mysql_cmd -e "SELECT COUNT(*) FROM revisoes_legado r INNER JOIN alunos a ON a.id = r.aluno_id_origem AND BINARY a.plano = BINARY r.plano_texto_original")" "texto original do plano deve ser preservado byte a byte"
 
 echo "Simulando decisão humana e novo aluno após o corte inicial..."
 mysql_cmd <<'SQL'
