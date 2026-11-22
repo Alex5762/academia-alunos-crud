@@ -262,7 +262,7 @@ function usuarioTemPermissao(array $usuario, string $permissao): bool {
         return false;
     }
 
-    return \\FitControl\\Security\\AccessControl::allows($perfil, $permissao);
+    return \FitControl\Security\AccessControl::allows($perfil, $permissao);
 }
 
 /** Retorna 403 sem redirecionar para login quando o usuário está autenticado. */
