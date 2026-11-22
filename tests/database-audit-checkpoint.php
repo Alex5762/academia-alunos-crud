@@ -94,13 +94,13 @@ try {
 
     $secondPath = checkpointTempPath();
     try {
-        $secondCreated = \\FitControl\\Security\\AuditIntegrityCheckpoint::export(
+        $secondCreated = \FitControl\Security\AuditIntegrityCheckpoint::export(
             $pdo,
             $databaseName,
             $secret,
             $secondPath
         );
-        $comparison = \\FitControl\\Security\\AuditIntegrityCheckpoint::compare(
+        $comparison = \FitControl\Security\AuditIntegrityCheckpoint::compare(
             $pdo,
             $databaseName,
             $secret,
@@ -113,7 +113,7 @@ try {
             'O checkpoint posterior deve ter identificador igual ou maior.'
         );
 
-        $reversed = \\FitControl\\Security\\AuditIntegrityCheckpoint::compare(
+        $reversed = \FitControl\Security\AuditIntegrityCheckpoint::compare(
             $pdo,
             $databaseName,
             $secret,
