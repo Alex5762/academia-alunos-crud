@@ -1,6 +1,6 @@
-# Procedimento local — migrations 005 a 009 (FitControl)
+# Procedimento local — migrations 005 a 013 (FitControl)
 
-> **Escopo:** ambiente acadêmico/local com XAMPP. Este procedimento não autoriza uso em produção nem aplicação automática em banco com dados reais. A CI está configurada para validar as migrations 005, 006, 007, 008 e 009 em MySQL 8.0 e MariaDB 10.11; isso não identifica nem valida a versão instalada no computador.
+> **Escopo:** ambiente acadêmico/local com XAMPP. Este procedimento não autoriza uso em produção nem aplicação automática em banco com dados reais. A CI valida os fluxos de migrations e os testes de banco em MySQL 8.0 e MariaDB 10.11, incluindo o financeiro (010 a 013); isso não identifica nem valida a versão instalada no computador.
 
 ## 1. Antes de começar
 
@@ -370,6 +370,6 @@ A migration cria duas constraints no próprio banco: `cobrancas.valor_total > 0.
 
 ## Estado e cautelas
 
-A CI valida as migrations 005/006/007/008 em MySQL 8.0 e MariaDB 10.11, incluindo preservação do texto original, reexecução segura da carga inicial, atribuição compatível dos perfis e cadeia de integridade. Isso não significa que tenham sido aplicadas no computador.
+A CI valida os fluxos de migrations 005 a 013 e os testes de banco em MySQL 8.0 e MariaDB 10.11, incluindo planos/matrículas, importação de legado, perfis, integridade da auditoria, presença, financeiro, idempotência, append-only e constraints de valores positivos. Isso não significa que tenham sido aplicadas no computador.
 
 A PR #1 deve permanecer em Draft até a validação local, a inspeção física e a revisão final. Não fazer merge para `main` automaticamente.
