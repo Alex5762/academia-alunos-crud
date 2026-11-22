@@ -366,7 +366,23 @@ Depois de validar as migrations 010, 011 e 012, faça backup e execute uma únic
 "C:\\xampp\\mysql\\bin\\mysql.exe" --host=127.0.0.1 --port=3306 --user=root academia_alunos < database\\migrations\\013_financeiro_valores_positivos.sql
 ```
 
-A migration cria duas constraints no próprio banco: `cobrancas.valor_total > 0.00` e `pagamentos.valor > 0.00`. A CI verifica a rejeição de cobrança com valor zero e pagamento negativo em MySQL 8.0 e MariaDB 10.11. Se houver dados inválidos preexistentes, a migration deve falhar para revisão explícita; nenhum valor financeiro histórico é corrigido automaticamente.
+A migration cria duas constraints no próprio banco: `cobrancas.valor_total > 0.00` e `pagamentos.valor > 0.00`. Requer MySQL 8.0.16 ou superior para que `CHECK` seja efetivamente aplicado; MariaDB 10.11 também aplica essas constraints. A CI valida a rejeição de cobrança e pagamento com zero e valores negativos nos dois motores, além de preservar valores positivos.
+
+Antes da execução, faça a pré-verificação:
+
+```sql
+SELECT COUNT(*) AS cobrancas_invalidas
+FROM cobrancas
+WHERE valor_total <= 0.00;
+
+SELECT COUNT(*) AS pagamentos_invalidos
+FROM pagamentos
+WHERE valor <= 0.00;
+```
+
+Os dois resultados devem ser zero. Se algum resultado for maior que zero, interrompa a aplicação e analise os registros; não corrija valores financeiros por atualização automática. Como os dois `ALTER TABLE` são comandos DDL separados, uma falha no segundo pode deixar a primeira constraint já instalada. Nesse caso, consulte `information_schema.TABLE_CONSTRAINTS` antes de qualquer nova tentativa e aplique somente a alteração que ainda estiver ausente. Não reexecute o arquivo inteiro às cegas.
+
+Referências: [MySQL — CHECK constraints](https://dev.mysql.com/doc/refman/8.0/en/create-table-check-constraints.html) e [MariaDB — Constraints](https://mariadb.com/docs/server/reference/sql-statements/data-definition/constraint).
 
 ## Estado e cautelas
 
