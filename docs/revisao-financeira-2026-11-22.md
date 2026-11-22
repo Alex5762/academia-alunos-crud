@@ -85,7 +85,7 @@ Essas escolhas estão alinhadas com as recomendações de transações PDO, leit
 
 ### F-05 — Médio: faltam restrições positivas no próprio schema
 
-**Estado: migration 013 e testes implementados na branch `feat/dashboard-portfolio`; CI pendente.**
+**Estado: validado na CI #1361 em MySQL 8.0 e MariaDB 10.11.**
 
 **Correção entregue:**
 - `chk_cobrancas_valor_total_positivo`: exige `cobrancas.valor_total > 0.00`.
@@ -97,13 +97,16 @@ Essas escolhas estão alinhadas com as recomendações de transações PDO, leit
 - CI aplica a migration 013 nos dois ambientes e executa o teste financeiro em MySQL 8.0 e MariaDB 10.11.
 - Compatibilidade mínima: MySQL 8.0.16, versão a partir da qual o servidor passa a aplicar CHECK constraints; a matriz usa MySQL 8.0 atual e MariaDB 10.11. Consulte a [documentação do MySQL](https://dev.mysql.com/doc/refman/8.0/en/create-table-check-constraints.html) e a [documentação do MariaDB](https://mariadb.com/docs/server/reference/sql-statements/data-definition/constraint).
 
-### F-06 — Médio: a proteção de concorrência ainda não tem teste de corrida financeira
+### F-06 — Médio: concorrência no limite do saldo
 
-**Evidência:** `tests/database-finance.php` testa pagamentos parciais e excesso de saldo em sequência, numa única conexão. Não simula dois processos independentes tentando pagar a mesma cobrança ao mesmo tempo.
+**Estado: teste concorrente implementado na branch `feat/dashboard-portfolio`; CI #1362 pendente.**
 
-**Leitura do código:** o `SELECT ... FOR UPDATE` é uma estratégia correta para serializar a leitura e a atualização do saldo no caminho normal. A falha aqui é de cobertura: ainda não há teste que prove o comportamento sob duas conexões concorrentes.
-
-**Correção recomendada:** criar teste com dois processos PDO independentes, mesma cobrança e valores que, juntos, excederiam o saldo. Um pagamento deve ser confirmado; o outro deve ser recusado após obter o bloqueio e reler o saldo. Adicionar também o cenário de duas tentativas com a mesma chave idempotente.
+**Cobertura adicionada:**
+- O teste mantém a cobrança bloqueada na conexão principal e inicia dois processos PHP independentes, cada um com sua própria conexão PDO.
+- Ambos tentam registrar R$ 200,00 na mesma cobrança de R$ 300,00, usando chaves idempotentes diferentes.
+- A expectativa é exatamente um pagamento confirmado e um evento de auditoria; a segunda requisição deve ser recusada especificamente por exceder o saldo, depois de obter o lock e reler o total pago.
+- A suíte também preserva o cenário F-01 de duas requisições concorrentes com a mesma chave, que devem retornar o mesmo ID de pagamento.
+- O teste verifica no banco quantidade, soma dos pagamentos e quantidade de eventos de auditoria.
 
 ### F-07 — Baixo: formatação monetária converte DECIMAL para float
 
@@ -137,8 +140,8 @@ Não recomendo adicionar agora um razão contábil de partidas dobradas, concili
 
 - CI #1312 foi aprovada integralmente: sete jobs verdes, incluindo MySQL 8.0, MariaDB 10.11, migrations, concorrência financeira, classificação de revisão e integração CRUD.
 - F-01 a F-04 estão implementados e validados na CI #1332, com sete jobs verdes nos fluxos MySQL 8.0 e MariaDB 10.11.
-- F-05: migration 013 e testes de rejeição para cobrança/pagamento com zero e valores negativos estão na branch; a execução atual da CI está pendente.
-- F-06: ainda falta um cenário concorrente específico para confirmar que duas conexões não ultrapassam o saldo restante.
+- F-05 foi validado integralmente na CI #1361: migration 013 e rejeição de zero/negativos em cobranças e pagamentos, em MySQL 8.0 e MariaDB 10.11.
+- F-06: teste com duas conexões, valores que somados excederiam o saldo e auditoria única foi publicado; aguarda validação na CI #1362.
 - Nenhuma migration foi aplicada no banco local do usuário.
 - PR #1 permanece Draft e não integrada; não fazer merge antes da validação final.
 
