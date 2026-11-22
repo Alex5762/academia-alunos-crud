@@ -171,9 +171,22 @@ final class FinanceService
             } finally {
                 $this->pdo->exec('SET @fitcontrol_payment_write = NULL');
             }
-            $paymentId = (int) $this->pdo->lastInsertId();
+            // Recupera pela chave única da operação, sem depender do estado
+            // de LAST_INSERT_ID() após a execução de gatilhos no banco.
+            $paymentIdQuery = $this->pdo->prepare(
+                'SELECT id
+                 FROM pagamentos
+                 WHERE cobranca_id = :charge_id
+                   AND chave_idempotencia = :idempotency_key
+                 LIMIT 1'
+            );
+            $paymentIdQuery->execute([
+                'charge_id' => $chargeId,
+                'idempotency_key' => $idempotencyKey,
+            ]);
+            $paymentId = (int) $paymentIdQuery->fetchColumn();
             if ($paymentId < 1) {
-                throw new UnexpectedValueException('O banco não retornou o ID do pagamento.');
+                throw new UnexpectedValueException('O banco não retornou o ID do pagamento recém-registrado.');
             }
 
             \FitControl\Security\AuditIntegrityChain::append(
