@@ -50,6 +50,13 @@ function assertFinanceRejected(callable $operation, string $message): void
     throw new RuntimeException($message);
 }
 
+function assertFinanceInvalid(callable $operation, string $message): void
+{
+    try { $operation(); }
+    catch (InvalidArgumentException) { return; }
+    throw new RuntimeException($message);
+}
+
 function assertFinanceSqlRejected(
     PDO $pdo,
     string $sql,
@@ -528,6 +535,44 @@ try {
         'A corrida de saldo deve produzir exatamente um evento de auditoria.'
     );
 
+    // F-08: recebimento retroativo pode ser lançado, mas exige justificativa;
+    // datas futuras são sempre rejeitadas no serviço.
+    assertFinanceInvalid(
+        fn () => $finance->registerPayment(
+            $balanceChargeId, $actorId, '10.00', 'PIX', '2026-11-20',
+            '33333333333333333333333333333333'
+        ),
+        'Pagamento retroativo sem observação deve ser recusado.'
+    );
+    assertFinanceInvalid(
+        fn () => $finance->registerPayment(
+            $balanceChargeId, $actorId, '10.00', 'PIX', '2026-11-23',
+            '44444444444444444444444444444444', 'Tentativa de data futura'
+        ),
+        'Pagamento com data futura deve ser recusado mesmo com observação.'
+    );
+    $retroPaymentId = $finance->registerPayment(
+        $balanceChargeId,
+        $actorId,
+        '10.00',
+        'PIX',
+        '2026-11-20',
+        '55555555555555555555555555555555',
+        'Recebimento em 20/11; lançado após conferência do comprovante.'
+    );
+    assertFinance($retroPaymentId > 0, 'Pagamento retroativo com justificativa deve ser aceito.');
+
+    $retroPaymentQuery = $pdo->prepare(
+        'SELECT data_pagamento, observacao FROM pagamentos WHERE id = :id'
+    );
+    $retroPaymentQuery->execute(['id' => $retroPaymentId]);
+    $retroPayment = $retroPaymentQuery->fetch();
+    assertFinance(
+        $retroPayment['data_pagamento'] === '2026-11-20'
+            && $retroPayment['observacao'] === 'Recebimento em 20/11; lançado após conferência do comprovante.',
+        'Data e justificativa do lançamento retroativo devem ser preservadas.'
+    );
+
     $paymentOne = $finance->registerPayment(
         $firstChargeId, $actorId, '100.00', 'PIX', '2026-11-22', 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', 'Pagamento parcial 1'
     );
@@ -741,6 +786,7 @@ try {
         ['pagamento_registrado', 'pagamentos', $paymentOne],
         ['pagamento_registrado', 'pagamentos', $paymentTwo],
         ['pagamento_registrado', 'pagamentos', $balanceRacePaymentId],
+        ['pagamento_registrado', 'pagamentos', $retroPaymentId],
         ['cobranca_criada', 'cobrancas', $balanceChargeId],
         ['cobranca_cancelada', 'cobrancas', $secondChargeId],
     ] as [$action, $entity, $entityId]) {
