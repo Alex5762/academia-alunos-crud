@@ -348,6 +348,16 @@ Depois de aplicar e validar a migration 010, faça backup e execute uma única v
 
 A migration adiciona uma chave aleatória por operação e um hash SHA-256 do conteúdo normalizado ao registro de pagamento. Pagamentos históricos permanecem válidos com as duas colunas nulas; novos pagamentos enviados pelo formulário recebem a chave automaticamente. Não execute novamente uma migration já aplicada.
 
+### 11. Migration 012 — Pagamentos append-only
+
+Depois de aplicar e validar as migrations 010 e 011, faça backup e execute uma única vez:
+
+```bat
+"C:\\xampp\\mysql\\bin\\mysql.exe" --host=127.0.0.1 --port=3306 --user=root academia_alunos < database\\migrations\\012_pagamentos_append_only.sql
+```
+
+A migration bloqueia INSERT direto fora do serviço financeiro e impede UPDATE/DELETE de pagamentos confirmados. Correções futuras deverão usar lançamentos compensatórios, como estorno/devolução, sem alterar o recebimento original. A variável de sessão de limpeza existe somente para o teardown dos testes automatizados e manutenção controlada; não deve ser usada pelo fluxo da aplicação.
+
 ## Estado e cautelas
 
 A CI valida as migrations 005/006/007/008 em MySQL 8.0 e MariaDB 10.11, incluindo preservação do texto original, reexecução segura da carga inicial, atribuição compatível dos perfis e cadeia de integridade. Isso não significa que tenham sido aplicadas no computador.
