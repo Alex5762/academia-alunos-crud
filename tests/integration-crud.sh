@@ -910,7 +910,8 @@ curl -fsS -L -c "$COOKIE_JAR" -b "$COOKIE_JAR" \
     -o "$TMP_DIR/legacy-review-saved.html"
 assert_contains "$TMP_DIR/legacy-review-saved.html" "Revisão mantida como pendente"
 assert_contains "$TMP_DIR/legacy-review-saved.html" "Documento recebido não permite confirmar o período exato."
-assert_contains "$TMP_DIR/legacy-review-saved.html" "Funcionário CI"
+RESPONSAVEL_REVISAO="$(db_value "SELECT nome FROM usuarios WHERE id = $USUARIO_ID")"
+assert_contains "$TMP_DIR/legacy-review-saved.html" "$RESPONSAVEL_REVISAO"
 
 REVIEW_STATE="$(db_value "SELECT resultado_atual FROM revisoes_legado WHERE id = $REVIEW_ID")"
 [[ "$REVIEW_STATE" == "PENDENTE_REVISAO" ]] || fail "A decisão não preservou o bloqueio da revisão pendente."
@@ -1006,4 +1007,4 @@ HTTP_CODE="$(curl -sS -o "$TMP_DIR/method.html" -w '%{http_code}' "$BASE_URL/sal
 [[ "$HTTP_CODE" == "405" ]] || fail "GET em salvar.php deveria retornar HTTP 405; retornou $HTTP_CODE."
 
 echo "10/10 - Verificações de integração concluídas."
-echo "CRUD real via HTTP, validação de e-mail e telefone, CSRF, pesquisa e persistência: OK"
+echo "CRUD real via HTTP, validação de e-mail e telefone, CSRF, pesquisa, revisão legada e persistência: OK"
