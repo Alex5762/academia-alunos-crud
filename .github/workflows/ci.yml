@@ -429,6 +429,11 @@ jobs:
           test -f alterar-status-aluno.php
           test -f docs/matriz-permissoes.md
           test -f auditoria.php
+          test -f checkins.php
+          test -f registrar-checkin.php
+          test -f src/Domain/Attendance/AttendanceCheckinService.php
+          test -f database/migrations/009_attendance_checkins.sql
+          test -f tests/database-attendance-checkin.php
           test -f detalhes-auditoria.php
           test -f src/Security/AuditIntegrityChain.php
           test -f database/migrations/008_audit_integrity_chain.sql
