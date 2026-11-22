@@ -522,9 +522,6 @@ try {
         }
     }
 
-    if ($actorId !== null) {
-}
-
     if ($reviewId !== null) {
         $deleteEvents = $pdo->prepare(
             'DELETE FROM revisoes_legado_eventos WHERE revisao_legado_id = :review_id'
