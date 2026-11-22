@@ -216,6 +216,9 @@ jobs:
       - name: Check required project files
         run: |
           test -f index.php
+          test -f gerenciar-plano.php
+          test -f salvar-plano.php
+          test -f planos.php
           test -f cadastro.php
           test -f salvar.php
           test -f excluir.php
