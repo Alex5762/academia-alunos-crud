@@ -10,7 +10,7 @@ $project = (Resolve-Path -LiteralPath $ProjectRoot).Path
 if (-not (Test-Path -LiteralPath (Join-Path $project "scripts\exportar-checkpoint-auditoria.php"))) { throw "A pasta informada não parece ser a raiz do FitControl." }
 if (-not (Test-Path -LiteralPath $PhpPath -PathType Leaf)) { throw "PHP não encontrado: $PhpPath" }
 $state = [System.IO.Path]::GetFullPath($StateDirectory)
-if ($state.Equals($project, [System.StringComparison]::OrdinalIgnoreCase) -or $state.StartsWith($project.TrimEnd("\") + "\", [System.StringComparison]::OrdinalIgnoreCase)) { throw "O armazenamento dos checkpoints deve ficar fora da pasta do projeto." }
+if ($state.Equals($project, [System.StringComparison]::OrdinalIgnoreCase) -or $state.StartsWith($project.TrimEnd('\') + '\', [System.StringComparison]::OrdinalIgnoreCase)) { throw "O armazenamento dos checkpoints deve ficar fora da pasta do projeto." }
 if ($DailyAt -notmatch '^(?:[01]\d|2[0-3]):[0-5]\d$') { throw "Informe o horário no formato HH:mm." }
 $taskName = "FitControl - Checkpoint externo da auditoria"
 $checkpointDirectory = Join-Path $state "checkpoints"
