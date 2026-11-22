@@ -2753,3 +2753,261 @@ body:not(.dashboard-body) .theme-option[aria-pressed="true"] {
     .enrollment-create-actions .button { width: 100%; }
     .enrollment-create-cta { width: 100%; justify-content: center; }
 }
+
+
+/* Fila e histórico administrativo de revisão de vínculos legados */
+.legacy-review-counts {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    margin: 22px 0;
+}
+.legacy-review-count {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 16px;
+    color: var(--ink);
+    text-decoration: none;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 13px;
+    transition: border-color .18s ease, transform .18s ease;
+}
+.legacy-review-count:hover,
+.legacy-review-count.is-selected {
+    border-color: var(--blue);
+    transform: translateY(-1px);
+}
+.legacy-review-count span {
+    color: var(--muted);
+    font-size: .78rem;
+    font-weight: 650;
+}
+.legacy-review-count strong {
+    font-size: 1.65rem;
+    font-variant-numeric: tabular-nums;
+}
+.legacy-review-search {
+    display: flex;
+    align-items: end;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 18px 0;
+}
+.legacy-review-search > div {
+    flex: 1 1 250px;
+}
+.legacy-review-search label,
+.legacy-review-form label {
+    display: block;
+    margin: 0 0 6px;
+    color: var(--ink);
+    font-size: .8rem;
+    font-weight: 700;
+}
+.legacy-review-search input,
+.legacy-review-form input,
+.legacy-review-form select,
+.legacy-review-form textarea {
+    width: 100%;
+    min-height: 44px;
+    padding: 10px 12px;
+    color: var(--ink);
+    background: var(--canvas);
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    font: inherit;
+}
+.legacy-review-form textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+.legacy-review-search input:focus,
+.legacy-review-form input:focus,
+.legacy-review-form select:focus,
+.legacy-review-form textarea:focus {
+    outline: 3px solid var(--blue-soft);
+    border-color: var(--blue);
+}
+.legacy-review-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 16px 0;
+}
+.legacy-review-filters a {
+    padding: 7px 11px;
+    color: var(--muted);
+    text-decoration: none;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    font-size: .78rem;
+    font-weight: 700;
+}
+.legacy-review-filters a.is-active {
+    color: var(--blue);
+    background: var(--blue-soft);
+    border-color: var(--blue);
+}
+.legacy-review-table .account-person small,
+.legacy-review-inactive {
+    display: block;
+    margin-top: 4px;
+    color: var(--muted);
+    font-size: .72rem;
+}
+.legacy-review-inactive {
+    color: #a15b26;
+}
+.legacy-review-student {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin: 18px 0;
+    padding: 14px;
+    background: var(--canvas);
+    border: 1px solid var(--line);
+    border-radius: 11px;
+}
+.legacy-review-student > div,
+.legacy-review-original > div {
+    display: grid;
+    gap: 4px;
+}
+.legacy-review-student span,
+.legacy-review-original dt,
+.legacy-review-event small,
+.legacy-review-profile-events small {
+    color: var(--muted);
+    font-size: .76rem;
+}
+.legacy-review-original {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    margin: 14px 0;
+}
+.legacy-review-original dt {
+    font-weight: 700;
+}
+.legacy-review-original dd {
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+.legacy-review-warning {
+    margin: 14px 0;
+    padding: 12px 14px;
+    color: #805a1d;
+    background: #fff7e7;
+    border: 1px solid #f0dfb8;
+    border-radius: 10px;
+    font-size: .84rem;
+    line-height: 1.55;
+}
+.legacy-review-form {
+    margin-top: 18px;
+}
+.legacy-review-wide,
+.legacy-review-period {
+    grid-column: 1 / -1;
+}
+.legacy-review-period {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    min-width: 0;
+    padding: 14px;
+    border: 1px solid var(--line);
+    border-radius: 11px;
+}
+.legacy-review-period legend {
+    padding: 0 6px;
+    color: var(--ink);
+    font-size: .82rem;
+    font-weight: 750;
+}
+.legacy-review-period .field-hint {
+    grid-column: 1 / -1;
+}
+.legacy-review-form-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 9px;
+    grid-column: 1 / -1;
+}
+.legacy-review-event-list,
+.legacy-review-profile-events ol {
+    display: grid;
+    gap: 12px;
+    margin: 14px 0 0;
+    padding: 0;
+    list-style: none;
+}
+.legacy-review-event {
+    padding: 14px;
+    background: var(--canvas);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+}
+.legacy-review-event-heading {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.legacy-review-event > p {
+    margin: 8px 0 0;
+    color: var(--muted);
+    font-size: .84rem;
+    line-height: 1.55;
+    overflow-wrap: anywhere;
+}
+.legacy-review-profile-link {
+    display: inline-flex;
+    margin-top: 12px;
+}
+.legacy-review-profile-events {
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid var(--line);
+}
+.legacy-review-profile-events li {
+    display: grid;
+    gap: 5px;
+}
+.legacy-review-profile-events li p {
+    margin: 0;
+    color: var(--muted);
+    font-size: .8rem;
+}
+:root[data-theme="dark"] .legacy-review-count,
+:root[data-theme="dark"] .legacy-review-student,
+:root[data-theme="dark"] .legacy-review-event {
+    background: #111c2d;
+    border-color: #35435a;
+}
+:root[data-theme="dark"] .legacy-review-search input,
+:root[data-theme="dark"] .legacy-review-form input,
+:root[data-theme="dark"] .legacy-review-form select,
+:root[data-theme="dark"] .legacy-review-form textarea {
+    color: #e8edf7;
+    background: #111c2d;
+    border-color: #35435a;
+}
+:root[data-theme="dark"] .legacy-review-warning {
+    color: #f2d18d;
+    background: #45391f;
+    border-color: #66532c;
+}
+@media (max-width: 680px) {
+    .legacy-review-counts { grid-template-columns: 1fr; }
+    .legacy-review-original { grid-template-columns: 1fr; }
+    .legacy-review-period { grid-template-columns: 1fr; }
+    .legacy-review-form-actions { flex-direction: column; align-items: stretch; }
+    .legacy-review-form-actions .button { width: 100%; }
+    .legacy-review-search > .button { flex: 1 1 auto; }
+}
