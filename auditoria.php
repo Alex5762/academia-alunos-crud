@@ -58,6 +58,23 @@ $pagina = is_string($paginaRecebida) && ctype_digit($paginaRecebida)
     : 1;
 $porPagina = 25;
 
+// Une a trilha geral aos eventos especializados de alteração de perfil.
+// O evento genérico correspondente é omitido para não duplicar a mesma ação.
+$fonteEventos = '(SELECT CONCAT("A-", LPAD(id, 20, "0")) AS id,
+                         usuario_id, acao, entidade, entidade_id, criado_em,
+                         NULL AS detalhes
+                  FROM auditoria
+                  WHERE acao <> "usuario_perfil_alterado"
+                  UNION ALL
+                  SELECT CONCAT("P-", LPAD(id, 20, "0")) AS id,
+                         responsavel_id AS usuario_id,
+                         "usuario_perfil_alterado" AS acao,
+                         "usuarios" AS entidade,
+                         usuario_id AS entidade_id,
+                         criado_em,
+                         CONCAT(perfil_anterior, " → ", perfil_novo) AS detalhes
+                  FROM usuarios_perfis_eventos)';
+
 $where = [];
 $parametros = [];
 
@@ -96,7 +113,7 @@ if ($dataFinal !== null) {
 $whereSql = $where === [] ? '' : ' WHERE ' . implode(' AND ', $where);
 $contar = $pdo->prepare(
     'SELECT COUNT(*)
-     FROM auditoria a
+     FROM ' . $fonteEventos . ' a
      LEFT JOIN usuarios u ON u.id = a.usuario_id'
      . $whereSql
 );
@@ -108,8 +125,8 @@ $offset = ($pagina - 1) * $porPagina;
 
 $consulta = $pdo->prepare(
     'SELECT a.id, a.usuario_id, a.acao, a.entidade, a.entidade_id, a.criado_em,
-            u.nome AS responsavel_nome, u.email AS responsavel_email
-     FROM auditoria a
+            a.detalhes, u.nome AS responsavel_nome, u.email AS responsavel_email
+     FROM ' . $fonteEventos . ' a
      LEFT JOIN usuarios u ON u.id = a.usuario_id'
      . $whereSql
      . ' ORDER BY a.criado_em DESC, a.id DESC
@@ -124,10 +141,10 @@ $consulta->execute();
 $eventos = $consulta->fetchAll();
 
 $opcoesAcao = $pdo->query(
-    'SELECT DISTINCT acao FROM auditoria ORDER BY acao ASC'
+    'SELECT DISTINCT acao FROM ' . $fonteEventos . ' eventos ORDER BY acao ASC'
 )->fetchAll(PDO::FETCH_COLUMN);
 $opcoesEntidade = $pdo->query(
-    'SELECT DISTINCT entidade FROM auditoria ORDER BY entidade ASC'
+    'SELECT DISTINCT entidade FROM ' . $fonteEventos . ' eventos ORDER BY entidade ASC'
 )->fetchAll(PDO::FETCH_COLUMN);
 
 function urlAuditoria(array $sobrescritas = []): string
@@ -209,7 +226,7 @@ function urlAuditoria(array $sobrescritas = []): string
                 <?php } else { ?>
                     <div class="table-scroll" tabindex="0" aria-label="Tabela de eventos de auditoria">
                         <table class="students-table accounts-table">
-                            <thead><tr><th scope="col">DATA E HORA</th><th scope="col">RESPONSÁVEL</th><th scope="col">AÇÃO</th><th scope="col">ENTIDADE</th><th scope="col">REGISTRO</th></tr></thead>
+                            <thead><tr><th scope="col">DATA E HORA</th><th scope="col">RESPONSÁVEL</th><th scope="col">AÇÃO</th><th scope="col">ENTIDADE</th><th scope="col">REGISTRO</th><th scope="col">DETALHES</th></tr></thead>
                             <tbody><?php foreach ($eventos as $evento) { ?>
                                 <tr>
                                     <td><?= escapar(formatarInstanteUtcNaAcademia($evento['criado_em'])) ?></td>
@@ -217,6 +234,7 @@ function urlAuditoria(array $sobrescritas = []): string
                                     <td><span class="account-status"><?= escapar($evento['acao']) ?></span></td>
                                     <td><?= escapar($evento['entidade']) ?></td>
                                     <td><?= $evento['entidade_id'] === null ? '—' : '#' . (int) $evento['entidade_id'] ?></td>
+                                    <td><?= escapar($evento['detalhes'] ?? '—') ?></td>
                                 </tr>
                             <?php } ?></tbody>
                         </table>
