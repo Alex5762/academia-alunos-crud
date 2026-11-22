@@ -103,3 +103,45 @@ O Bloco 05 é **Financeiro**. Ainda não foi implementado nem iniciado. Antes de
 ### Observação sobre a política de commits
 
 A implementação do Bloco 04 gerou commits separados por arquivo devido ao fluxo de publicação utilizado. A ADR-001 registra que isso foi uma exceção operacional e que futuras entregas devem agrupar mudanças relacionadas em commits lógicos. Não reescrever o histórico publicado para reduzir o contador.
+
+
+## 7. Atualização — Bloco 05 Financeiro (22/11/2026)
+
+### Decisões de negócio
+- Uma matrícula nova gera uma cobrança única pelo valor total do contrato; duração do plano não parcela nem divide o preço.
+- Exemplo: plano de três meses por R$ 300 gera uma cobrança de R$ 300. Para cobrança mensal, usa-se um plano com duração de um mês.
+- Vencimento padrão: data civil local do início da matrícula.
+- Pagamentos parciais permitidos; não podem exceder o saldo.
+- Cancelamento da matrícula não apaga pagamentos nem cancela a cobrança automaticamente.
+- Cobrança sem pagamentos pode ser cancelada separadamente, depois do cancelamento contratual, com justificativa e auditoria.
+- Cobrança com pagamentos não pode ser cancelada como se nada tivesse sido recebido; estorno/devolução é fluxo futuro.
+- Não há override pontual do preço no primeiro corte; o valor é copiado do plano e congelado.
+- Matrículas legadas/importadas não recebem cobranças retroativas.
+- Não há multi-tenancy nem integração com gateway.
+
+### Implementação publicada na branch
+- Migration database/migrations/010_financeiro.sql cria cobrancas e pagamentos.
+- EnrollmentCreationService cria cobrança única na mesma transação da matrícula e da cadeia de auditoria.
+- src/Domain/Finance/FinanceService.php registra pagamentos parciais, bloqueia concorrência por cobrança, rejeita excesso e cancela somente cobranças sem pagamentos após cancelamento da matrícula.
+- financeiro.php apresenta resumo, situação calculada, recebimentos e cancelamento condicionado.
+- RBAC finance.view, finance.register_payment e finance.cancel_charge para Administrador/Gestor; Operador sem acesso.
+- Testes de domínio e integração cobrem cobrança automática, preço total, vencimento, unicidade, pagamentos parciais, excesso de saldo, cancelamento e auditoria.
+- tests/integration-crud.sh inclui fixture de cobrança para validar o fluxo HTTP real de nova matrícula.
+- tests/browser-compatibility.mjs verifica a tela financeira em desktop e mobile.
+- README, guia XAMPP, matriz RBAC, roadmap e especificação financeira atualizados.
+
+### Estado técnico
+- Branch: feat/dashboard-portfolio.
+- PR #1 permanece aberta, Draft e não integrada.
+- HEAD consultado ao gravar esta atualização: cc6565be0f6da73c611961d6b8e6ade2cdcac92c.
+- CI #1242 estava em andamento no último estado consultado; consultar o resultado antes de declarar a entrega validada.
+- CI #1238/#1239 de commits anteriores falhou no teste HTTP de matrícula porque o fixture isolado de tests/integration-crud.sh ainda não criava a tabela cobrancas. A correção foi publicada em cc6565b: fixture agora cria a tabela, verifica cobrança e auditoria e remove a tabela antes de matriculas. As falhas antigas não representam o estado atual.
+- Nenhuma migration foi aplicada no XAMPP nem em banco local do usuário.
+- Não houve alteração em main, merge, force-push ou reescrita de histórico.
+
+### Próximos passos
+1. Verificar a CI #1242 e corrigir qualquer falha do commit atual.
+2. Inspecionar o teste de navegação financeira e o fluxo HTTP de matrícula com cobrança.
+3. Atualizar a descrição da PR #1 com o Bloco 05, mantendo-a Draft.
+4. Só depois da CI verde, preparar aplicação local da migration 010 após backup e inspeção de versão/engine; não executar automaticamente.
+5. Validar manualmente a experiência financeira em navegador/dispositivo real.

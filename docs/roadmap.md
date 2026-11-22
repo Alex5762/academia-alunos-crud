@@ -181,20 +181,28 @@ A migration 009 cria a estrutura de check-ins vinculada a alunos, matrículas e 
 
 ### Bloco 05 — Financeiro
 
-**Estado: modelagem parcialmente definida; implementação ainda não iniciada.** A especificação está em [Bloco 05 — Financeiro](bloco-05-financeiro.md).
-
-**Objetivo:** acompanhar cobranças e pagamentos vinculados às matrículas.
+**Estado: núcleo transacional e primeira interface implementados; validação da CI e revisão ainda em andamento.** Especificação em [Bloco 05 — Financeiro](bloco-05-financeiro.md).
 
 Decisões confirmadas:
-- Cada matrícula nova criada pelo sistema gera automaticamente uma única cobrança.
-- O valor do plano é o preço total do contrato, não um valor mensal a ser dividido. Ex.: plano de 3 meses por R$ 300 gera uma cobrança de R$ 300.
-- Para cobrança mensal, a academia cadastra um plano com duração de 1 mês.
-- Valores e durações permanecem editáveis no catálogo de cada instalação; matrículas e cobranças preservam snapshots históricos.
-- Matrículas legadas/importadas não geram dívidas retroativas automaticamente.
+- Cada matrícula nova criada pelo sistema gera automaticamente uma única cobrança pelo valor total do plano.
+- Plano de 3 meses por R$ 300 gera uma cobrança de R$ 300; para cobrança mensal, a academia contrata um plano de 1 mês.
+- O vencimento padrão é a data local de início da matrícula.
+- Pagamentos parciais são permitidos; não se aceita valor acima do saldo.
+- Cancelar a matrícula não apaga nem cancela automaticamente a cobrança. Cobrança sem pagamentos pode ser cancelada separadamente, após o cancelamento contratual e com motivo; cobrança com pagamentos exige fluxo futuro de estorno.
+- Preço e duração são configuráveis no catálogo; snapshots de matrículas/cobranças preservam o contrato. Não há override pontual de preço neste primeiro corte.
+- Matrículas legadas não recebem cobranças retroativas.
 
-Antes da migration e implementação, ainda precisam ser definidas a regra de vencimento, o pagamento parcial, o tratamento financeiro do cancelamento e a possibilidade de ajuste pontual do preço contratado.
+Entregas iniciais:
+- Migration 010 cria as tabelas cobrancas e pagamentos.
+- Criação automática da cobrança dentro da transação de matrícula e auditoria.
+- Serviço financeiro para pagamentos parciais e cancelamento condicionado.
+- Tela financeiro.php, resumo de valores, status calculado e ações com CSRF.
+- RBAC finance.*: Administrador e Gestor; Operador sem acesso.
+- Testes de domínio, integração HTTP e compatibilidade visual planejados na CI para MySQL 8.0/MariaDB 10.11.
 
-**Fora do escopo inicial:** gateways, cartão, Pix/boleto integrado, débito recorrente, parcelamento automático e multi-tenancy.
+**Ainda pendente:** confirmar CI do commit mais recente, revisar os fluxos de ponta a ponta, aplicar migration 010 no XAMPP somente após backup/inspeção e fazer teste manual. O Bloco 05 não deve ser considerado concluído nem pronto para produção.
+
+**Fora do escopo inicial:** gateways, cartão, Pix/boleto integrado, débito recorrente, parcelamento automático, estorno/devolução e multi-tenancy.
 
 ### Bloco 06 — Aulas e agenda
 
