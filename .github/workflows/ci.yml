@@ -288,6 +288,7 @@ jobs:
           mysql --host=127.0.0.1 --port=3306 --user=root < database/migrations/010_financeiro.sql
           mysql --host=127.0.0.1 --port=3306 --user=root < database/migrations/011_pagamento_idempotencia.sql
           mysql --host=127.0.0.1 --port=3306 --user=root < database/migrations/012_pagamentos_append_only.sql
+          mysql --host=127.0.0.1 --port=3306 --user=root < database/migrations/013_financeiro_valores_positivos.sql
           php scripts/inicializar-integridade-auditoria.php
 
       - name: Validate manual check-in, eligibility and daily uniqueness
@@ -450,6 +451,7 @@ jobs:
           test -f database/migrations/010_financeiro.sql
           test -f database/migrations/011_pagamento_idempotencia.sql
           test -f database/migrations/012_pagamentos_append_only.sql
+          test -f database/migrations/013_financeiro_valores_positivos.sql
           test -f src/Domain/Finance/FinanceService.php
           test -f tests/database-finance.php
           test -f tests/finance-dashboard-status.php
