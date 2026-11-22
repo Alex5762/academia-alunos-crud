@@ -147,6 +147,15 @@ A migration 010 deve ser executada somente após backup e conferência da versã
 - O cenário anterior de F-01 permanece: reenvio concorrente da mesma operação e mesma chave deve retornar o mesmo ID sem duplicar pagamento.
 - **Validação:** jobs financeiros da CI #1362 aprovados em MySQL 8.0 e MariaDB 10.11; ambos confirmaram exatamente um pagamento de R$ 200,00, uma recusa por saldo insuficiente e um evento de auditoria.
 
+## F-07 — Formatação monetária sem ponto flutuante
+
+- `FinanceMoneyFormatter` formata valores DECIMAL recebidos do PDO como texto e saldos calculados a partir de centavos inteiros.
+- A tela financeira não converte dinheiro para `float`, nem usa `number_format((float) ...)`.
+- `toCents()` centraliza a conversão exata de decimal para inteiro, com proteção contra overflow.
+- O formatador usa separadores brasileiros de milhar e decimal, valida exatamente duas casas e rejeita entradas inválidas e `float`.
+- Testes unitários cobrem valores zero, centavos, milhares, valores grandes, negativos e rejeição de tipos aproximados.
+- **Estado:** implementado; aguarda CI.
+
 ## Estado
 
-**F-01 a F-04 validados na CI #1332; F-05 validado na CI #1361; F-06 validado nos jobs financeiros da CI #1362.** A execução geral da CI ainda está concluindo os jobs de integração; não aplicar migrations no banco local sem backup e validação. PR #1 permanece Draft. Migration 013 documentada com pré-verificação dos dados e cautela para falha parcial dos dois comandos DDL. As migrations 011 e 012 estão incluídas na CI e no guia XAMPP. Não aplicar migrations no banco local sem backup e validação. PR #1 permanece Draft.
+**F-01 a F-04 validados na CI #1332; F-05 validado na CI #1361; F-06 validado nos jobs financeiros da CI #1362; F-07 implementado e aguardando CI.** A execução geral da CI ainda está concluindo os jobs de integração; não aplicar migrations no banco local sem backup e validação. PR #1 permanece Draft. Migration 013 documentada com pré-verificação dos dados e cautela para falha parcial dos dois comandos DDL. As migrations 011 e 012 estão incluídas na CI e no guia XAMPP. Não aplicar migrations no banco local sem backup e validação. PR #1 permanece Draft.
