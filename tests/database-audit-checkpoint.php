@@ -231,6 +231,21 @@ try {
         $rollbackReport['latest_checkpoint_ahead']['event_id'] === $futurePayload['checkpoint_event_id'],
         'O relatório deve identificar o checkpoint posterior à restauração.'
     );
+    assertCheckpoint(
+        $rollbackReport['potential_loss_window']['event_id_bounds']['exclusive_lower_bound']
+            === (int) $currentState['ultimo_evento_id']
+        && $rollbackReport['potential_loss_window']['event_id_bounds']['inclusive_upper_bound']
+            === $futurePayload['checkpoint_event_id'],
+        'O relatório deve delimitar a janela potencial de perda pelos IDs comprovados.'
+    );
+    assertCheckpoint(
+        $rollbackReport['potential_loss_window']['exact_missing_event_count'] === null,
+        'O relatório não deve inventar uma contagem de eventos perdidos a partir dos IDs.'
+    );
+    assertCheckpoint(
+        $rollbackReport['checkpoint_evidence_summary']['ahead_of_restore_count'] === 1,
+        'O resumo deve contabilizar checkpoints posteriores à restauração.'
+    );
 
     $tamperedReport = \FitControl\Security\AuditRecoveryDiagnostic::diagnose(
         $pdo,
