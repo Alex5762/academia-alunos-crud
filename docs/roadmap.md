@@ -181,15 +181,20 @@ A migration 009 cria a estrutura de check-ins vinculada a alunos, matrículas e 
 
 ### Bloco 05 — Financeiro
 
-**Objetivo:** acompanhar cobranças e pagamentos sem misturar o financeiro com o simples cadastro de alunos.
+**Estado: modelagem parcialmente definida; implementação ainda não iniciada.** A especificação está em [Bloco 05 — Financeiro](bloco-05-financeiro.md).
 
-Possíveis entregas:
-- Lançamentos vinculados a matrículas.
-- Situação de cobrança e pagamento.
-- Registro de pagamentos e inadimplência.
-- Resumo financeiro por período.
+**Objetivo:** acompanhar cobranças e pagamentos vinculados às matrículas.
 
-**Dependência:** planos e matrículas definidos no Bloco 03. Integrações com gateways e cobranças automáticas dependem de decisão separada.
+Decisões confirmadas:
+- Cada matrícula nova criada pelo sistema gera automaticamente uma única cobrança.
+- O valor do plano é o preço total do contrato, não um valor mensal a ser dividido. Ex.: plano de 3 meses por R$ 300 gera uma cobrança de R$ 300.
+- Para cobrança mensal, a academia cadastra um plano com duração de 1 mês.
+- Valores e durações permanecem editáveis no catálogo de cada instalação; matrículas e cobranças preservam snapshots históricos.
+- Matrículas legadas/importadas não geram dívidas retroativas automaticamente.
+
+Antes da migration e implementação, ainda precisam ser definidas a regra de vencimento, o pagamento parcial, o tratamento financeiro do cancelamento e a possibilidade de ajuste pontual do preço contratado.
+
+**Fora do escopo inicial:** gateways, cartão, Pix/boleto integrado, débito recorrente, parcelamento automático e multi-tenancy.
 
 ### Bloco 06 — Aulas e agenda
 
