@@ -123,15 +123,37 @@ $eventosRevisaoLegado = [];
 
 if ($historicoMatriculasDisponivel) {
     $consultaMatriculas = $pdo->prepare(
-        'SELECT id, plano_nome_contratado, valor_contratado,
-                duracao_contratada_valor, duracao_contratada_unidade,
-                inicio_em, fim_exclusivo_em, cancelada_em, origem,
-                motivo_cancelamento, criado_em
+        'SELECT
+            matriculas.id,
+            matriculas.plano_nome_contratado,
+            matriculas.valor_contratado,
+            matriculas.duracao_contratada_valor,
+            matriculas.duracao_contratada_unidade,
+            matriculas.inicio_em,
+            matriculas.fim_exclusivo_em,
+            matriculas.cancelada_em,
+            matriculas.origem,
+            matriculas.motivo_cancelamento,
+            matriculas.criado_em,
+            (
+                SELECT u.nome
+                FROM auditoria a
+                LEFT JOIN usuarios u ON u.id = a.usuario_id
+                WHERE a.acao = :acao_cancelamento
+                  AND a.entidade = :entidade_cancelamento
+                  AND a.entidade_id = matriculas.id
+                ORDER BY a.id DESC
+                LIMIT 1
+            ) AS responsavel_cancelamento
          FROM matriculas
          WHERE aluno_id = :aluno_id
          ORDER BY inicio_em DESC, id DESC'
     );
-    $consultaMatriculas->execute(['aluno_id' => $id]);
+    $consultaMatriculas->execute([
+        'acao_cancelamento' => 'matricula_cancelada',
+        'entidade_cancelamento' => 'matriculas',
+        'aluno_id' => $id,
+    ]);
 
     $fusoUtc = new DateTimeZone('UTC');
     $fusoAcademia = new DateTimeZone(
@@ -409,6 +431,9 @@ unset($_SESSION['mensagem']);
                             <?php if ($matricula['cancelamento_local'] !== null) { ?>
                                 <p class="enrollment-cancellation-note">
                                     Cancelada em <?= escapar($matricula['cancelamento_local']->format('d/m/Y H:i')) ?>
+                                    <?php if (!empty($matricula['responsavel_cancelamento'])) { ?>
+                                        · por <?= escapar($matricula['responsavel_cancelamento']) ?>
+                                    <?php } ?>
                                     <?php if (!empty($matricula['motivo_cancelamento'])) { ?>
                                         · <?= escapar($matricula['motivo_cancelamento']) ?>
                                     <?php } ?>
