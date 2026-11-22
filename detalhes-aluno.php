@@ -67,6 +67,7 @@ $colunasHistoricoEsperadas = [
         'aluno_id_origem',
         'resultado_atual',
         'fonte_referencia',
+        'atualizado_em',
     ],
 ];
 
