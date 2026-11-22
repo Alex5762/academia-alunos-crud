@@ -2662,6 +2662,11 @@ body:not(.dashboard-body) .theme-option[aria-pressed="true"] {
     background: #fff5df;
     border-color: #f0dfb8;
 }
+.account-status.is-review {
+    color: #315d8a;
+    background: #edf5ff;
+    border-color: #cbdff5;
+}
 :root[data-theme="dark"] .legacy-review-summary,
 :root[data-theme="dark"] .enrollment-history-item {
     background: #111c2d;
@@ -2677,6 +2682,11 @@ body:not(.dashboard-body) .theme-option[aria-pressed="true"] {
     color: #f2d18d;
     background: #45391f;
     border-color: #66532c;
+}
+:root[data-theme="dark"] .account-status.is-review {
+    color: #a9cfff;
+    background: #1e344e;
+    border-color: #345575;
 }
 :root[data-theme="dark"] .enrollment-status.is-expired {
     color: #bdc7d8;
