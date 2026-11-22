@@ -69,6 +69,22 @@ $colunasHistoricoEsperadas = [
         'fonte_referencia',
         'atualizado_em',
     ],
+    'revisoes_legado_eventos' => [
+        'id',
+        'revisao_legado_id',
+        'usuario_id',
+        'tipo_evento',
+        'resultado_anterior',
+        'resultado_novo',
+        'matricula_id',
+        'inicio_anterior',
+        'fim_exclusivo_anterior',
+        'inicio_novo',
+        'fim_exclusivo_novo',
+        'fonte_referencia',
+        'observacoes',
+        'criado_em',
+    ],
 ];
 
 $condicoesColunas = [];
