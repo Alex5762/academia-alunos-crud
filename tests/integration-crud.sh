@@ -1292,16 +1292,10 @@ assert_contains "$TMP_DIR/audit-enrollment-detail.html" "Intervalo contratual"
 assert_contains "$TMP_DIR/audit-enrollment-detail.html" "Plano CI Mensal"
 assert_contains "$TMP_DIR/audit-enrollment-detail.html" "matricula_criada"
 
-# Limpa apenas as tabelas descartáveis criadas por este teste.
-db_exec "DELETE FROM auditoria WHERE entidade = 'planos' AND entidade_id IN ($PLAN_ID, $UNUSED_PLAN_ID)"
-db_exec "DELETE FROM auditoria
-    WHERE entidade = 'matriculas'
-      AND entidade_id IN (SELECT id FROM matriculas WHERE plano_id = $PLAN_ID)"
+# A trilha é append-only. Eventos de teste permanecem no banco descartável
+# da CI; somente os registros de domínio e as tabelas temporárias são removidos.
 db_exec "DELETE FROM matriculas WHERE plano_id = $PLAN_ID"
 db_exec "DELETE FROM planos WHERE id IN ($PLAN_ID, $UNUSED_PLAN_ID)"
-db_exec "DELETE FROM auditoria
-    WHERE entidade = 'revisoes_legado'
-      AND entidade_id = $REVIEW_ID"
 db_exec "DELETE FROM revisoes_legado_eventos WHERE revisao_legado_id = $REVIEW_ID"
 db_exec "DROP TABLE revisoes_legado_eventos"
 db_exec "DELETE FROM revisoes_legado WHERE aluno_id_origem = $ALUNO_ID"
