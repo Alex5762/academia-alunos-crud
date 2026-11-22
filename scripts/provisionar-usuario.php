@@ -8,6 +8,7 @@ if (PHP_SAPI !== 'cli') {
 }
 
 require_once __DIR__ . '/../conexao.php';
+require_once __DIR__ . '/../src/Security/AuditIntegrityChain.php';
 
 /**
  * Lê um campo não secreto da entrada padrão.
@@ -68,13 +69,14 @@ try {
 
     $usuarioId = (int) $pdo->lastInsertId();
 
-    // Como o provisionamento é local via CLI, não existe sessão web autenticada
-    // que possa ser atribuída como autora. O evento fica identificado como CLI.
-    $registrarAuditoria = $pdo->prepare(
-        "INSERT INTO auditoria (usuario_id, acao, entidade, entidade_id)
-         VALUES (NULL, 'usuario_provisionado_cli', 'usuarios', :entidade_id)"
+    // O provisionamento local não tem sessão web; a autoria fica explicitamente nula.
+    \\FitControl\\Security\\AuditIntegrityChain::append(
+        $pdo,
+        null,
+        'usuario_provisionado_cli',
+        'usuarios',
+        $usuarioId
     );
-    $registrarAuditoria->execute(['entidade_id' => $usuarioId]);
 
     $pdo->commit();
 
