@@ -113,6 +113,10 @@ function runFinancePaymentWorker(array $arguments): never
         fwrite(STDOUT, 'PAYMENT_ID=' . $paymentId . "\n");
         fflush(STDOUT);
         exit(0);
+    } catch (DomainException $exception) {
+        fwrite(STDOUT, 'REJECTED=' . $exception->getMessage() . "\n");
+        fflush(STDOUT);
+        exit(0);
     } catch (Throwable $exception) {
         fwrite(STDERR, get_class($exception) . ': ' . $exception->getMessage() . "\n");
         exit(1);
@@ -226,6 +230,117 @@ function runFinanceIdempotencyRace(
     }
 }
 
+
+/**
+ * Disputa real de saldo: duas conexões independentes tentam pagar R$ 200,00
+ * numa cobrança de R$ 300,00. Só um lançamento pode ser confirmado.
+ */
+function runFinanceBalanceRace(PDO $pdo, int $chargeId, int $actorId): int
+{
+    $requests = [
+        ['200.00', 'PIX', '2026-11-22', '11111111111111111111111111111111', 'Corrida limite PIX'],
+        ['200.00', 'DINHEIRO', '2026-11-22', '22222222222222222222222222222222', 'Corrida limite dinheiro'],
+    ];
+    $workers = [];
+    $pdo->beginTransaction();
+
+    try {
+        $lock = $pdo->prepare('SELECT id FROM cobrancas WHERE id = :id FOR UPDATE');
+        $lock->execute(['id' => $chargeId]);
+        assertFinance((int) $lock->fetchColumn() === $chargeId, 'Cobrança do teste de limite não encontrada.');
+
+        foreach ($requests as [$amount, $method, $paymentDate, $key, $observation]) {
+            $pipes = [];
+            $process = proc_open(
+                [
+                    PHP_BINARY,
+                    __FILE__,
+                    '--idempotency-worker',
+                    (string) $chargeId,
+                    (string) $actorId,
+                    $amount,
+                    $method,
+                    $paymentDate,
+                    $key,
+                    $observation,
+                ],
+                [
+                    0 => ['pipe', 'r'],
+                    1 => ['pipe', 'w'],
+                    2 => ['pipe', 'w'],
+                ],
+                $pipes
+            );
+
+            assertFinance(is_resource($process), 'Não foi possível iniciar worker do teste de limite financeiro.');
+            fclose($pipes[0]);
+            stream_set_timeout($pipes[1], 15);
+            $workers[] = ['process' => $process, 'pipes' => $pipes];
+        }
+
+        foreach ($workers as $worker) {
+            $signal = fgets($worker['pipes'][1]);
+            $metadata = stream_get_meta_data($worker['pipes'][1]);
+            assertFinance(
+                $signal === "READY\n" && empty($metadata['timed_out']),
+                'Worker do limite não confirmou prontidão antes da liberação do bloqueio.'
+            );
+        }
+
+        $pdo->commit();
+
+        $paymentId = null;
+        $rejected = 0;
+        foreach ($workers as $index => $worker) {
+            $stdout = trim(stream_get_contents($worker['pipes'][1]));
+            $stderr = stream_get_contents($worker['pipes'][2]);
+            fclose($worker['pipes'][1]);
+            fclose($worker['pipes'][2]);
+
+            $exitCode = proc_close($worker['process']);
+            $workers[$index]['process'] = null;
+            $workers[$index]['pipes'] = [];
+
+            assertFinance($exitCode === 0, 'Worker do limite falhou: ' . trim($stderr));
+
+            if (preg_match('/^PAYMENT_ID=(\d+)$/D', $stdout, $matches) === 1) {
+                assertFinance($paymentId === null, 'A corrida confirmou mais de um pagamento.');
+                $paymentId = (int) $matches[1];
+                continue;
+            }
+
+            assertFinance(
+                str_starts_with($stdout, 'REJECTED=')
+                    && str_contains($stdout, 'excede o saldo em aberto'),
+                'A segunda requisição deve ser recusada especificamente por exceder o saldo: ' . $stdout
+            );
+            $rejected++;
+        }
+
+        assertFinance($paymentId !== null, 'A corrida deve confirmar exatamente um pagamento.');
+        assertFinance($rejected === 1, 'A corrida deve rejeitar exatamente uma requisição por saldo insuficiente.');
+
+        return $paymentId;
+    } catch (Throwable $exception) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        throw $exception;
+    } finally {
+        foreach ($workers as $worker) {
+            foreach ($worker['pipes'] as $pipe) {
+                if (is_resource($pipe)) {
+                    fclose($pipe);
+                }
+            }
+            if (isset($worker['process']) && is_resource($worker['process'])) {
+                proc_terminate($worker['process']);
+                proc_close($worker['process']);
+            }
+        }
+    }
+}
+
 if (($argv[1] ?? '') === '--idempotency-worker') {
     try {
         runFinancePaymentWorker($argv);
@@ -259,7 +374,7 @@ try {
         'INSERT INTO alunos (nome, telefone, email, plano, ativo)
          VALUES (:nome, :telefone, :email, :plano, 1)'
     );
-    for ($i = 1; $i <= 3; $i++) {
+    for ($i = 1; $i <= 4; $i++) {
         $createStudent->execute([
             'nome' => 'Aluno teste financeiro ' . $i,
             'telefone' => '217777' . str_pad((string) $i, 5, '0', STR_PAD_LEFT),
@@ -305,6 +420,18 @@ try {
     $raceChargeId = (int) $raceChargeQuery->fetchColumn();
     assertFinance($raceChargeId > 0, 'A matrícula concorrente precisa ter uma cobrança própria.');
     $chargeIds[] = $raceChargeId;
+
+    // Quarta matrícula isolada para a corrida de saldo: dois pagamentos de
+    // R$ 200,00 competirão por uma cobrança de R$ 300,00.
+    $balanceEnrollmentId = $enrollmentService->create(
+        $studentIds[3], $planIds[0], $actorId, financeDate('2026-12-15 09:00:00')
+    );
+    $enrollmentIds[] = $balanceEnrollmentId;
+    $balanceChargeQuery = $pdo->prepare('SELECT id FROM cobrancas WHERE matricula_id = :id');
+    $balanceChargeQuery->execute(['id' => $balanceEnrollmentId]);
+    $balanceChargeId = (int) $balanceChargeQuery->fetchColumn();
+    assertFinance($balanceChargeId > 0, 'A matrícula da corrida de saldo precisa ter cobrança.');
+    $chargeIds[] = $balanceChargeId;
 
     $raceKey = bin2hex(random_bytes(16));
     $raceObservation = 'Pagamento simultâneo com a mesma chave';
@@ -367,6 +494,40 @@ try {
     );
 
     $finance = new FinanceService($pdo, $clock);
+
+    // F-06: chaves distintas, mesma cobrança e pagamentos que somados
+    // ultrapassariam o contrato. O lock precisa permitir apenas um deles.
+    $balanceRacePaymentId = runFinanceBalanceRace($pdo, $balanceChargeId, $actorId);
+    $balanceRaceRows = $pdo->prepare(
+        'SELECT COUNT(*) AS quantidade, COALESCE(SUM(valor), 0.00) AS total
+         FROM pagamentos
+         WHERE cobranca_id = :charge_id'
+    );
+    $balanceRaceRows->execute(['charge_id' => $balanceChargeId]);
+    $balanceRace = $balanceRaceRows->fetch();
+    assertFinance(
+        (int) $balanceRace['quantidade'] === 1 && $balanceRace['total'] === '200.00',
+        'A corrida de saldo deve preservar exatamente um pagamento de R$ 200,00.'
+    );
+
+    $balanceRaceAudit = $pdo->prepare(
+        'SELECT COUNT(*) FROM auditoria
+         WHERE usuario_id = :actor_id
+           AND acao = :action
+           AND entidade = :entity
+           AND entidade_id = :entity_id'
+    );
+    $balanceRaceAudit->execute([
+        'actor_id' => $actorId,
+        'action' => 'pagamento_registrado',
+        'entity' => 'pagamentos',
+        'entity_id' => $balanceRacePaymentId,
+    ]);
+    assertFinance(
+        (int) $balanceRaceAudit->fetchColumn() === 1,
+        'A corrida de saldo deve produzir exatamente um evento de auditoria.'
+    );
+
     $paymentOne = $finance->registerPayment(
         $firstChargeId, $actorId, '100.00', 'PIX', '2026-11-22', 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', 'Pagamento parcial 1'
     );
@@ -579,13 +740,15 @@ try {
         ['cobranca_criada', 'cobrancas', $firstChargeId],
         ['pagamento_registrado', 'pagamentos', $paymentOne],
         ['pagamento_registrado', 'pagamentos', $paymentTwo],
+        ['pagamento_registrado', 'pagamentos', $balanceRacePaymentId],
+        ['cobranca_criada', 'cobrancas', $balanceChargeId],
         ['cobranca_cancelada', 'cobrancas', $secondChargeId],
     ] as [$action, $entity, $entityId]) {
         $audit->execute(['actor_id' => $actorId, 'action' => $action, 'entity' => $entity, 'entity_id' => $entityId]);
         assertFinance((int) $audit->fetchColumn() === 1, 'Evento de auditoria ausente: ' . $action);
     }
 
-    echo "Financeiro transacional: OK; cobrança única, pagamentos parciais, limite de saldo, cancelamento condicionado e auditoria validados.\n";
+    echo "Financeiro transacional: OK; idempotência, corrida de saldo em duas conexões, pagamentos parciais, constraints positivas, imutabilidade, revisão de matrícula, histórico e auditoria validados.\n";
 } finally {
     if ($chargeIds !== []) {
         $pdo->exec('SET @fitcontrol_finance_test_cleanup = 1');
