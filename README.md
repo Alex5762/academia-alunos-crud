@@ -222,7 +222,9 @@ Para conferir os resultados, consulte a aba **Actions** do GitHub. Uma execuçã
 - [Bloco 04 — frequência e check-in](docs/bloco-04-frequencia-checkin.md)
 - [Bloco 05 — financeiro](docs/bloco-05-financeiro.md)
 - [Revisão técnica do financeiro](docs/revisao-financeira-2026-11-22.md)
-- [Procedimento seguro para aplicar migrations 005/006 no XAMPP](docs/guia-migrations-xampp.md)
+- [Procedimento seguro para aplicar migrations 005–013 e validar o XAMPP](docs/guia-migrations-xampp.md)
+- [Bloco 05 — financeiro: arquitetura, implementação e validação](docs/bloco-05-financeiro.md)
+- [Revisão técnica e achados financeiros F-01 a F-08](docs/revisao-financeira-2026-11-22.md)
 - [Roadmap e critérios de evolução por blocos](docs/roadmap.md)
 - [Modelo de dados e migração de autenticação/auditoria](docs/modelo-dados-autenticacao-auditoria.md)
 
