@@ -1,0 +1,176 @@
+# Procedimento local — migrations 005 e 006 (FitControl)
+
+> **Escopo:** ambiente acadêmico/local com XAMPP. Este procedimento não autoriza uso em produção nem aplicação automática em banco com dados reais. As migrations 005 e 006 foram executadas na CI em MySQL 8.0 e MariaDB 10.11; isso não identifica nem valida a versão instalada no computador.
+
+## 1. Antes de começar
+
+1. Confirme que está na branch `feat/dashboard-portfolio` e que a árvore de trabalho está atualizada.
+2. Confirme que o projeto é o FitControl local e que o banco selecionado é `academia_alunos`.
+3. Não prossiga se houver dúvida sobre qual banco está conectado.
+4. Confirme que as migrations 001–004 já foram aplicadas. Não execute novamente migrations antigas às cegas: a 004 contém `ALTER TABLE` e não é uma operação de reexecução livre.
+5. Confirme que as tabelas `alunos`, `usuarios` e `auditoria` usam InnoDB. O bloqueio de linhas e a atomicidade dependem desse mecanismo.
+
+Abra o **Prompt de Comando (CMD)** do Windows e entre na pasta do projeto:
+
+```bat
+cd /d C:\xampp\htdocs\academia-alunos-crud
+```
+
+Se o projeto estiver em outro local, ajuste o caminho. Os comandos abaixo usam os executáveis padrão do XAMPP.
+
+## 2. Inspecionar a versão e o mecanismo do banco
+
+Execute:
+
+```bat
+"C:\xampp\mysql\bin\mysql.exe" --host=127.0.0.1 --port=3306 --user=root academia_alunos -e "SELECT VERSION() AS versao, @@version_comment AS distribuicao; SELECT TABLE_NAME, ENGINE FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME IN ('alunos','usuarios','auditoria');"
+```
+
+Se o usuário root tiver senha, acrescente `--password` ao comando; o cliente solicitará a senha. Não coloque a senha diretamente em arquivos ou no repositório.
+
+**Interrompa** se alguma tabela-base não existir, se alguma das tabelas acima não usar InnoDB ou se a versão/mecanismo não corresponder ao ambiente que você pretende validar. A CI cobre MySQL 8.0 e MariaDB 10.11, mas não substitui essa inspeção local.
+
+Para conferir se as colunas de autenticação e status esperadas estão presentes:
+
+```sql
+SHOW CREATE TABLE alunos;
+SHOW CREATE TABLE usuarios;
+SHOW CREATE TABLE auditoria;
+```
+
+Verifique também se `alunos.ativo` existe antes de continuar.
+
+## 3. Criar e conferir o backup
+
+Crie uma pasta fora de `htdocs`, para que o arquivo SQL não fique acessível pelo servidor web:
+
+```bat
+mkdir C:\xampp\backups
+```
+
+Gere o backup completo:
+
+```bat
+"C:\xampp\mysql\bin\mysqldump.exe" --host=127.0.0.1 --port=3306 --user=root --single-transaction --routines --triggers --events academia_alunos > "C:\xampp\backups\academia_alunos_pre_bloco03.sql"
+```
+
+Se houver senha no root, acrescente `--password` e informe-a quando solicitado.
+
+Confira se o arquivo foi criado e se não está vazio:
+
+```bat
+dir C:\xampp\backups\academia_alunos_pre_bloco03.sql
+```
+
+O backup só é útil se puder ser lido/restaurado. Para uma validação rigorosa, restaure-o em um banco descartável separado antes de alterar o banco de trabalho. Não teste a restauração sobre o banco original.
+
+## 4. Aplicar as migrations na ordem correta
+
+**Atenção:** a migration 005 cria tabelas e constraints (DDL). MySQL/MariaDB podem confirmar instruções DDL implicitamente; não conte com rollback transacional de toda a migration. Execute-a somente uma vez, após o backup.
+
+No CMD, a partir da raiz do projeto:
+
+```bat
+"C:\xampp\mysql\bin\mysql.exe" --host=127.0.0.1 --port=3306 --user=root academia_alunos < database\migrations\005_plans_enrollments_schema.sql
+```
+
+Se o comando terminar sem erro, execute a carga inicial:
+
+```bat
+"C:\xampp\mysql\bin\mysql.exe" --host=127.0.0.1 --port=3306 --user=root academia_alunos < database\migrations\006_import_legacy_review.sql
+```
+
+Se houver senha, acrescente `--password` a cada chamada. Não execute a 006 se a 005 tiver apresentado qualquer erro.
+
+### O que cada arquivo faz
+
+- **005 — DDL:** cria `planos`, `matriculas`, `revisoes_legado`, `controle_importacao_legado` e `revisoes_legado_eventos`, com InnoDB, índices e chaves estrangeiras.
+- **006 — DML transacional:** registra o maior ID de aluno existente no momento da primeira execução e cria uma revisão `PENDENTE_REVISAO` para cada aluno até esse limite. Não cria matrículas, não decide se havia contrato vigente e não inventa evidências. Reexecuções não sobrescrevem decisões humanas nem incluem alunos criados depois do corte.
+
+A 005 não é idempotente: se ela já tiver criado uma ou mais tabelas e falhar antes de terminar, **não a execute novamente às cegas**. Inspecione a estrutura e compare com o arquivo antes de qualquer reparo.
+
+## 5. Verificações depois da aplicação
+
+Execute estas consultas no banco `academia_alunos`:
+
+```sql
+SELECT TABLE_NAME, ENGINE
+FROM information_schema.TABLES
+WHERE TABLE_SCHEMA = DATABASE()
+  AND TABLE_NAME IN (
+    'planos',
+    'matriculas',
+    'revisoes_legado',
+    'controle_importacao_legado',
+    'revisoes_legado_eventos'
+  )
+ORDER BY TABLE_NAME;
+
+SELECT
+    (SELECT COUNT(*) FROM alunos) AS total_alunos,
+    (SELECT COUNT(*) FROM revisoes_legado) AS total_revisoes,
+    (SELECT ultimo_aluno_id FROM controle_importacao_legado WHERE id = 1) AS corte_importacao;
+
+SELECT COUNT(*) AS alunos_do_corte_sem_revisao
+FROM alunos a
+INNER JOIN controle_importacao_legado c
+    ON c.id = 1 AND a.id <= c.ultimo_aluno_id
+LEFT JOIN revisoes_legado r
+    ON r.aluno_id_origem = a.id
+WHERE r.id IS NULL;
+
+SELECT COUNT(*) AS revisoes_com_texto_original_divergente
+FROM revisoes_legado r
+INNER JOIN alunos a ON a.id = r.aluno_id_origem
+WHERE BINARY r.plano_texto_original <> BINARY a.plano;
+
+SELECT COUNT(*) AS matriculas_importadas_automaticamente
+FROM matriculas;
+```
+
+Critérios de conferência imediata:
+
+- As cinco tabelas novas devem existir e usar InnoDB.
+- `alunos_do_corte_sem_revisao` deve ser zero.
+- `revisoes_com_texto_original_divergente` deve ser zero.
+- `matriculas_importadas_automaticamente` deve ser zero logo após a primeira carga, pois nenhum contrato é inferido do texto livre.
+- Antes de novos cadastros, o total de revisões deve corresponder ao total de alunos incluídos no corte. Depois, alunos criados posteriormente ficam fora da carga inicial, por projeto.
+
+Inspecione as constraints e índices:
+
+```sql
+SHOW CREATE TABLE planos;
+SHOW CREATE TABLE matriculas;
+SHOW CREATE TABLE revisoes_legado;
+SHOW CREATE TABLE controle_importacao_legado;
+SHOW CREATE TABLE revisoes_legado_eventos;
+```
+
+Guarde os resultados da versão do banco, engines, contagens e definições das tabelas junto ao registro da validação local. Não inclua dados pessoais reais ou senhas nas evidências.
+
+## 6. Se alguma etapa falhar
+
+- **Falha na 005:** pare imediatamente. Não rode a 006 e não repita a 005. Colete a mensagem de erro e a saída de `SHOW CREATE TABLE`/metadados das tabelas que chegaram a ser criadas. Como DDL pode confirmar parcialmente, o estado precisa ser inspecionado.
+- **Falha na 006:** não presuma que a carga foi concluída. A parte DML está dentro de transação, mas confirme o estado da linha de controle e das revisões antes de repetir. Preserve qualquer decisão humana já existente.
+- **Necessidade de restaurar:** restaure o backup somente após decidir conscientemente que as alterações feitas depois dele podem ser descartadas. A restauração do dump substitui o estado do banco; não é um rollback seletivo das migrations.
+- Não apague manualmente tabelas novas para “tentar de novo” sem análise do estado e das FKs.
+
+## 7. Smoke test da aplicação
+
+Somente depois de confirmar as tabelas e constraints:
+
+1. Entre com uma conta fictícia já provisionada.
+2. Abra Planos; crie um rascunho e confirme que ele não pode ser contratado antes de estar completo e ativo.
+3. Complete os campos, ative o plano e confira a auditoria.
+4. Contrate para um aluno fictício e confira snapshot, período e histórico.
+5. Teste cancelamento de uma matrícula agendada e de uma ativa, sem usar registros reais.
+6. Abra Revisão de legados; valide a fila pendente e registre uma decisão somente com evidência fictícia/adequada ao exercício.
+7. Em um vínculo confirmado de teste, verifique a tela de retificação e confira que intervalo anterior e novo aparecem no histórico.
+
+Registre separadamente o que foi executado, o que passou e o que não foi testado. A CI verde não equivale à validação no XAMPP nem à inspeção em celular real.
+
+## Estado e cautelas
+
+As migrations 005/006 foram executadas pela CI em MySQL 8.0 e MariaDB 10.11, incluindo preservação do texto original e reexecução segura da carga inicial. Isso não significa que tenham sido aplicadas no computador.
+
+A PR #1 deve permanecer em Draft até a validação local, a inspeção física e a revisão final. Não fazer merge para `main` automaticamente.
