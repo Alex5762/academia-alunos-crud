@@ -74,6 +74,15 @@ CREATE TABLE revisoes_legado (
   DEFAULT CHARSET=utf8mb4
   COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE controle_importacao_legado (
+    id TINYINT UNSIGNED NOT NULL,
+    ultimo_aluno_id INT UNSIGNED NOT NULL,
+    concluido_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id)
+) ENGINE=InnoDB
+  DEFAULT CHARSET=utf8mb4
+  COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE revisoes_legado_eventos (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     revisao_legado_id BIGINT UNSIGNED NOT NULL,
