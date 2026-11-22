@@ -90,6 +90,17 @@ A migration 010 deve ser executada somente após backup e conferência da versã
 - Não é possível duplicar a cobrança da mesma matrícula.
 - Todo pagamento, ajuste ou estorno mantém histórico e auditoria.
 
+## F-01 — Idempotência de pagamentos
+
+- Migration 011 adiciona `chave_idempotencia` e `hash_requisicao` à tabela `pagamentos`, com unicidade por cobrança.
+- O formulário gera um token aleatório de 128 bits por operação; reenvios do mesmo POST reutilizam o mesmo token.
+- `FinanceService::registerPayment()` calcula SHA-256 dos campos normalizados (cobrança, ator, valor, forma, data e observação).
+- Reenvio com a mesma chave e o mesmo conteúdo retorna o ID original sem criar novo pagamento nem novo evento de auditoria.
+- Reutilização da chave com conteúdo diferente é recusada.
+- A consulta idempotente ocorre depois do `SELECT ... FOR UPDATE` da cobrança, serializando requisições concorrentes para a mesma cobrança.
+- Pagamentos anteriores à migration permanecem com as colunas novas nulas; a proteção se aplica aos novos registros.
+- Testes de domínio/banco cobrem reenvio idêntico, conflito de conteúdo e preservação da contagem de lançamentos.
+
 ## Estado
 
-**Núcleo transacional e primeira interface implementados.** CI #1243–#1245 aprovada; revisão técnica registrada em `docs/revisao-financeira-2026-11-22.md`. O bloco continua aberto para correções priorizadas e inspeção local após backup/migration.
+**Núcleo transacional, interface e F-01 implementados na branch de trabalho.** A migration 011 está incluída na CI e no guia XAMPP. Aguardando execução dos jobs e revisão adicional de concorrência real; não aplicar migration no banco local sem backup e validação. PR #1 permanece Draft.
