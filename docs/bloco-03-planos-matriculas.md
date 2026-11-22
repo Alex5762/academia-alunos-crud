@@ -1,6 +1,29 @@
 # Bloco 03 — Planos e matrículas
 
-> **Estado: especificação funcional aprovada e revisão técnica em andamento.** As regras de negócio, os limites temporais, os três resultados da revisão de legados e os critérios centrais de integridade foram consolidados. O modelo físico ainda depende da confirmação do MySQL/MariaDB e do InnoDB no XAMPP. Nenhuma tabela, migration, tela ou fluxo do Bloco 03 foi implementado.
+> **Estado: especificação funcional aprovada; camada de aplicação e interfaces iniciais em implementação e validação automatizada.** O catálogo de planos já possui serviço de domínio, interface administrativa e endpoints protegidos. O perfil do aluno já apresenta o histórico de matrículas quando o esquema completo está disponível, com situações derivadas em tempo de consulta e preservação do snapshot contratado. A compatibilidade dos serviços de domínio e das interfaces está sendo validada em MySQL 8.0 e MariaDB 10.11. As migrations 005 e 006 ainda não foram criadas, e nenhuma alteração estrutural foi aplicada à base local/XAMPP. A inspeção física em dispositivo real continua pendente.
+
+## 0. Estado de implementação (22/11/2026)
+
+### Implementado na branch de trabalho
+
+- Serviço de domínio para gerenciamento transacional do catálogo de planos, incluindo criação, edição, ativação, inativação e exclusão protegida.
+- Interface administrativa do catálogo em `planos.php`, com endpoints POST autenticados e protegidos por CSRF.
+- Atalho do catálogo na navegação do painel.
+- Exibição do histórico operacional no perfil individual do aluno, sem substituir o campo legado `alunos.plano`.
+- Derivação de `AGENDADA`, `ATIVA`, `VENCIDA` e `CANCELADA` a partir dos intervalos e do instante consultado; os estados temporais não são persistidos.
+- Apresentação das condições contratadas (nome, preço e duração), início, limite exclusivo, origem e motivo/instante de cancelamento.
+- Apresentação do resultado da revisão de legado e aviso de bloqueio quando a revisão está pendente.
+- Fallback seguro: se as tabelas/colunas necessárias ainda não existirem, o perfil continua exibindo dados cadastrais e auditoria, informando que o histórico será habilitado após as migrations.
+
+### Ainda pendente
+
+- Confirmar o resultado final da CI que cobre a nova interface do histórico.
+- Finalizar e validar as migrations 005 (DDL) e 006 (carga inicial de revisão de legados).
+- Inspecionar a versão real do MySQL/MariaDB e o mecanismo InnoDB no XAMPP antes de aplicar qualquer migration local.
+- Implementar os fluxos administrativos de criação/cancelamento/revisão de matrícula na interface.
+- Fazer inspeção física em dispositivo real e navegador adicional antes de retirar a PR do estado Draft.
+
+Nenhuma migration foi aplicada à base local e nenhuma operação de merge foi realizada.
 
 ## 1. Objetivo
 
