@@ -809,6 +809,7 @@ db_exec "ALTER TABLE matriculas
 db_exec "CREATE TABLE revisoes_legado (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
     aluno_id_origem INT UNSIGNED NOT NULL,
+    plano_texto_original VARCHAR(40) NOT NULL DEFAULT '',
     resultado_atual ENUM('VINCULO_CONFIRMADO','LEGADO_SEM_VIGENCIA','PENDENTE_REVISAO')
         NOT NULL DEFAULT 'PENDENTE_REVISAO',
     fonte_referencia VARCHAR(255) NULL,
@@ -839,8 +840,8 @@ db_exec "INSERT INTO matriculas (
 )"
 
 db_exec "INSERT INTO revisoes_legado (
-    aluno_id_origem, resultado_atual, fonte_referencia
-) VALUES ($ALUNO_ID, 'PENDENTE_REVISAO', 'Fixture automatizado de CI')"
+    aluno_id_origem, plano_texto_original, resultado_atual, fonte_referencia
+) VALUES ($ALUNO_ID, 'Plano CI Mensal legado', 'PENDENTE_REVISAO', 'Fixture automatizado de CI')"
 
 db_exec "CREATE TABLE revisoes_legado_eventos (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
