@@ -14,6 +14,20 @@ $databaseName = getenv('DB_NAME') ?: 'academia_alunos';
 $olderPath = $argv[1] ?? '';
 $newerPath = $argv[2] ?? '';
 
+$projectRoot = realpath(__DIR__ . '/..');
+foreach ([$olderPath, $newerPath] as $candidate) {
+    $directory = $candidate !== '' ? realpath(dirname($candidate)) : false;
+    if (
+        $projectRoot === false
+        || $directory === false
+        || $directory === $projectRoot
+        || str_starts_with($directory . DIRECTORY_SEPARATOR, $projectRoot . DIRECTORY_SEPARATOR)
+    ) {
+        fwrite(STDERR, "Informe dois checkpoints armazenados fora da pasta do projeto.\n");
+        exit(1);
+    }
+}
+
 if (!is_string($secret) || strlen($secret) < 32) {
     fwrite(STDERR, "Defina FITCONTROL_AUDIT_CHECKPOINT_SECRET com pelo menos 32 bytes aleatórios.\n");
     exit(1);
