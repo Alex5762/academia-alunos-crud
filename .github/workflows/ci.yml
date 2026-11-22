@@ -257,6 +257,9 @@ jobs:
       - name: Test enrollment status and cancellation eligibility
         run: php tests/enrollment-status.php
 
+      - name: Test UTC audit timestamp formatting in academy timezone
+        run: php tests/utc-academy-time-format.php
+
       - name: Check required project files
         run: |
           test -f index.php
@@ -282,6 +285,7 @@ jobs:
           test -f tests/enrollment-interval.php
           test -f src/Domain/Enrollment/EnrollmentStatus.php
           test -f tests/enrollment-status.php
+          test -f tests/utc-academy-time-format.php
           test -f src/Domain/Enrollment/EnrollmentCancellationService.php
           test -f src/Domain/Enrollment/EnrollmentCreationService.php
           test -f src/Domain/Enrollment/PlanManagementService.php
