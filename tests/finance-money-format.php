@@ -46,6 +46,23 @@ foreach ($centCases as [$input, $expected]) {
     );
 }
 
+
+$conversionCases = [
+    ['0.00', 0],
+    ['1.05', 105],
+    ['1234.56', 123456],
+    ['-1234.56', -123456],
+    [1234, 123400],
+    [null, 0],
+];
+
+foreach ($conversionCases as [$input, $expected]) {
+    assertFinanceMoneyFormat(
+        FinanceMoneyFormatter::toCents($input) === $expected,
+        'Conversão para centavos inesperada para ' . var_export($input, true)
+    );
+}
+
 foreach (['1', '1.2', '1.234', '1,23', 'abc', ''] as $invalid) {
     try {
         FinanceMoneyFormatter::formatDecimal($invalid);
