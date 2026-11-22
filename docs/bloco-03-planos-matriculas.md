@@ -1,39 +1,49 @@
 # Bloco 03 — Planos e matrículas
 
-> **Estado: especificação funcional aprovada; catálogo, histórico, contratação e fila inicial de revisão de legados implementados na branch e em validação automatizada.** A fila permite filtrar e pesquisar registros, registrar decisões autenticadas com evidência, intervalo comprovado e justificativa, e consultar eventos especializados no perfil do aluno. O fluxo reutiliza o serviço transacional de domínio e preserva auditoria append-only. As migrations 005 e 006 ainda não foram criadas, e nenhuma alteração estrutural foi aplicada à base local/XAMPP. A inspeção física em dispositivo real continua pendente.
+> **Estado em 22/11/2026: implementação funcional avançada na branch, com CI de push e PR aprovadas.** Catálogo de planos, criação e histórico de matrículas, cancelamento, revisão de vínculos legados e retificação de vigência estão implementados e cobertos por testes automatizados. As migrations 005 e 006 ainda não existem; o esquema do banco local/XAMPP não foi alterado. A inspeção em dispositivo físico e a validação das migrations no ambiente local continuam pendentes.
 
 ## 0. Estado de implementação (22/11/2026)
 
 ### Implementado na branch de trabalho
 
-- Serviço de domínio para gerenciamento transacional do catálogo de planos, incluindo criação, edição, ativação, inativação e exclusão protegida.
-- Interface administrativa do catálogo em `planos.php`, com endpoints POST autenticados e protegidos por CSRF.
-- Formulário inicial de contratação no catálogo, com seleção de aluno ativo, plano ativo, data e horário.
+- Serviço transacional do catálogo de planos, incluindo criação, edição, ativação, inativação e exclusão protegida.
+- Interface administrativa do catálogo em `planos.php`, com operações POST autenticadas e protegidas por CSRF.
+- Formulário de contratação no catálogo, com seleção de aluno ativo, plano ativo, data e horário.
 - Atalho de contratação no perfil do aluno, oculto quando o aluno está inativo ou a revisão de legado está pendente.
 - Integração com `EnrollmentCreationService`: bloqueios transacionais, validação de elegibilidade, detecção de sobreposição, snapshot do preço/nome/duração e auditoria atômica.
-- Regra de horário aplicada na interface: hoje sem horário resolve o instante depois dos bloqueios; data futura sem horário inicia às 00:00 no fuso da academia.
-- Teste HTTP que confirma o bloqueio quando a revisão está pendente e a contratação após o resultado de fixture `LEGADO_SEM_VIGENCIA`.
+- Regra de horário na contratação: hoje sem horário resolve o instante depois dos bloqueios; data futura sem horário começa às 00:00 no fuso da academia.
 - Fila administrativa de revisão de legados em `revisoes-legado.php`, com pendentes por padrão, filtros por resultado, busca e limite explícito de 100 registros por consulta.
-- Cancelamento de matrículas agendadas/ativas diretamente no histórico do perfil, com motivo opcional, proteção CSRF, revalidação transacional e auditoria atômica.
-- Formulário de decisão em `salvar-revisao-legado.php`, protegido por autenticação, POST e CSRF, com validação de fonte, observações, intervalo local exato e condições históricas opcionais comprovadas.
+- Decisão de revisão por `salvar-revisao-legado.php`, com autenticação, POST, CSRF, referência de evidência, justificativa e intervalo exato quando comprovado.
 - Histórico de decisões append-only na fila e no perfil do aluno, com responsável, resultado, fonte, observações e instante do evento.
-- Teste HTTP que valida a fila, bloqueio de CSRF, decisão pendente, evento especializado, auditoria geral e exibição do histórico no perfil.
-- Link administrativo da fila adicionado à navegação principal.
+- Cancelamento de matrículas agendadas/ativas no histórico do perfil, com motivo opcional, revalidação transacional e auditoria atômica.
+- Serviço `LegacyEnrollmentRectificationService` para corrigir somente o intervalo de uma matrícula `LEGADO`, preservando valores anteriores, condições históricas e cancelamento.
+- Interface específica em `retificar-vigencia-legado.php` e endpoint `salvar-retificacao-legado.php`, acessíveis a partir da revisão confirmada.
+- Formulário de retificação exibe o intervalo atual no fuso `America/Sao_Paulo`, exige nova fonte e justificativa e explica que somente início/fim exclusivo serão alterados.
+- Histórico especializado apresenta os intervalos anterior e novo; a operação registra evento append-only e auditoria geral na mesma transação.
+- Idempotência para repetição exata da última retificação, evitando evento ou auditoria duplicados.
 - Exibição do histórico operacional no perfil individual do aluno, sem substituir o campo legado `alunos.plano`.
 - Derivação de `AGENDADA`, `ATIVA`, `VENCIDA` e `CANCELADA` a partir dos intervalos e do instante consultado; os estados temporais não são persistidos.
-- Apresentação das condições contratadas (nome, preço e duração), início, limite exclusivo, origem e motivo/instante de cancelamento.
-- Apresentação do resultado da revisão de legado e aviso de bloqueio quando a revisão está pendente.
-- Fallback seguro: se as tabelas/colunas necessárias ainda não existirem, o perfil continua exibindo dados cadastrais e auditoria, informando que o histórico será habilitado após as migrations.
+- Fallback seguro no perfil e na nova tela quando as estruturas do Bloco 03 ainda não existem.
+- Testes de domínio, persistência, concorrência, rollback, integração HTTP, CSRF, auditoria, idempotência e regressão dos fluxos existentes.
+
+### Validação automatizada confirmada
+
+- CI de push #741: PHP/integração HTTP/capturas, MySQL 8.0 e MariaDB 10.11 aprovados.
+- CI de pull request #742: PHP/integração HTTP, MySQL 8.0 e MariaDB 10.11 aprovados.
+- A CI HTTP usa tabelas de fixture descartáveis para exercitar a interface de retificação; isso valida a aplicação, mas não substitui a execução das migrations 005/006, que ainda não foram criadas.
+- A publicação de capturas é executada no fluxo de push; a execução de PR não publica diretamente os arquivos.
 
 ### Ainda pendente
 
-- Confirmar a CI da interface de contratação, incluindo o novo cenário HTTP, e a publicação resiliente de capturas.
-- Implementar e validar a interface específica de retificação de vigência já suportada pelo serviço de domínio.
-- Finalizar e validar as migrations 005 (DDL) e 006 (carga inicial de revisão de legados).
-- Inspecionar a versão real do MySQL/MariaDB e o mecanismo InnoDB no XAMPP antes de aplicar qualquer migration local.
+- Projetar, implementar e revisar as migrations 005 (DDL do catálogo/matrículas/revisão/eventos) e 006 (carga inicial transacional dos legados).
+- Adicionar as migrations à sequência de importação da CI e testar banco limpo, banco com alunos existentes, reexecução segura e preservação de dados.
+- Confirmar a versão real do MySQL/MariaDB e o mecanismo InnoDB no XAMPP antes de qualquer aplicação local.
+- Executar as migrations no XAMPP somente depois da revisão, com backup e inspeção de `SHOW CREATE TABLE`/metadados após o DDL.
+- Validar no navegador local os fluxos completos de contratação, revisão, retificação, cancelamento e histórico.
 - Fazer inspeção física em dispositivo real antes de retirar a PR do estado Draft.
 
-Nenhuma migration foi aplicada à base local e nenhuma operação de merge foi realizada.
+Nenhuma migration 005/006 foi aplicada à base local e nenhuma operação de merge foi realizada. A PR #1 continua aberta em Draft; `main` permanece intacta.
+
 
 ## 1. Objetivo
 
