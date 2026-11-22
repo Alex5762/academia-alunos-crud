@@ -182,7 +182,7 @@ function urlAuditoria(array $sobrescritas = []): string
     <main class="app-main">
         <header class="topbar">
             <div><span class="eyebrow">SEGURANÇA E GOVERNANÇA</span><h1>Central de auditoria</h1></div>
-            <span class="account-current"><?= escapar($usuario['nome']) ?> · <?= escapar(\\FitControl\\Security\\AccessControl::label($usuario['perfil'])) ?></span>
+            <span class="account-current"><?= escapar($usuario['nome']) ?> · <?= escapar(\FitControl\Security\AccessControl::label($usuario['perfil'])) ?></span>
         </header>
         <div class="page-content">
             <section class="page-heading">
