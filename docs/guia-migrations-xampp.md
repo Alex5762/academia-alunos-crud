@@ -338,6 +338,16 @@ mysql -u root academia_alunos < database/migrations/010_financeiro.sql
 
 A migration cria \`cobrancas\` e \`pagamentos\`; não cria cobranças retroativas para matrículas antigas. Confirme as duas tabelas e suas chaves no phpMyAdmin ou no cliente SQL. Não execute novamente uma migration de criação de tabelas já aplicada. A CI valida MySQL 8.0 e MariaDB 10.11, mas isso não substitui backup nem validação local.
 
+### 10. Migration 011 — Idempotência de pagamentos
+
+Depois de aplicar e validar a migration 010, faça backup e execute uma única vez:
+
+```bat
+"C:\\xampp\\mysql\\bin\\mysql.exe" --host=127.0.0.1 --port=3306 --user=root academia_alunos < database\\migrations\\011_pagamento_idempotencia.sql
+```
+
+A migration adiciona uma chave aleatória por operação e um hash SHA-256 do conteúdo normalizado ao registro de pagamento. Pagamentos históricos permanecem válidos com as duas colunas nulas; novos pagamentos enviados pelo formulário recebem a chave automaticamente. Não execute novamente uma migration já aplicada.
+
 ## Estado e cautelas
 
 A CI valida as migrations 005/006/007/008 em MySQL 8.0 e MariaDB 10.11, incluindo preservação do texto original, reexecução segura da carga inicial, atribuição compatível dos perfis e cadeia de integridade. Isso não significa que tenham sido aplicadas no computador.
