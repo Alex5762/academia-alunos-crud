@@ -68,7 +68,7 @@ As imagens abaixo são capturadas automaticamente pelo GitHub Actions com regist
 - Fila de revisão de vínculos legados, decisões fundamentadas por evidência e histórico append-only.
 - Retificação auditada de vigência legada, preservando o intervalo anterior e exigindo nova fonte e justificativa.
 
-> **Estado do Bloco 03 na branch:** os fluxos de aplicação e os testes HTTP estão implementados; as migrations 005/006 ainda não foram criadas/aplicadas. Não execute o fluxo integrado no XAMPP até concluir as migrations revisadas. A CI #741 (push) e #742 (PR) passou em MySQL 8.0 e MariaDB 10.11. A PR permanece Draft e a inspeção em dispositivo físico continua pendente.
+> **Estado do Bloco 03 na branch (22/11/2026):** os fluxos de aplicação, migrations 005/006 e testes automatizados estão implementados. As CIs #760 (push) e #761 (PR) passaram integralmente, incluindo execução das migrations em MySQL 8.0 e MariaDB 10.11. Isso não significa que o banco local/XAMPP tenha sido alterado: a aplicação local ainda depende de backup, inspeção da versão e execução manual conforme [guia de migrations para XAMPP](docs/guia-migrations-xampp.md). A PR #1 permanece Draft, `main` intacta e a inspeção em dispositivo físico pendente.
 
 Cada aluno possui nome, telefone, e-mail, plano (Mensal, Trimestral, Semestral ou Anual) e situação ativa/inativa. Registros inativos permanecem consultáveis e editáveis.
 
@@ -90,6 +90,7 @@ academia-alunos-crud/
 │   └── workflows/
 │       └── ci.yml
 ├── docs/
+│   ├── guia-migrations-xampp.md
 │   ├── relatorio-testes-academia-alunos.md
 │   └── screenshots/
 │       ├── dashboard-desktop.png
@@ -196,7 +197,8 @@ Para conferir os resultados, consulte a aba **Actions** do GitHub. Uma execuçã
 - [Roadmap e critérios de evolução por blocos](docs/roadmap.md)
 - [Planejamento do Bloco 01 — autenticação e auditoria](docs/bloco-01-autenticacao.md)
 - [Planejamento do Bloco 02 — gestão de alunos](docs/bloco-02-gestao-alunos.md)
-- [Pesquisa e proposta técnica do Bloco 03 — planos e matrículas](docs/bloco-03-planos-matriculas.md)
+- [Pesquisa, implementação e estado do Bloco 03 — planos e matrículas](docs/bloco-03-planos-matriculas.md)
+- [Procedimento seguro para aplicar migrations 005/006 no XAMPP](docs/guia-migrations-xampp.md)
 - [Roadmap e critérios de evolução por blocos](docs/roadmap.md)
 - [Modelo de dados e migração de autenticação/auditoria](docs/modelo-dados-autenticacao-auditoria.md)
 
