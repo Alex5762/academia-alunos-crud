@@ -10,6 +10,11 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 validarToken();
 require_once __DIR__ . '/conexao.php';
 $usuario = exigirAutenticacao($pdo);
+$idRecebidoParaPermissao = $_POST['id'] ?? '';
+exigirPermissao(
+    $usuario,
+    $idRecebidoParaPermissao === '' ? 'students.create' : 'students.update'
+);
 $contextoLista = obterContextoListaAlunos($_POST);
 
 // Aceita somente textos nos campos esperados.
