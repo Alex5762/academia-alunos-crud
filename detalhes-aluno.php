@@ -99,6 +99,7 @@ $historicoMatriculasDisponivel = (int) $consultaEstrutura->fetchColumn() === $to
 
 $matriculas = [];
 $revisaoLegado = null;
+$eventosRevisaoLegado = [];
 
 if ($historicoMatriculasDisponivel) {
     $consultaMatriculas = $pdo->prepare(
@@ -148,6 +149,30 @@ if ($historicoMatriculasDisponivel) {
     );
     $consultaRevisao->execute(['aluno_id' => $id]);
     $revisaoLegado = $consultaRevisao->fetch(PDO::FETCH_ASSOC) ?: null;
+
+    if ($revisaoLegado !== null) {
+        $consultaEventosRevisao = $pdo->prepare(
+            'SELECT
+                e.tipo_evento,
+                e.resultado_anterior,
+                e.resultado_novo,
+                e.inicio_anterior,
+                e.fim_exclusivo_anterior,
+                e.inicio_novo,
+                e.fim_exclusivo_novo,
+                e.fonte_referencia,
+                e.observacoes,
+                e.criado_em,
+                u.nome AS responsavel
+             FROM revisoes_legado_eventos e
+             LEFT JOIN usuarios u ON u.id = e.usuario_id
+             WHERE e.revisao_legado_id = :review_id
+             ORDER BY e.id DESC
+             LIMIT 10'
+        );
+        $consultaEventosRevisao->execute(['review_id' => $revisaoLegado['id']]);
+        $eventosRevisaoLegado = $consultaEventosRevisao->fetchAll(PDO::FETCH_ASSOC);
+    }
 }
 
 $rotulosEventos = [
@@ -276,6 +301,33 @@ unset($_SESSION['mensagem']);
                         <p>Não há vínculo antigo vigente confirmado. Uma nova contratação pode seguir o fluxo normal.</p>
                     <?php } else { ?>
                         <p>O vínculo anterior foi confirmado. Consulte abaixo o intervalo comprovado e seu histórico.</p>
+                    <?php } ?>
+                    <a class="button button-search legacy-review-profile-link"
+                       href="revisoes-legado.php?filtro=todos&amp;review_id=<?= (int) $revisaoLegado['id'] ?>">
+                        <?= $situacaoRevisao === 'PENDENTE_REVISAO' ? 'Analisar revisão' : 'Consultar revisão' ?>
+                    </a>
+                    <?php if ($eventosRevisaoLegado !== []) { ?>
+                        <div class="legacy-review-profile-events">
+                            <strong>Últimas decisões registradas</strong>
+                            <ol>
+                                <?php foreach ($eventosRevisaoLegado as $eventoRevisao) { ?>
+                                    <li>
+                                        <span><?= escapar($eventoRevisao['tipo_evento'] === 'RETIFICACAO_VIGENCIA' ? 'Retificação' : 'Decisão') ?> ·
+                                            <?= escapar($rotulosRevisao[$eventoRevisao['resultado_novo']] ?? 'Resultado não reconhecido') ?></span>
+                                        <small>
+                                            <?= escapar($eventoRevisao['responsavel'] ?? 'Funcionário não identificado') ?>
+                                            · <?= escapar($eventoRevisao['criado_em']) ?>
+                                        </small>
+                                        <?php if (!empty($eventoRevisao['fonte_referencia'])) { ?>
+                                            <small>Fonte: <?= escapar($eventoRevisao['fonte_referencia']) ?></small>
+                                        <?php } ?>
+                                        <?php if (!empty($eventoRevisao['observacoes'])) { ?>
+                                            <p><?= nl2br(escapar($eventoRevisao['observacoes'])) ?></p>
+                                        <?php } ?>
+                                    </li>
+                                <?php } ?>
+                            </ol>
+                        </div>
                     <?php } ?>
                 </div>
             <?php } ?>
