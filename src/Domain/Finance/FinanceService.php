@@ -39,6 +39,7 @@ final class FinanceService
         string $amount,
         string $method,
         string $paymentDateLocal,
+        string $idempotencyKey,
         ?string $observation = null
     ): int {
         if ($chargeId < 1 || $actorUserId < 1) {
@@ -49,6 +50,9 @@ final class FinanceService
         }
         if (!in_array($method, ['DINHEIRO', 'PIX', 'TRANSFERENCIA', 'CARTAO', 'OUTRO'], true)) {
             throw new InvalidArgumentException('A forma de pagamento é inválida.');
+        }
+        if (preg_match('/^[a-f0-9]{32}$/D', $idempotencyKey) !== 1) {
+            throw new InvalidArgumentException('A chave de idempotência é inválida.');
         }
 
         $nowLocal = $this->nowLocal();
@@ -71,6 +75,16 @@ final class FinanceService
             throw new InvalidArgumentException('A observação deve ter até 255 caracteres UTF-8.');
         }
 
+        $requestPayload = json_encode([
+            'charge_id' => $chargeId,
+            'actor_user_id' => $actorUserId,
+            'amount' => $amount,
+            'method' => $method,
+            'payment_date' => $paymentDateLocal,
+            'observation' => $observation,
+        ], JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        $requestFingerprint = hash('sha256', $requestPayload);
+
         $this->beginOwnedTransaction();
         try {
             $lock = $this->pdo->prepare(
@@ -85,6 +99,34 @@ final class FinanceService
             if (!$charge) {
                 throw new DomainException('Cobrança não encontrada.');
             }
+
+            // A linha da cobrança já está bloqueada: reenvios concorrentes da mesma
+            // operação aguardam aqui e passam a enxergar o lançamento confirmado.
+            $existingPaymentQuery = $this->pdo->prepare(
+                'SELECT id, hash_requisicao
+                 FROM pagamentos
+                 WHERE cobranca_id = :charge_id
+                   AND chave_idempotencia = :idempotency_key
+                 LIMIT 1'
+            );
+            $existingPaymentQuery->execute([
+                'charge_id' => $chargeId,
+                'idempotency_key' => $idempotencyKey,
+            ]);
+            $existingPayment = $existingPaymentQuery->fetch();
+            if ($existingPayment) {
+                $storedFingerprint = (string) ($existingPayment['hash_requisicao'] ?? '');
+                if ($storedFingerprint === '' || !hash_equals($storedFingerprint, $requestFingerprint)) {
+                    throw new DomainException(
+                        'A chave de idempotência já foi utilizada com dados diferentes.'
+                    );
+                }
+
+                $existingPaymentId = (int) $existingPayment['id'];
+                $this->pdo->commit();
+                return $existingPaymentId;
+            }
+
             if ($charge['cancelada_em_utc'] !== null) {
                 throw new DomainException('Uma cobrança cancelada não aceita pagamentos.');
             }
@@ -106,10 +148,11 @@ final class FinanceService
             $insert = $this->pdo->prepare(
                 'INSERT INTO pagamentos (
                     cobranca_id, valor, forma_pagamento, data_pagamento, observacao,
-                    registrado_por, registrado_em_utc
+                    registrado_por, registrado_em_utc,
+                    chave_idempotencia, hash_requisicao
                  ) VALUES (
                     :charge_id, :amount, :method, :payment_date, :observation,
-                    :actor_id, :registered_at
+                    :actor_id, :registered_at, :idempotency_key, :request_fingerprint
                  )'
             );
             $insert->execute([
@@ -120,6 +163,8 @@ final class FinanceService
                 'observation' => $observation,
                 'actor_id' => $actorUserId,
                 'registered_at' => $nowLocal->setTimezone($this->utcTimezone)->format('Y-m-d H:i:s'),
+                'idempotency_key' => $idempotencyKey,
+                'request_fingerprint' => $requestFingerprint,
             ]);
             $paymentId = (int) $this->pdo->lastInsertId();
             if ($paymentId < 1) {
