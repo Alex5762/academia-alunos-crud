@@ -63,6 +63,12 @@ As imagens abaixo são capturadas automaticamente pelo GitHub Actions com regist
 - Expiração após 30 minutos sem interação ou 8 horas desde o login, com aviso antecipado e opção de continuar conectado.
 - Sincronização autenticada da sessão enquanto o funcionário interage com a página, sem renovar sessões abandonadas.
 - Auditoria de login/logout e das operações de cadastro, edição, inativação e reativação de alunos.
+- Catálogo administrativo de planos, com rascunho, ativação, inativação e proteção de planos vinculados a matrículas.
+- Contratação e histórico de matrículas com snapshot de preço/duração, cálculo de vigência, detecção de sobreposição e cancelamento auditado.
+- Fila de revisão de vínculos legados, decisões fundamentadas por evidência e histórico append-only.
+- Retificação auditada de vigência legada, preservando o intervalo anterior e exigindo nova fonte e justificativa.
+
+> **Estado do Bloco 03 na branch:** os fluxos de aplicação e os testes HTTP estão implementados; as migrations 005/006 ainda não foram criadas/aplicadas. Não execute o fluxo integrado no XAMPP até concluir as migrations revisadas. A CI #741 (push) e #742 (PR) passou em MySQL 8.0 e MariaDB 10.11. A PR permanece Draft e a inspeção em dispositivo físico continua pendente.
 
 Cada aluno possui nome, telefone, e-mail, plano (Mensal, Trimestral, Semestral ou Anual) e situação ativa/inativa. Registros inativos permanecem consultáveis e editáveis.
 
