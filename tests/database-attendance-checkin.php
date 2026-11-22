@@ -108,6 +108,7 @@ $definitions = [
     ['Aluno com matrícula futura', 1],
     ['Aluno com matrícula vencida', 1],
     ['Aluno com matrícula cancelada', 1],
+    ['Aluno para teste de rollback', 1],
 ];
 
 foreach ($definitions as $index => [$name, $active]) {
@@ -147,6 +148,7 @@ $enrollmentFixtures = [
     [3, '2026-11-23 00:00:00', '2026-12-23 00:00:00', null],
     [4, '2026-10-01 00:00:00', '2026-11-22 09:00:00', null],
     [5, '2026-11-01 00:00:00', '2026-12-01 00:00:00', '2026-11-20 12:00:00'],
+    [6, '2026-11-01 00:00:00', '2026-12-01 00:00:00', null],
 ];
 
 foreach ($enrollmentFixtures as [$studentIndex, $startsAt, $endsAt, $cancelledAt]) {
@@ -225,6 +227,18 @@ try {
         'Matrícula cancelada não pode habilitar check-in.'
     );
 
+    // Uma falha de FK na gravação da auditoria deve reverter também o check-in.
+    try {
+        $service->register($studentIds[6], 4294967295);
+        throw new RuntimeException('A autoria inexistente deveria fazer a transação falhar.');
+    } catch (PDOException) {
+        $rollbackCount = $pdo->prepare(
+            'SELECT COUNT(*) FROM checkins WHERE aluno_id = :student_id'
+        );
+        $rollbackCount->execute(['student_id' => $studentIds[6]]);
+        assertAttendance((int) $rollbackCount->fetchColumn() === 0, 'Falha de auditoria precisa reverter o check-in.');
+    }
+
     $auditCount = $pdo->prepare(
         'SELECT COUNT(*)
          FROM auditoria
@@ -267,6 +281,9 @@ try {
         'index_name' => 'uq_checkins_aluno_data_local',
     ]);
     assertAttendance((int) $uniqueIndex->fetchColumn() === 2, 'A proteção de duplicidade deve usar chave única por aluno/dia.');
+
+    $integrity = \\FitControl\\Security\\AuditIntegrityChain::verify($pdo);
+    assertAttendance($integrity['ok'], 'A cadeia geral de auditoria precisa permanecer íntegra.');
 
     echo "Check-in: elegibilidade, UTC, unicidade diária e auditoria aprovados.\n";
 } finally {
