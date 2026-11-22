@@ -651,6 +651,15 @@ echo "9.5/10 - Validando catálogo de planos pela interface autenticada..."
 HTTP_CODE="$(curl -sS -o "$TMP_DIR/plans-anonymous.html" -w '%{http_code}' "$BASE_URL/planos.php")"
 [[ "$HTTP_CODE" == "303" ]] || fail "Catálogo de planos anônimo deveria redirecionar para login; retornou $HTTP_CODE."
 
+curl -fsS -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/login.php" -o "$TMP_DIR/plans-login.html"
+PLANS_LOGIN_TOKEN="$(get_token "$TMP_DIR/plans-login.html")"
+curl -fsS -L -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/login.php" \
+    --data-urlencode "token=$PLANS_LOGIN_TOKEN" \
+    --data-urlencode "email=provision-ci@example.test" \
+    --data-urlencode "senha=$FITCONTROL_NEW_PASSWORD" \
+    -o "$TMP_DIR/plans-login-success.html"
+assert_contains "$TMP_DIR/plans-login-success.html" "Visão geral"
+
 curl -fsS -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/planos.php" -o "$TMP_DIR/plans-not-installed.html"
 assert_contains "$TMP_DIR/plans-not-installed.html" "Catálogo ainda não instalado"
 
