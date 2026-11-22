@@ -162,7 +162,7 @@ if ($historicoMatriculasDisponivel) {
     }
 
     $consultaRevisao = $pdo->prepare(
-        'SELECT resultado_atual, fonte_referencia, atualizado_em
+        'SELECT id, resultado_atual, fonte_referencia, atualizado_em
          FROM revisoes_legado
          WHERE aluno_id_origem = :aluno_id
          LIMIT 1'
