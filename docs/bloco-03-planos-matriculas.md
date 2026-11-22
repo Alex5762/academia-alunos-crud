@@ -668,24 +668,22 @@ A revisão cruzada consolidada encontrou e tratou os seguintes pontos:
 - Alinhada a renovação contínua para começar exatamente no limite exclusivo anterior; o teste de referência 31 agora inclui 31/03 e termina em 01/04 às 00:00.
 - Esclarecido que `VINCULO_CONFIRMADO` só libera novas matrículas quando o intervalo legado está comprovado e registrado; preço/duração desconhecidos podem permanecer nulos no registro legado.
 
-Pontos técnicos que ainda precisam ser fechados antes das migrations:
+### Pendências técnicas antes de considerar o Bloco 03 concluído
 
-1. **Implementação operacional da revisão de legado:** construir a fila, filtros, tela de decisão, histórico no perfil e endpoint POST conforme o fluxo já especificado na seção 11; validar os três resultados, idempotência, bloqueio/liberação e auditoria transacional.
-2. **Implementação dos estados da matrícula:** criar a consulta/camada de domínio que calcula `AGENDADA`, `ATIVA` e `VENCIDA`, e garantir que `CANCELADA` derive de `cancelada_em` mais auditoria.
-3. **Implementação e validação do fuso aprovado:** aplicar `America/Sao_Paulo` na camada de data/hora, persistir instantes UTC nos campos `DATETIME` conforme a convenção documentada e testar conversões de entrada/saída no XAMPP. A decisão funcional de fuso e armazenamento já está aprovada.
-4. **Compatibilidade do banco:** confirmar a versão real do MySQL/MariaDB no XAMPP antes de definir `CHECK`, índices, constraints e estratégia de bloqueio.
-5. **Cancelamento de matrícula futura:** comportamento aprovado; implementar e testar cancelamento antes do início, exatamente no início e depois do início, preservando histórico e tratando corretamente o intervalo efetivo vazio.
-6. **Implementação e validação da carga inicial de legados:** aplicar a referência única do aluno, transação e testes de reexecução sem sobrescrever revisões ou duplicar auditoria. Usar migrations SQL numeradas na ordem da CI/README; não construir runner próprio ou tabela de checksums nesta versão.
-7. **Compatibilidade de timestamps de auditoria:** verificar o fuso da sessão do banco no XAMPP e manter `criado_em`/`atualizado_em` das tabelas administrativas e eventos na convenção já existente; somente os instantes contratuais serão UTC.
-8. **Aplicação da elegibilidade de cancelamento:** a regra está aprovada; implementar a revalidação da situação dentro da transação e testar concorrência entre cancelamento e vencimento natural.
+1. **Migrations 005 e 006:** criar e revisar o DDL e a carga inicial de revisão dos legados. A implementação das telas/serviços não alterou o esquema de dados; não executar uma migration parcial nem presumir que DDL terá rollback automático.
+2. **Compatibilidade do banco local:** confirmar a versão real do MySQL/MariaDB do XAMPP, InnoDB nas tabelas envolvidas, suporte às constraints escolhidas e fuso da sessão. A matriz automatizada já cobre MySQL 8.0 e MariaDB 10.11, mas não identifica a versão instalada no computador.
+3. **Validação de migração:** adicionar 005/006 à CI e cobrir banco limpo, conjunto legado existente, preservação do texto original, contagem/uniqueness, falhas parciais e reexecução sem sobrescrever decisões ou duplicar auditoria.
+4. **Validação local:** somente após revisão das migrations e backup, aplicar no XAMPP; inspecionar `SHOW CREATE TABLE`, FKs, índices e mecanismos, e executar os cenários reais no navegador.
+5. **Inspeção física:** testar desktop/mobile em dispositivo e navegador instalados, incluindo navegação por toque, foco/teclado, telas de revisão/retificação, mensagens de erro e histórico.
+6. **Integração:** manter a PR #1 em Draft até a inspeção física e aprovação explícita; não fazer merge automaticamente.
 
-A revisão consolidada corrigiu contradições entre limites exclusivos, renovação contínua, regras de dias/semanas, legado comprovado e critérios de aceite. O fluxo de revisão e retificação também está especificado; permanecem a implementação, os testes e as validações técnicas listadas acima. Não iniciar migrations enquanto esses itens não forem verificados e os critérios de aceite finais não forem fechados.
+A automação atual confirma a lógica de domínio e a interface HTTP no banco efêmero com fixtures, além da compatibilidade dos testes transacionais em MySQL 8.0 e MariaDB 10.11. Ela ainda não valida as migrations 005/006 nem a instalação local. O Bloco 03 está implementado em boa parte na branch, mas não está pronto para uso local integrado até essas pendências serem concluídas.
 
 ## 13. Dependências e limites do projeto
 
 O Bloco 02 já implementou situação cadastral e inativação lógica, mas a inspeção em aparelho físico/navegador instalado continua pendente. A preparação deste documento não encerra formalmente o Bloco 02 e não autoriza merge da PR #1.
 
-Este documento registra planejamento. O Bloco 03 só deve entrar em implementação depois da revisão das regras acima, confirmação dos critérios de aceite e respeito à regra do roadmap de avançar um bloco por vez. Não executar migration nem alterar o esquema por causa desta documentação.
+Este documento registra a especificação funcional, as decisões aprovadas, o estado de implementação e as pendências de validação. Os serviços e fluxos HTTP do Bloco 03 já estão implementados na branch; migrations não devem ser criadas/aplicadas sem revisão técnica, backup e validação explícita.
 
 O FitControl permanece um projeto acadêmico/local. Não usar dados reais de alunos nem expor a aplicação publicamente.
 
