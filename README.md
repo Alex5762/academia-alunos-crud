@@ -68,7 +68,7 @@ As imagens abaixo são capturadas automaticamente pelo GitHub Actions com regist
 - Fila de revisão de vínculos legados, decisões fundamentadas por evidência e histórico append-only.
 - Retificação auditada de vigência legada, preservando o intervalo anterior e exigindo nova fonte e justificativa.
 
-> **Estado do Bloco 03 na branch (22/11/2026):** os fluxos de aplicação, migrations 005/006 e testes automatizados estão implementados. As CIs #760 (push) e #761 (PR) passaram integralmente, incluindo execução das migrations em MySQL 8.0 e MariaDB 10.11. Isso não significa que o banco local/XAMPP tenha sido alterado: a aplicação local ainda depende de backup, inspeção da versão e execução manual conforme [guia de migrations para XAMPP](docs/guia-migrations-xampp.md). A PR #1 permanece Draft, `main` intacta e a inspeção em dispositivo físico pendente.
+> **Estado do Bloco 03 na branch (22/11/2026):** os fluxos de aplicação, migrations 005/006 e testes automatizados estão implementados. As CIs #766 (push) e #767 (PR) passaram integralmente, incluindo execução das migrations em MySQL 8.0 e MariaDB 10.11. O banco local/XAMPP não foi alterado: a aplicação local ainda depende de backup, inspeção da versão e execução manual conforme [guia de migrations para XAMPP](docs/guia-migrations-xampp.md). A PR #1 permanece Draft, `main` intacta e a inspeção em dispositivo físico pendente.
 
 Cada aluno possui nome, telefone, e-mail, plano (Mensal, Trimestral, Semestral ou Anual) e situação ativa/inativa. Registros inativos permanecem consultáveis e editáveis.
 
@@ -106,11 +106,14 @@ academia-alunos-crud/
 │       ├── 001_authentication_audit.sql
 │       ├── 002_force_password_change.sql
 │       ├── 003_login_rate_limit.sql
-│       └── 004_student_status.sql
+│       ├── 004_student_status.sql
+│       ├── 005_plans_enrollments_schema.sql
+│       └── 006_import_legacy_review.sql
 ├── tests/
 │   ├── browser-compatibility.mjs
 │   ├── capture-screenshots.mjs
 │   ├── integration-crud.sh
+│   ├── migration-block-03.sh
 │   └── migration-student-status.sh
 ├── banco.sql
 ├── conexao.php
@@ -138,9 +141,10 @@ academia-alunos-crud/
    - \`database/migrations/002_force_password_change.sql\`
    - \`database/migrations/003_login_rate_limit.sql\`
    - \`database/migrations/004_student_status.sql\`
-7. No terminal, a partir da pasta do projeto, execute \`php scripts/provisionar-usuario.php\`, informe nome e e-mail e copie a senha temporária exibida uma única vez. No XAMPP, se necessário, use \`C:\\xampp\\php\\php.exe scripts\\provisionar-usuario.php\`.
-8. Acesse [http://localhost/academia-alunos-crud/login.php](http://localhost/academia-alunos-crud/login.php) e entre com a conta criada. Entregue a senha temporária por canal seguro.
-9. No primeiro acesso, substitua a senha temporária por uma senha pessoal com pelo menos 12 caracteres.
+7. Para habilitar o Bloco 03, não execute 005/006 sem antes conferir a versão do banco e criar um backup. Siga integralmente o [guia de migrations para XAMPP](docs/guia-migrations-xampp.md), que aplica 005 e depois 006 e inclui consultas de verificação e procedimentos para falhas.
+8. No terminal
+9. Acesse
+10. No primeiro acesso
 
 ### Configuração do banco por variáveis de ambiente
 
@@ -164,11 +168,12 @@ O pipeline:
 
 1. prepara PHP 8.2, Node.js 24, MySQL 8 e os motores Chromium, Firefox e WebKit;
 2. verifica a sintaxe de todos os arquivos PHP e a presença dos arquivos essenciais;
-3. importa \`banco.sql\`, executa as migrações 001, 002 e 003 e testa a migração 004 com um aluno legado inserido antes da alteração;
-4. provisiona uma conta fictícia e verifica hash, auditoria e unicidade do e-mail;
-5. inicia a aplicação com o servidor embutido do PHP e executa os testes HTTP reais;
-6. prepara registros fictícios no banco temporário e executa as verificações Playwright;
-7. publica as capturas como artefato e, em pushes para a branch de desenvolvimento, atualiza os arquivos versionados em \`docs/screenshots/\`.
+3. importa `banco.sql`, executa as migrations 001–004 e testa a preservação de alunos existentes;
+4. executa um job independente em MySQL 8.0 e MariaDB 10.11, aplica 005/006 e verifica a revisão inicial, preservação byte a byte, ausência de matrículas inventadas e reexecução segura;
+5. provisiona uma conta fictícia
+6. inicia a aplicação
+7. prepara registros fictícios
+8. publica as capturas
 
 Antes dos testes HTTP, `tests/migration-student-status.sh` insere um aluno usando o esquema anterior, executa a migração 004 e confere a preservação do ID e dos dados, o status ativo por padrão, o status de novos registros e o índice composto. O teste HTTP cobre também a mudança transacional de status, proteção CSRF, idempotência e aposentadoria da exclusão física.
 
