@@ -156,6 +156,50 @@ jobs:
           DB_PASSWORD: root
         run: php tests/database-temporal-compatibility.php
 
+  block-03-migrations:
+    name: Block 03 migrations (${{ matrix.database-name }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - database-name: MySQL 8.0
+            database-image: mysql:8.0
+          - database-name: MariaDB 10.11
+            database-image: mariadb:10.11
+
+    services:
+      database:
+        image: ${{ matrix.database-image }}
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: academia_alunos
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install MySQL-compatible client
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes default-mysql-client
+
+      - name: Apply and verify migrations 005/006
+        env:
+          MYSQL_PWD: root
+          MYSQL_HOST: 127.0.0.1
+          MYSQL_PORT: 3306
+          MYSQL_USER: root
+          MYSQL_DATABASE: academia_alunos
+        run: bash tests/migration-block-03.sh
+
   php-and-mysql:
     name: PHP, CRUD integration and visual capture
     runs-on: ubuntu-latest
@@ -252,6 +296,9 @@ jobs:
           test -f tests/database-enrollment-cancellation.php
           test -f tests/database-plan-lock-concurrency.php
           test -f database/migrations/004_student_status.sql
+          test -f database/migrations/005_plans_enrollments_schema.sql
+          test -f database/migrations/006_import_legacy_review.sql
+          test -f tests/migration-block-03.sh
           test -f tests/capture-screenshots.mjs
           test -f tests/browser-compatibility.mjs
           test -f theme.js
