@@ -5,8 +5,8 @@ require_once __DIR__ . '/src/Domain/Enrollment/EnrollmentPeriodCalculator.php';
 require_once __DIR__ . '/src/Domain/Enrollment/EnrollmentInterval.php';
 require_once __DIR__ . '/src/Domain/Enrollment/EnrollmentCreationService.php';
 
-use FitControl\\Domain\\Enrollment\\EnrollmentCreationService;
-use FitControl\\Domain\\Enrollment\\EnrollmentPeriodCalculator;
+use FitControl\Domain\Enrollment\EnrollmentCreationService;
+use FitControl\Domain\Enrollment\EnrollmentPeriodCalculator;
 
 $usuario = exigirAutenticacao($pdo);
 
