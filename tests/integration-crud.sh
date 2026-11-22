@@ -841,6 +841,27 @@ db_exec "INSERT INTO revisoes_legado (
     aluno_id_origem, resultado_atual, fonte_referencia
 ) VALUES ($ALUNO_ID, 'PENDENTE_REVISAO', 'Fixture automatizado de CI')"
 
+db_exec "CREATE TABLE revisoes_legado_eventos (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    revisao_legado_id BIGINT UNSIGNED NOT NULL,
+    usuario_id INT UNSIGNED NOT NULL,
+    tipo_evento ENUM('DECISAO','RETIFICACAO_VIGENCIA') NOT NULL,
+    resultado_anterior ENUM('VINCULO_CONFIRMADO','LEGADO_SEM_VIGENCIA','PENDENTE_REVISAO') NOT NULL,
+    resultado_novo ENUM('VINCULO_CONFIRMADO','LEGADO_SEM_VIGENCIA','PENDENTE_REVISAO') NOT NULL,
+    matricula_id BIGINT UNSIGNED NULL,
+    inicio_anterior DATETIME NULL,
+    fim_exclusivo_anterior DATETIME NULL,
+    inicio_novo DATETIME NULL,
+    fim_exclusivo_novo DATETIME NULL,
+    fonte_referencia VARCHAR(255) NULL,
+    observacoes TEXT NULL,
+    criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    KEY idx_ci_review_event (revisao_legado_id, criado_em)
+) ENGINE=InnoDB"
+
+REVIEW_ID="$(db_value "SELECT id FROM revisoes_legado WHERE aluno_id_origem = $ALUNO_ID")"
+[[ "$REVIEW_ID" =~ ^[0-9]+$ ]] || fail "O fixture não criou o registro de revisão legado."
+
 curl -fsS -G -c "$COOKIE_JAR" -b "$COOKIE_JAR" \
     --data-urlencode "id=$ALUNO_ID" "$BASE_URL/detalhes-aluno.php" \
     -o "$TMP_DIR/detail-enrollments.html"
@@ -853,6 +874,56 @@ assert_contains "$TMP_DIR/detail-enrollments.html" "R$ 149,90"
 assert_contains "$TMP_DIR/detail-enrollments.html" "Teste de preservação histórica"
 assert_contains "$TMP_DIR/detail-enrollments.html" "Revisão do vínculo pendente"
 assert_contains "$TMP_DIR/detail-enrollments.html" "Fixture automatizado de CI"
+assert_contains "$TMP_DIR/detail-enrollments.html" "Analisar revisão"
+
+echo "9.4/10 - Validando fila administrativa e decisão auditada de revisão..."
+curl -fsS -G -c "$COOKIE_JAR" -b "$COOKIE_JAR" \
+    --data-urlencode "filtro=pendentes" "$BASE_URL/revisoes-legado.php" \
+    -o "$TMP_DIR/legacy-review-queue.html"
+assert_contains "$TMP_DIR/legacy-review-queue.html" "Revisão de vínculos legados"
+assert_contains "$TMP_DIR/legacy-review-queue.html" "Aluno #$ALUNO_ID"
+assert_contains "$TMP_DIR/legacy-review-queue.html" "Plano CI"
+assert_contains "$TMP_DIR/legacy-review-queue.html" "Analisar"
+
+curl -fsS -G -c "$COOKIE_JAR" -b "$COOKIE_JAR" \
+    --data-urlencode "filtro=todos" --data-urlencode "review_id=$REVIEW_ID" \
+    "$BASE_URL/revisoes-legado.php" -o "$TMP_DIR/legacy-review-detail.html"
+assert_contains "$TMP_DIR/legacy-review-detail.html" "Analisar vínculo legado"
+assert_contains "$TMP_DIR/legacy-review-detail.html" "Registrar decisão auditada"
+
+REVIEW_TOKEN="$(get_token "$TMP_DIR/legacy-review-detail.html")"
+HTTP_CODE="$(curl -sS -o "$TMP_DIR/legacy-review-no-csrf.html" -w '%{http_code}' -c "$COOKIE_JAR" -b "$COOKIE_JAR" \
+    "$BASE_URL/salvar-revisao-legado.php" \
+    --data-urlencode "token=token-invalido" \
+    --data-urlencode "review_id=$REVIEW_ID" \
+    --data-urlencode "resultado=PENDENTE_REVISAO" \
+    --data-urlencode "observacoes=Evidência ainda insuficiente.")"
+[[ "$HTTP_CODE" == "403" ]] || fail "Decisão de revisão sem CSRF deveria retornar 403; retornou $HTTP_CODE."
+
+curl -fsS -L -c "$COOKIE_JAR" -b "$COOKIE_JAR" \
+    "$BASE_URL/salvar-revisao-legado.php" \
+    --data-urlencode "token=$REVIEW_TOKEN" \
+    --data-urlencode "review_id=$REVIEW_ID" \
+    --data-urlencode "resultado=PENDENTE_REVISAO" \
+    --data-urlencode "fonte_referencia=Documento ilegível, pasta CI" \
+    --data-urlencode "observacoes=Documento recebido não permite confirmar o período exato." \
+    -o "$TMP_DIR/legacy-review-saved.html"
+assert_contains "$TMP_DIR/legacy-review-saved.html" "Revisão mantida como pendente"
+assert_contains "$TMP_DIR/legacy-review-saved.html" "Documento recebido não permite confirmar o período exato."
+assert_contains "$TMP_DIR/legacy-review-saved.html" "Funcionário CI"
+
+REVIEW_STATE="$(db_value "SELECT resultado_atual FROM revisoes_legado WHERE id = $REVIEW_ID")"
+[[ "$REVIEW_STATE" == "PENDENTE_REVISAO" ]] || fail "A decisão não preservou o bloqueio da revisão pendente."
+REVIEW_EVENT_COUNT="$(db_value "SELECT COUNT(*) FROM revisoes_legado_eventos WHERE revisao_legado_id = $REVIEW_ID AND resultado_novo = 'PENDENTE_REVISAO'")"
+[[ "$REVIEW_EVENT_COUNT" == "1" ]] || fail "A decisão não gerou exatamente um evento especializado."
+REVIEW_AUDIT_COUNT="$(db_value "SELECT COUNT(*) FROM auditoria WHERE usuario_id = $USUARIO_ID AND acao = 'revisao_legado_decidida' AND entidade = 'revisoes_legado' AND entidade_id = $REVIEW_ID")"
+[[ "$REVIEW_AUDIT_COUNT" == "1" ]] || fail "A decisão não gerou exatamente uma auditoria geral."
+
+curl -fsS -G -c "$COOKIE_JAR" -b "$COOKIE_JAR" \
+    --data-urlencode "id=$ALUNO_ID" "$BASE_URL/detalhes-aluno.php" \
+    -o "$TMP_DIR/detail-review-events.html"
+assert_contains "$TMP_DIR/detail-review-events.html" "Últimas decisões registradas"
+assert_contains "$TMP_DIR/detail-review-events.html" "Documento recebido não permite confirmar o período exato."
 
 echo "9.5/10 - Validando contratação pela interface e bloqueio de revisão pendente..."
 curl -fsS -G -c "$COOKIE_JAR" -b "$COOKIE_JAR" \
@@ -920,6 +991,11 @@ db_exec "DELETE FROM auditoria
       AND entidade_id IN (SELECT id FROM matriculas WHERE plano_id = $PLAN_ID)"
 db_exec "DELETE FROM matriculas WHERE plano_id = $PLAN_ID"
 db_exec "DELETE FROM planos WHERE id IN ($PLAN_ID, $UNUSED_PLAN_ID)"
+db_exec "DELETE FROM auditoria
+    WHERE entidade = 'revisoes_legado'
+      AND entidade_id = $REVIEW_ID"
+db_exec "DELETE FROM revisoes_legado_eventos WHERE revisao_legado_id = $REVIEW_ID"
+db_exec "DROP TABLE revisoes_legado_eventos"
 db_exec "DELETE FROM revisoes_legado WHERE aluno_id_origem = $ALUNO_ID"
 db_exec "DROP TABLE revisoes_legado"
 db_exec "DROP TABLE matriculas"
