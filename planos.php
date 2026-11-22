@@ -321,7 +321,7 @@ function classeSituacaoPlano(string $situacao): string {
     <span class="eyebrow">CATÁLOGO COMERCIAL</span>
     <h1>Planos</h1>
     <p class="settings-intro">Organize as opções disponíveis para novas matrículas sem alterar o histórico das contratações existentes.</p>
-    <?php if ($estruturaMatriculasDisponivel) { ?>
+    <?php if ($estruturaMatriculasDisponivel && usuarioTemPermissao($usuario, 'enrollments.create')) { ?>
         <a class="button button-primary enrollment-create-cta" href="planos.php?nova_matricula=1">Registrar matrícula</a>
     <?php } ?>
 
@@ -446,6 +446,7 @@ function classeSituacaoPlano(string $situacao): string {
             </article>
         </section>
 
+        <?php if (usuarioTemPermissao($usuario, 'plans.manage')) { ?>
         <section class="settings-card account-card" aria-labelledby="plan-form-title">
             <div class="settings-card-heading">
                 <span class="settings-icon" aria-hidden="true"><?= $planoEdicao ? '✎' : '＋' ?></span>
@@ -514,6 +515,7 @@ function classeSituacaoPlano(string $situacao): string {
                 </div>
             </form>
         </section>
+        <?php } ?>
 
         <section class="settings-card account-card" aria-labelledby="plan-list-title">
             <div class="settings-card-heading account-list-heading">
@@ -553,6 +555,7 @@ function classeSituacaoPlano(string $situacao): string {
                                             <?php if ($plano['descricao'] !== null && $plano['descricao'] !== '') { ?>
                                                 <small><?= escapar($plano['descricao']) ?></small>
                                             <?php } ?>
+                                        <?php } ?>
                                         </div>
                                     </td>
                                     <td><?= escapar(rotuloDuracaoPlano($plano)) ?></td>
@@ -565,6 +568,7 @@ function classeSituacaoPlano(string $situacao): string {
                                     </td>
                                     <td>
                                         <div class="plan-actions">
+                                            <?php if (usuarioTemPermissao($usuario, 'plans.manage')) { ?>
                                             <a class="button button-search" href="planos.php?editar=<?= (int) $plano['id'] ?>">Editar</a>
 
                                             <?php if ($situacao === 'ATIVO') { ?>
