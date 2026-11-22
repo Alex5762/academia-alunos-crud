@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace FitControl\Domain\Finance;
 
-use UnexpectedValueException;
+require_once __DIR__ . '/FinanceMoneyFormatter.php';
 
 /**
  * Classifica cobranças sem confundir saldo histórico com valor ainda cobrável.
@@ -14,14 +14,9 @@ final class FinanceDashboardStatus
     {
     }
 
-    private static function cents(string|int|float|null $value): int
+    private static function cents(string|int|null $value): int
     {
-        $normalized = (string) ($value ?? '0.00');
-        if (preg_match('/^(\\d{1,8})\\.(\\d{2})$/D', $normalized, $parts) !== 1) {
-            throw new UnexpectedValueException('Valor monetário inválido retornado pelo banco.');
-        }
-
-        return ((int) $parts[1] * 100) + (int) $parts[2];
+        return FinanceMoneyFormatter::toCents($value);
     }
 
     public static function balanceCents(array $charge): int
