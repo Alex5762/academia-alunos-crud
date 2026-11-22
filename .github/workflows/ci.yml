@@ -270,7 +270,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install --yes default-mysql-client
 
-      - name: Apply migrations 001–009 and initialize audit chain
+      - name: Apply migrations 001–014 and initialize audit chain
         env:
           MYSQL_PWD: root
           DB_HOST: 127.0.0.1
