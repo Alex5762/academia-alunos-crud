@@ -365,17 +365,17 @@ unset($_SESSION['mensagem']);
                                             && $eventoRevisao['resultado_novo'] === 'VINCULO_CONFIRMADO'
                                         ) { ?>
                                             <small>Vigência comprovada:
-                                                <?= escapar($eventoRevisao['inicio_novo'] ?? 'Não informada') ?>
-                                                → <?= escapar($eventoRevisao['fim_exclusivo_novo'] ?? 'Não informado') ?>
+                                                <?= escapar(formatarInstanteUtcNaAcademia($eventoRevisao['inicio_novo'] ?? null)) ?>
+                                                → <?= escapar(formatarInstanteUtcNaAcademia($eventoRevisao['fim_exclusivo_novo'] ?? null)) ?>
                                             </small>
                                         <?php } elseif ($eventoRevisao['tipo_evento'] === 'RETIFICACAO_VIGENCIA') { ?>
                                             <small>Intervalo anterior:
-                                                <?= escapar($eventoRevisao['inicio_anterior'] ?? 'Não informado') ?>
-                                                → <?= escapar($eventoRevisao['fim_exclusivo_anterior'] ?? 'Não informado') ?>
+                                                <?= escapar(formatarInstanteUtcNaAcademia($eventoRevisao['inicio_anterior'] ?? null)) ?>
+                                                → <?= escapar(formatarInstanteUtcNaAcademia($eventoRevisao['fim_exclusivo_anterior'] ?? null)) ?>
                                             </small>
                                             <small>Novo intervalo:
                                                 <?= escapar($eventoRevisao['inicio_novo'] ?? 'Não informado') ?>
-                                                → <?= escapar($eventoRevisao['fim_exclusivo_novo'] ?? 'Não informado') ?>
+                                                → <?= escapar(formatarInstanteUtcNaAcademia($eventoRevisao['fim_exclusivo_novo'] ?? null)) ?>
                                             </small>
                                         <?php } ?>
                                         <?php if (!empty($eventoRevisao['fonte_referencia'])) { ?>
