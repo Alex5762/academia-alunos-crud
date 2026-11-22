@@ -285,16 +285,14 @@ function registrarAuditoria(
     string $entidade,
     ?int $entidadeId = null
 ): void {
-    $comando = $pdo->prepare(
-        'INSERT INTO auditoria (usuario_id, acao, entidade, entidade_id)
-         VALUES (:usuario_id, :acao, :entidade, :entidade_id)'
+    require_once __DIR__ . '/src/Security/AuditIntegrityChain.php';
+    \\FitControl\\Security\\AuditIntegrityChain::append(
+        $pdo,
+        $usuarioId,
+        $acao,
+        $entidade,
+        $entidadeId
     );
-    $comando->execute([
-        'usuario_id' => $usuarioId,
-        'acao' => $acao,
-        'entidade' => $entidade,
-        'entidade_id' => $entidadeId
-    ]);
 }
 
 function inicialNome($nome): string {
