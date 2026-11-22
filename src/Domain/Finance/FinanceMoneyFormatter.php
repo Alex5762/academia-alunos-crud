@@ -79,7 +79,7 @@ final class FinanceMoneyFormatter
         return $parts[1] === '-' ? -$absolute : $absolute;
     }
 
-    public static function formatCents(int $cents): string
+    public static function decimalFromCents(int $cents): string
     {
         if ($cents === PHP_INT_MIN) {
             throw new OverflowException('O valor em centavos excede o intervalo suportado.');
@@ -90,6 +90,11 @@ final class FinanceMoneyFormatter
         $whole = (string) intdiv($absolute, 100);
         $fraction = str_pad((string) ($absolute % 100), 2, '0', STR_PAD_LEFT);
 
-        return self::formatDecimal(($negative ? '-' : '') . $whole . '.' . $fraction);
+        return ($negative ? '-' : '') . $whole . '.' . $fraction;
+    }
+
+    public static function formatCents(int $cents): string
+    {
+        return self::formatDecimal(self::decimalFromCents($cents));
     }
 }
