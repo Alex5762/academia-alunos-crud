@@ -276,6 +276,20 @@ try {
     )->fetchColumn();
     assertLegacyReview((int) $eventCount === 1, 'Confirmação deve criar exatamente um evento especializado.');
 
+    $decisionEvent = $pdo->query(
+        'SELECT tipo_evento, inicio_novo, fim_exclusivo_novo
+         FROM revisoes_legado_eventos
+         WHERE revisao_legado_id = ' . $reviewIds[0] . '
+         ORDER BY id DESC
+         LIMIT 1'
+    )->fetch();
+    assertLegacyReview($decisionEvent['tipo_evento'] === 'DECISAO', 'O primeiro evento deve ser uma decisão humana.');
+    assertLegacyReview(
+        $decisionEvent['inicio_novo'] === legacyUtc('2025-12-01 00:00:00')
+        && $decisionEvent['fim_exclusivo_novo'] === legacyUtc('2026-01-01 00:00:00'),
+        'O evento de confirmação deve preservar o intervalo original, independentemente de retificações futuras.'
+    );
+
     $auditCount = $pdo->query(
         "SELECT COUNT(*) FROM auditoria
          WHERE usuario_id = {$actorId}
