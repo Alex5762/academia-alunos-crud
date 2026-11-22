@@ -646,6 +646,137 @@ curl -sS -L -c "$ABSOLUTE_JAR" -b "$ABSOLUTE_JAR" "$BASE_URL/index.php" -o "$TMP
 assert_contains "$TMP_DIR/absolute-expired.html" "Sua sessão expirou por inatividade ou pelo tempo máximo de acesso."
 
 
+
+echo "9.5/10 - Validando catálogo de planos pela interface autenticada..."
+HTTP_CODE="$(curl -sS -o "$TMP_DIR/plans-anonymous.html" -w '%{http_code}' "$BASE_URL/planos.php")"
+[[ "$HTTP_CODE" == "303" ]] || fail "Catálogo de planos anônimo deveria redirecionar para login; retornou $HTTP_CODE."
+
+curl -fsS -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/planos.php" -o "$TMP_DIR/plans-not-installed.html"
+assert_contains "$TMP_DIR/plans-not-installed.html" "Catálogo ainda não instalado"
+
+# O fixture é exclusivo deste processo de CI. Não aplica nem antecipa migrations do projeto.
+PLAN_TABLES_BEFORE="$(db_value "SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME IN ('planos', 'matriculas')")"
+[[ "$PLAN_TABLES_BEFORE" == "0" ]] || fail "O fixture de planos encontrou tabelas já existentes; não vai sobrescrevê-las."
+
+db_exec "CREATE TABLE planos (
+    id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    nome VARCHAR(100) NOT NULL,
+    descricao VARCHAR(255) NULL,
+    duracao_valor SMALLINT UNSIGNED NULL,
+    duracao_unidade ENUM('DIA','SEMANA','MES') NULL,
+    valor_atual DECIMAL(10,2) NULL,
+    situacao ENUM('RASCUNHO','ATIVO','INATIVO') NOT NULL DEFAULT 'RASCUNHO',
+    criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    atualizado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    KEY idx_plan_management_status_name (situacao, nome)
+) ENGINE=InnoDB"
+
+db_exec "CREATE TABLE matriculas (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    plano_id INT UNSIGNED NULL,
+    plano_nome_contratado VARCHAR(100) NULL,
+    valor_contratado DECIMAL(10,2) NULL,
+    KEY idx_plan_management_plan (plano_id),
+    CONSTRAINT fk_plan_management_plan
+        FOREIGN KEY (plano_id) REFERENCES planos (id)
+        ON UPDATE CASCADE ON DELETE RESTRICT
+) ENGINE=InnoDB"
+
+curl -fsS -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/planos.php" -o "$TMP_DIR/plans-ready.html"
+assert_contains "$TMP_DIR/plans-ready.html" "Adicionar plano"
+PLAN_TOKEN="$(get_token "$TMP_DIR/plans-ready.html")"
+
+HTTP_CODE="$(curl -sS -o "$TMP_DIR/plans-csrf.html" -w '%{http_code}' -c "$COOKIE_JAR" -b "$COOKIE_JAR" -X POST "$BASE_URL/salvar-plano.php" \
+    --data-urlencode "token=token-invalido" --data-urlencode "nome=Plano sem CSRF")"
+[[ "$HTTP_CODE" == "403" ]] || fail "Salvar plano sem CSRF deveria retornar 403; retornou $HTTP_CODE."
+
+curl -fsS -L -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/salvar-plano.php" \
+    --data-urlencode "token=$PLAN_TOKEN" \
+    --data-urlencode "nome=Plano CI em preparação" \
+    --data-urlencode "descricao=Rascunho criado pelo teste HTTP" \
+    -o "$TMP_DIR/plan-created.html"
+assert_contains "$TMP_DIR/plan-created.html" "Rascunho de plano criado com sucesso."
+PLAN_ID="$(db_value "SELECT id FROM planos WHERE nome = 'Plano CI em preparação' LIMIT 1")"
+[[ "$PLAN_ID" =~ ^[0-9]+$ ]] || fail "A interface não criou o rascunho de plano."
+PLAN_DRAFT="$(db_value "SELECT COUNT(*) FROM planos WHERE id = $PLAN_ID AND situacao = 'RASCUNHO' AND valor_atual IS NULL AND duracao_valor IS NULL")"
+[[ "$PLAN_DRAFT" == "1" ]] || fail "O plano incompleto não permaneceu como rascunho."
+
+PLAN_TOKEN="$(get_token "$TMP_DIR/plan-created.html")"
+curl -fsS -L -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/salvar-plano.php" \
+    --data-urlencode "token=$PLAN_TOKEN" \
+    --data-urlencode "id=$PLAN_ID" \
+    --data-urlencode "nome=Plano CI Mensal" \
+    --data-urlencode "descricao=Plano atualizado pela interface" \
+    --data-urlencode "duracao_valor=1" \
+    --data-urlencode "duracao_unidade=MES" \
+    --data-urlencode "valor_atual=149,90" \
+    -o "$TMP_DIR/plan-updated.html"
+assert_contains "$TMP_DIR/plan-updated.html" "Plano atualizado com sucesso."
+PLAN_VALID="$(db_value "SELECT COUNT(*) FROM planos WHERE id = $PLAN_ID AND nome = 'Plano CI Mensal' AND valor_atual = 149.90 AND duracao_valor = 1 AND duracao_unidade = 'MES'")"
+[[ "$PLAN_VALID" == "1" ]] || fail "A edição não normalizou nem persistiu os dados do plano."
+
+PLAN_TOKEN="$(get_token "$TMP_DIR/plan-updated.html")"
+curl -fsS -L -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/gerenciar-plano.php" \
+    --data-urlencode "token=$PLAN_TOKEN" --data-urlencode "id=$PLAN_ID" --data-urlencode "acao=ativar" \
+    -o "$TMP_DIR/plan-activated.html"
+assert_contains "$TMP_DIR/plan-activated.html" "Plano ativado"
+PLAN_ACTIVE="$(db_value "SELECT COUNT(*) FROM planos WHERE id = $PLAN_ID AND situacao = 'ATIVO'")"
+[[ "$PLAN_ACTIVE" == "1" ]] || fail "A ativação do plano não foi persistida."
+
+db_exec "INSERT INTO matriculas (plano_id, plano_nome_contratado, valor_contratado)
+    VALUES ($PLAN_ID, 'Plano CI Mensal', 149.90)"
+
+PLAN_TOKEN="$(get_token "$TMP_DIR/plan-activated.html")"
+curl -fsS -L -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/gerenciar-plano.php" \
+    --data-urlencode "token=$PLAN_TOKEN" --data-urlencode "id=$PLAN_ID" --data-urlencode "acao=excluir" \
+    -o "$TMP_DIR/plan-delete-blocked.html"
+assert_contains "$TMP_DIR/plan-delete-blocked.html" "possui matrículas vinculadas"
+PLAN_STILL_EXISTS="$(db_value "SELECT COUNT(*) FROM planos WHERE id = $PLAN_ID")"
+[[ "$PLAN_STILL_EXISTS" == "1" ]] || fail "A interface removeu um plano com matrícula vinculada."
+
+PLAN_TOKEN="$(get_token "$TMP_DIR/plan-delete-blocked.html")"
+curl -fsS -L -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/gerenciar-plano.php" \
+    --data-urlencode "token=$PLAN_TOKEN" --data-urlencode "id=$PLAN_ID" --data-urlencode "acao=inativar" \
+    -o "$TMP_DIR/plan-deactivated.html"
+assert_contains "$TMP_DIR/plan-deactivated.html" "Plano inativado"
+PLAN_INACTIVE="$(db_value "SELECT COUNT(*) FROM planos WHERE id = $PLAN_ID AND situacao = 'INATIVO'")"
+[[ "$PLAN_INACTIVE" == "1" ]] || fail "A inativação não foi persistida."
+
+PLAN_SNAPSHOT="$(db_value "SELECT COUNT(*) FROM matriculas WHERE plano_id = $PLAN_ID AND plano_nome_contratado = 'Plano CI Mensal' AND valor_contratado = 149.90")"
+[[ "$PLAN_SNAPSHOT" == "1" ]] || fail "A inativação alterou o snapshot histórico."
+
+PLAN_TOKEN="$(get_token "$TMP_DIR/plan-deactivated.html")"
+curl -fsS -L -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/gerenciar-plano.php" \
+    --data-urlencode "token=$PLAN_TOKEN" --data-urlencode "id=$PLAN_ID" --data-urlencode "acao=ativar" \
+    -o "$TMP_DIR/plan-reactivated.html"
+assert_contains "$TMP_DIR/plan-reactivated.html" "Plano ativado"
+
+# Um rascunho sem vínculo pode ser excluído, com auditoria preservada.
+PLAN_TOKEN="$(get_token "$TMP_DIR/plan-reactivated.html")"
+curl -fsS -L -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/salvar-plano.php" \
+    --data-urlencode "token=$PLAN_TOKEN" --data-urlencode "nome=Plano CI descartável" \
+    -o "$TMP_DIR/plan-unused-created.html"
+assert_contains "$TMP_DIR/plan-unused-created.html" "Rascunho de plano criado"
+UNUSED_PLAN_ID="$(db_value "SELECT id FROM planos WHERE nome = 'Plano CI descartável' LIMIT 1")"
+[[ "$UNUSED_PLAN_ID" =~ ^[0-9]+$ ]] || fail "Não foi possível criar o rascunho descartável."
+PLAN_TOKEN="$(get_token "$TMP_DIR/plan-unused-created.html")"
+curl -fsS -L -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/gerenciar-plano.php" \
+    --data-urlencode "token=$PLAN_TOKEN" --data-urlencode "id=$UNUSED_PLAN_ID" --data-urlencode "acao=excluir" \
+    -o "$TMP_DIR/plan-unused-deleted.html"
+assert_contains "$TMP_DIR/plan-unused-deleted.html" "Plano excluído"
+UNUSED_PLAN_AUDIT="$(db_value "SELECT COUNT(*) FROM auditoria WHERE usuario_id = $USUARIO_ID AND acao = 'plano_excluido' AND entidade = 'planos' AND entidade_id = $UNUSED_PLAN_ID")"
+[[ "$UNUSED_PLAN_AUDIT" == "1" ]] || fail "A exclusão de plano sem vínculo não foi auditada."
+
+PLAN_ACTOR_AUDIT="$(db_value "SELECT COUNT(*) FROM auditoria WHERE usuario_id = $USUARIO_ID AND acao = 'plano_ativado' AND entidade = 'planos' AND entidade_id = $PLAN_ID")"
+[[ "$PLAN_ACTOR_AUDIT" == "2" ]] || fail "Ativação inicial e reativação não foram auditadas pelo funcionário correto."
+
+# Limpa apenas as tabelas descartáveis criadas por este teste.
+db_exec "DELETE FROM auditoria WHERE entidade = 'planos' AND entidade_id IN ($PLAN_ID, $UNUSED_PLAN_ID)"
+db_exec "DELETE FROM matriculas WHERE plano_id = $PLAN_ID"
+db_exec "DELETE FROM planos WHERE id IN ($PLAN_ID, $UNUSED_PLAN_ID)"
+db_exec "DROP TABLE matriculas"
+db_exec "DROP TABLE planos"
+
 echo "10/10 - Verificando que o endpoint de gravação rejeita GET..."
 HTTP_CODE="$(curl -sS -o "$TMP_DIR/method.html" -w '%{http_code}' "$BASE_URL/salvar.php")"
 [[ "$HTTP_CODE" == "405" ]] || fail "GET em salvar.php deveria retornar HTTP 405; retornou $HTTP_CODE."
