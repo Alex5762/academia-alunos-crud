@@ -41,6 +41,31 @@ function escapar($texto) {
 }
 
 /**
+ * Converte um DATETIME persistido como UTC para o horário local da academia.
+ * Os campos contratuais/eventos usam UTC mesmo quando a conexão SQL tem outro fuso.
+ */
+function formatarInstanteUtcNaAcademia(?string $valor): string {
+    if ($valor === null || trim($valor) === '') {
+        return 'Não informado';
+    }
+
+    $utc = new DateTimeZone('UTC');
+    $academia = new DateTimeZone('America/Sao_Paulo');
+    $instante = DateTimeImmutable::createFromFormat('!Y-m-d H:i:s', $valor, $utc);
+    $erros = DateTimeImmutable::getLastErrors();
+
+    if (
+        !$instante instanceof DateTimeImmutable
+        || $instante->format('Y-m-d H:i:s') !== $valor
+        || (is_array($erros) && ($erros['warning_count'] > 0 || $erros['error_count'] > 0))
+    ) {
+        return 'Data inválida';
+    }
+
+    return $instante->setTimezone($academia)->format('d/m/Y H:i:s');
+}
+
+/**
  * Inclui o monitor de sessão nas páginas autenticadas.
  * O navegador recebe somente o token CSRF e o tempo restante da sessão.
  */
