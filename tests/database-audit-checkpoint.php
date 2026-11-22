@@ -186,7 +186,7 @@ try {
     );
     assertCheckpoint(!$restored['ok'], 'Banco atrás do checkpoint deve ser rejeitado como possível restauração.');
 
-    $signedPayload = \\FitControl\\Security\\AuditIntegrityCheckpoint::readSignedPayload(
+    $signedPayload = \FitControl\Security\AuditIntegrityCheckpoint::readSignedPayload(
         $databaseName,
         $secret,
         $checkpointPath
