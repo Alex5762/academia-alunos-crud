@@ -36,6 +36,22 @@ echo "Aplicando migration 005 (DDL)..."
 echo "Aplicando migration 006 (carga inicial)..."
 "${MYSQL_BIN}" --host="${MYSQL_HOST}" --port="${MYSQL_PORT}" --user="${MYSQL_USER}" --database="${MYSQL_DATABASE}" < "${migration_dir}/006_import_legacy_review.sql"
 
+echo "Preparando conta existente para validar compatibilidade RBAC..."
+mysql_cmd <<'SQL'
+INSERT INTO usuarios (nome, email, senha_hash, ativo, deve_trocar_senha)
+VALUES ('Conta legada RBAC', 'rbac-legacy@example.test', 'hash-ficticio', 1, 0);
+SQL
+
+echo "Aplicando migration 007 (perfis administrativos)..."
+"${MYSQL_BIN}" --host="${MYSQL_HOST}" --port="${MYSQL_PORT}" --user="${MYSQL_USER}" --database="${MYSQL_DATABASE}" < "${migration_dir}/007_administrative_roles.sql"
+
+assert_equals "ADMINISTRADOR" "$(mysql_cmd -e "SELECT perfil FROM usuarios WHERE email = 'rbac-legacy@example.test'")" "contas existentes devem preservar o acesso administrativo"
+mysql_cmd <<'SQL'
+INSERT INTO usuarios (nome, email, senha_hash, ativo, deve_trocar_senha)
+VALUES ('Nova conta RBAC', 'rbac-new@example.test', 'hash-ficticio', 1, 1);
+SQL
+assert_equals "OPERADOR" "$(mysql_cmd -e "SELECT perfil FROM usuarios WHERE email = 'rbac-new@example.test'")" "novas contas devem receber o perfil de menor privilégio"
+
 assert_equals() {
   local expected="$1"
   local actual="$2"
