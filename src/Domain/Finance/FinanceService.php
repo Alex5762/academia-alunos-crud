@@ -74,6 +74,11 @@ final class FinanceService
         if ($observation !== null && self::unicodeLength($observation) > 255) {
             throw new InvalidArgumentException('A observação deve ter até 255 caracteres UTF-8.');
         }
+        if ($paymentDateLocal < $nowLocal->format('Y-m-d') && $observation === null) {
+            throw new InvalidArgumentException(
+                'Informe uma observação ou justificativa para registrar um pagamento em data retroativa.'
+            );
+        }
 
         $requestPayload = json_encode([
             'charge_id' => $chargeId,
