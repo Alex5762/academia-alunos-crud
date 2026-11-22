@@ -157,7 +157,7 @@ Campos candidatos:
 | `fonte_referencia` | Referência da fonte que sustenta a última conclusão humana; fica sem valor na criação automática inicial até a revisão. |
 | `criado_em` / `atualizado_em` | Metadados de criação e atualização do controle de revisão. |
 
-Cada decisão humana deve gerar auditoria com funcionário, instante, resultado e referência da fonte. A criação automática inicial como `PENDENTE_REVISAO` deve ser distinguível de uma decisão humana: não cria `revisoes_legado_eventos` com funcionário fictício. A definição física final de tipos, nomes, chaves e índices ainda será validada antes da migration.
+Cada decisão humana gera auditoria com funcionário, instante, resultado e referência da fonte. A criação automática inicial como `PENDENTE_REVISAO` não cria evento especializado nem atribui funcionário fictício. A migration 005 define os tipos, FKs e índices efetivos; a migration 006 registra o corte inicial em `controle_importacao_legado` para permitir reexecução sem incorporar alunos posteriores.
 
 **Regra importante:** a existência de `revisoes_legado` não significa que exista uma matrícula. Não criar linhas artificiais em `matriculas` apenas para representar o legado pendente ou sem vigência. Criar uma matrícula operacional somente quando existir contratação comprovada com os dados necessários para determinar sua vigência.
 
@@ -624,7 +624,7 @@ As regras abaixo já foram aprovadas para orientar a implementação. O status n
 | Exclusão de plano | Permitir exclusão física somente sem matrículas vinculadas; com histórico, bloquear exclusão e permitir desativação. | **Aprovada** |
 | Horário padrão de início | Data futura sem horário: 00:00; hoje sem horário: instante atual; permitir horário posterior hoje, nunca anterior ao momento atual. | **Aprovada** |
 
-As regras marcadas como aprovadas compõem a base funcional do Bloco 03. O fluxo de revisão e de retificação descrito neste documento também integra os critérios de implementação. A confirmação do ambiente local e a revisão final de compatibilidade continuam pendentes antes das migrations.
+As regras marcadas como aprovadas compõem a base funcional do Bloco 03. Os fluxos de revisão e retificação e as migrations 005/006 estão implementados e passaram pela CI #766/#767; a confirmação do ambiente local continua pendente.
 
 ## 11. Fluxo operacional de revisão de legados
 
@@ -652,7 +652,7 @@ As regras marcadas como aprovadas compõem a base funcional do Bloco 03. O fluxo
 
 ## 12. Revisão de consistência das decisões aprovadas
 
-A revisão cruzada consolidada encontrou e tratou os seguintes pontos:
+A revisão cruzada consolidou limites exclusivos, renovação contínua, regras de dias/semanas, legado comprovado e critérios de aceite. Os fluxos, testes e migrations 005/006 foram implementados; a validação restante é local, no XAMPP, e a inspeção física descrita neste documento.
 
 - Corrigida a duplicação de `cancelada_em` na lista conceitual de campos; o cancelamento é representado por um único atributo e pelo evento de auditoria.
 - Alinhado o fluxo de legados: a revisão possui três resultados explícitos e auditados (`VINCULO_CONFIRMADO`, `LEGADO_SEM_VIGENCIA` e `PENDENTE_REVISAO`). Somente os dois primeiros, quando sustentados por evidência confiável, encerram o bloqueio; ausência de comprovação mantém o bloqueio.
@@ -670,10 +670,10 @@ A revisão cruzada consolidada encontrou e tratou os seguintes pontos:
 
 ### Pendências técnicas antes de considerar o Bloco 03 concluído
 
-1. **Migrations 005 e 006:** criar e revisar o DDL e a carga inicial de revisão dos legados. A implementação das telas/serviços não alterou o esquema de dados; não executar uma migration parcial nem presumir que DDL terá rollback automático.
+1. **Migrations 005 e 006:** implementadas e aprovadas na CI. A 005 é DDL e pode confirmar parcialmente; no XAMPP, aplicar apenas após backup e inspeção, seguindo `docs/guia-migrations-xampp.md`.
 2. **Compatibilidade do banco local:** confirmar a versão real do MySQL/MariaDB do XAMPP, InnoDB nas tabelas envolvidas, suporte às constraints escolhidas e fuso da sessão. A matriz automatizada já cobre MySQL 8.0 e MariaDB 10.11, mas não identifica a versão instalada no computador.
-3. **Validação de migração:** concluída na CI #760/#761 para MySQL 8.0 e MariaDB 10.11, cobrindo conjunto legado, preservação byte a byte do texto original, ausência de matrículas inventadas e reexecução sem sobrescrever decisões ou incluir alunos posteriores ao corte.
-4. **Validação local:** somente após revisão das migrations e backup, aplicar no XAMPP; inspecionar `SHOW CREATE TABLE`, FKs, índices e mecanismos, e executar os cenários reais no navegador.
+3. **Validação de migração:** concluída nas CIs #766/#767 para MySQL 8.0 e MariaDB 10.11, cobrindo conjunto legado, preservação byte a byte do texto original, ausência de matrículas inventadas e reexecução sem sobrescrever decisões ou incluir alunos posteriores ao corte.
+4. **Validação local:** ainda pendente. Após backup, conferir versão e InnoDB, aplicar 005/006 conforme o guia, inspecionar `SHOW CREATE TABLE`, FKs, índices e contagens, e executar os cenários reais no navegador.
 5. **Inspeção física:** testar desktop/mobile em dispositivo e navegador instalados, incluindo navegação por toque, foco/teclado, telas de revisão/retificação, mensagens de erro e histórico.
 6. **Integração:** manter a PR #1 em Draft até a inspeção física e aprovação explícita; não fazer merge automaticamente.
 
