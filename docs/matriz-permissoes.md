@@ -14,6 +14,7 @@ A autorização é aplicada no servidor por `exigirPermissao()`; ocultar um link
 | Consultar revisão de vínculos legados | ✓ | ✓ | — |
 | Decidir revisão e retificar vigência legada | ✓ | ✓ | — |
 | Criar/desativar funcionários e alterar perfis | ✓ | — | — |
+| Consultar central de auditoria | ✓ | ✓ | — |
 | Preferências locais e alteração da própria senha | ✓ | ✓ | ✓ |
 
 ## Regras de segurança
@@ -34,3 +35,8 @@ A autorização é aplicada no servidor por `exigirPermissao()`; ocultar um link
 - Todos os administradores têm acesso integral.
 - O operador pode criar e editar dados cadastrais de alunos, mas não alterar seu status.
 - A matriz não substitui a validação de sessão, CSRF, regras de domínio ou transações.
+
+
+## Central de auditoria
+
+A página `auditoria.php` reúne eventos gerais e alterações de perfil, incluindo responsável, data/hora, ação, entidade, identificador do registro e detalhe do perfil anterior e novo. Permite filtrar por funcionário/e-mail/ID, ação, entidade e período local da academia, com paginação. O acesso é restrito a Administrador e Gestor; Operador recebe HTTP 403.
