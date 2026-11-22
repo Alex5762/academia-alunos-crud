@@ -170,7 +170,7 @@ A migration 010 deve ser executada somente após backup e conferência da versã
 
 - O teste de integração HTTP agora confirma que um usuário OPERADOR recebe HTTP 403 ao solicitar diretamente `financeiro.php`, mesmo sem depender de ocultar links na interface.
 - A matriz unitária RBAC também verifica que Operador não recebe `finance.view`, `finance.register_payment` ou `finance.cancel_charge`.
-- **Estado:** caso HTTP acrescentado; aguarda CI.
+- **Validação:** CI #1420 aprovou a integração HTTP/Playwright com o caso de acesso direto do Operador a `financeiro.php` retornando 403.
 
 ## Estado
 
