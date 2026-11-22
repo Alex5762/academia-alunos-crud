@@ -108,23 +108,37 @@ try {
 
     $finance = new FinanceService($pdo, $clock);
     $paymentOne = $finance->registerPayment(
-        $firstChargeId, $actorId, '100.00', 'PIX', '2026-11-22', 'Pagamento parcial 1'
+        $firstChargeId, $actorId, '100.00', 'PIX', '2026-11-22', 'idem00000000000000000000000000001', 'Pagamento parcial 1'
     );
     $paymentTwo = $finance->registerPayment(
-        $firstChargeId, $actorId, '200.00', 'DINHEIRO', '2026-11-22', 'Quitação do saldo'
+        $firstChargeId, $actorId, '200.00', 'DINHEIRO', '2026-11-22', 'idem00000000000000000000000000002', 'Quitação do saldo'
     );
     assertFinance($paymentOne > 0 && $paymentTwo > 0, 'O serviço deve retornar IDs de pagamentos válidos.');
+
+    $replayedPayment = $finance->registerPayment(
+        $firstChargeId, $actorId, '100.00', 'PIX', '2026-11-22',
+        'idem00000000000000000000000000001', 'Pagamento parcial 1'
+    );
+    assertFinance($replayedPayment === $paymentOne, 'Reenvio idêntico deve retornar o ID do pagamento original.');
+
+    assertFinanceRejected(
+        fn () => $finance->registerPayment(
+            $firstChargeId, $actorId, '101.00', 'PIX', '2026-11-22',
+            'idem00000000000000000000000000001', 'Payload alterado'
+        ),
+        'A mesma chave não pode ser reutilizada com dados diferentes.'
+    );
     $paidSum = $pdo->prepare('SELECT SUM(valor) FROM pagamentos WHERE cobranca_id = :charge_id');
     $paidSum->execute(['charge_id' => $firstChargeId]);
     assertFinance($paidSum->fetchColumn() === '300.00', 'Pagamentos parciais devem somar exatamente o valor contratado.');
 
     assertFinanceRejected(
-        fn () => $finance->registerPayment($firstChargeId, $actorId, '0.01', 'PIX', '2026-11-22'),
+        fn () => $finance->registerPayment($firstChargeId, $actorId, '0.01', 'PIX', '2026-11-22', 'idem00000000000000000000000000003'),
         'O sistema não deve aceitar pagamento acima do saldo.'
     );
     $paymentCount = $pdo->prepare('SELECT COUNT(*) FROM pagamentos WHERE cobranca_id = :charge_id');
     $paymentCount->execute(['charge_id' => $firstChargeId]);
-    assertFinance((int) $paymentCount->fetchColumn() === 2, 'Tentativa de exceder saldo não deve criar pagamento.');
+    assertFinance((int) $paymentCount->fetchColumn() === 2, 'Reenvios e tentativas inválidas não devem criar pagamentos adicionais.');
 
     try {
         $duplicate = $pdo->prepare(
@@ -171,7 +185,7 @@ try {
         'Motivo do cancelamento financeiro deve ser preservado.'
     );
     assertFinanceRejected(
-        fn () => $finance->registerPayment($secondChargeId, $actorId, '10.00', 'PIX', '2026-11-22'),
+        fn () => $finance->registerPayment($secondChargeId, $actorId, '10.00', 'PIX', '2026-11-22', 'idem00000000000000000000000000004'),
         'Cobrança cancelada não deve aceitar pagamentos.'
     );
 
