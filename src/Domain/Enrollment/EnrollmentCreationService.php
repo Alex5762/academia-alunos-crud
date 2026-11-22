@@ -287,8 +287,34 @@ final class EnrollmentCreationService
                 throw new UnexpectedValueException('O banco não retornou o ID da nova matrícula.');
             }
 
-            // 7. A auditoria faz parte da mesma transação do contrato.
-            \FitControl\Security\AuditIntegrityChain::append($this->pdo, $actorUserId, 'matricula_criada', 'matriculas', $enrollmentId);
+            // 7. Uma única cobrança pelo valor total do contrato. O vencimento
+            // padrão é a data local de início; valor e data ficam congelados.
+            $chargeInsert = $this->pdo->prepare(
+                'INSERT INTO cobrancas (
+                    matricula_id, valor_total, data_vencimento, criado_por, criado_em_utc
+                 ) VALUES (
+                    :matricula_id, :valor_total, :data_vencimento, :criado_por, :criado_em_utc
+                 )'
+            );
+            $chargeInsert->execute([
+                'matricula_id' => $enrollmentId,
+                'valor_total' => $price,
+                'data_vencimento' => $startLocal->format('Y-m-d'),
+                'criado_por' => $actorUserId,
+                'criado_em_utc' => $nowLocal->setTimezone($this->utcTimezone)->format('Y-m-d H:i:s'),
+            ]);
+            $chargeId = (int) $this->pdo->lastInsertId();
+            if ($chargeId < 1) {
+                throw new UnexpectedValueException('O banco não retornou o ID da cobrança criada.');
+            }
+
+            // 8. Contrato, cobrança e auditoria são confirmados juntos.
+            \FitControl\Security\AuditIntegrityChain::append(
+                $this->pdo, $actorUserId, 'matricula_criada', 'matriculas', $enrollmentId
+            );
+            \FitControl\Security\AuditIntegrityChain::append(
+                $this->pdo, $actorUserId, 'cobranca_criada', 'cobrancas', $chargeId
+            );
 
             $this->pdo->commit();
 
