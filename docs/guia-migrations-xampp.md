@@ -1,6 +1,6 @@
-# Procedimento local — migrations 005 a 008 (FitControl)
+# Procedimento local — migrations 005 a 009 (FitControl)
 
-> **Escopo:** ambiente acadêmico/local com XAMPP. Este procedimento não autoriza uso em produção nem aplicação automática em banco com dados reais. A CI está configurada para validar as migrations 005, 006, 007 e 008 em MySQL 8.0 e MariaDB 10.11; isso não identifica nem valida a versão instalada no computador.
+> **Escopo:** ambiente acadêmico/local com XAMPP. Este procedimento não autoriza uso em produção nem aplicação automática em banco com dados reais. A CI está configurada para validar as migrations 005, 006, 007, 008 e 009 em MySQL 8.0 e MariaDB 10.11; isso não identifica nem valida a versão instalada no computador.
 
 ## 1. Antes de começar
 
@@ -66,7 +66,7 @@ O backup só é útil se puder ser lido/restaurado. Para uma validação rigoros
 
 ## 4. Aplicar as migrations na ordem correta
 
-**Atenção:** as migrations 005 e 007 criam/alteram estrutura (DDL). MySQL/MariaDB podem confirmar instruções DDL implicitamente; não conte com rollback transacional de toda a migration. Execute cada uma somente uma vez, após o backup.
+**Atenção:** as migrations 005, 007, 008 e 009 criam/alteram estrutura (DDL). MySQL/MariaDB podem confirmar instruções DDL implicitamente; não conte com rollback transacional de toda a migration. Execute cada uma somente uma vez, após o backup.
 
 No CMD, a partir da raiz do projeto:
 
@@ -101,6 +101,14 @@ Depois de confirmar que a migration terminou sem erro, inicialize o marco dos ev
 ```
 
 O comando calcula um marco SHA-256 sobre os eventos já existentes e é idempotente: uma segunda execução não substitui o marco. **A aplicação não deve voltar a receber tráfego entre a migration 008 e a inicialização do marco**, pois novas gravações são recusadas enquanto a cadeia não estiver inicializada.
+
+Aplique então a migration 009, específica do Bloco 04, uma única vez:
+
+```bat
+"C:\\xampp\\mysql\\bin\\mysql.exe" --host=127.0.0.1 --port=3306 --user=root academia_alunos < database\\migrations\\009_attendance_checkins.sql
+```
+
+Ela cria a tabela `checkins`, com chaves estrangeiras para aluno, matrícula e funcionário e uma restrição única por aluno/dia local. A data civil é calculada pela aplicação no fuso `America/Sao_Paulo`; o instante correspondente é armazenado em UTC. Não edite a tabela manualmente para simular presenças.
 
 Não execute a próxima migration se a anterior tiver apresentado qualquer erro. Se houver senha no root, acrescente `--password` às chamadas e informe-a quando solicitado.
 
