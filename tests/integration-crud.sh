@@ -800,6 +800,7 @@ db_exec "ALTER TABLE matriculas
     ADD COLUMN duracao_contratada_unidade ENUM('DIA','SEMANA','MES') NULL,
     ADD COLUMN inicio_em DATETIME NULL,
     ADD COLUMN fim_exclusivo_em DATETIME NULL,
+    ADD COLUMN dia_referencia_calendario TINYINT UNSIGNED NULL,
     ADD COLUMN cancelada_em DATETIME NULL,
     ADD COLUMN origem ENUM('SISTEMA','LEGADO') NOT NULL DEFAULT 'SISTEMA',
     ADD COLUMN motivo_cancelamento VARCHAR(255) NULL,
@@ -853,10 +854,73 @@ assert_contains "$TMP_DIR/detail-enrollments.html" "Teste de preservação hist�
 assert_contains "$TMP_DIR/detail-enrollments.html" "Revisão do vínculo pendente"
 assert_contains "$TMP_DIR/detail-enrollments.html" "Fixture automatizado de CI"
 
+echo "9.5/10 - Validando contratação pela interface e bloqueio de revisão pendente..."
+curl -fsS -G -c "$COOKIE_JAR" -b "$COOKIE_JAR" \
+    --data-urlencode "nova_matricula=1" \
+    --data-urlencode "aluno_id=$ALUNO_ID" \
+    "$BASE_URL/planos.php" -o "$TMP_DIR/enrollment-form.html"
+assert_contains "$TMP_DIR/enrollment-form.html" "Nova matrícula"
+assert_contains "$TMP_DIR/enrollment-form.html" "Plano CI Mensal"
+
+ENROLLMENT_TOKEN="$(get_token "$TMP_DIR/enrollment-form.html")"
+START_DATE="$(php -r 'echo (new DateTimeImmutable("+60 days", new DateTimeZone("America/Sao_Paulo")))->format("Y-m-d");')"
+HTTP_CODE="$(curl -sS -o "$TMP_DIR/enrollment-pending.html" -w '%{http_code}' -c "$COOKIE_JAR" -b "$COOKIE_JAR" \
+    "$BASE_URL/planos.php?nova_matricula=1" \
+    --data-urlencode "token=$ENROLLMENT_TOKEN" \
+    --data-urlencode "acao=criar_matricula" \
+    --data-urlencode "aluno_id=$ALUNO_ID" \
+    --data-urlencode "plano_id=$PLAN_ID" \
+    --data-urlencode "data_inicio=$START_DATE" \
+    --data-urlencode "hora_inicio=")"
+[[ "$HTTP_CODE" == "422" ]] || fail "Revisão legada pendente deveria bloquear contratação com HTTP 422; retornou $HTTP_CODE."
+assert_contains "$TMP_DIR/enrollment-pending.html" "A matrícula está bloqueada enquanto a revisão do vínculo legado estiver pendente."
+
+# A decisão abaixo é apenas fixture de teste. A tela de decisão auditada será implementada no fluxo próprio.
+db_exec "UPDATE revisoes_legado SET resultado_atual = 'LEGADO_SEM_VIGENCIA' WHERE aluno_id_origem = $ALUNO_ID"
+
+ENROLLMENT_TOKEN="$(get_token "$TMP_DIR/enrollment-pending.html")"
+curl -fsS -L -c "$COOKIE_JAR" -b "$COOKIE_JAR" \
+    "$BASE_URL/planos.php?nova_matricula=1" \
+    --data-urlencode "token=$ENROLLMENT_TOKEN" \
+    --data-urlencode "acao=criar_matricula" \
+    --data-urlencode "aluno_id=$ALUNO_ID" \
+    --data-urlencode "plano_id=$PLAN_ID" \
+    --data-urlencode "data_inicio=$START_DATE" \
+    --data-urlencode "hora_inicio=" \
+    -o "$TMP_DIR/enrollment-created.html"
+assert_contains "$TMP_DIR/enrollment-created.html" "Matrícula #"
+assert_contains "$TMP_DIR/enrollment-created.html" "Plano CI Mensal"
+assert_contains "$TMP_DIR/enrollment-created.html" "Agendada"
+
+NEW_ENROLLMENT_ID="$(db_value "SELECT id FROM matriculas
+    WHERE aluno_id = $ALUNO_ID
+      AND plano_id = $PLAN_ID
+      AND plano_nome_contratado = 'Plano CI Mensal'
+      AND origem = 'SISTEMA'
+      AND inicio_em > UTC_TIMESTAMP()
+    ORDER BY id DESC LIMIT 1")"
+[[ "$NEW_ENROLLMENT_ID" =~ ^[0-9]+$ ]] || fail "A contratação pela interface não criou uma matrícula futura."
+ENROLLMENT_SNAPSHOT="$(db_value "SELECT COUNT(*) FROM matriculas
+    WHERE id = $NEW_ENROLLMENT_ID
+      AND valor_contratado = 149.90
+      AND duracao_contratada_valor = 1
+      AND duracao_contratada_unidade = 'MES'")"
+[[ "$ENROLLMENT_SNAPSHOT" == "1" ]] || fail "A nova matrícula não preservou o snapshot do plano."
+ENROLLMENT_AUDIT="$(db_value "SELECT COUNT(*) FROM auditoria
+    WHERE usuario_id = $USUARIO_ID
+      AND acao = 'matricula_criada'
+      AND entidade = 'matriculas'
+      AND entidade_id = $NEW_ENROLLMENT_ID")"
+[[ "$ENROLLMENT_AUDIT" == "1" ]] || fail "A criação da matrícula não foi auditada pelo funcionário autenticado."
+
 # Limpa apenas as tabelas descartáveis criadas por este teste.
 db_exec "DELETE FROM auditoria WHERE entidade = 'planos' AND entidade_id IN ($PLAN_ID, $UNUSED_PLAN_ID)"
+db_exec "DELETE FROM auditoria
+    WHERE entidade = 'matriculas'
+      AND entidade_id IN (SELECT id FROM matriculas WHERE plano_id = $PLAN_ID)"
 db_exec "DELETE FROM matriculas WHERE plano_id = $PLAN_ID"
 db_exec "DELETE FROM planos WHERE id IN ($PLAN_ID, $UNUSED_PLAN_ID)"
+db_exec "DELETE FROM revisoes_legado WHERE aluno_id_origem = $ALUNO_ID"
 db_exec "DROP TABLE revisoes_legado"
 db_exec "DROP TABLE matriculas"
 db_exec "DROP TABLE planos"
