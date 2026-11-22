@@ -155,17 +155,22 @@ final class FinanceService
                     :actor_id, :registered_at, :idempotency_key, :request_fingerprint
                  )'
             );
-            $insert->execute([
-                'charge_id' => $chargeId,
-                'amount' => $amount,
-                'method' => $method,
-                'payment_date' => $paymentDateLocal,
-                'observation' => $observation,
-                'actor_id' => $actorUserId,
-                'registered_at' => $nowLocal->setTimezone($this->utcTimezone)->format('Y-m-d H:i:s'),
-                'idempotency_key' => $idempotencyKey,
-                'request_fingerprint' => $requestFingerprint,
-            ]);
+            $this->pdo->exec('SET @fitcontrol_payment_write = 1');
+            try {
+                $insert->execute([
+                    'charge_id' => $chargeId,
+                    'amount' => $amount,
+                    'method' => $method,
+                    'payment_date' => $paymentDateLocal,
+                    'observation' => $observation,
+                    'actor_id' => $actorUserId,
+                    'registered_at' => $nowLocal->setTimezone($this->utcTimezone)->format('Y-m-d H:i:s'),
+                    'idempotency_key' => $idempotencyKey,
+                    'request_fingerprint' => $requestFingerprint,
+                ]);
+            } finally {
+                $this->pdo->exec('SET @fitcontrol_payment_write = NULL');
+            }
             $paymentId = (int) $this->pdo->lastInsertId();
             if ($paymentId < 1) {
                 throw new UnexpectedValueException('O banco não retornou o ID do pagamento.');
@@ -177,13 +182,17 @@ final class FinanceService
             $this->pdo->commit();
             return $paymentId;
         } catch (Throwable $exception) {
+            try {
+                $this->pdo->exec('SET @fitcontrol_payment_write = NULL');
+            } catch (Throwable) {
+                // A conexão pode estar indisponível; o rollback será tentado abaixo.
+            }
             $this->rollBackIfNeeded();
             throw $exception;
         }
     }
 
-    /** Cancela somente cobrança sem pagamentos e após o cancelamento do contrato. */
-    public function cancelUnpaidCharge(int $chargeId, int $actorUserId, string $reason): void
+    /** Cancela somente cobrança sem pagamentos e após o cancelamento do contrato.    public function cancelUnpaidCharge(int $chargeId, int $actorUserId, string $reason): void
     {
         if ($chargeId < 1 || $actorUserId < 1) {
             throw new InvalidArgumentException('Os identificadores precisam ser positivos.');
