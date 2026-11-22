@@ -65,6 +65,17 @@ jobs:
           mysql --host=127.0.0.1 --port=3306 --user=root < database/migrations/002_force_password_change.sql
           mysql --host=127.0.0.1 --port=3306 --user=root < database/migrations/003_login_rate_limit.sql
           mysql --host=127.0.0.1 --port=3306 --user=root < database/migrations/004_student_status.sql
+          mysql --host=127.0.0.1 --port=3306 --user=root < database/migrations/007_administrative_roles.sql
+          mysql --host=127.0.0.1 --port=3306 --user=root < database/migrations/008_audit_integrity_chain.sql
+
+      - name: Initialize audit integrity baseline
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_NAME: academia_alunos
+          DB_USER: root
+          DB_PASSWORD: root
+        run: php scripts/inicializar-integridade-auditoria.php
 
       - name: Validate enrollment concurrency with parent row lock
         env:
