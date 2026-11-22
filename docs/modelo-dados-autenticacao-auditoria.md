@@ -138,3 +138,10 @@ A classe `FitControl\\Security\\AuditIntegrityCheckpoint` exporta um snapshot co
 - `tests/database-audit-checkpoint.php`: cobre assinatura, adulteração, chave incorreta, identidade incompatível, extensão legítima após o checkpoint e estado atual atrás de um identificador assinado.
 
 Um checkpoint antigo permanece válido quando eventos novos são adicionados, desde que o hash assinado continue presente na cadeia. Um banco cujo último identificador esteja abaixo do checkpoint é rejeitado como possível restauração. A chave e os arquivos devem ficar em armazenamentos independentes; no Windows, as permissões da pasta devem ser revisadas por ACL. HMAC não fornece carimbo de tempo confiável e não substitui backup, retenção imutável ou controle de acesso.
+
+
+### Histórico e agendamento de checkpoints
+
+O comparador `scripts/comparar-checkpoints-auditoria.php` valida duas assinaturas e exige que os arquivos pertençam ao mesmo banco, marco histórico e cadeia ainda presente no estado atual. O utilitário `scripts/listar-checkpoints-auditoria.php` percorre os JSON de uma pasta externa e valida cada arquivo; qualquer checkpoint inválido faz o comando terminar com código diferente de zero.
+
+No Windows, `scripts/windows/instalar-checkpoint-auditoria.ps1` registra uma tarefa diária com privilégio limitado. A chave HMAC e as credenciais de conexão são guardadas em uma configuração protegida pelo DPAPI do usuário que instalou a tarefa. O executor exporta um novo arquivo, verifica o arquivo recém-criado e registra o resultado. A tarefa exige sessão interativa do mesmo usuário; o DPAPI não permite mover a configuração para outro perfil/computador. O armazenamento local deve ser copiado periodicamente para destino independente e não possui retenção imutável por si só.
