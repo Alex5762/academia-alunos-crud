@@ -129,11 +129,12 @@ Não recomendo adicionar agora um razão contábil de partidas dobradas, concili
 
 ## Estado de validação
 
-- CI #1243–#1245 foram aprovadas nos jobs anteriores.
-- CI #1266: job financeiro em MariaDB 10.11 aprovado, incluindo migration 011 e concorrência idempotente; MySQL 8.0 ainda em execução na última consulta.
-- F-01 agora possui cobertura sequencial e concorrente; F-02, F-03 e F-04 permanecem pendentes. A concorrência de F-06 sobre o limite de saldo ainda requer cenário próprio.
+- CI #1312 foi aprovada integralmente: sete jobs verdes, incluindo MySQL 8.0, MariaDB 10.11, migrations, concorrência financeira, classificação de revisão e integração CRUD.
+- F-01, F-02 e F-03 estão implementados e validados na CI #1312.
+- F-04 foi implementado na branch `feat/dashboard-portfolio`; consulta em lote, histórico expansível e testes de integração aguardam a próxima execução completa da CI.
+- A concorrência de F-06 sobre o limite de saldo ainda requer cenário próprio.
 - Nenhuma migration foi aplicada no banco local do usuário.
-- PR #1 permanece Draft e não integrada. Esta revisão não altera a decisão de manter a PR aberta.
+- PR #1 permanece Draft e não integrada; não fazer merge antes da validação final.
 
 ## Referências consultadas
 
