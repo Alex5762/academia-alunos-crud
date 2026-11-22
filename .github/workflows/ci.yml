@@ -362,6 +362,21 @@ jobs:
           MYSQL_PWD: root
         run: mysql --host=127.0.0.1 --port=3306 --user=root < database/migrations/007_administrative_roles.sql
 
+      - name: Validate audit integrity chain migration
+        env:
+          MYSQL_PWD: root
+        run: mysql --host=127.0.0.1 --port=3306 --user=root < database/migrations/008_audit_integrity_chain.sql
+
+      - name: Initialize legacy audit baseline
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_NAME: academia_alunos
+          DB_USER: root
+          DB_PASSWORD: root
+          MYSQL_PWD: root
+        run: php scripts/inicializar-integridade-auditoria.php
+
       - name: Validate student status migration and legacy data preservation
         env:
           DB_HOST: 127.0.0.1
@@ -381,6 +396,16 @@ jobs:
           DB_PASSWORD: root
           MYSQL_PWD: root
         run: bash tests/provision-user.sh
+
+      - name: Test audit hash chain, append-only protection and concurrency
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_NAME: academia_alunos
+          DB_USER: root
+          DB_PASSWORD: root
+          MYSQL_PWD: root
+        run: php tests/database-audit-integrity.php
 
       - name: Run CRUD integration tests and capture screenshots
         env:
