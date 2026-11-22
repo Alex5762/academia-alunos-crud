@@ -221,6 +221,8 @@ jobs:
           test -f planos.php
           test -f revisoes-legado.php
           test -f salvar-revisao-legado.php
+          test -f retificar-vigencia-legado.php
+          test -f salvar-retificacao-legado.php
           test -f cancelar-matricula.php
           test -f cadastro.php
           test -f salvar.php
