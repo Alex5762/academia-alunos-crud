@@ -102,9 +102,7 @@ Depois de confirmar que a migration terminou sem erro, inicialize o marco dos ev
 
 O comando calcula um marco SHA-256 sobre os eventos já existentes e é idempotente: uma segunda execução não substitui o marco. **A aplicação não deve voltar a receber tráfego entre a migration 008 e a inicialização do marco**, pois novas gravações são recusadas enquanto a cadeia não estiver inicializada.
 
-Se houver senha, acrescente `--password` a cada chamada. Não execute a próxima migration se a anterior tiver apresentado qualquer erro. A migration 008 também instala gatilhos que impedem UPDATE/DELETE em `auditoria` e na tabela de hashes; a limpeza dos eventos antigos deixa de ser permitida.
-
-Se houver senha, acrescente `--password` a cada chamada. Não execute a 006 se a 005 tiver apresentado qualquer erro, nem a 007/008 se as etapas anteriores não tiverem sido concluídas.
+Não execute a próxima migration se a anterior tiver apresentado qualquer erro. Se houver senha no root, acrescente `--password` às chamadas e informe-a quando solicitado.
 
 ### O que cada arquivo faz
 
@@ -216,6 +214,6 @@ Não aplique a migration 008 em banco de produção ou com dados reais sem revis
 
 ## Estado e cautelas
 
-A CI valida as migrations 005/006/007/008 em MySQL 8.0 e MariaDB 10.11, incluindo preservação do texto original, reexecução segura da carga inicial e atribuição compatível dos perfis. Isso não significa que tenham sido aplicadas no computador. Isso não significa que tenham sido aplicadas no computador.
+A CI valida as migrations 005/006/007/008 em MySQL 8.0 e MariaDB 10.11, incluindo preservação do texto original, reexecução segura da carga inicial, atribuição compatível dos perfis e cadeia de integridade. Isso não significa que tenham sido aplicadas no computador.
 
 A PR #1 deve permanecer em Draft até a validação local, a inspeção física e a revisão final. Não fazer merge para `main` automaticamente.
