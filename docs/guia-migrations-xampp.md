@@ -252,7 +252,7 @@ Compare dois arquivos assinados, informando primeiro o mais antigo:
 
 A comparação valida as duas assinaturas, a mesma identidade de banco, o mesmo marco histórico, a ordem dos identificadores e a presença dos dois pontos na cadeia atual. A diferença informada é de identificadores, não uma contagem de eventos garantida quando há lacunas na sequência.
 
-### 8.4 Diagnóstico de recuperação após restaurar um backup
+### 8.3 Diagnóstico de recuperação após restaurar um backup
 
 O diagnóstico abaixo é somente leitura. Ele compara o estado do banco restaurado com todos os checkpoints JSON encontrados na pasta externa, valida as assinaturas HMAC e verifica a cadeia atual. Não insere eventos, não repara hashes, não reaplica migrations e não restaura dados.
 
@@ -277,7 +277,7 @@ Estados possíveis:
 O relatório inclui o último checkpoint correspondente, checkpoints posteriores ao estado restaurado, arquivos rejeitados e limitações. Preserve o relatório e os arquivos originais como evidência; não substitua checkpoints antigos. Se houver suspeita de perda, interrompa alterações no banco e decida manualmente a recuperação com base em backups, logs e evidências externas. Nunca reconstrua eventos de auditoria por estimativa.
 
 
-### 8.3 Agendamento diário no Windows
+### 8.4 Agendamento diário no Windows
 
 Os scripts PowerShell automatizam a exportação e a verificação pós-exportação. O instalador cria uma chave HMAC aleatória e guarda a configuração (chave e credenciais do banco) protegida pelo DPAPI do usuário Windows atual. A tarefa usa privilégio limitado e roda diariamente enquanto esse usuário estiver conectado.
 
