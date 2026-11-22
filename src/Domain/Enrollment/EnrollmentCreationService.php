@@ -12,9 +12,9 @@ use InvalidArgumentException;
 use LogicException;
 use PDO;
 use Throwable;
-use UnexpectedValueException
+use UnexpectedValueException;
+
 require_once __DIR__ . '/../../Security/AuditIntegrityChain.php';
-;
 
 /**
  * Cria uma matrícula operacional com snapshot do plano e trilha de auditoria.
