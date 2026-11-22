@@ -164,8 +164,8 @@ A migration 010 deve ser executada somente após backup e conferência da versã
 - O serviço normaliza a observação e exige justificativa quando `data_pagamento` for anterior à data local da academia; não confia no limite HTML.
 - Testes de integração verificam retroativo sem observação (rejeitado), retroativo com observação (aceito e preservado) e data futura (rejeitada mesmo com observação).
 - Data e observação permanecem incluídas no fingerprint de idempotência e na consulta de histórico.
-- **Validação:** testes financeiros aprovados nos jobs Block 04 da CI #1397 em MySQL 8.0 e MariaDB 10.11; integração CRUD geral ainda em execução.
+- **Validação:** testes financeiros e integração CRUD/Playwright aprovados na CI #1397 em MySQL 8.0 e MariaDB 10.11.
 
 ## Estado
 
-**F-01 a F-04 validados na CI #1332; F-05 validado na CI #1361; F-06 validado integralmente na CI #1362; F-07 validado integralmente na CI #1385; F-08 implementado e aguardando CI.** A execução geral da CI ainda está concluindo os jobs de integração; não aplicar migrations no banco local sem backup e validação. PR #1 permanece Draft. Migration 013 documentada com pré-verificação dos dados e cautela para falha parcial dos dois comandos DDL. As migrations 011 e 012 estão incluídas na CI e no guia XAMPP. Não aplicar migrations no banco local sem backup e validação. PR #1 permanece Draft.
+**F-01 a F-04 validados na CI #1332; F-05 validado na CI #1361; F-06 validado integralmente na CI #1362; F-07 validado integralmente na CI #1385; F-08 validado integralmente na CI #1397.** A execução geral da CI ainda está concluindo os jobs de integração; não aplicar migrations no banco local sem backup e validação. PR #1 permanece Draft. Migration 013 documentada com pré-verificação dos dados e cautela para falha parcial dos dois comandos DDL. As migrations 011 e 012 estão incluídas na CI e no guia XAMPP. Não aplicar migrations no banco local sem backup e validação. PR #1 permanece Draft.
