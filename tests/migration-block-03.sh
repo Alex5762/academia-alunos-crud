@@ -61,6 +61,7 @@ INSERT INTO usuarios (nome, email, senha_hash, ativo, deve_trocar_senha)
 VALUES ('Nova conta RBAC', 'rbac-new@example.test', 'hash-ficticio', 1, 1);
 SQL
 assert_equals "OPERADOR" "$(mysql_cmd -e "SELECT perfil FROM usuarios WHERE email = 'rbac-new@example.test'")" "novas contas devem receber o perfil de menor privilégio"
+assert_equals "1" "$(mysql_cmd -e "SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'usuarios_perfis_eventos'")" "histórico especializado de perfis deve existir"
 
 
 
