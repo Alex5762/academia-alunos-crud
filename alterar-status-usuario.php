@@ -9,6 +9,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 $usuario = exigirAutenticacao($pdo);
+exigirPermissao($usuario, 'users.manage');
 validarToken();
 
 $id = validarId($_POST['id'] ?? null);
