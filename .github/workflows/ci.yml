@@ -219,6 +219,8 @@ jobs:
           test -f gerenciar-plano.php
           test -f salvar-plano.php
           test -f planos.php
+          test -f revisoes-legado.php
+          test -f salvar-revisao-legado.php
           test -f cadastro.php
           test -f salvar.php
           test -f excluir.php
