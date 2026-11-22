@@ -332,17 +332,7 @@ try {
         "Cancelamento transacional: OK; cancelamento agendado/ativo, vencida/repetida rejeitadas e rollback de auditoria confirmado.\n"
     );
 } finally {
-    if (isset($enrollmentIds) && $enrollmentIds !== []) {
-        $placeholders = implode(',', array_fill(0, count($enrollmentIds), '?'));
-        $deleteAudit = $pdo->prepare(
-            "DELETE FROM auditoria
-             WHERE entidade = 'matriculas'
-               AND entidade_id IN ({$placeholders})"
-        );
-        $deleteAudit->execute($enrollmentIds);
-    }
-
-    if (isset($enrollmentIds) && $enrollmentIds !== []) {
+if (isset($enrollmentIds) && $enrollmentIds !== []) {
         $placeholders = implode(',', array_fill(0, count($enrollmentIds), '?'));
         $deleteMatriculas = $pdo->prepare(
             "DELETE FROM matriculas WHERE id IN ({$placeholders})"
@@ -359,9 +349,7 @@ try {
     }
 
     if ($actorId !== null) {
-        $deleteUser = $pdo->prepare('DELETE FROM usuarios WHERE id = :id');
-        $deleteUser->execute(['id' => $actorId]);
-    }
+}
 
     $pdo->exec('DROP TABLE IF EXISTS matriculas');
 }
