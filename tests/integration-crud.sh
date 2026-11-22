@@ -346,6 +346,8 @@ RBAC_USERS_HTTP="$(curl -sS -o "$TMP_DIR/operator-users.html" -w '%{http_code}' 
 [[ "$RBAC_USERS_HTTP" == "403" ]] || fail "Operador deveria receber 403 na gestão de funcionários; recebeu $RBAC_USERS_HTTP."
 RBAC_LEGACY_HTTP="$(curl -sS -o "$TMP_DIR/operator-legacy.html" -w '%{http_code}' -c "$NEW_COOKIE_JAR" -b "$NEW_COOKIE_JAR" "$BASE_URL/revisoes-legado.php")"
 [[ "$RBAC_LEGACY_HTTP" == "403" ]] || fail "Operador deveria receber 403 na revisão de legados; recebeu $RBAC_LEGACY_HTTP."
+RBAC_FINANCE_HTTP="$(curl -sS -o "$TMP_DIR/operator-finance.html" -w '%{http_code}' -c "$NEW_COOKIE_JAR" -b "$NEW_COOKIE_JAR" "$BASE_URL/financeiro.php")"
+[[ "$RBAC_FINANCE_HTTP" == "403" ]] || fail "Operador deveria receber 403 no módulo financeiro; recebeu $RBAC_FINANCE_HTTP."
 RBAC_PLANS_HTTP="$(curl -sS -o "$TMP_DIR/operator-plans.html" -w '%{http_code}' -c "$NEW_COOKIE_JAR" -b "$NEW_COOKIE_JAR" "$BASE_URL/planos.php")"
 [[ "$RBAC_PLANS_HTTP" == "200" ]] || fail "Operador deveria consultar planos; recebeu $RBAC_PLANS_HTTP."
 
