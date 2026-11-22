@@ -268,7 +268,7 @@ final class PlanManagementService
 
     private function recordAudit(int $actorUserId, string $action, int $planId): void
     {
-        AuditIntegrityChain::append($this->pdo, $actorUserId, $action, 'planos', $planId);
+        \\FitControl\\Security\\AuditIntegrityChain::append($this->pdo, $actorUserId, $action, 'planos', $planId);
     }
 
     private function beginOwnedTransaction(): void
