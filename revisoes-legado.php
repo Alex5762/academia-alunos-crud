@@ -524,17 +524,17 @@ if ($estruturaDisponivel) {
                                     && $evento['resultado_novo'] === 'VINCULO_CONFIRMADO'
                                 ) { ?>
                                     <p><strong>Intervalo comprovado na decisão:</strong>
-                                        <?= escapar($evento['inicio_novo'] ?? 'Não informado') ?>
-                                        → <?= escapar($evento['fim_exclusivo_novo'] ?? 'Não informado') ?>
+                                        <?= escapar(formatarInstanteUtcNaAcademia($evento['inicio_novo'] ?? null)) ?>
+                                        → <?= escapar(formatarInstanteUtcNaAcademia($evento['fim_exclusivo_novo'] ?? null)) ?>
                                     </p>
                                 <?php } elseif ($evento['tipo_evento'] === 'RETIFICACAO_VIGENCIA') { ?>
                                     <p><strong>Intervalo anterior:</strong>
-                                        <?= escapar($evento['inicio_anterior'] ?? 'Não informado') ?>
-                                        → <?= escapar($evento['fim_exclusivo_anterior'] ?? 'Não informado') ?>
+                                        <?= escapar(formatarInstanteUtcNaAcademia($evento['inicio_anterior'] ?? null)) ?>
+                                        → <?= escapar(formatarInstanteUtcNaAcademia($evento['fim_exclusivo_anterior'] ?? null)) ?>
                                     </p>
                                     <p><strong>Novo intervalo:</strong>
-                                        <?= escapar($evento['inicio_novo'] ?? 'Não informado') ?>
-                                        → <?= escapar($evento['fim_exclusivo_novo'] ?? 'Não informado') ?>
+                                        <?= escapar(formatarInstanteUtcNaAcademia($evento['inicio_novo'] ?? null)) ?>
+                                        → <?= escapar(formatarInstanteUtcNaAcademia($evento['fim_exclusivo_novo'] ?? null)) ?>
                                     </p>
                                 <?php } ?>
                                 <?php if (!empty($evento['observacoes'])) { ?>
