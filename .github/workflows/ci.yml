@@ -353,6 +353,10 @@ jobs:
           test -f src/Security/AuditIntegrityCheckpoint.php
           test -f scripts/exportar-checkpoint-auditoria.php
           test -f scripts/verificar-checkpoint-auditoria.php
+          test -f scripts/comparar-checkpoints-auditoria.php
+          test -f scripts/listar-checkpoints-auditoria.php
+          test -f scripts/windows/instalar-checkpoint-auditoria.ps1
+          test -f scripts/windows/executar-checkpoint-auditoria.ps1
           test -f tests/database-audit-checkpoint.php
           test -f tests/database-audit-integrity.php
           test -f detalhes-aluno.php
