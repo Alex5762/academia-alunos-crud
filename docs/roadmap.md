@@ -20,10 +20,10 @@ Já existe:
 - CI com MySQL, testes HTTP de integração, Playwright e capturas automatizadas.
 
 Limites conhecidos:
-- Todas as contas ativas têm a mesma permissão administrativa; não existe separação por cargo.
+- O RBAC possui três perfis (Administrador, Gestor e Operador), com permissões documentadas em `docs/matriz-permissoes.md`.
 - Não há recuperação de senha por e-mail nem MFA.
-- - O campo `alunos.plano` permanece preservado como texto legado; o catálogo e as matrículas estão implementados na branch, aguardando migrations 005/006 para integração local.
-- Pagamentos, check-in, aulas, agenda e relatórios operacionais continuam fora dos blocos já implementados.
+- O campo `alunos.plano` permanece preservado como texto legado; catálogo, matrículas e revisão dos vínculos estão implementados e validados pela CI. A aplicação das migrations no XAMPP local continua pendente.
+- O financeiro, aulas, agenda e relatórios operacionais continuam fora dos blocos já implementados.
 - A aplicação permanece acadêmica/local; não está preparada para uso público ou dados reais.
 
 ## Regras de execução
@@ -49,9 +49,9 @@ Limites conhecidos:
 - A contagem exata de eventos potencialmente perdidos permanece explicitamente desconhecida: lacunas de identificadores e ausência de inventário completo impedem inferir quantidade pela diferença entre IDs. O diagnóstico não restaura backups, não repara cadeias e não altera auditoria.
 - O CLI exige uma chave HMAC com pelo menos 64 caracteres hexadecimais, equivalente a 32 bytes de entropia; checkpoints e relatórios devem ficar fora da raiz do projeto.
 
-**Validação:** as CI #1153–#1158 aprovaram o teste da camada de checkpoints na execução MySQL e as matrizes de compatibilidade/migrations. O workflow foi ampliado para executar também `tests/database-audit-checkpoint.php` nos jobs MySQL 8.0 e MariaDB 10.11; a confirmação dos dois motores depende da próxima CI desta alteração.
+**Validação:** as CIs #1163/#1164 aprovaram os testes da cadeia e dos checkpoints; as execuções #1193, #1216 e #1221 mantiveram os jobs de compatibilidade e diagnóstico aprovados em MySQL 8.0 e MariaDB 10.11.
 
-**Pendência:** completar essa matriz, inspecionar o relatório gerado em cenário controlado e reconciliar a revisão da PR sem merge automático.
+**Pendências:** inspecionar o relatório em cenário controlado e reconciliar a revisão da PR sem merge automático.
 
 ## Blocos planejados
 
@@ -82,7 +82,7 @@ Entregas:
 - Limitação de tentativas de login: cinco falhas por combinação de e-mail/origem em 15 minutos geram bloqueio temporário de 15 minutos.
 - Expiração por 30 minutos de inatividade ou 8 horas absolutas, aviso antecipado e renovação autenticada durante interação.
 
-**Decisão funcional:** todas as contas ativas possuem a mesma permissão administrativa nesta versão. Perfis diferentes ficam fora do escopo até existir uma necessidade concreta.
+**Decisão funcional:** o RBAC foi implementado pela migration 007 com os perfis Administrador, Gestor e Operador. A matriz e os testes de permissões ficam em `docs/matriz-permissoes.md` e `tests/access-control.php`.
 
 **Pendências que não impedem a continuidade acadêmica/local, mas impedem considerar o sistema pronto para produção:** MFA, recuperação de senha por e-mail, revisão independente de segurança, HTTPS de produção, backups, monitoramento e revisão de privacidade.
 
@@ -115,7 +115,7 @@ O encerramento formal depende da inspeção em aparelho físico/navegador instal
 
 ### Bloco 03 — Planos e matrículas
 
-**Estado: implementação funcional avançada na branch; CI #741 (push) e #742 (PR) aprovadas em MySQL 8.0, MariaDB 10.11 e testes PHP/HTTP. Ainda não concluído para uso local: migrations 005/006, validação no XAMPP e inspeção física permanecem pendentes.**
+**Estado: implementação funcional avançada e migrations 005/006 aprovadas pela CI #1221 em MySQL 8.0 e MariaDB 10.11. Ainda não concluído para uso local: aplicação no XAMPP após backup e inspeção física permanecem pendentes.**
 
 Documento de referência: [Especificação, estado de implementação e pendências do Bloco 03](bloco-03-planos-matriculas.md).
 
@@ -164,7 +164,7 @@ Não iniciar migrations ou implementação até revisar as decisões restantes e
 
 ### Bloco 04 — Frequência e check-in
 
-**Estado: implementação inicial em andamento na branch `feat/dashboard-portfolio`.** A especificação fechada está em [Bloco 04 — Frequência e check-in](bloco-04-frequencia-checkin.md).
+**Estado: implementação concluída e CI #1221 aprovada** em MySQL 8.0 e MariaDB 10.11, incluindo migrations, regras de elegibilidade, duplicidade diária, rollback da auditoria, integração HTTP e compatibilidade visual. Permanecem pendentes a aplicação local no XAMPP e a inspeção manual em dispositivo físico. A especificação e os critérios estão em [Bloco 04 — Frequência e check-in](bloco-04-frequencia-checkin.md).
 
 **Objetivo:** registrar entradas e consultar a frequência dos alunos.
 
@@ -177,7 +177,7 @@ Escopo aprovado:
 - Auditoria transacional e permissões RBAC específicas.
 - QR Code, catraca, registro retroativo, edição/exclusão e financeiro ficam fora do escopo.
 
-A migration 009 cria a estrutura de check-ins vinculada a alunos, matrículas e funcionários. A validação automatizada será executada em MySQL 8.0 e MariaDB 10.11. A aplicação no XAMPP continua dependendo de backup, inspeção da versão/engine e execução manual controlada.
+A migration 009 cria a estrutura de check-ins vinculada a alunos, matrículas e funcionários. A CI #1221 validou o fluxo nos dois motores e a página em Chromium, Firefox e WebKit, com viewports desktop e mobile. A aplicação no XAMPP continua dependendo de backup, inspeção da versão/engine e execução manual controlada.
 
 ### Bloco 05 — Financeiro
 
