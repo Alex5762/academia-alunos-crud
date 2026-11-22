@@ -1,6 +1,6 @@
 # Bloco 03 — Planos e matrículas
 
-> **Estado em 22/11/2026: implementação funcional avançada na branch, com CI de push e PR aprovadas.** Catálogo de planos, criação e histórico de matrículas, cancelamento, revisão de vínculos legados e retificação de vigência estão implementados e cobertos por testes automatizados. As migrations 005 e 006 ainda não existem; o esquema do banco local/XAMPP não foi alterado. A inspeção em dispositivo físico e a validação das migrations no ambiente local continuam pendentes.
+> **Estado em 22/11/2026: implementação funcional avançada na branch; migrations 005/006 criadas e CI aprovadas.** Catálogo de planos, matrículas, cancelamento, revisão de vínculos legados e retificação de vigência estão implementados. As CIs #760 (push) e #761 (PR) passaram em MySQL 8.0 e MariaDB 10.11, incluindo aplicação, preservação e reexecução da carga inicial. O banco local/XAMPP não foi alterado; backup, inspeção e aplicação manual seguem pendentes conforme `docs/guia-migrations-xampp.md`. A inspeção em dispositivo físico também continua pendente.
 
 ## 0. Estado de implementação (22/11/2026)
 
@@ -30,19 +30,19 @@
 
 - CI de push #741: PHP/integração HTTP/capturas, MySQL 8.0 e MariaDB 10.11 aprovados.
 - CI de pull request #742: PHP/integração HTTP, MySQL 8.0 e MariaDB 10.11 aprovados.
-- A CI HTTP usa tabelas de fixture descartáveis para exercitar a interface de retificação; isso valida a aplicação, mas não substitui a execução das migrations 005/006, que ainda não foram criadas.
+- A CI HTTP usa tabelas de fixture descartáveis para exercitar a interface de retificação; os jobs independentes `Block 03 migrations` também aplicam e verificam as migrations 005/006 em MySQL 8.0 e MariaDB 10.11.
 - A publicação de capturas é executada no fluxo de push; a execução de PR não publica diretamente os arquivos.
 
 ### Ainda pendente
 
-- Projetar, implementar e revisar as migrations 005 (DDL do catálogo/matrículas/revisão/eventos) e 006 (carga inicial transacional dos legados).
-- Adicionar as migrations à sequência de importação da CI e testar banco limpo, banco com alunos existentes, reexecução segura e preservação de dados.
+- Migrations 005 (DDL do catálogo/matrículas/revisão/eventos) e 006 (carga inicial transacional dos legados) implementadas e revisadas; manter os testes de compatibilidade e reexecução.
+- CI executa as migrations em bancos efêmeros MySQL 8.0 e MariaDB 10.11, cobrindo alunos legados, preservação byte a byte do texto original, ausência de matrículas inventadas, reexecução e proteção de decisões humanas.
 - Confirmar a versão real do MySQL/MariaDB e o mecanismo InnoDB no XAMPP antes de qualquer aplicação local.
-- Executar as migrations no XAMPP somente depois da revisão, com backup e inspeção de `SHOW CREATE TABLE`/metadados após o DDL.
+- Aplicar as migrations no XAMPP somente após backup conferido e inspeção de versão/engines, seguindo `docs/guia-migrations-xampp.md`; inspecionar `SHOW CREATE TABLE`, FKs, índices e contagens após a execução.
 - Validar no navegador local os fluxos completos de contratação, revisão, retificação, cancelamento e histórico.
 - Fazer inspeção física em dispositivo real antes de retirar a PR do estado Draft.
 
-Nenhuma migration 005/006 foi aplicada à base local e nenhuma operação de merge foi realizada. A PR #1 continua aberta em Draft; `main` permanece intacta.
+As migrations 005/006 foram aprovadas na CI, mas não foram aplicadas à base local. Nenhuma operação de merge foi realizada. A PR #1 continua aberta em Draft; `main` permanece intacta.
 
 
 ## 1. Objetivo
@@ -458,11 +458,11 @@ Em qualquer resultado, a revisão deve registrar o funcionário responsável, o 
 
 Estratégia de migração e regularização:
 
-**Sequência simples sugerida (arquivos ainda não criados):**
+**Sequência implementada (arquivos criados e validados na CI):**
 
 - `005_plans_enrollments_schema.sql`: DDL para `planos`, `matriculas`, `revisoes_legado` e `revisoes_legado_eventos`, índices e FKs.
 - `006_import_legacy_review.sql`: somente carga DML do conjunto inicial de alunos para `revisoes_legado` e, se adotado, o evento geral de importação. Executar a carga em transação.
-- Manter as migrations 001–004 intactas; README e CI devem passar a executar 005 e 006 depois da 004 quando forem implementadas.
+- Manter as migrations 001–004 intactas; executar 005 e depois 006, conforme o guia operacional, após backup e inspeção do ambiente local.
 
 O DDL do MySQL/MariaDB pode confirmar implicitamente; após 005, conferir as tabelas com `SHOW CREATE TABLE` e metadados. Se falhar parcialmente, inspecionar o que foi criado e corrigir manualmente antes de continuar. Não criar runner genérico para esse cenário neste portfólio.
 
@@ -672,18 +672,18 @@ A revisão cruzada consolidada encontrou e tratou os seguintes pontos:
 
 1. **Migrations 005 e 006:** criar e revisar o DDL e a carga inicial de revisão dos legados. A implementação das telas/serviços não alterou o esquema de dados; não executar uma migration parcial nem presumir que DDL terá rollback automático.
 2. **Compatibilidade do banco local:** confirmar a versão real do MySQL/MariaDB do XAMPP, InnoDB nas tabelas envolvidas, suporte às constraints escolhidas e fuso da sessão. A matriz automatizada já cobre MySQL 8.0 e MariaDB 10.11, mas não identifica a versão instalada no computador.
-3. **Validação de migração:** adicionar 005/006 à CI e cobrir banco limpo, conjunto legado existente, preservação do texto original, contagem/uniqueness, falhas parciais e reexecução sem sobrescrever decisões ou duplicar auditoria.
+3. **Validação de migração:** concluída na CI #760/#761 para MySQL 8.0 e MariaDB 10.11, cobrindo conjunto legado, preservação byte a byte do texto original, ausência de matrículas inventadas e reexecução sem sobrescrever decisões ou incluir alunos posteriores ao corte.
 4. **Validação local:** somente após revisão das migrations e backup, aplicar no XAMPP; inspecionar `SHOW CREATE TABLE`, FKs, índices e mecanismos, e executar os cenários reais no navegador.
 5. **Inspeção física:** testar desktop/mobile em dispositivo e navegador instalados, incluindo navegação por toque, foco/teclado, telas de revisão/retificação, mensagens de erro e histórico.
 6. **Integração:** manter a PR #1 em Draft até a inspeção física e aprovação explícita; não fazer merge automaticamente.
 
-A automação atual confirma a lógica de domínio e a interface HTTP no banco efêmero com fixtures, além da compatibilidade dos testes transacionais em MySQL 8.0 e MariaDB 10.11. Ela ainda não valida as migrations 005/006 nem a instalação local. O Bloco 03 está implementado em boa parte na branch, mas não está pronto para uso local integrado até essas pendências serem concluídas.
+A automação atual confirma a lógica de domínio e a interface HTTP com fixtures, além da aplicação e dos testes das migrations 005/006 em MySQL 8.0 e MariaDB 10.11. Ela não valida a instalação local nem substitui backup, inspeção do XAMPP e teste manual no navegador. O Bloco 03 está implementado e validado na CI, mas a integração no ambiente local permanece pendente.
 
 ## 13. Dependências e limites do projeto
 
 O Bloco 02 já implementou situação cadastral e inativação lógica, mas a inspeção em aparelho físico/navegador instalado continua pendente. A preparação deste documento não encerra formalmente o Bloco 02 e não autoriza merge da PR #1.
 
-Este documento registra a especificação funcional, as decisões aprovadas, o estado de implementação e as pendências de validação. Os serviços e fluxos HTTP do Bloco 03 já estão implementados na branch; migrations não devem ser criadas/aplicadas sem revisão técnica, backup e validação explícita.
+Este documento registra a especificação funcional, as decisões aprovadas, o estado de implementação e as pendências de validação. Os serviços, fluxos HTTP e migrations 005/006 estão implementados na branch; a aplicação no XAMPP depende de backup, inspeção do ambiente e execução controlada conforme `docs/guia-migrations-xampp.md`.
 
 O FitControl permanece um projeto acadêmico/local. Não usar dados reais de alunos nem expor a aplicação publicamente.
 
