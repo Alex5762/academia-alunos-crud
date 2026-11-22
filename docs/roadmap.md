@@ -246,7 +246,9 @@ Entregas implementadas e validadas pela CI:
 
 O MVP proposto cobre modalidades, turmas recorrentes, horários semanais, geração explícita e idempotente de sessões para 30 dias, agenda, reservas internas, capacidade concorrente, cancelamento e presença por aula. Reutiliza alunos, matrículas, funcionários/usuários, RBAC, fuso `America/Sao_Paulo` e auditoria existentes.
 
-**Decisões propostas que aguardam confirmação:** instrutores serão funcionários já cadastrados em `usuarios`; reservas serão feitas pela equipe no painel interno; não haverá portal do aluno nem lista de espera automática na primeira versão; presença na aula será separada do check-in geral; horizonte padrão de geração será 30 dias.
+**Decisão confirmada:** instrutores terão cadastro profissional independente, com vínculo opcional e único a uma conta existente em `usuarios`. O cadastro não concede acesso nem altera RBAC. A especificação detalha inativação, histórico e snapshot do nome nas sessões.
+
+**Decisões ainda abertas:** reservas serão feitas pela equipe no painel interno; não haverá portal do aluno nem lista de espera automática na primeira versão; presença na aula será separada do check-in geral; horizonte padrão de geração será 30 dias.
 
 A especificação inclui modelo de domínio, regras de elegibilidade, permissões, ordem de bloqueios, concorrência, datas e critérios de aceite. Não criar migration nem iniciar implementação antes de fechar as decisões da seção 10 do documento.
 
