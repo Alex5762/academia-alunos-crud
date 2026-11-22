@@ -328,7 +328,9 @@ jobs:
           test -f renovar-sessao.php
           test -f salvar-usuario.php
           test -f alterar-status-usuario.php
+          test -f alterar-perfil-usuario.php
           test -f alterar-status-aluno.php
+          test -f docs/matriz-permissoes.md
           test -f detalhes-aluno.php
           test -f tests/assert-user-provisioned.php
           test -f tests/provision-user.sh
