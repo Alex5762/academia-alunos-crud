@@ -383,9 +383,9 @@ final class AuditIntegrityCheckpoint
             throw new RuntimeException('Nome do banco inválido para o checkpoint.');
         }
 
-        if (strlen($secret) < 32) {
+        if (preg_match('/^[a-fA-F0-9]{64,}$/D', $secret) !== 1) {
             throw new RuntimeException(
-                'FITCONTROL_AUDIT_CHECKPOINT_SECRET precisa ter pelo menos 32 bytes aleatórios.'
+                'FITCONTROL_AUDIT_CHECKPOINT_SECRET precisa conter pelo menos 64 caracteres hexadecimais (32 bytes de entropia).'
             );
         }
     }

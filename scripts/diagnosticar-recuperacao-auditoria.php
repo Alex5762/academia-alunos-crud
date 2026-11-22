@@ -16,8 +16,8 @@ $databaseName = getenv('DB_NAME') ?: 'academia_alunos';
 $checkpointDirectory = $argv[1] ?? '';
 $reportPath = $argv[2] ?? '';
 
-if (!is_string($secret) || strlen($secret) < 32) {
-    fwrite(STDERR, "Defina FITCONTROL_AUDIT_CHECKPOINT_SECRET com a chave HMAC original.\n");
+if (!is_string($secret) || preg_match('/^[a-fA-F0-9]{64,}$/D', $secret) !== 1) {
+    fwrite(STDERR, "Defina FITCONTROL_AUDIT_CHECKPOINT_SECRET com pelo menos 64 caracteres hexadecimais (32 bytes de entropia).\n");
     exit(1);
 }
 

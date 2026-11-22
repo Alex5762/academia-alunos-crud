@@ -32,7 +32,7 @@ final class AuditRecoveryDiagnostic
         }
 
         try {
-            if (!preg_match('/^[a-fA-F0-9]{64,}$/', $secret)) {
+            if (!preg_match('/^[a-fA-F0-9]{64,}$/D', $secret)) {
                 throw new RuntimeException('A chave HMAC deve conter pelo menos 32 bytes em hexadecimal.');
             }
 
@@ -215,7 +215,7 @@ final class AuditRecoveryDiagnostic
             }
 
             return [
-                'report_version' => 1,
+                'report_version' => 2,
                 'generated_at_utc' => gmdate('Y-m-d\TH:i:s\Z'),
                 'read_only' => true,
                 'status' => 'diagnostic_error',

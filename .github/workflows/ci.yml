@@ -168,6 +168,15 @@ jobs:
           DB_PASSWORD: root
         run: php tests/database-temporal-compatibility.php
 
+      - name: Validate signed audit checkpoints and read-only recovery diagnosis
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_NAME: academia_alunos
+          DB_USER: root
+          DB_PASSWORD: root
+        run: php tests/database-audit-checkpoint.php
+
   block-03-migrations:
     name: Block 03 migrations (${{ matrix.database-name }})
     runs-on: ubuntu-latest

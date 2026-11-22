@@ -37,6 +37,22 @@ Limites conhecidos:
 7. **Documentação acompanha o código.** Atualizar README, instruções locais, decisões técnicas e relatório de testes no mesmo bloco.
 8. **Integração controlada.** Trabalhar na branch de desenvolvimento e em PRs com escopo claro. Não fazer merge em `main` sem revisão e aprovação explícita.
 
+## Integridade e recuperação da auditoria
+
+**Implementado na branch `feat/dashboard-portfolio`; ainda aguardando integração revisada com `main`.**
+
+- A migration 008 cria o estado da integridade e os mecanismos append-only da cadeia de auditoria.
+- `AuditIntegrityChain` mantém hashes encadeados SHA-256 dos eventos posteriores ao marco histórico.
+- `AuditIntegrityCheckpoint` exporta checkpoints HMAC externos, verifica assinaturas e presença do marco na cadeia, e compara checkpoints da mesma linhagem.
+- `AuditRecoveryDiagnostic` executa diagnóstico somente leitura e distingue `consistent_through_checkpoint`, `possible_older_restore`, `chain_divergence`, `chain_invalid` e `insufficient_evidence`.
+- O relatório v2 inclui o estado restaurado, checkpoints correspondentes, posteriores, divergentes ou rejeitados, resumo das evidências e uma janela potencial de perda delimitada por IDs quando existe checkpoint assinado posterior.
+- A contagem exata de eventos potencialmente perdidos permanece explicitamente desconhecida: lacunas de identificadores e ausência de inventário completo impedem inferir quantidade pela diferença entre IDs. O diagnóstico não restaura backups, não repara cadeias e não altera auditoria.
+- O CLI exige uma chave HMAC com pelo menos 64 caracteres hexadecimais, equivalente a 32 bytes de entropia; checkpoints e relatórios devem ficar fora da raiz do projeto.
+
+**Validação:** as CI #1153–#1158 aprovaram o teste da camada de checkpoints na execução MySQL e as matrizes de compatibilidade/migrations. O workflow foi ampliado para executar também `tests/database-audit-checkpoint.php` nos jobs MySQL 8.0 e MariaDB 10.11; a confirmação dos dois motores depende da próxima CI desta alteração.
+
+**Pendência:** completar essa matriz, inspecionar o relatório gerado em cenário controlado e reconciliar a revisão da PR sem merge automático.
+
 ## Blocos planejados
 
 ### Bloco 00 — Consolidar a base atual

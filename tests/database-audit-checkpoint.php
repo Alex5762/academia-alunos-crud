@@ -196,6 +196,30 @@ try {
         'A leitura autenticada deve expor o identificador assinado sem exigir consulta mutável.'
     );
 
+    $invalidSecretRejected = false;
+    try {
+        \\FitControl\\Security\\AuditIntegrityCheckpoint::readSignedPayload(
+            $databaseName,
+            str_repeat('g', 64),
+            $checkpointPath
+        );
+    } catch (RuntimeException) {
+        $invalidSecretRejected = true;
+    }
+    assertCheckpoint($invalidSecretRejected, 'A chave HMAC deve seguir o contrato hexadecimal de pelo menos 64 caracteres.');
+
+    $invalidDiagnostic = \\FitControl\\Security\\AuditRecoveryDiagnostic::diagnose(
+        $pdo,
+        $databaseName,
+        str_repeat('g', 64),
+        [$checkpointPath]
+    );
+    assertCheckpoint(
+        $invalidDiagnostic['status'] === 'diagnostic_error'
+        && $invalidDiagnostic['report_version'] === 2,
+        'Erros de diagnóstico devem preservar a versão atual do relatório.'
+    );
+
     $consistentReport = \FitControl\Security\AuditRecoveryDiagnostic::diagnose(
         $pdo,
         $databaseName,
@@ -230,6 +254,10 @@ try {
     assertCheckpoint(
         $rollbackReport['latest_checkpoint_ahead']['event_id'] === $futurePayload['checkpoint_event_id'],
         'O relatório deve identificar o checkpoint posterior à restauração.'
+    );
+    assertCheckpoint(
+        $rollbackReport['latest_checkpoint_ahead']['created_at_utc'] === $futurePayload['created_at_utc'],
+        'O relatório deve preservar o horário UTC assinado do checkpoint posterior.'
     );
     assertCheckpoint(
         $rollbackReport['potential_loss_window']['event_id_bounds']['exclusive_lower_bound']
