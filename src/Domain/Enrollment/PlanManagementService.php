@@ -3,14 +3,15 @@ declare(strict_types=1);
 
 namespace FitControl\Domain\Enrollment;
 
-require_once __DIR__ . '/../../Security/AuditIntegrityChain.php';
 
 use DomainException;
 use InvalidArgumentException;
 use LogicException;
 use PDO;
 use Throwable;
-use UnexpectedValueException;
+use UnexpectedValueException
+require_once __DIR__ . '/../../Security/AuditIntegrityChain.php';
+;
 
 /**
  * Gerencia o catálogo de planos sem alterar snapshots de matrículas existentes.
