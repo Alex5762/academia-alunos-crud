@@ -32,7 +32,7 @@ Essas escolhas estão alinhadas com as recomendações de transações PDO, leit
 
 ### F-01 — Alto: idempotência no lançamento de pagamento
 
-**Estado: implementado na branch `feat/dashboard-portfolio`; validação em andamento.**
+**Estado: validado integralmente nas CI #1312 e #1362 em MySQL 8.0 e MariaDB 10.11.**
 
 **Correção entregue:**
 - Migration 011 adiciona `chave_idempotencia` e `hash_requisicao`, com índice único por cobrança. Registros antigos permanecem válidos com as colunas nulas.
@@ -41,14 +41,11 @@ Essas escolhas estão alinhadas com as recomendações de transações PDO, leit
 - Reenvio com mesma chave e mesmo conteúdo retorna o ID original sem criar pagamento ou evento de auditoria adicional.
 - Reutilização da chave com conteúdo diferente é recusada.
 - A leitura idempotente ocorre após o bloqueio da cobrança com `SELECT ... FOR UPDATE`, serializando tentativas concorrentes na mesma cobrança.
-
-**Cobertura adicionada:** teste sequencial de reenvio, conflito de conteúdo e teste de corrida com dois processos PHP e conexões PDO independentes. O cenário concorrente exige um único pagamento, o mesmo ID nos dois processos e exatamente um evento de auditoria.
-
-**Validação observada:** no run CI #1266, o job financeiro em MariaDB 10.11 concluiu com sucesso, incluindo migration 011 e o teste concorrente. O job equivalente em MySQL 8.0 ainda estava em execução na última consulta. A confirmação final depende dos dois motores.
+- Testes sequenciais e concorrentes verificam pagamento único, ID estável e evento de auditoria único.
 
 ### F-02 — Alto: histórico de pagamentos append-only
 
-**Estado: implementação na branch `feat/dashboard-portfolio`; CI da migration 012 pendente.**
+**Estado: validado integralmente na CI #1312 em MySQL 8.0 e MariaDB 10.11.**
 
 **Correção entregue:**
 - Migration 012 adiciona um guard de INSERT que exige a variável de sessão controlada por `FinanceService`.
@@ -72,9 +69,9 @@ Essas escolhas estão alinhadas com as recomendações de transações PDO, leit
 - Cobrança financeiramente cancelada aparece como **Cancelada** e não mantém saldo em aberto.
 - Testes unitários cobrem os estados ativo, parcial, quitado, revisão e cancelado; o teste de banco cria uma matrícula com pagamento parcial, cancela o contrato e verifica a classificação e a separação dos R$ 250 restantes.
 
-### F-04 — Médio: falta consulta do histórico individual de pagamentos
+### F-04 — Médio: consulta do histórico individual de pagamentos
 
-**Estado: implementado na branch `feat/dashboard-portfolio`; CI pendente.**
+**Estado: validado integralmente na CI #1332 em MySQL 8.0 e MariaDB 10.11.**
 
 **Correção entregue:**
 - Criada `FinancePaymentHistoryQuery`, que consulta os pagamentos das cobranças exibidas em uma única ida ao banco, evitando N+1.
@@ -139,7 +136,7 @@ Essas escolhas estão alinhadas com as recomendações de transações PDO, leit
 5. **F-05 — Constraints:** validado; cobranças e pagamentos exigem valores positivos no banco.
 6. **F-06 — Concorrência:** validado; duas operações distintas que excederiam o saldo foram serializadas, com um lançamento aceito e outro recusado.
 7. **F-07 — Formatação monetária:** validado na CI #1385; interface e cálculo usam texto decimal/centavos inteiros sem conversão para `float`.
-8. **F-08 — Datas retroativas:** regra e testes implementados; jobs financeiros MySQL/MariaDB da CI #1397 aprovados. A execução geral de integração visual ainda está terminando.
+8. **F-08 — Datas retroativas:** validado integralmente na CI #1397; retroativo exige justificativa e data futura é bloqueada.
 
 Não recomendo adicionar agora um razão contábil de partidas dobradas, conciliação bancária ou integração com gateway. Para o escopo local/acadêmico, um registro de contas a receber e pagamentos com histórico imutável, idempotência, saldo exato, transações e auditoria é proporcional.
 
