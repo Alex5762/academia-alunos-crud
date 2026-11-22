@@ -31,6 +31,7 @@ final class AuditIntegrityCheckpoint
     public static function create(PDO $pdo, string $databaseName, string $secret): array
     {
         self::assertConfiguration($databaseName, $secret);
+        self::assertConnectedDatabase($pdo, $databaseName);
 
         if ($pdo->inTransaction()) {
             throw new RuntimeException('Gere checkpoints fora de transações já abertas.');
@@ -122,6 +123,7 @@ final class AuditIntegrityCheckpoint
     ): array {
         try {
             self::assertConfiguration($databaseName, $secret);
+            self::assertConnectedDatabase($pdo, $databaseName);
             $envelope = self::readEnvelope($checkpointPath);
             $payload = $envelope['payload'];
             self::validatePayload($payload);
@@ -249,6 +251,14 @@ final class AuditIntegrityCheckpoint
         ];
 
         return json_encode($canonical, self::JSON_FLAGS);
+    }
+
+    private static function assertConnectedDatabase(PDO $pdo, string $databaseName): void
+    {
+        $connectedDatabase = $pdo->query('SELECT DATABASE()')->fetchColumn();
+        if (!is_string($connectedDatabase) || !hash_equals($databaseName, $connectedDatabase)) {
+            throw new RuntimeException('O nome informado não corresponde ao banco conectado.');
+        }
     }
 
     private static function assertConfiguration(string $databaseName, string $secret): void
