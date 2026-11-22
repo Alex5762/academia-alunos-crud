@@ -5,6 +5,7 @@ use FitControl\Domain\Enrollment\EnrollmentCancellationService;
 use FitControl\Domain\Enrollment\EnrollmentCreationService;
 use FitControl\Domain\Enrollment\EnrollmentPeriodCalculator;
 use FitControl\Domain\Finance\FinanceService;
+use FitControl\Domain\Finance\FinanceDashboardStatus;
 
 require_once dirname(__DIR__) . '/src/Domain/Enrollment/EnrollmentPeriodCalculator.php';
 require_once dirname(__DIR__) . '/src/Domain/Enrollment/EnrollmentInterval.php';
@@ -12,6 +13,7 @@ require_once dirname(__DIR__) . '/src/Domain/Enrollment/EnrollmentStatus.php';
 require_once dirname(__DIR__) . '/src/Domain/Enrollment/EnrollmentCreationService.php';
 require_once dirname(__DIR__) . '/src/Domain/Enrollment/EnrollmentCancellationService.php';
 require_once dirname(__DIR__) . '/src/Domain/Finance/FinanceService.php';
+require_once dirname(__DIR__) . '/src/Domain/Finance/FinanceDashboardStatus.php';
 
 function financeConnection(): PDO
 {
@@ -314,6 +316,38 @@ try {
         'entity_id' => $racePaymentId,
     ]);
     assertFinance((int) $raceAuditCount->fetchColumn() === 1, 'A corrida deve gerar exatamente um evento de auditoria.');
+
+    // Matrícula cancelada com recebimento parcial permanece em revisão,
+    // não deve ser apresentada como saldo normalmente cobrável.
+    $cancellation = new EnrollmentCancellationService($pdo, $clock);
+    $cancellation->cancel($studentIds[2], $raceEnrollmentId, $actorId, 'Cancelamento com pagamento parcial');
+    $reviewQuery = $pdo->prepare(
+        'SELECT
+            c.valor_total,
+            c.cancelada_em_utc,
+            m.cancelada_em AS matricula_cancelada_em,
+            COALESCE(SUM(p.valor), 0.00) AS valor_pago,
+            c.data_vencimento
+         FROM cobrancas c
+         INNER JOIN matriculas m ON m.id = c.matricula_id
+         LEFT JOIN pagamentos p ON p.cobranca_id = c.id
+         WHERE c.id = :charge_id
+         GROUP BY c.id, c.valor_total, c.cancelada_em_utc, m.cancelada_em, c.data_vencimento'
+    );
+    $reviewQuery->execute(['charge_id' => $raceChargeId]);
+    $reviewCharge = $reviewQuery->fetch();
+    assertFinance(
+        FinanceDashboardStatus::status($reviewCharge, '2026-11-22')[0] === 'Em revisão',
+        'Matrícula cancelada com cobrança não cancelada deve aparecer Em revisão.'
+    );
+    assertFinance(
+        FinanceDashboardStatus::collectibleBalanceCents($reviewCharge) === 0,
+        'Saldo da matrícula cancelada não pode permanecer no saldo cobrável.'
+    );
+    assertFinance(
+        FinanceDashboardStatus::reviewBalanceCents($reviewCharge) === 25000,
+        'Saldo restante da matrícula cancelada deve permanecer em revisão.'
+    );
 
     $finance = new FinanceService($pdo, $clock);
     $paymentOne = $finance->registerPayment(
