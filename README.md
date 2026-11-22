@@ -143,10 +143,10 @@ academia-alunos-crud/
    - \`database/migrations/002_force_password_change.sql\`
    - \`database/migrations/003_login_rate_limit.sql\`
    - \`database/migrations/004_student_status.sql\`
-7. Para habilitar o Bloco 03, não execute 005/006 sem antes conferir a versão do banco e criar um backup. Siga integralmente o [guia de migrations para XAMPP](docs/guia-migrations-xampp.md), que aplica 005 e depois 006 e inclui consultas de verificação e procedimentos para falhas.
-8. No terminal
-9. Acesse
-10. No primeiro acesso
+7. Antes de habilitar os módulos posteriores, confirme a versão do banco, crie e confira um backup e siga o [guia de migrations para XAMPP](docs/guia-migrations-xampp.md) para aplicar 005–008 na ordem documentada. Não repita migrations DDL já aplicadas.
+8. Depois da migration 008 e da inicialização da cadeia de auditoria pelo procedimento do guia, aplique a migration 009 uma única vez: `database/migrations/009_attendance_checkins.sql`. Faça isso somente após backup e inspeção de InnoDB; a CI não aplica migrations no seu computador.
+9. No CMD, na raiz do projeto, execute `C:\\xampp\\php\\php.exe scripts\\provisionar-usuario.php`. Informe nome e e-mail e copie a senha temporária exibida: ela aparece uma única vez e não deve ser colocada no repositório.
+10. Acesse `http://localhost/academia-alunos-crud/login.php`, entre com o e-mail e a senha temporária e defina sua senha pessoal no primeiro acesso.
 
 ### Configuração do banco por variáveis de ambiente
 
