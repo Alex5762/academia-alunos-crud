@@ -102,7 +102,12 @@ academia-alunos-crud/
 │   ├── 006_import_legacy_review.sql
 │   ├── 007_administrative_roles.sql
 │   ├── 008_audit_integrity_chain.sql
-│   └── 009_attendance_checkins.sql
+│   ├── 009_attendance_checkins.sql
+│   ├── 010_financeiro.sql
+│   ├── 011_pagamento_idempotencia.sql
+│   ├── 012_pagamentos_append_only.sql
+│   ├── 013_financeiro_valores_positivos.sql
+│   └── 014_grade_fixa_aulas.sql
 ├── docs/
 │   ├── decisoes/
 │   ├── bloco-01-autenticacao.md
@@ -124,6 +129,7 @@ academia-alunos-crud/
 ├── tests/
 │   ├── browser-compatibility.mjs
 │   ├── database-attendance-checkin.php
+│   ├── database-class-schedule-migration.php
 │   ├── integration-crud.sh
 │   └── testes de domínio, banco e migrations
 ├── checkins.php
