@@ -3,9 +3,11 @@ require_once __DIR__ . '/funcoes.php';
 require_once __DIR__ . '/conexao.php';
 require_once __DIR__ . '/src/Domain/Enrollment/EnrollmentPeriodCalculator.php';
 require_once __DIR__ . '/src/Domain/Finance/FinanceService.php';
+require_once __DIR__ . '/src/Domain/Finance/FinanceDashboardStatus.php';
 
 use FitControl\Domain\Enrollment\EnrollmentPeriodCalculator;
 use FitControl\Domain\Finance\FinanceService;
+use FitControl\Domain\Finance\FinanceDashboardStatus;
 
 $usuario = exigirAutenticacao($pdo);
 exigirPermissao($usuario, 'finance.view');
@@ -143,10 +145,25 @@ if ($financialStructureAvailable) {
 
     $summary = $pdo->query(
         'SELECT
-            COALESCE(SUM(CASE WHEN c.cancelada_em_utc IS NULL THEN c.valor_total ELSE 0 END), 0.00) AS total_cobrado,
-            COALESCE(SUM(CASE WHEN c.cancelada_em_utc IS NULL THEN COALESCE(p.valor_pago, 0.00) ELSE 0 END), 0.00) AS total_pago,
-            COUNT(CASE WHEN c.cancelada_em_utc IS NULL THEN 1 END) AS total_cobrancas
+            COALESCE(SUM(c.valor_total), 0.00) AS total_cobrado,
+            COALESCE(SUM(COALESCE(p.valor_pago, 0.00)), 0.00) AS total_pago,
+            COUNT(c.id) AS total_cobrancas,
+            COALESCE(SUM(
+                CASE
+                    WHEN c.cancelada_em_utc IS NULL AND m.cancelada_em IS NULL
+                    THEN GREATEST(c.valor_total - COALESCE(p.valor_pago, 0.00), 0.00)
+                    ELSE 0.00
+                END
+            ), 0.00) AS saldo_cobravel,
+            COALESCE(SUM(
+                CASE
+                    WHEN c.cancelada_em_utc IS NULL AND m.cancelada_em IS NOT NULL
+                    THEN GREATEST(c.valor_total - COALESCE(p.valor_pago, 0.00), 0.00)
+                    ELSE 0.00
+                END
+            ), 0.00) AS saldo_em_revisao
          FROM cobrancas c
+         INNER JOIN matriculas m ON m.id = c.matricula_id
          LEFT JOIN (
             SELECT cobranca_id, SUM(valor) AS valor_pago
             FROM pagamentos
@@ -169,28 +186,10 @@ function financeiroCentavos(string|int|float|null $value): int
     return ((int) $parts[1] * 100) + (int) $parts[2];
 }
 
-function financeiroStatus(array $charge, string $today): array
-{
-    if ($charge['cancelada_em_utc'] !== null) {
-        return ['Cancelada', 'is-inactive'];
-    }
-    $totalCents = financeiroCentavos($charge['valor_total']);
-    $paidCents = financeiroCentavos($charge['valor_pago']);
-    if ($paidCents >= $totalCents) {
-        return ['Quitada', 'is-active'];
-    }
-    if ((string) $charge['data_vencimento'] < $today) {
-        return [$paidCents > 0 ? 'Parcial vencida' : 'Vencida', 'is-expired'];
-    }
-    if ($paidCents > 0) {
-        return ['Parcial', 'is-pending'];
-    }
-    return ['Em aberto', 'is-scheduled'];
-}
-
 $totalCobradoCents = financeiroCentavos($summary['total_cobrado'] ?? '0.00');
 $totalPagoCents = financeiroCentavos($summary['total_pago'] ?? '0.00');
-$totalSaldoCents = max(0, $totalCobradoCents - $totalPagoCents);
+$totalSaldoCobravelCents = financeiroCentavos($summary['saldo_cobravel'] ?? '0.00');
+$totalSaldoRevisaoCents = financeiroCentavos($summary['saldo_em_revisao'] ?? '0.00');
 ?>
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -219,7 +218,7 @@ $totalSaldoCents = max(0, $totalCobradoCents - $totalPagoCents);
 
     <section class="plan-summary-grid" aria-label="Resumo financeiro">
         <article class="plan-summary-card">
-            <span>Valor contratado</span>
+            <span>Valor contratado (histórico)</span>
             <strong><?= escapar(financeiroMoeda($summary['total_cobrado'] ?? 0)) ?></strong>
         </article>
         <article class="plan-summary-card">
@@ -227,8 +226,12 @@ $totalSaldoCents = max(0, $totalCobradoCents - $totalPagoCents);
             <strong><?= escapar(financeiroMoeda($summary['total_pago'] ?? 0)) ?></strong>
         </article>
         <article class="plan-summary-card">
-            <span>Saldo em aberto</span>
-            <strong><?= escapar(financeiroMoeda($totalSaldoCents / 100)) ?></strong>
+            <span>Saldo cobrável</span>
+            <strong><?= escapar(financeiroMoeda($totalSaldoCobravelCents / 100)) ?></strong>
+        </article>
+        <article class="plan-summary-card">
+            <span>Em revisão</span>
+            <strong><?= escapar(financeiroMoeda($totalSaldoRevisaoCents / 100)) ?></strong>
         </article>
     </section>
 
@@ -266,10 +269,9 @@ $totalSaldoCents = max(0, $totalCobradoCents - $totalPagoCents);
                     </thead>
                     <tbody>
                     <?php foreach ($charges as $charge) {
-                        [$statusLabel, $statusClass] = financeiroStatus($charge, $dataHoje);
-                        $totalCents = financeiroCentavos($charge['valor_total']);
+                        [$statusLabel, $statusClass] = FinanceDashboardStatus::status($charge, $dataHoje);
                         $paidCents = financeiroCentavos($charge['valor_pago']);
-                        $balanceCents = max(0, $totalCents - $paidCents);
+                        $balanceCents = FinanceDashboardStatus::balanceCents($charge);
                         $cancelledEnrollment = $charge['matricula_cancelada_em'] !== null;
                         $chargeCancelled = $charge['cancelada_em_utc'] !== null;
                     ?>
