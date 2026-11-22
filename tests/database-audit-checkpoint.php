@@ -207,6 +207,15 @@ try {
         'O diagnóstico deve reconhecer cadeia válida que contém o checkpoint.'
     );
     assertCheckpoint($consistentReport['read_only'] === true, 'O relatório deve declarar execução somente leitura.');
+    assertCheckpoint(!$pdo->inTransaction(), 'O diagnóstico deve encerrar sua transação de leitura.');
+    $stateAfterDiagnostic = $pdo->query(
+        'SELECT ultimo_evento_id, ultimo_hash FROM auditoria_integridade_estado WHERE id = 1'
+    )->fetch(PDO::FETCH_ASSOC);
+    assertCheckpoint(
+        (int) $stateAfterDiagnostic['ultimo_evento_id'] === (int) $currentState['ultimo_evento_id']
+        && hash_equals((string) $stateAfterDiagnostic['ultimo_hash'], (string) $currentState['ultimo_hash']),
+        'O diagnóstico não pode modificar o estado da cadeia.'
+    );
 
     $rollbackReport = \FitControl\Security\AuditRecoveryDiagnostic::diagnose(
         $pdo,
