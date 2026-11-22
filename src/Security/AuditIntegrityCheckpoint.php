@@ -235,6 +235,37 @@ final class AuditIntegrityCheckpoint
     }
 
     /**
+     * Lê e autentica um checkpoint sem exigir que seu evento já exista no banco atual.
+     * Isso permite diagnosticar backups anteriores ao checkpoint sem modificar dados.
+     *
+     * @return array{payload: array, signature: string}
+     */
+    public static function readSignedPayload(
+        string $databaseName,
+        string $secret,
+        string $checkpointPath
+    ): array {
+        self::assertConfiguration($databaseName, $secret);
+        $envelope = self::readEnvelope($checkpointPath);
+        $payload = $envelope['payload'];
+        self::validatePayload($payload);
+
+        if (!hash_equals($databaseName, $payload['database_name'])) {
+            throw new RuntimeException('O checkpoint pertence a outro banco de dados.');
+        }
+
+        $expectedSignature = hash_hmac('sha256', self::canonicalPayload($payload), $secret);
+        if (!hash_equals($expectedSignature, $envelope['signature'])) {
+            throw new RuntimeException('Assinatura HMAC inválida: o arquivo foi alterado ou a chave não corresponde.');
+        }
+
+        return [
+            'payload' => $payload,
+            'signature' => $envelope['signature'],
+        ];
+    }
+
+    /**
      * Compara dois checkpoints assinados do mesmo banco e da mesma linhagem.
      * Ambos também precisam continuar presentes na cadeia atual.
      *
