@@ -360,6 +360,24 @@ unset($_SESSION['mensagem']);
                                             <?= escapar($eventoRevisao['responsavel'] ?? 'Funcionário não identificado') ?>
                                             · <?= escapar($eventoRevisao['criado_em']) ?>
                                         </small>
+                                        <?php if (
+                                            $eventoRevisao['tipo_evento'] === 'DECISAO'
+                                            && $eventoRevisao['resultado_novo'] === 'VINCULO_CONFIRMADO'
+                                        ) { ?>
+                                            <small>Vigência comprovada:
+                                                <?= escapar($eventoRevisao['inicio_novo'] ?? 'Não informada') ?>
+                                                → <?= escapar($eventoRevisao['fim_exclusivo_novo'] ?? 'Não informado') ?>
+                                            </small>
+                                        <?php } elseif ($eventoRevisao['tipo_evento'] === 'RETIFICACAO_VIGENCIA') { ?>
+                                            <small>Intervalo anterior:
+                                                <?= escapar($eventoRevisao['inicio_anterior'] ?? 'Não informado') ?>
+                                                → <?= escapar($eventoRevisao['fim_exclusivo_anterior'] ?? 'Não informado') ?>
+                                            </small>
+                                            <small>Novo intervalo:
+                                                <?= escapar($eventoRevisao['inicio_novo'] ?? 'Não informado') ?>
+                                                → <?= escapar($eventoRevisao['fim_exclusivo_novo'] ?? 'Não informado') ?>
+                                            </small>
+                                        <?php } ?>
                                         <?php if (!empty($eventoRevisao['fonte_referencia'])) { ?>
                                             <small>Fonte: <?= escapar($eventoRevisao['fonte_referencia']) ?></small>
                                         <?php } ?>
