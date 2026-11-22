@@ -243,7 +243,7 @@ try {
         throw new RuntimeException('A cadeia inválida deveria fazer a transação falhar.');
     } catch (RuntimeException $exception) {
         assertAttendance(
-            str_contains($exception->getMessage(), 'SHA-256'),
+            str_contains($exception->getMessage(), 'Hash de integridade inválido.'),
             'A falha esperada deve vir da validação do hash da cadeia.'
         );
     } finally {
