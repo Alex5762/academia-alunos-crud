@@ -22,8 +22,8 @@ Já existe:
 Limites conhecidos:
 - Todas as contas ativas têm a mesma permissão administrativa; não existe separação por cargo.
 - Não há recuperação de senha por e-mail nem MFA.
-- O campo `alunos.plano` ainda é texto, sem relação com uma tabela de planos.
-- Não existem módulos de matrículas/contratos, pagamentos, check-in, aulas, agenda ou relatórios operacionais.
+- - O campo `alunos.plano` permanece preservado como texto legado; o catálogo e as matrículas estão implementados na branch, aguardando migrations 005/006 para integração local.
+- Pagamentos, check-in, aulas, agenda e relatórios operacionais continuam fora dos blocos já implementados.
 - A aplicação permanece acadêmica/local; não está preparada para uso público ou dados reais.
 
 ## Regras de execução
@@ -99,9 +99,9 @@ O encerramento formal depende da inspeção em aparelho físico/navegador instal
 
 ### Bloco 03 — Planos e matrículas
 
-**Estado: regras de negócio e diretrizes temporais aprovadas; revisão técnica ampliada; implementação não iniciada.**
+**Estado: implementação funcional avançada na branch; CI #741 (push) e #742 (PR) aprovadas em MySQL 8.0, MariaDB 10.11 e testes PHP/HTTP. Ainda não concluído para uso local: migrations 005/006, validação no XAMPP e inspeção física permanecem pendentes.**
 
-Documento de referência: [Pesquisa e proposta técnica do Bloco 03](bloco-03-planos-matriculas.md).
+Documento de referência: [Especificação, estado de implementação e pendências do Bloco 03](bloco-03-planos-matriculas.md).
 
 **Objetivo:** deixar de tratar o plano como texto livre e representar separadamente o catálogo de planos e os vínculos contratuais dos alunos.
 
@@ -111,6 +111,10 @@ Escopo candidato:
 - Renovação sem sobrescrever matrículas anteriores.
 - Consulta de vencimentos e histórico no perfil do aluno.
 - Migração preservadora dos valores atuais de `alunos.plano`.
+
+**Implementado e coberto pela CI na branch:** catálogo de planos; contratação com snapshot das condições; histórico e cancelamento de matrículas; fila e decisão auditada de revisão de legados; retificação auditada de vigência com preservação dos intervalos anterior/novo e idempotência. A validação HTTP usa fixtures em banco efêmero, não migrations reais.
+
+**Próximas entregas obrigatórias:** migrations 005/006, testes de carga/reexecução/preservação, confirmação do ambiente XAMPP, execução local após backup e inspeção física. A PR #1 continua Draft; não integrar automaticamente.
 
 **Regras aprovadas:**
 - Um aluno pode ter várias matrículas no histórico, mas não pode ter períodos sobrepostos em matrículas não canceladas.
