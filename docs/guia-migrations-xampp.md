@@ -205,6 +205,61 @@ Somente depois de confirmar as tabelas e constraints:
 
 Registre separadamente o que foi executado, o que passou e o que não foi testado. A CI verde não equivale à validação no XAMPP nem à inspeção em celular real.
 
+## 8. Smoke test financeiro (somente dados fictícios)
+
+Execute esta etapa apenas depois de aplicar e conferir as migrations 010–013 em uma cópia descartável do banco. Não use alunos, contratos ou pagamentos reais. Crie um aluno de teste e um plano fictício de valor conhecido (por exemplo, R$ 300,00), com matrícula criada pelo fluxo normal da aplicação.
+
+### Acesso e autorização
+
+1. Entre com uma conta Administrador e confirme que `financeiro.php` abre e apresenta a cobrança de teste.
+2. Entre com uma conta Gestor e confirme que pode consultar o painel e registrar pagamentos.
+3. Entre com uma conta Operador e tente abrir diretamente `financeiro.php`; o resultado esperado é HTTP 403. A ocultação do link no menu, sozinha, não vale como teste.
+4. Confirme que o Operador não consegue enviar POST para registrar pagamento ou cancelar cobrança; as permissões devem ser verificadas no servidor.
+
+### Cobrança e recebimentos
+
+1. Confirme que a matrícula criou exatamente uma cobrança pelo valor contratado e que o evento `cobranca_criada` aparece na auditoria.
+2. Registre um pagamento parcial de R$ 100,00. O saldo esperado é R$ 200,00.
+3. Reenvie exatamente a mesma operação com a mesma chave de idempotência. O sistema deve retornar o mesmo pagamento, sem criar outro registro nem outro evento financeiro.
+4. Registre outro pagamento de R$ 200,00. O saldo deve chegar a zero.
+5. Tente registrar valor superior ao saldo restante; o sistema deve recusar e manter pagamentos e auditoria sem alteração.
+6. Abra o histórico individual e confira valor, data, forma, observação, responsável e instante de registro.
+
+### Datas e cancelamentos
+
+1. Registre um pagamento retroativo sem justificativa; deve ser recusado.
+2. Repita com uma justificativa; deve ser aceito e preservado no histórico.
+3. Tente usar uma data futura; deve ser recusado mesmo que o formulário seja manipulado.
+4. Em outra matrícula fictícia cancelada e sem pagamentos, cancele a cobrança com motivo; ela deve deixar de ser cobrável, preservando o registro e a auditoria.
+5. Tente cancelar uma cobrança que já recebeu qualquer pagamento; a operação deve ser recusada. Não apague nem edite o pagamento para forçar o cancelamento.
+
+### Integridade do banco e auditoria
+
+Execute consultas de leitura para conferir:
+
+```sql
+SELECT id, matricula_id, valor_total, cancelada_em_utc
+FROM cobrancas
+ORDER BY id DESC
+LIMIT 20;
+
+SELECT id, cobranca_id, valor, forma_pagamento, data_pagamento,
+       registrado_por, registrado_em_utc, chave_idempotencia
+FROM pagamentos
+ORDER BY id DESC
+LIMIT 50;
+
+SELECT acao, entidade, entidade_id, usuario_id, criado_em
+FROM auditoria
+WHERE entidade IN ('cobrancas', 'pagamentos')
+ORDER BY id DESC
+LIMIT 50;
+```
+
+Tente UPDATE e DELETE em um pagamento fictício dentro da cópia descartável: ambos devem ser rejeitados pelos gatilhos append-only. Não use as variáveis de sessão reservadas aos testes para contornar a proteção. Execute o verificador de integridade da auditoria depois dos cenários.
+
+Registre o resultado esperado e o observado, incluindo versão do banco, IDs fictícios e evidências sem dados pessoais. Se algum passo falhar, pare, preserve a cópia e registre o erro; não corrija pagamentos diretamente no banco.
+
 ## 8. Verificar a integridade da auditoria
 
 Depois de inicializar o marco e iniciar a aplicação, execute:
