@@ -2404,7 +2404,7 @@ body:not(.dashboard-body) .theme-option[aria-pressed="true"] {
 .plans-page { width: min(100%, 1120px); }
 .plan-summary-grid {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 13px;
     margin: 20px 0;
 }
