@@ -454,6 +454,7 @@ jobs:
           test -f tests/database-finance.php
           test -f tests/finance-dashboard-status.php
           test -f src/Domain/Finance/FinanceDashboardStatus.php
+          test -f src/Domain/Finance/FinancePaymentHistoryQuery.php
           test -f financeiro.php
           test -f database/migrations/009_attendance_checkins.sql
           test -f tests/database-attendance-checkin.php
