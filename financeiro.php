@@ -186,8 +186,6 @@ function financeiroCentavos(string|int|float|null $value): int
     return ((int) $parts[1] * 100) + (int) $parts[2];
 }
 
-$totalCobradoCents = financeiroCentavos($summary['total_cobrado'] ?? '0.00');
-$totalPagoCents = financeiroCentavos($summary['total_pago'] ?? '0.00');
 $totalSaldoCobravelCents = financeiroCentavos($summary['saldo_cobravel'] ?? '0.00');
 $totalSaldoRevisaoCents = financeiroCentavos($summary['saldo_em_revisao'] ?? '0.00');
 ?>
