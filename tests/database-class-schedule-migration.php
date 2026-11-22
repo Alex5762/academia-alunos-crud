@@ -71,7 +71,8 @@ $columnQuery = $pdo->prepare(
      FROM information_schema.COLUMNS
      WHERE TABLE_SCHEMA = :schema
        AND (
-           (TABLE_NAME = \'instrutores\' AND COLUMN_NAME = \'usuario_id\')
+           (TABLE_NAME = \'usuarios\' AND COLUMN_NAME = \'id\')
+           OR (TABLE_NAME = \'instrutores\' AND COLUMN_NAME = \'usuario_id\')
            OR (TABLE_NAME = \'horarios_aula\' AND COLUMN_NAME = \'instrutor_id\')
        )'
 );
@@ -81,9 +82,24 @@ foreach ($columnQuery->fetchAll() as $column) {
     $columns[$column['TABLE_NAME']][$column['COLUMN_NAME']] = $column;
 }
 
+// MySQL e MariaDB podem exibir a largura legada do inteiro de maneiras
+// diferentes em COLUMN_TYPE (INT UNSIGNED vs INT(10) UNSIGNED).
+$normalizeColumnType = static function (?string $type): ?string {
+    if ($type === null) {
+        return null;
+    }
+
+    return strtolower((string) preg_replace('/\\(\\d+\\)/', '', $type));
+};
+
+$userIdType = $normalizeColumnType($columns['usuarios']['id']['COLUMN_TYPE'] ?? null);
+$instructorUserIdType = $normalizeColumnType(
+    $columns['instrutores']['usuario_id']['COLUMN_TYPE'] ?? null
+);
+
 assertClassSchedule(
-    ($columns['instrutores']['usuario_id']['COLUMN_TYPE'] ?? null) === 'int unsigned',
-    'instrutores.usuario_id precisa corresponder exatamente a usuarios.id (INT UNSIGNED).'
+    $userIdType === 'int unsigned' && $instructorUserIdType === $userIdType,
+    'instrutores.usuario_id precisa corresponder ao tipo real de usuarios.id (INT UNSIGNED).'
 );
 assertClassSchedule(
     ($columns['instrutores']['usuario_id']['IS_NULLABLE'] ?? null) === 'YES',
