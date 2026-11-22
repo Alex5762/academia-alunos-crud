@@ -434,6 +434,9 @@ jobs:
           test -f src/Domain/Attendance/AttendanceCheckinService.php
           test -f database/migrations/009_attendance_checkins.sql
           test -f tests/database-attendance-checkin.php
+          test -f docs/registro-retomada-2026-11-22.md
+          test -f docs/decisoes/ADR-001-politica-de-historico-git.md
+          test -f docs/bloco-04-frequencia-checkin.md
           test -f detalhes-auditoria.php
           test -f src/Security/AuditIntegrityChain.php
           test -f database/migrations/008_audit_integrity_chain.sql
