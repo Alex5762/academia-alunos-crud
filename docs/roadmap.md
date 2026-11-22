@@ -24,11 +24,11 @@ Enquanto o acesso ao XAMPP/dispositivo não estiver disponível, continuar com e
 
 ### Blocos ainda por desenvolver
 
-- **Bloco 06 — Aulas e agenda:** ainda requer escopo funcional e decisões de domínio antes de implementação.
+- **Bloco 06 — Grade fixa de aulas:** escopo inicial definido; implementação ainda não iniciada.
 - **Bloco 07 — Relatórios e experiência:** ainda requer definição de indicadores, filtros, exportação e permissões.
 - **Bloco 08 — Preparação para produção:** etapa futura, não iniciar como se fosse apenas deploy; depende de revisão independente e plano operacional/de segurança.
 
-**Próximo bloco recomendado: Bloco 06 — Aulas e agenda**, começando pela especificação e critérios de aceite. A validação local dos Blocos 03–05 permanece registrada como adiada, não como concluída.
+**Próximo bloco recomendado: Bloco 06 — Grade fixa de aulas**, começando pela inspeção do schema, migration e critérios de aceite. A validação local dos Blocos 03–05 permanece registrada como adiada, não como concluída.
 
 ---
 
@@ -57,7 +57,7 @@ Limites conhecidos:
 - Não há recuperação de senha por e-mail nem MFA.
 - O campo `alunos.plano` permanece preservado como texto legado; catálogo, matrículas e revisão dos vínculos estão implementados e validados por CI. A aplicação das migrations 005/006 no XAMPP local continua pendente.
 - Frequência/check-in (Bloco 04) e financeiro (Bloco 05) estão implementados na branch e validados por CI em MySQL 8.0 e MariaDB 10.11; a validação local/manual continua pendente.
-- Aulas/agenda (Bloco 06) e relatórios operacionais (Bloco 07) ainda não foram especificados nem implementados.
+- A especificação do Bloco 06 (grade semanal fixa) está documentada, mas ainda não foi implementada. O Bloco 07 ainda requer definição.
 - A preparação para produção (Bloco 08) continua pendente e exige revisão de segurança, privilégios SQL, backups/restauração, HTTPS, monitoramento e privacidade.
 - A aplicação permanece acadêmica/local; não está preparada para uso público ou dados reais.
 
@@ -242,11 +242,11 @@ Entregas implementadas e validadas pela CI:
 
 ### Bloco 06 — Aulas e agenda
 
-**Estado: especificação em evolução; implementação ainda não iniciada.** Documento: [Bloco 06 — Aulas e agenda](bloco-06-aulas-agenda.md).
+**Estado: escopo inicial definido; implementação ainda não iniciada.** Documento: [Bloco 06 — Grade fixa de aulas](bloco-06-aulas-agenda.md).
 
-O MVP proposto cobre modalidades, instrutores independentes com vínculo opcional a funcionário, turmas recorrentes, horários semanais, geração explícita e idempotente de sessões, agenda, reservas internas, capacidade concorrente, cancelamento, fila de espera interna e presença por aula.
+O MVP cobre cadastro de modalidades, instrutores independentes com vínculo opcional a funcionário, horários recorrentes por dia da semana e consulta da grade. Não haverá reservas, controle de vagas, lista de espera, presença por aula, QR Code, catraca ou portal do aluno nesta etapa.
 
-**Decisões confirmadas:** reservas e cancelamentos são feitos por funcionários autorizados no painel; alunos não terão portal no MVP. Instrutores têm cadastro profissional independente e vínculo opcional a `usuarios`, sem concessão de acesso. A arquitetura será web-first: painel responsivo acessado pelo navegador, sem aplicativo nativo. A confirmação seletiva de intenção pelo aluno e uma PWA instalável ficam como evoluções futuras.
+**Decisões confirmadas:** o modelo inicial é de participação livre em horários fixos; o aluno consulta a grade e comparece, sem reserva. O check-in geral do Bloco 04 permanece independente. Instrutores têm cadastro profissional independente e vínculo opcional a `usuarios`, sem concessão de acesso. A arquitetura será web-first: painel responsivo acessado pelo navegador, sem aplicativo nativo. Presença por aula, sessões datadas e integrações físicas ficam como possíveis evoluções futuras.
 
 **Recomendação da pesquisa — aguarda confirmação:** fila FIFO administrada por funcionários, sem promoção automática; equipe contata o próximo aluno pelo canal já utilizado e registra a resposta no painel. Uma vaga só é convertida em reserva por ação normal de funcionário, com nova validação de capacidade e elegibilidade.
 
