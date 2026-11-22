@@ -109,7 +109,21 @@ A desativação de funcionário bloqueia o próximo acesso protegido. Não é pe
 
 - Não armazenar senhas, tokens CSRF, IDs de sessão ou cópias integrais de dados pessoais na auditoria.
 - A tabela \`login_tentativas\` guarda hashes de e-mail e IP de origem para aplicar o limite; esses valores são pseudonimizados, não anônimos.
-- A trilha básica identifica autor, ação, alvo e horário; não é um histórico de alterações campo a campo.
-- Não há interface para consulta de auditoria nesta versão.
-- A estrutura não implementa papéis/permissões diferentes, MFA ou recuperação de senha por e-mail.
+- A trilha geral identifica autor, ação, alvo e horário. Eventos especializados complementam alterações de perfil, decisões de revisão e retificações de vigência.
+- A central `auditoria.php` oferece filtros e paginação; `detalhes-auditoria.php` reúne a linha do tempo por aluno, funcionário, plano, matrícula ou revisão legada.
+- A matriz RBAC diferencia Administrador, Gestor e Operador. MFA e recuperação de senha por e-mail não estão implementados.
 - A aplicação não está pronta para produção; hospedagem, HTTPS, backups, monitoramento e revisão de privacidade exigem etapa própria.
+
+
+## Cadeia de integridade da auditoria (migration 008)
+
+A migration `008_audit_integrity_chain.sql` acrescenta duas estruturas:
+
+- `auditoria_integridade_estado`: mantém o marco histórico, o último identificador encadeado e o último hash.
+- `auditoria_integridade_eventos`: guarda, para cada evento posterior ao marco, o hash anterior e o SHA-256 do evento canônico.
+
+A classe `FitControl\\Security\\AuditIntegrityChain` serializa as gravações bloqueando a linha única de estado com `SELECT ... FOR UPDATE`. A inserção do evento, o hash encadeado e a atualização do último hash ocorrem na mesma transação ou savepoint. O registrador é usado pela função comum e pelos serviços transacionais de matrícula, plano e revisão.
+
+A migration instala gatilhos para bloquear inserções fora do registrador, alterações/exclusões dos eventos e hashes, e alterações/exclusões do estado final. O marco inicial é criado uma única vez por `scripts/inicializar-integridade-auditoria.php`; a verificação pode ser executada com `scripts/verificar-integridade-auditoria.php`.
+
+**Limite importante:** a cadeia é *tamper-evident*, não inviolável. Ela detecta divergências no histórico coberto pelo marco e nos eventos encadeados, mas alguém com privilégios administrativos suficientes no próprio banco pode alterar dados, estado e gatilhos em conjunto. Para evidência independente, exporte periodicamente o último hash para armazenamento externo e imutável, com credenciais separadas. A cadeia não substitui backup nem revisão de permissões do banco.
