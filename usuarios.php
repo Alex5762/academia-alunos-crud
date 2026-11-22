@@ -1,11 +1,12 @@
 <?php
 require_once __DIR__ . '/funcoes.php';
 require_once __DIR__ . '/conexao.php';
+require_once __DIR__ . '/src/Security/AccessControl.php';
 
 $usuario = exigirAutenticacao($pdo);
 exigirPermissao($usuario, 'users.manage');
 $usuarios = $pdo->query(
-    'SELECT id, nome, email, ativo, criado_em
+    'SELECT id, nome, email, ativo, perfil, criado_em
      FROM usuarios
      ORDER BY ativo DESC, nome ASC'
 )->fetchAll();
@@ -97,6 +98,7 @@ foreach ($usuarios as $conta) {
                         <th scope="col">FUNCIONÁRIO</th>
                         <th scope="col">E-MAIL</th>
                         <th scope="col">CADASTRADO EM</th>
+                        <th scope="col">PERFIL</th>
                         <th scope="col">STATUS</th>
                         <th scope="col">AÇÃO</th>
                     </tr>
@@ -115,6 +117,25 @@ foreach ($usuarios as $conta) {
                             </td>
                             <td><?= escapar($conta['email']) ?></td>
                             <td><?= escapar(date('d/m/Y H:i', strtotime($conta['criado_em']))) ?></td>
+                            <td>
+                                <?php if ($contaAtual) { ?>
+                                    <span class="account-current"><?= escapar(\\FitControl\\Security\\AccessControl::label($conta['perfil'])) ?></span>
+                                <?php } else { ?>
+                                    <form action="alterar-perfil-usuario.php" method="post" class="account-status-form">
+                                        <input type="hidden" name="token" value="<?= escapar($_SESSION['token']) ?>">
+                                        <input type="hidden" name="id" value="<?= (int) $conta['id'] ?>">
+                                        <select name="perfil" aria-label="Perfil de <?= escapar($conta['nome']) ?>">
+                                            <?php foreach (\\FitControl\\Security\\AccessControl::roles() as $perfilDisponivel) { ?>
+                                                <option value="<?= escapar($perfilDisponivel) ?>"
+                                                    <?= $conta['perfil'] === $perfilDisponivel ? 'selected' : '' ?>>
+                                                    <?= escapar(\\FitControl\\Security\\AccessControl::label($perfilDisponivel)) ?>
+                                                </option>
+                                            <?php } ?>
+                                        </select>
+                                        <button class="button button-search" type="submit">Salvar perfil</button>
+                                    </form>
+                                <?php } ?>
+                            </td>
                             <td>
                                 <span class="account-status <?= $ativo ? 'is-active' : 'is-inactive' ?>">
                                     <?= $ativo ? 'Ativa' : 'Inativa' ?>
