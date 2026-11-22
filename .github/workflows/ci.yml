@@ -84,6 +84,15 @@ jobs:
           DB_PASSWORD: root
         run: php tests/database-plan-lock-concurrency.php
 
+      - name: Validate inverse legacy rectification and review concurrency
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_NAME: academia_alunos
+          DB_USER: root
+          DB_PASSWORD: root
+        run: php tests/database-legacy-rectification-decision-concurrency.php
+
       - name: Validate legacy review and rectification concurrency
         env:
           DB_HOST: 127.0.0.1
@@ -218,6 +227,7 @@ jobs:
           test -f src/Domain/Enrollment/LegacyEnrollmentRectificationService.php
           test -f tests/database-legacy-enrollment-rectification.php
           test -f tests/database-legacy-review-rectification-concurrency.php
+          test -f tests/database-legacy-rectification-decision-concurrency.php
           test -f tests/database-legacy-review-decision.php
           test -f tests/database-enrollment-creation.php
           test -f tests/database-enrollment-cancellation.php
