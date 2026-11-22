@@ -1,6 +1,6 @@
 # Procedimento local — migrations 005, 006 e 007 (FitControl)
 
-> **Escopo:** ambiente acadêmico/local com XAMPP. Este procedimento não autoriza uso em produção nem aplicação automática em banco com dados reais. As migrations 005, 006 e 007 foram executadas na CI em MySQL 8.0 e MariaDB 10.11; isso não identifica nem valida a versão instalada no computador.
+> **Escopo:** ambiente acadêmico/local com XAMPP. Este procedimento não autoriza uso em produção nem aplicação automática em banco com dados reais. A CI está configurada para validar as migrations 005, 006 e 007 em MySQL 8.0 e MariaDB 10.11; isso não identifica nem valida a versão instalada no computador.
 
 ## 1. Antes de começar
 
@@ -180,6 +180,6 @@ Registre separadamente o que foi executado, o que passou e o que não foi testad
 
 ## Estado e cautelas
 
-As migrations 005/006/007 foram executadas pela CI em MySQL 8.0 e MariaDB 10.11, incluindo preservação do texto original e reexecução segura da carga inicial. Isso não significa que tenham sido aplicadas no computador.
+A CI valida as migrations 005/006/007 em MySQL 8.0 e MariaDB 10.11, incluindo preservação do texto original, reexecução segura da carga inicial e atribuição compatível dos perfis. Isso não significa que tenham sido aplicadas no computador. Isso não significa que tenham sido aplicadas no computador.
 
 A PR #1 deve permanecer em Draft até a validação local, a inspeção física e a revisão final. Não fazer merge para `main` automaticamente.
