@@ -252,6 +252,31 @@ Compare dois arquivos assinados, informando primeiro o mais antigo:
 
 A comparação valida as duas assinaturas, a mesma identidade de banco, o mesmo marco histórico, a ordem dos identificadores e a presença dos dois pontos na cadeia atual. A diferença informada é de identificadores, não uma contagem de eventos garantida quando há lacunas na sequência.
 
+### 8.4 Diagnóstico de recuperação após restaurar um backup
+
+O diagnóstico abaixo é somente leitura. Ele compara o estado do banco restaurado com todos os checkpoints JSON encontrados na pasta externa, valida as assinaturas HMAC e verifica a cadeia atual. Não insere eventos, não repara hashes, não reaplica migrations e não restaura dados.
+
+Configure a mesma chave HMAC original e execute:
+
+```powershell
+$env:FITCONTROL_AUDIT_CHECKPOINT_SECRET = "CHAVE_HEXADECIMAL_ORIGINAL"
+& "C:\xampp\php\php.exe" scripts\diagnosticar-recuperacao-auditoria.php "D:\FitControl-Secure-Backups\checkpoints" "D:\FitControl-Secure-Backups\relatorio-recuperacao-20261122.json"
+```
+
+O relatório é salvo com nome novo, fora do projeto e sem incluir a chave secreta. O comando também imprime o JSON no terminal. Código de saída 0 significa que o estado atual contém o checkpoint compatível mais recente encontrado; 2 indica cadeia inválida, divergência ou checkpoint posterior ao banco restaurado; 3 indica evidência insuficiente; 1 indica erro de configuração/execução.
+
+Estados possíveis:
+
+- `consistent_through_checkpoint`: cadeia íntegra e checkpoint compatível encontrado. Isso comprova consistência somente até aquele ponto, não a ausência de eventos perdidos depois dele.
+- `possible_older_restore`: há checkpoint HMAC assinado posterior ao último evento do banco restaurado, compatível com a mesma linhagem. É evidência de possível restauração antiga, não prova da causa ou do horário.
+- `chain_divergence`: checkpoint assinado não corresponde ao hash encontrado no banco.
+- `chain_invalid`: a verificação da cadeia atual falhou.
+- `insufficient_evidence`: nenhum checkpoint externo confiável e compatível foi encontrado.
+- `diagnostic_error`: não foi possível executar a análise.
+
+O relatório inclui o último checkpoint correspondente, checkpoints posteriores ao estado restaurado, arquivos rejeitados e limitações. Preserve o relatório e os arquivos originais como evidência; não substitua checkpoints antigos. Se houver suspeita de perda, interrompa alterações no banco e decida manualmente a recuperação com base em backups, logs e evidências externas. Nunca reconstrua eventos de auditoria por estimativa.
+
+
 ### 8.3 Agendamento diário no Windows
 
 Os scripts PowerShell automatizam a exportação e a verificação pós-exportação. O instalador cria uma chave HMAC aleatória e guarda a configuração (chave e credenciais do banco) protegida pelo DPAPI do usuário Windows atual. A tarefa usa privilégio limitado e roda diariamente enquanto esse usuário estiver conectado.
@@ -261,6 +286,7 @@ Abra o PowerShell na raiz do repositório e execute:
 ```powershell
 Set-ExecutionPolicy -Scope Process Bypass
 .\scripts\windows\instalar-checkpoint-auditoria.ps1 -ProjectRoot (Get-Location).Path -PhpPath "C:\xampp\php\php.exe" -DailyAt "08:00"
+```
 
 Para exibir a chave uma única vez e copiá-la diretamente para um cofre de senhas, acrescente `-ShowRecoveryKey`. Faça isso somente em uma sessão privada, sem gravação de terminal/transcrição, e não cole a chave em chats, e-mails ou no repositório. Sem essa opção, a chave permanece apenas na configuração DPAPI, que só pode ser descriptografada pelo mesmo usuário Windows no mesmo computador.
 
@@ -274,7 +300,6 @@ Para executar manualmente a tarefa após instalá-la:
 ```powershell
 Start-ScheduledTask -TaskName "FitControl - Checkpoint externo da auditoria"
 Get-ScheduledTaskInfo -TaskName "FitControl - Checkpoint externo da auditoria"
-```
 
 Para removê-la sem apagar os checkpoints:
 
