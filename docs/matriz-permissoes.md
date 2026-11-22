@@ -47,3 +47,12 @@ A página `detalhes-auditoria.php` consolida a linha do tempo por registro para 
 ## Detalhes por registro
 
 A partir da central, eventos vinculados a alunos, funcionários, planos, matrículas e revisões legadas abrem `detalhes-auditoria.php`. A página consulta somente entidades permitidas, valida o identificador positivo, exige a permissão `audit.view` no servidor e combina a trilha geral com os históricos especializados de perfil e revisão legada. A linha do tempo é somente leitura e apresenta responsável, data/hora, ação e detalhes operacionais, sem expor hashes de senha, tokens ou dados de autenticação.
+
+
+## Integridade da trilha
+
+A migration 008 introduz um marco SHA-256 dos eventos preexistentes e encadeia cada novo evento pelo hash anterior. O registrador central usa bloqueio transacional da linha de estado para serializar gravações concorrentes e confirma evento, hash e estado juntos. Gatilhos impedem UPDATE/DELETE direto na tabela `auditoria` e na tabela de hashes.
+
+A inicialização e a verificação são operações exclusivas de CLI: `scripts/inicializar-integridade-auditoria.php` e `scripts/verificar-integridade-auditoria.php`. Novos eventos da aplicação devem passar por `registrarAuditoria()`; inserções diretas são detectadas pelo verificador como eventos sem hash.
+
+O encadeamento oferece detecção de adulteração, não inviolabilidade contra um administrador que controle o banco e possa alterar também os hashes, o estado e os gatilhos. Para elevar a garantia, exporte periodicamente o último hash para armazenamento externo imutável, com credenciais e administração separadas.
