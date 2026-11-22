@@ -259,13 +259,7 @@ try {
     );
 } finally {
     if ($actorId !== null) {
-        $deleteAudits = $pdo->prepare(
-            "DELETE FROM auditoria
-             WHERE usuario_id = :user_id
-               AND entidade = 'planos'"
-        );
-        $deleteAudits->execute(['user_id' => $actorId]);
-    }
+}
 
     if ($planIds !== []) {
         $placeholders = implode(',', array_fill(0, count($planIds), '?'));
@@ -281,9 +275,7 @@ try {
     }
 
     if ($actorId !== null) {
-        $deleteUser = $pdo->prepare('DELETE FROM usuarios WHERE id = :id');
-        $deleteUser->execute(['id' => $actorId]);
-    }
+}
 
     $pdo->exec('DROP TABLE IF EXISTS matriculas');
     $pdo->exec('DROP TABLE IF EXISTS planos');
