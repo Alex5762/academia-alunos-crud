@@ -14,7 +14,7 @@ if (
     !is_string($entidadeRecebida)
     || !in_array($entidadeRecebida, $entidadesPermitidas, true)
     || !is_string($idRecebido)
-    || ($registroId = validarId($idRecebido)) === false
+    || ($registroId = filter_var($idRecebido, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]])) === false
 ) {
     http_response_code(400);
     exit('Registro de auditoria inválido.');
