@@ -60,19 +60,19 @@ $porPagina = 25;
 
 // Une a trilha geral aos eventos especializados de alteração de perfil.
 // O evento genérico correspondente é omitido para não duplicar a mesma ação.
-$fonteEventos = '(SELECT CONCAT("A-", LPAD(id, 20, "0")) AS id,
+$fonteEventos = '(SELECT CONCAT(\\'A-\\', LPAD(id, 20, \\'0\\')) AS id,
                          usuario_id, acao, entidade, entidade_id, criado_em,
                          NULL AS detalhes
                   FROM auditoria
-                  WHERE acao <> "usuario_perfil_alterado"
+                  WHERE acao <> \\'usuario_perfil_alterado\\'
                   UNION ALL
-                  SELECT CONCAT("P-", LPAD(id, 20, "0")) AS id,
+                  SELECT CONCAT(\\'P-\\', LPAD(id, 20, \\'0\\')) AS id,
                          responsavel_id AS usuario_id,
-                         "usuario_perfil_alterado" AS acao,
-                         "usuarios" AS entidade,
+                         \\'usuario_perfil_alterado\\' AS acao,
+                         \\'usuarios\\' AS entidade,
                          usuario_id AS entidade_id,
                          criado_em,
-                         CONCAT(perfil_anterior, " → ", perfil_novo) AS detalhes
+                         CONCAT(perfil_anterior, \\' → \\', perfil_novo) AS detalhes
                   FROM usuarios_perfis_eventos)';
 
 $where = [];
