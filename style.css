@@ -3369,3 +3369,89 @@ body:not(.dashboard-body) .theme-option[aria-pressed="true"] {
         max-width: none;
     }
 }
+
+
+/* Histórico individual de pagamentos — Bloco 05 / F-04 */
+.payment-history {
+    min-width: 11rem;
+    max-width: 24rem;
+    color: var(--ink);
+    font-size: .78rem;
+}
+.payment-history summary {
+    width: fit-content;
+    color: var(--blue);
+    font-weight: 750;
+    cursor: pointer;
+    text-underline-offset: 3px;
+}
+.payment-history summary:focus-visible {
+    outline: 2px solid var(--blue);
+    outline-offset: 3px;
+    border-radius: 3px;
+}
+.payment-history-list {
+    display: grid;
+    gap: 10px;
+    max-height: 24rem;
+    overflow-y: auto;
+    margin: 10px 0 0;
+    padding: 0 3px 0 0;
+    list-style: none;
+}
+.payment-history-list > li {
+    min-width: 15rem;
+    padding: 12px;
+    background: var(--canvas);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+}
+.payment-history-heading {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--line);
+}
+.payment-history-heading strong {
+    color: var(--ink);
+    font-size: .95rem;
+    font-variant-numeric: tabular-nums;
+}
+.payment-history-heading span,
+.payment-history-list dt {
+    color: var(--muted);
+    font-size: .7rem;
+}
+.payment-history-list dl {
+    display: grid;
+    gap: 7px;
+    margin: 9px 0 0;
+}
+.payment-history-list dl > div {
+    display: grid;
+    grid-template-columns: 6rem minmax(0, 1fr);
+    gap: 8px;
+}
+.payment-history-list dt {
+    font-weight: 700;
+}
+.payment-history-list dd {
+    min-width: 0;
+    margin: 0;
+    color: var(--ink);
+    overflow-wrap: anywhere;
+}
+:root[data-theme="dark"] .payment-history-list > li {
+    background: #111c2d;
+    border-color: #35435a;
+}
+@media (max-width: 640px) {
+    .payment-history {
+        min-width: 10rem;
+    }
+    .payment-history-list > li {
+        min-width: 13rem;
+    }
+}
