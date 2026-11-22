@@ -29,6 +29,10 @@ if (($argv[1] ?? '') === '--worker') {
 
 $before = \FitControl\Security\AuditIntegrityChain::verify($pdo);
 assertAuditIntegrity($before['ok'], 'A cadeia deveria estar íntegra antes do teste.');
+assertAuditIntegrity(
+    $before['baseline_count'] >= 1,
+    'O marco deve incluir pelo menos um evento criado antes da migration 008.'
+);
 
 $beforeCount = (int) $pdo->query('SELECT COUNT(*) FROM auditoria')->fetchColumn();
 $pdo->beginTransaction();
