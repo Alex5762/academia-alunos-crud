@@ -242,11 +242,11 @@ try {
         "INSERT INTO revisoes_legado_eventos (
             revisao_legado_id, usuario_id, tipo_evento,
             resultado_anterior, resultado_novo, matricula_id,
-            fonte_referencia, observacoes
+            inicio_novo, fim_exclusivo_novo, fonte_referencia, observacoes
         ) VALUES (
             :review_id, :user_id, 'DECISAO',
             'PENDENTE_REVISAO', 'VINCULO_CONFIRMADO', :enrollment_id,
-            'Fonte inicial', 'Intervalo conferido na documentação original.'
+            :start_at, :end_at, 'Fonte inicial', 'Intervalo conferido na documentação original.'
         )"
     );
 
@@ -255,6 +255,8 @@ try {
             'review_id' => $reviewId,
             'user_id' => $actorId,
             'enrollment_id' => $enrollmentIds[$index],
+            'start_at' => rectificationUtc($legacyStart),
+            'end_at' => rectificationUtc($legacyEnd),
         ]);
     }
 
@@ -325,6 +327,20 @@ try {
     assertRectification($event['fim_exclusivo_novo'] === rectificationUtc('2026-03-01 00:00:00'), 'Fim novo deve ser preservado no evento.');
     assertRectification($event['fonte_referencia'] === 'Contrato digital assinado, referência 2025-12, documento 18', 'Evento deve armazenar fonte.');
     assertRectification($event['observacoes'] === 'A data inicial foi registrada incorretamente; evidência confirma 15/12.', 'Evento deve armazenar justificativa.');
+
+    $initialDecision = $pdo->query(
+        "SELECT inicio_novo, fim_exclusivo_novo
+         FROM revisoes_legado_eventos
+         WHERE revisao_legado_id = {$reviewIds[0]}
+           AND tipo_evento = 'DECISAO'
+         ORDER BY id ASC
+         LIMIT 1"
+    )->fetch();
+    assertRectification(
+        $initialDecision['inicio_novo'] === rectificationUtc($legacyStart)
+        && $initialDecision['fim_exclusivo_novo'] === rectificationUtc($legacyEnd),
+        'A retificação não pode alterar o snapshot temporal da decisão original.'
+    );
 
     $auditCount = (int) $pdo->query(
         "SELECT COUNT(*) FROM auditoria
