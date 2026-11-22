@@ -286,7 +286,7 @@ function registrarAuditoria(
     ?int $entidadeId = null
 ): void {
     require_once __DIR__ . '/src/Security/AuditIntegrityChain.php';
-    \\FitControl\\Security\\AuditIntegrityChain::append(
+    \FitControl\Security\AuditIntegrityChain::append(
         $pdo,
         $usuarioId,
         $acao,
