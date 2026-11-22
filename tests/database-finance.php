@@ -381,7 +381,7 @@ try {
         'O histórico deve identificar o usuário responsável pelo lançamento.'
     );
     assertFinance(
-        $history[$secondChargeId] === null ?? true,
+        !isset($history[$secondChargeId]),
         'Cobrança sem pagamento não deve inventar lançamentos.'
     );
 
