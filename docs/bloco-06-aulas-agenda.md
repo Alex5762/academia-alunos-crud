@@ -31,13 +31,49 @@ O módulo deve reutilizar alunos, matrículas, funcionários, fuso horário, tra
 
 - Portal completo de autoatendimento, escolha de aulas, criação e cancelamento de reservas pelo aluno (fora do MVP).
 - QR Code, catraca, biometria ou check-in automático.
-- Lista de espera automática e promoção automática de vagas.
+- Portal de autoatendimento do aluno, criação/cancelamento de reservas pelo aluno e lista de espera autoatendida/automática.
+- Promoção automática de vagas, notificações automáticas e push no MVP.
 - Cobrança por aula, pacotes de aulas, créditos ou integração com o financeiro.
 - Gestão de salas, quadras, equipamentos ou recursos físicos.
 - Notificações automáticas por e-mail, WhatsApp ou push.
 - Aplicativo nativo, sincronização com Google/Outlook ou integrações externas.
 - Multiunidade/multitenancy.
 - Relatórios avançados (Bloco 07).
+
+### Pesquisa aplicada: lista de espera sem aplicativo nativo
+
+A pesquisa de soluções de agendamento para academias/estúdios encontrou três padrões relevantes:
+
+1. **Fila com oferta da próxima vaga:** GettingBooked descreve que, quando uma pessoa cancela, a vaga é oferecida à próxima da fila; Luma descreve oferta automática antes de um horário-limite; Glofox descreve notificação e promoção conforme as políticas do estúdio. Avana descreve notificação ao primeiro da fila e passagem ao próximo quando a vaga não é aceita. São descrições dos próprios fornecedores sobre seus produtos, úteis como referência de mercado, não normas técnicas.
+2. **Acesso por navegador:** GettingBooked oferece página de reservas no browser sem aplicativo; Luma compartilha uma página/URL ou widget incorporável; Glofox oferece app e web portal; Avana declara que o membro pode usar o browser do celular e código de acesso por e-mail, sem instalar app.
+3. **PWA como aprimoramento opcional:** uma Progressive Web App usa tecnologias web e uma base de código para várias plataformas. O usuário pode abrir por URL no navegador e, se desejar, instalar um ícone na tela inicial e abrir em modo standalone. Isso não exige publicar nem manter um aplicativo nativo separado. Push é um recurso posterior, condicionado a suporte do navegador, HTTPS, service worker e consentimento explícito; no iOS/iPadOS, Web Push exige que a web app esteja adicionada à tela inicial e que o usuário autorize.
+
+**Recomendação para o FitControl: web-first, sem app nativo.** O painel da equipe permanece no próprio sistema web responsivo. Para o MVP, a lista de espera pode ser interna e operada por funcionário; a equipe comunica a oferta pelo canal já usado pela academia (telefone/WhatsApp/e-mail) e registra a resposta no painel. Não precisamos criar portal de reservas do aluno, app Android/iOS, integração de notificações ou PWA agora.
+
+### Lista de espera interna — proposta recomendada para o MVP (aguarda confirmação)
+
+- Quando a sessão estiver cheia, funcionário autorizado pode adicionar aluno elegível à fila.
+- A ordem é FIFO por `criado_em`, com `id` como desempate estável.
+- A fila não ocupa vaga e não altera a capacidade. Só uma reserva ativa confirmada ocupa a vaga.
+- Quando surge uma vaga, o painel sinaliza o próximo aluno elegível. Um funcionário entra em contato pelo canal habitual e registra: ofertada, aceita, recusada ou sem resposta.
+- A aceitação só vira reserva quando um funcionário executa a operação normal de reservar; a transação de reserva revalida matrícula, conflito e capacidade. Se outra pessoa ocupar a vaga antes, a operação informa que não há mais disponibilidade e a equipe oferece a próxima posição.
+- Recusa ou desistência encerra aquela entrada e libera a próxima posição. Não há promoção automática, bloqueio temporário de vaga ou expiração automática no MVP.
+- Um aluno não pode estar duas vezes na fila da mesma sessão nem manter simultaneamente reserva ativa e entrada ativa na fila da mesma sessão.
+- Toda inclusão, oferta, recusa, conversão em reserva e remoção é auditada. A fila preserva histórico em vez de apagar registros.
+
+Esse desenho entrega o benefício operacional de uma waitlist sem obrigar o aluno a instalar um app nem exigir automação de mensagens. A promoção automática pode ser reavaliada após observar uso real.
+
+### Acesso futuro do aluno por web link — sem aplicativo nativo
+
+A confirmação seletiva de intenção de comparecer pode ser implementada como uma página mobile-first no próprio FitControl, aberta por link em navegador. Não requer app nativo nem PWA. A PWA seria opcional apenas se, mais tarde, houver valor em ícone de tela inicial ou push.
+
+Para essa fase futura:
+- O link deve dar acesso a uma única ação e a uma única reserva; nunca abrir agenda, dados financeiros, cadastro completo ou outras reservas.
+- Usar token aleatório de alta entropia, armazenado somente como hash, associado à reserva e com expiração/revogação. O token não deve conter aluno_id ou outros dados pessoais legíveis.
+- GET apenas apresenta a página; a confirmação ocorre em POST explícito para evitar que pré-visualizadores de e-mail/WhatsApp consumam o token.
+- A resposta registra intenção de comparecer, instante e origem; não altera presença real, não cria/cancela reserva nem libera vaga.
+- A funcionalidade fica desabilitada por padrão e é habilitada por reserva/aluno escolhido pela equipe. Não há conta de aluno no MVP.
+
 
 ## 3. Modelo de domínio proposto
 
@@ -68,6 +104,9 @@ O módulo deve reutilizar alunos, matrículas, funcionários, fuso horário, tra
 - O primeiro corte não bloqueará reserva por inadimplência: financeiro e reservas permanecem desacoplados até uma decisão explícita posterior.
 - Uma turma/sessão cancelada ou iniciada/concluída não aceita nova reserva.
 - Uma reserva ativa ocupa uma vaga; reserva cancelada não ocupa vaga.
+- A lista de espera interna proposta não ocupa vaga; a posição é ordenada por `criado_em` e `id` e só funcionário autorizado administra a fila.
+- Uma vaga aberta apenas sinaliza o próximo aluno elegível à equipe. Não há promoção automática, reserva temporária nem liberação automática baseada em resposta do aluno no MVP.
+- A entrada de espera só vira reserva após confirmação operacional e nova validação transacional de capacidade, elegibilidade e conflito.
 - Uma pessoa não pode possuir duas reservas ativas em sessões cujos intervalos se sobreponham.
 - O mesmo aluno não pode ter duas reservas para a mesma sessão. Se cancelar e voltar atrás antes do início, o serviço poderá reativar o registro existente em vez de inserir duplicata, mantendo a trilha de auditoria.
 - A capacidade é conferida dentro da transação, após bloquear a linha da sessão. O índice único continua protegendo a duplicidade por aluno/sessão.
@@ -145,17 +184,32 @@ O servidor deve verificar cada permissão em toda página e endpoint. Ocultar co
 ### Ainda abertas antes da implementação
 
 1. **Janela de geração:** confirmar 30 dias como horizonte padrão de criação de sessões.
-2. **Lista de espera:** manter fora da primeira versão ou reavaliar depois do fluxo básico.
+2. **Lista de espera:** decidir se aprovamos a fila interna operada por funcionários no MVP. A recomendação da pesquisa é incluir essa versão simples e deixar promoção automática fora.
 3. **Presença por aula:** confirmar que será um registro separado do check-in geral da academia (a especificação recomenda separação).
-4. **Confirmação seletiva futura:** decidir se será por portal autenticado do aluno ou link/token individual; não implementar antes de definir identidade, expiração, revogação e canal de entrega.
+4. **Confirmação seletiva futura:** a recomendação é uma página web mobile-first com token individual e limitado à reserva; decidir canal de entrega e política de expiração antes de implementar.
+5. **PWA:** não faz parte do MVP. Reavaliar somente se houver necessidade real de instalação em tela inicial ou push; não criar app nativo dedicado.
 
 A decisão sobre reservas internas define o MVP. As evoluções futuras não devem aumentar o escopo inicial nem bloquear sua implementação.
 
-## 11. Referências técnicas
+## 11. Referências técnicas e pesquisa de mercado
+
+### Produto e operação de aulas
+
+- [GettingBooked — booking software](https://gettingbooked.app/): página pública no navegador; a documentação comercial descreve fila de espera em que a vaga é oferecida à próxima pessoa quando há cancelamento.
+- [Luma — gym scheduling](https://www.lumaos.app/gym-scheduling-software): página de agenda compartilhável/incorporável e waitlist com oferta da vaga antes de um cutoff.
+- [ABC Glofox — FAQ](https://www.glofox.com/faq/): app e web portal; descreve notificação da próxima pessoa na fila, promoção conforme políticas e confirmação da vaga.
+- [Avana — member app and browser](https://www.getavana.com/studio-software/app-voor-leden): descreve reserva pelo browser do celular com código por e-mail, sem download, além de lista de espera e notificação. As descrições são material dos fornecedores e não auditoria independente dos produtos.
+
+### Plataforma web
+
+- MDN — [Progressive Web Apps](https://developer.mozilla.org/pt-BR/docs/Web/Progressive_web_apps): tecnologias web e base de código compartilhada entre plataformas.
+- MDN — [Making PWAs installable](https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/Guides/Making_PWAs_installable): manifest, instalação e modo standalone.
+- WebKit — [Web Push for Web Apps on iOS and iPadOS](https://webkit.org/blog/13878/web-push-for-web-apps-on-ios-and-ipados/): Web Push para web apps adicionadas à tela inicial no iOS/iPadOS 16.4+, mediante permissão do usuário.
+- MDN — [Notifications API](https://developer.mozilla.org/en-US/docs/Web/API/Notifications_API): permissão para notificações deve ser solicitada em resposta a gesto do usuário.
+
+### Concorrência e banco
 
 - MySQL 8.0 — [InnoDB Locking Reads](https://dev.mysql.com/doc/refman/8.0/en/innodb-locking-reads.html): `SELECT ... FOR UPDATE`, bloqueios e transações.
 - MySQL 8.0 — [Internal Locking Methods](https://dev.mysql.com/doc/refman/8.0/en/internal-locking.html): locks por linha e práticas para evitar deadlocks.
 - MySQL 8.0 — [InnoDB Best Practices](https://dev.mysql.com/doc/refman/8.0/en/innodb-best-practices.html): PKs, FKs, índices e transações curtas.
-- MySQL 8.0 — [InnoDB Best Practices](https://dev.mysql.com/doc/refman/8.0/en/innodb-best-practices.html): PKs, FKs, índices e transações curtas.
-- Scraler (11/11/2026) — [Class Booking Software: 6 Tools Compared](https://scraler.com/blog/class-booking-software): capacidades, horários recorrentes, reservas, lista de espera e políticas de cancelamento como dimensões comuns de sistemas de aulas. Referência de mercado, não norma técnica.
 
