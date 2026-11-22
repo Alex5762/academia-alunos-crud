@@ -242,15 +242,15 @@ Entregas implementadas e validadas pela CI:
 
 ### Bloco 06 — Aulas e agenda
 
-**Estado: especificação inicial em evolução; implementação ainda não iniciada.** Documento: [Bloco 06 — Aulas e agenda](bloco-06-aulas-agenda.md).
+**Estado: especificação em evolução; implementação ainda não iniciada.** Documento: [Bloco 06 — Aulas e agenda](bloco-06-aulas-agenda.md).
 
-O MVP proposto cobre modalidades, turmas recorrentes, horários semanais, geração explícita e idempotente de sessões, agenda, reservas internas, capacidade concorrente, cancelamento e presença por aula.
+O MVP proposto cobre modalidades, instrutores independentes com vínculo opcional a funcionário, turmas recorrentes, horários semanais, geração explícita e idempotente de sessões, agenda, reservas internas, capacidade concorrente, cancelamento e presença por aula.
 
-**Decisão confirmada:** instrutores terão cadastro profissional independente, com vínculo opcional e único a uma conta existente em `usuarios`. O cadastro não concede acesso nem altera RBAC. O documento detalha inativação, histórico e snapshot do nome nas sessões.
+**Decisões confirmadas:** reservas e cancelamentos são feitos por funcionários autorizados no painel; alunos não terão portal no MVP. Instrutores têm cadastro profissional independente e vínculo opcional a `usuarios`, sem concessão de acesso. Como evolução futura e seletiva, alguns alunos poderão apenas confirmar intenção de comparecer a uma reserva já criada pela equipe. Essa confirmação não é presença real, não cria/cancela reserva e não libera vaga automaticamente.
 
-**Decisões ainda abertas:** reservas serão feitas pela equipe no painel interno; não haverá portal do aluno nem lista de espera automática na primeira versão; presença na aula será separada do check-in geral; horizonte padrão de geração será 30 dias.
+**Decisões ainda abertas:** horizonte padrão de geração (proposta: 30 dias), lista de espera e detalhes do fluxo futuro de confirmação seletiva. A presença específica da aula será separada do check-in geral.
 
-A especificação inclui modelo de domínio, regras de elegibilidade, permissões, ordem de bloqueios, concorrência, datas e critérios de aceite. Não criar migration nem iniciar implementação antes de fechar as decisões da seção 10 do documento.
+A especificação inclui modelo de domínio, elegibilidade, permissões, transações, concorrência, datas e critérios de aceite. Não criar migration nem iniciar implementação até fechar as decisões ainda abertas da seção 10 do documento.
 
 ### Bloco 07 — Relatórios e experiência
 
