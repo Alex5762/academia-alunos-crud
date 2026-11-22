@@ -40,3 +40,8 @@ A autorização é aplicada no servidor por `exigirPermissao()`; ocultar um link
 ## Central de auditoria
 
 A página `auditoria.php` reúne eventos gerais e alterações de perfil, incluindo responsável, data/hora, ação, entidade, identificador do registro e detalhe do perfil anterior e novo. Permite filtrar por funcionário/e-mail/ID, ação, entidade e período local da academia, com paginação. O acesso é restrito a Administrador e Gestor; Operador recebe HTTP 403.
+
+
+## Detalhes por registro
+
+A partir da central, eventos vinculados a alunos, funcionários, planos, matrículas e revisões legadas abrem `detalhes-auditoria.php`. A página consulta somente entidades permitidas, valida o identificador positivo, exige a permissão `audit.view` no servidor e combina a trilha geral com os históricos especializados de perfil e revisão legada. A linha do tempo é somente leitura e apresenta responsável, data/hora, ação e detalhes operacionais, sem expor hashes de senha, tokens ou dados de autenticação.
