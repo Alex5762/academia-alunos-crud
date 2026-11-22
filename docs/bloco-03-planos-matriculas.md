@@ -1,6 +1,6 @@
 # Bloco 03 — Planos e matrículas
 
-> **Estado: especificação funcional aprovada; camada de aplicação e interfaces iniciais em implementação e validação automatizada.** O catálogo de planos já possui serviço de domínio, interface administrativa e endpoints protegidos. O perfil do aluno já apresenta o histórico de matrículas quando o esquema completo está disponível, com situações derivadas em tempo de consulta e preservação do snapshot contratado. A compatibilidade dos serviços de domínio e das interfaces está sendo validada em MySQL 8.0 e MariaDB 10.11. As migrations 005 e 006 ainda não foram criadas, e nenhuma alteração estrutural foi aplicada à base local/XAMPP. A inspeção física em dispositivo real continua pendente.
+> **Estado: especificação funcional aprovada; catálogo, histórico e fluxo inicial de contratação implementados na branch e em validação automatizada.** A criação de matrículas usa o serviço transacional já testado, copia o snapshot do plano, bloqueia aluno/plano inelegíveis, respeita a revisão de legado e impede sobreposição. O perfil do aluno apresenta o histórico e as situações calculadas em tempo de consulta quando o esquema completo está disponível. As migrations 005 e 006 ainda não foram criadas, e nenhuma alteração estrutural foi aplicada à base local/XAMPP. A inspeção física em dispositivo real continua pendente.
 
 ## 0. Estado de implementação (22/11/2026)
 
@@ -8,7 +8,11 @@
 
 - Serviço de domínio para gerenciamento transacional do catálogo de planos, incluindo criação, edição, ativação, inativação e exclusão protegida.
 - Interface administrativa do catálogo em `planos.php`, com endpoints POST autenticados e protegidos por CSRF.
-- Atalho do catálogo na navegação do painel.
+- Formulário inicial de contratação no catálogo, com seleção de aluno ativo, plano ativo, data e horário.
+- Atalho de contratação no perfil do aluno, oculto quando o aluno está inativo ou a revisão de legado está pendente.
+- Integração com `EnrollmentCreationService`: bloqueios transacionais, validação de elegibilidade, detecção de sobreposição, snapshot do preço/nome/duração e auditoria atômica.
+- Regra de horário aplicada na interface: hoje sem horário resolve o instante depois dos bloqueios; data futura sem horário inicia às 00:00 no fuso da academia.
+- Teste HTTP que confirma o bloqueio quando a revisão está pendente e a contratação após o resultado de fixture `LEGADO_SEM_VIGENCIA`.
 - Exibição do histórico operacional no perfil individual do aluno, sem substituir o campo legado `alunos.plano`.
 - Derivação de `AGENDADA`, `ATIVA`, `VENCIDA` e `CANCELADA` a partir dos intervalos e do instante consultado; os estados temporais não são persistidos.
 - Apresentação das condições contratadas (nome, preço e duração), início, limite exclusivo, origem e motivo/instante de cancelamento.
@@ -17,11 +21,11 @@
 
 ### Ainda pendente
 
-- Confirmar o resultado final da CI que cobre a nova interface do histórico.
+- Confirmar a CI da interface de contratação, incluindo o novo cenário HTTP, e a publicação resiliente de capturas.
+- Implementar os fluxos administrativos de cancelamento e revisão/retificação de legado na interface.
 - Finalizar e validar as migrations 005 (DDL) e 006 (carga inicial de revisão de legados).
 - Inspecionar a versão real do MySQL/MariaDB e o mecanismo InnoDB no XAMPP antes de aplicar qualquer migration local.
-- Implementar os fluxos administrativos de criação/cancelamento/revisão de matrícula na interface.
-- Fazer inspeção física em dispositivo real e navegador adicional antes de retirar a PR do estado Draft.
+- Fazer inspeção física em dispositivo real antes de retirar a PR do estado Draft.
 
 Nenhuma migration foi aplicada à base local e nenhuma operação de merge foi realizada.
 
