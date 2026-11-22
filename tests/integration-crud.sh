@@ -984,6 +984,7 @@ curl -fsS -L -c "$COOKIE_JAR" -b "$COOKIE_JAR" \
     --data-urlencode "token=$RECTIFICATION_TOKEN" \
     --data-urlencode "review_id=$REVIEW_ID" \
     --data-urlencode "enrollment_id=$LEGACY_ENROLLMENT_ID" \
+    --data-urlencode "usuario_id=999999" \
     --data-urlencode "inicio_em=$NEW_LEGACY_START" \
     --data-urlencode "fim_exclusivo_em=$NEW_LEGACY_END" \
     --data-urlencode "fonte_referencia=Contrato original assinado, folha 12" \
@@ -1010,6 +1011,12 @@ RECTIFICATION_AUDIT_COUNT="$(db_value "SELECT COUNT(*) FROM auditoria
       AND entidade = 'matriculas'
       AND entidade_id = $LEGACY_ENROLLMENT_ID")"
 [[ "$RECTIFICATION_AUDIT_COUNT" == "1" ]] || fail "A retificação não gerou auditoria geral."
+FORGED_RECTIFICATION_AUDIT_COUNT="$(db_value "SELECT COUNT(*) FROM auditoria
+    WHERE usuario_id = 999999
+      AND acao = 'matricula_corrigida'
+      AND entidade = 'matriculas'
+      AND entidade_id = $LEGACY_ENROLLMENT_ID")"
+[[ "$FORGED_RECTIFICATION_AUDIT_COUNT" == "0" ]] || fail "O endpoint aceitou autoria enviada pelo formulário em vez da sessão autenticada."
 RECTIFICATION_FORM_TOKEN="$(get_token "$TMP_DIR/rectification-saved.html")"
 curl -fsS -L -c "$COOKIE_JAR" -b "$COOKIE_JAR" \
     "$BASE_URL/salvar-retificacao-legado.php" \
@@ -1032,6 +1039,23 @@ assert_contains "$TMP_DIR/rectification-history.html" "Retificar vigência compr
 assert_contains "$TMP_DIR/rectification-history.html" "Intervalo anterior:"
 assert_contains "$TMP_DIR/rectification-history.html" "Novo intervalo:"
 assert_contains "$TMP_DIR/rectification-history.html" "Contrato original assinado, folha 12"
+
+# Os eventos são persistidos em UTC, mas a interface deve mostrá-los no fuso da academia.
+LEGACY_START_DISPLAY="$(VALUE="$LEGACY_START_UTC" php -r '$d=new DateTimeImmutable(getenv("VALUE"),new DateTimeZone("UTC")); echo $d->setTimezone(new DateTimeZone("America/Sao_Paulo"))->format("d/m/Y H:i:s");')"
+LEGACY_END_DISPLAY="$(VALUE="$LEGACY_END_UTC" php -r '$d=new DateTimeImmutable(getenv("VALUE"),new DateTimeZone("UTC")); echo $d->setTimezone(new DateTimeZone("America/Sao_Paulo"))->format("d/m/Y H:i:s");')"
+NEW_LEGACY_START_DISPLAY="$(VALUE="$NEW_LEGACY_START" php -r '$d=new DateTimeImmutable(getenv("VALUE"),new DateTimeZone("America/Sao_Paulo")); echo $d->format("d/m/Y H:i:s");')"
+NEW_LEGACY_END_DISPLAY="$(VALUE="$NEW_LEGACY_END" php -r '$d=new DateTimeImmutable(getenv("VALUE"),new DateTimeZone("America/Sao_Paulo")); echo $d->format("d/m/Y H:i:s");')"
+assert_contains "$TMP_DIR/rectification-history.html" "$LEGACY_START_DISPLAY"
+assert_contains "$TMP_DIR/rectification-history.html" "$LEGACY_END_DISPLAY"
+assert_contains "$TMP_DIR/rectification-history.html" "$NEW_LEGACY_START_DISPLAY"
+assert_contains "$TMP_DIR/rectification-history.html" "$NEW_LEGACY_END_DISPLAY"
+
+curl -fsS -G -c "$COOKIE_JAR" -b "$COOKIE_JAR" \
+    --data-urlencode "id=$ALUNO_ID" \
+    "$BASE_URL/detalhes-aluno.php" -o "$TMP_DIR/rectification-profile-history.html"
+assert_contains "$TMP_DIR/rectification-profile-history.html" "Vigência comprovada:"
+assert_contains "$TMP_DIR/rectification-profile-history.html" "$LEGACY_START_DISPLAY"
+assert_contains "$TMP_DIR/rectification-profile-history.html" "$LEGACY_END_DISPLAY"
 
 # Restaura o fixture ao estado pendente para executar, em seguida, o teste original de decisão.
 db_exec "UPDATE revisoes_legado SET resultado_atual = 'PENDENTE_REVISAO' WHERE id = $REVIEW_ID"
