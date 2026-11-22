@@ -127,3 +127,14 @@ A classe `FitControl\\Security\\AuditIntegrityChain` serializa as gravações bl
 A migration instala gatilhos para bloquear inserções fora do registrador, alterações/exclusões dos eventos e hashes, e alterações/exclusões do estado final. O marco inicial é criado uma única vez por `scripts/inicializar-integridade-auditoria.php`; a verificação pode ser executada com `scripts/verificar-integridade-auditoria.php`.
 
 **Limite importante:** a cadeia é *tamper-evident*, não inviolável. Ela detecta divergências no histórico coberto pelo marco e nos eventos encadeados, mas alguém com privilégios administrativos suficientes no próprio banco pode alterar dados, estado e gatilhos em conjunto. Para evidência independente, exporte periodicamente o último hash para armazenamento externo e imutável, com credenciais separadas. A cadeia não substitui backup nem revisão de permissões do banco.
+
+
+## Checkpoints externos assinados
+
+A classe `FitControl\\Security\\AuditIntegrityCheckpoint` exporta um snapshot consistente do marco e do último evento da cadeia. O payload canônico é assinado com HMAC-SHA-256 usando `FITCONTROL_AUDIT_CHECKPOINT_SECRET`, uma chave aleatória de pelo menos 32 bytes que não deve ser armazenada no banco nem versionada.
+
+- `scripts/exportar-checkpoint-auditoria.php`: exporta um arquivo JSON sem sobrescrever um checkpoint existente e exige destino fora da pasta do projeto.
+- `scripts/verificar-checkpoint-auditoria.php`: valida a assinatura, o banco configurado, a cadeia atual e a presença do hash assinado.
+- `tests/database-audit-checkpoint.php`: cobre assinatura, adulteração, chave incorreta, identidade incompatível, extensão legítima após o checkpoint e estado atual atrás de um identificador assinado.
+
+Um checkpoint antigo permanece válido quando eventos novos são adicionados, desde que o hash assinado continue presente na cadeia. Um banco cujo último identificador esteja abaixo do checkpoint é rejeitado como possível restauração. A chave e os arquivos devem ficar em armazenamentos independentes; no Windows, as permissões da pasta devem ser revisadas por ACL. HMAC não fornece carimbo de tempo confiável e não substitui backup, retenção imutável ou controle de acesso.
