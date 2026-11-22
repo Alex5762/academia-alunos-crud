@@ -105,7 +105,7 @@ foreach ($blockedOperations as $operation) {
         $blocked = true;
     }
 
-    assertAuditIntegrity($blocked, 'Trigger deveria bloquear alteração, exclusão ou inserção direta na trilha.');
+    assertAuditIntegrity($blocked, 'Trigger deveria bloquear: ' . $operation['sql']);
 }
 
 assertAuditIntegrity(
