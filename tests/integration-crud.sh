@@ -466,7 +466,7 @@ assert_contains "$TMP_DIR/detail-created.html" "Informações cadastrais"
 assert_contains "$TMP_DIR/detail-created.html" "Aluno CI CRUD"
 assert_contains "$TMP_DIR/detail-created.html" "Cadastro criado"
 assert_contains "$TMP_DIR/detail-created.html" "Histórico de matrículas"
-assert_contains "$TMP_DIR/detail-created.html" "O histórico operacional será habilitado após a instalação e validação das migrations do Bloco 03."
+assert_contains "$TMP_DIR/detail-created.html" "Nenhuma matrícula operacional registrada para este aluno."
 assert_contains "$TMP_DIR/detail-created.html" 'href="index.php?status=ativos&amp;busca=Aluno%20CI%20CRUD#alunos"'
 DETAIL_AUDIT_COUNT="$(db_value "SELECT COUNT(*) FROM auditoria WHERE entidade = 'alunos' AND entidade_id = $ALUNO_ID AND acao = 'aluno_criado'")"
 [[ "$DETAIL_AUDIT_COUNT" == "1" ]] || fail "Perfil não refletiu o evento de criação na auditoria."
