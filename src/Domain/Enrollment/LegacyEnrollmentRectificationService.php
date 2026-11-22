@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace FitControl\Domain\Enrollment;
 
-require_once __DIR__ . '/../../Security/AuditIntegrityChain.php';
 
 use DateTimeImmutable;
 use DateTimeZone;
@@ -12,7 +11,9 @@ use InvalidArgumentException;
 use LogicException;
 use PDO;
 use Throwable;
-use UnexpectedValueException;
+use UnexpectedValueException
+require_once __DIR__ . '/../../Security/AuditIntegrityChain.php';
+;
 
 /**
  * Retifica somente o intervalo de uma matrícula de origem LEGADO.
