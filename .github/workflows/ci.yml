@@ -344,6 +344,12 @@ jobs:
           test -f docs/matriz-permissoes.md
           test -f auditoria.php
           test -f detalhes-auditoria.php
+          test -f src/Security/AuditIntegrityChain.php
+          test -f database/migrations/008_audit_integrity_chain.sql
+          test -f scripts/inicializar-integridade-auditoria.php
+          test -f scripts/verificar-integridade-auditoria.php
+          test -f scripts/registrar-eventos-demo.php
+          test -f tests/database-audit-integrity.php
           test -f detalhes-aluno.php
           test -f tests/assert-user-provisioned.php
           test -f tests/provision-user.sh
