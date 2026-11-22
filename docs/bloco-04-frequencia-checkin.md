@@ -1,7 +1,8 @@
 # Bloco 04 — Frequência e check-in
 
-> **Estado:** especificação aprovada para implementação na branch `feat/dashboard-portfolio`.
-> **Data:** 22/11/2026.
+> **Estado:** implementação concluída e CI aprovada em MySQL 8.0 e MariaDB 10.11. Restam a aplicação controlada no XAMPP e a inspeção manual em dispositivo físico.
+> **Data da validação automatizada:** 22/11/2026.
+> **CI:** [#1221 — todos os sete jobs aprovados](https://github.com/Alex5762/academia-alunos-crud/actions/runs/45027184228).
 
 ## Objetivo
 
@@ -42,17 +43,18 @@ Registrar a presença dos alunos por meio de check-in manual, consultar o histó
 
 ## Critérios de aceite
 
-- [ ] Migration 009 cria a tabela de check-ins, FKs, índices e unicidade diária.
-- [ ] Aluno inativo, inexistente ou sem matrícula vigente é recusado.
-- [ ] Matrícula futura, vencida ou cancelada não habilita check-in.
-- [ ] Check-in válido registra aluno, matrícula, funcionário, dia local e instante UTC.
-- [ ] Segunda tentativa do mesmo aluno no mesmo dia é recusada sem novo registro.
-- [ ] Um novo check-in em outro dia é permitido quando a matrícula continua vigente.
-- [ ] A auditoria é gravada atomicamente e a integridade da cadeia permanece válida.
-- [ ] Testes cobrem regras, duplicidade, rollback e compatibilidade MySQL 8.0/MariaDB 10.11.
-- [ ] A interface oferece registro manual, histórico filtrável e indicadores do dia/mês.
-- [ ] README, matriz de permissões, roadmap, guia de migrations e PR refletem o estado verdadeiro.
-- [ ] Inspeção manual em desktop e celular concluída.
+- [x] Migration 009 cria a tabela de check-ins, FKs, índices e unicidade diária.
+- [x] Aluno inativo, inexistente ou sem matrícula vigente é recusado; múltiplas matrículas vigentes são tratadas como estado ambíguo.
+- [x] Matrícula futura, vencida ou cancelada não habilita check-in.
+- [x] Check-in válido registra aluno, matrícula, funcionário, dia local e instante UTC.
+- [x] Segunda tentativa do mesmo aluno no mesmo dia é recusada sem novo registro.
+- [x] Um novo check-in em outro dia é permitido quando a matrícula continua vigente.
+- [x] A auditoria é gravada atomicamente; a cadeia permanece íntegra após os registros e rollback testado.
+- [x] Testes cobrem regras, duplicidade, rollback, virada do dia local e MySQL 8.0/MariaDB 10.11.
+- [x] A interface oferece registro manual, histórico filtrável e indicadores do dia/mês.
+- [x] README, matriz de permissões, roadmap, guia de migrations e PR refletem o estado verdadeiro.
+- [ ] Aplicar migrations 005–009 no XAMPP após backup e inspeção da versão/mecanismo do banco.
+- [ ] Concluir inspeção manual em dispositivo físico e navegador instalado.
 
 ## Relação com os blocos anteriores
 
