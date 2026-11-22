@@ -15,6 +15,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 $usuario = exigirAutenticacao($pdo);
+exigirPermissao($usuario, 'enrollments.cancel');
 validarToken();
 
 $studentId = validarId($_POST['student_id'] ?? '');
