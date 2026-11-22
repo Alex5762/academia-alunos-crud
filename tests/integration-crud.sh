@@ -839,6 +839,16 @@ db_exec "INSERT INTO matriculas (
     UTC_TIMESTAMP() - INTERVAL 1 HOUR, 'SISTEMA', 'Teste de preservação histórica'
 )"
 
+db_exec "INSERT INTO matriculas (
+    aluno_id, plano_id, plano_nome_contratado, valor_contratado,
+    duracao_contratada_valor, duracao_contratada_unidade,
+    inicio_em, fim_exclusivo_em, origem
+) VALUES (
+    $ALUNO_ID, $PLAN_ID, 'Plano CI Agendado para Cancelar', 79.90,
+    1, 'MES', UTC_TIMESTAMP() + INTERVAL 45 DAY,
+    UTC_TIMESTAMP() + INTERVAL 75 DAY, 'SISTEMA'
+)"
+
 db_exec "INSERT INTO revisoes_legado (
     aluno_id_origem, plano_texto_original, resultado_atual, fonte_referencia
 ) VALUES ($ALUNO_ID, 'Plano CI Mensal legado', 'PENDENTE_REVISAO', 'Fixture automatizado de CI')"
@@ -877,6 +887,41 @@ assert_contains "$TMP_DIR/detail-enrollments.html" "Teste de preservação hist�
 assert_contains "$TMP_DIR/detail-enrollments.html" "Revisão do vínculo pendente"
 assert_contains "$TMP_DIR/detail-enrollments.html" "Fixture automatizado de CI"
 assert_contains "$TMP_DIR/detail-enrollments.html" "Analisar revisão"
+assert_contains "$TMP_DIR/detail-enrollments.html" "Plano CI Agendado para Cancelar"
+assert_contains "$TMP_DIR/detail-enrollments.html" "Cancelar matrícula"
+
+echo "9.3/10 - Validando cancelamento HTTP de matrícula agendada..."
+CANCEL_ENROLLMENT_ID="$(db_value "SELECT id FROM matriculas WHERE aluno_id = $ALUNO_ID AND plano_nome_contratado = 'Plano CI Agendado para Cancelar' LIMIT 1")"
+[[ "$CANCEL_ENROLLMENT_ID" =~ ^[0-9]+$ ]] || fail "A matrícula agendada de teste não foi criada."
+CANCEL_TOKEN="$(get_token "$TMP_DIR/detail-enrollments.html")"
+HTTP_CODE="$(curl -sS -o "$TMP_DIR/enrollment-cancel-no-csrf.html" -w '%{http_code}' -c "$COOKIE_JAR" -b "$COOKIE_JAR" \
+    "$BASE_URL/cancelar-matricula.php" \
+    --data-urlencode "token=token-invalido" \
+    --data-urlencode "student_id=$ALUNO_ID" \
+    --data-urlencode "enrollment_id=$CANCEL_ENROLLMENT_ID")"
+[[ "$HTTP_CODE" == "403" ]] || fail "Cancelamento sem CSRF deveria retornar 403; retornou $HTTP_CODE."
+
+HTTP_CODE="$(curl -sS -L -o "$TMP_DIR/enrollment-cancelled.html" -w '%{http_code}' -c "$COOKIE_JAR" -b "$COOKIE_JAR" \
+    "$BASE_URL/cancelar-matricula.php" \
+    --data-urlencode "token=$CANCEL_TOKEN" \
+    --data-urlencode "student_id=$ALUNO_ID" \
+    --data-urlencode "enrollment_id=$CANCEL_ENROLLMENT_ID" \
+    --data-urlencode "motivo_cancelamento=Solicitação do aluno pelo teste HTTP")"
+[[ "$HTTP_CODE" == "200" ]] || fail "Cancelamento válido não retornou ao perfil com HTTP 200."
+assert_contains "$TMP_DIR/enrollment-cancelled.html" "Matrícula cancelada com sucesso."
+assert_contains "$TMP_DIR/enrollment-cancelled.html" "Solicitação do aluno pelo teste HTTP"
+
+CANCELLED_ROW="$(db_value "SELECT COUNT(*) FROM matriculas
+    WHERE id = $CANCEL_ENROLLMENT_ID
+      AND cancelada_em IS NOT NULL
+      AND motivo_cancelamento = 'Solicitação do aluno pelo teste HTTP'")"
+[[ "$CANCELLED_ROW" == "1" ]] || fail "O cancelamento não preservou instante e motivo."
+CANCEL_AUDIT="$(db_value "SELECT COUNT(*) FROM auditoria
+    WHERE usuario_id = $USUARIO_ID
+      AND acao = 'matricula_cancelada'
+      AND entidade = 'matriculas'
+      AND entidade_id = $CANCEL_ENROLLMENT_ID")"
+[[ "$CANCEL_AUDIT" == "1" ]] || fail "O cancelamento não foi auditado pelo funcionário autenticado."
 
 echo "9.4/10 - Validando fila administrativa e decisão auditada de revisão..."
 curl -fsS -G -c "$COOKIE_JAR" -b "$COOKIE_JAR" \
