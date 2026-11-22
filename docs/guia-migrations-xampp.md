@@ -94,7 +94,7 @@ Se houver senha, acrescente `--password` a cada chamada. Não execute a 006 se a
 
 - **005 — DDL:** cria `planos`, `matriculas`, `revisoes_legado`, `controle_importacao_legado` e `revisoes_legado_eventos`, com InnoDB, índices e chaves estrangeiras.
 - **006 — DML transacional:** registra o maior ID de aluno existente no momento da primeira execução e cria uma revisão `PENDENTE_REVISAO` para cada aluno até esse limite. Não cria matrículas, não decide se havia contrato vigente e não inventa evidências. Reexecuções não sobrescrevem decisões humanas nem incluem alunos criados depois do corte.
-- **007 — DDL de acesso:** adiciona o perfil administrativo em `usuarios`. Contas anteriores à migração recebem `ADMINISTRADOR` para não perder acesso; o valor padrão de novas contas passa a ser `OPERADOR`. Atribuições podem ser ajustadas na tela Funcionários por um administrador.
+- **007 — DDL de acesso:** adiciona o perfil administrativo em `usuarios`. Contas anteriores à migração recebem `ADMINISTRADOR` para não perder acesso; o valor padrão de novas contas passa a ser `OPERADOR`. Atribuições podem ser ajustadas na tela Funcionários por um administrador. A migration também cria `usuarios_perfis_eventos`, que preserva perfil anterior, perfil novo, responsável e instante de cada alteração.
 
 A 005 não é idempotente: se ela já tiver criado uma ou mais tabelas e falhar antes de terminar, **não a execute novamente às cegas**. Inspecione a estrutura e compare com o arquivo antes de qualquer reparo.
 
