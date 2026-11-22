@@ -398,7 +398,7 @@ final class LegacyReviewDecisionService
             ]);
 
             // 7. Auditoria geral na mesma transação.
-            \\FitControl\\Security\\AuditIntegrityChain::append($this->pdo, $actorUserId, 'revisao_legado_decidida', 'revisoes_legado', $reviewId);
+            \FitControl\Security\AuditIntegrityChain::append($this->pdo, $actorUserId, 'revisao_legado_decidida', 'revisoes_legado', $reviewId);
 
             $this->pdo->commit();
 
