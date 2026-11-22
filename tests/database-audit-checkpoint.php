@@ -92,6 +92,41 @@ try {
     assertCheckpoint($extended['ok'], 'Eventos legítimos posteriores devem preservar checkpoint antigo: ' . $extended['message']);
     assertCheckpoint($extended['events_since_checkpoint'] >= 1, 'A extensão deve ser contabilizada.');
 
+    $secondPath = checkpointTempPath();
+    try {
+        $secondCreated = \\FitControl\\Security\\AuditIntegrityCheckpoint::export(
+            $pdo,
+            $databaseName,
+            $secret,
+            $secondPath
+        );
+        $comparison = \\FitControl\\Security\\AuditIntegrityCheckpoint::compare(
+            $pdo,
+            $databaseName,
+            $secret,
+            $checkpointPath,
+            $secondPath
+        );
+        assertCheckpoint($comparison['ok'], 'Dois checkpoints válidos da mesma cadeia devem ser comparáveis: ' . $comparison['message']);
+        assertCheckpoint(
+            $comparison['newer_event_id'] >= $comparison['older_event_id'],
+            'O checkpoint posterior deve ter identificador igual ou maior.'
+        );
+
+        $reversed = \\FitControl\\Security\\AuditIntegrityCheckpoint::compare(
+            $pdo,
+            $databaseName,
+            $secret,
+            $secondPath,
+            $checkpointPath
+        );
+        assertCheckpoint(!$reversed['ok'], 'A comparação com ordem invertida deve ser rejeitada.');
+    } finally {
+        if (is_file($secondPath)) {
+            unlink($secondPath);
+        }
+    }
+
     $wrongSecret = \FitControl\Security\AuditIntegrityCheckpoint::verify(
         $pdo,
         $databaseName,
