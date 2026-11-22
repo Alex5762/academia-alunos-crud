@@ -108,7 +108,7 @@ A migration 010 deve ser executada somente após backup e conferência da versã
 - `FinanceService::registerPayment()` habilita a escrita somente durante o INSERT transacional e limpa a variável de sessão mesmo quando a operação falha.
 - O teste financeiro tenta INSERT, UPDATE e DELETE diretamente e exige rejeição; a limpeza de fixtures usa uma variável de sessão reservada ao teardown automatizado.
 - Correções financeiras futuras devem ser lançamentos compensatórios, nunca edição ou exclusão do pagamento original.
-- A proteção por gatilhos reduz alterações acidentais por caminhos SQL da aplicação. Como em qualquer controle dentro do próprio banco, uma conta administrativa capaz de alterar gatilhos ou variáveis de sessão continua sendo uma fronteira privilegiada; o ambiente real deve usar usuário SQL de menor privilégio.
+- Limite de segurança: os guards usam variáveis de sessão; qualquer cliente com as mesmas credenciais SQL pode defini-las. Eles reduzem alterações acidentais, mas não protegem contra credenciais comprometidas ou SQL arbitrário na mesma sessão. Para ambiente exposto, usar conta SQL de menor privilégio e rotina controlada (`SQL SECURITY DEFINER`) com DML direto revogado; root local/CI não é modelo de produção.
 
 ## F-03 — Matrícula cancelada e saldo em revisão
 
