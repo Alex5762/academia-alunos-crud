@@ -263,6 +263,8 @@ Set-ExecutionPolicy -Scope Process Bypass
 .\scripts\windows\instalar-checkpoint-auditoria.ps1 -ProjectRoot (Get-Location).Path -PhpPath "C:\xampp\php\php.exe" -DailyAt "08:00"
 
 Para exibir a chave uma única vez e copiá-la diretamente para um cofre de senhas, acrescente `-ShowRecoveryKey`. Faça isso somente em uma sessão privada, sem gravação de terminal/transcrição, e não cole a chave em chats, e-mails ou no repositório. Sem essa opção, a chave permanece apenas na configuração DPAPI, que só pode ser descriptografada pelo mesmo usuário Windows no mesmo computador.
+
+Ao reinstalar em outro computador ou perfil, recupere a chave do cofre e acrescente `-UseExistingRecoveryKey`; o instalador solicitará a chave em entrada segura e criará uma nova configuração DPAPI local com a mesma chave HMAC. Não use uma chave nova se precisar continuar verificando checkpoints antigos.
 ```
 
 O instalador solicita host, porta, banco, usuário e senha do MySQL; a senha pode ficar vazia no XAMPP padrão. Os arquivos são armazenados por padrão em `%LOCALAPPDATA%\FitControl\AuditCheckpoints`, fora do repositório. A pasta recebe ACL restrita ao usuário atual. Cada execução cria um JSON novo e um log; não há limpeza automática nem sobrescrita.
