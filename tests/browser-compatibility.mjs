@@ -116,6 +116,23 @@ for (const engine of engines) {
     await assertNoDocumentOverflow(page, engine.name, "mobile estreito de 320px");
 
     await page.setViewportSize({ width: 1280, height: 900 });
+    const attendanceResponse = await page.goto(baseUrl + "/checkins.php", {
+      waitUntil: "domcontentloaded",
+    });
+    ensure(attendanceResponse?.ok(), engine.name + ": a página de frequência não abriu.");
+    await page.getByRole("heading", { name: "Frequência" }).waitFor();
+    await page.getByRole("heading", { name: "Registrar entrada" }).waitFor();
+    await page.getByRole("heading", { name: "Histórico de presenças" }).waitFor();
+    await page.locator("#checkin-de").waitFor();
+    await page.locator("#checkin-ate").waitFor();
+    await assertNoDocumentOverflow(page, engine.name, "frequência desktop");
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await assertNoDocumentOverflow(page, engine.name, "frequência mobile de 390px");
+    await page.setViewportSize({ width: 320, height: 780 });
+    await assertNoDocumentOverflow(page, engine.name, "frequência mobile estreito de 320px");
+
+    await page.setViewportSize({ width: 1280, height: 900 });
     const formResponse = await page.goto(baseUrl + "/cadastro.php", {
       waitUntil: "domcontentloaded",
     });
