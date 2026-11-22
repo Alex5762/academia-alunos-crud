@@ -61,16 +61,16 @@ Essas escolhas estão alinhadas com as recomendações de transações PDO, leit
 
 **Ponto ainda não coberto:** o evento geral de auditoria continua encadeando metadados e ID, não um snapshot criptográfico independente dos campos financeiros. Um verificador de conteúdo pode ser considerado em etapa posterior, se o escopo justificar.
 
-### F-03 — Médio: cobranças de matrículas canceladas são apresentadas como abertas
+### F-03 — Médio: classificação financeira após cancelamento da matrícula
 
-**Evidência:** `financeiroStatus()` considera o cancelamento da cobrança, valor recebido e vencimento, mas não considera `matricula_cancelada_em`. O resumo também soma cobranças não canceladas mesmo quando a matrícula vinculada foi cancelada.
+**Estado: implementado na branch `feat/dashboard-portfolio`; CI pendente.**
 
-**Risco concreto:** o serviço bloqueia novos pagamentos depois do cancelamento contratual, mas a tela ainda pode mostrar a cobrança como “Em aberto”, “Parcial” ou “Vencida” e incluí-la no saldo em aberto. Isso passa a impressão de que a academia deve continuar cobrando um contrato cujo cancelamento está em revisão financeira.
-
-**Correção recomendada:**
-- Exibir estado “Em revisão” quando a matrícula estiver cancelada e a cobrança ainda não tiver uma decisão financeira.
-- Separar saldo efetivamente cobravel de valores pendentes de revisão.
-- Preservar o total histórico contratado e os valores já recebidos; não apagar os lançamentos.
+**Correção entregue:**
+- Cobrança cuja matrícula foi cancelada e que ainda não recebeu decisão financeira passa a aparecer como **Em revisão**.
+- O resumo separa saldo cobrável de saldo em revisão; valores em revisão deixam de compor o saldo cobrável.
+- O indicador de valor contratado e o total recebido preservam o histórico, inclusive de matrículas canceladas.
+- Cobrança financeiramente cancelada aparece como **Cancelada** e não mantém saldo em aberto.
+- Testes unitários cobrem os estados ativo, parcial, quitado, revisão e cancelado; o teste de banco cria uma matrícula com pagamento parcial, cancela o contrato e verifica a classificação e a separação dos R$ 250 restantes.
 
 ### F-04 — Médio: falta consulta do histórico individual de pagamentos
 
@@ -117,7 +117,7 @@ Essas escolhas estão alinhadas com as recomendações de transações PDO, leit
 1. **F-01:** implementado e validado em MySQL 8.0 e MariaDB 10.11 no CI #1266; integração CRUD/visual ainda estava em execução.
 2. **F-02:** implementado com guards append-only; aguardar CI e avaliar snapshot criptográfico independente em etapa posterior.
 3. **F-05:** adicionar constraints positivas no schema.
-4. **F-03:** separar valores cobraveis de valores em revisão por cancelamento contratual.
+4. **F-03:** implementado; aguardar CI nos dois bancos.
 5. **F-04:** disponibilizar o histórico de pagamentos por cobrança.
 6. **F-06:** adicionar testes de concorrência do limite de saldo e HTTP para registro de pagamento/cancelamento.
 7. **F-07 e F-08:** acabamento da apresentação e explicitação da política de datas.
