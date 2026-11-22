@@ -2,6 +2,7 @@
 require_once __DIR__ . '/funcoes.php';
 require_once __DIR__ . '/conexao.php';
 $usuario = exigirAutenticacao($pdo);
+exigirPermissao($usuario, 'dashboard.view');
 
 // Pesquisa por nome, e-mail ou telefone; filtro padrão mostra apenas alunos ativos.
 $busca = $_GET['busca'] ?? '';
