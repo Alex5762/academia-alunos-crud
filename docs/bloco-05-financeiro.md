@@ -133,9 +133,11 @@ A migration 010 deve ser executada somente após backup e conferência da versã
 - Os nomes são explícitos: `chk_cobrancas_valor_total_positivo` e `chk_pagamentos_valor_positivo`.
 - Nenhum dado legado é alterado automaticamente; a migration deve interromper se encontrar valor inválido.
 - Testes de integração tentam gravar cobrança e pagamento com zero e valores negativos diretamente no banco; verificam também que valores positivos válidos continuam aceitos.
+- As exceções esperadas precisam mencionar as constraints nomeadas, evitando que outro erro (por exemplo, o guard de INSERT) seja confundido com a validação do CHECK.
 - Para testar o CHECK de pagamentos, o teste habilita temporariamente o guard de INSERT do F-02 e o limpa em `finally`.
-- CI aplica a migration em MySQL 8.0 e MariaDB 10.11.
+- A CI aplica a migration 013 nos jobs MySQL 8.0 e MariaDB 10.11, além do caminho de integração/browser.
+- Requisito de compatibilidade: MySQL 8.0.16+; conferir dados inválidos antes da migration e não corrigir histórico automaticamente.
 
 ## Estado
 
-**F-01 a F-04 validados na CI #1332; F-05 implementado e aguardando CI #1350.** As migrations 011 e 012 estão incluídas na CI e no guia XAMPP. Não aplicar migrations no banco local sem backup e validação. PR #1 permanece Draft.
+**F-01 a F-04 validados na CI #1332; F-05 implementado e aguardando CI #1350.** Migration 013 documentada com pré-verificação dos dados e cautela para falha parcial dos dois comandos DDL. As migrations 011 e 012 estão incluídas na CI e no guia XAMPP. Não aplicar migrations no banco local sem backup e validação. PR #1 permanece Draft.
