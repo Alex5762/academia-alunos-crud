@@ -114,7 +114,7 @@ Essas escolhas estão alinhadas com as recomendações de transações PDO, leit
 
 ## Plano de correção recomendado
 
-1. **F-01:** implementado; aguardar confirmação final em MySQL 8.0 além do MariaDB 10.11.
+1. **F-01:** implementado e validado em MySQL 8.0 e MariaDB 10.11 no CI #1266; integração CRUD/visual ainda estava em execução.
 2. **F-02:** implementado com guards append-only; aguardar CI e avaliar snapshot criptográfico independente em etapa posterior.
 3. **F-05:** adicionar constraints positivas no schema.
 4. **F-03:** separar valores cobraveis de valores em revisão por cancelamento contratual.
