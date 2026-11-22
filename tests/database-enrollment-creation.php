@@ -269,6 +269,29 @@ try {
     );
     $enrollmentIds[] = $monthlyId;
 
+    // Hoje sem horário: o serviço resolve o instante depois dos bloqueios,
+    // evitando que a latência da transação torne o horário padrão retroativo.
+    $clockAfterLocks = creationLocalDate('2026-01-10 08:00:05');
+    $nowService = new EnrollmentCreationService(
+        $pdo,
+        static fn (): DateTimeImmutable => $clockAfterLocks
+    );
+    $nowStartId = $nowService->create(
+        $studentIds[8],
+        $planIds[0],
+        $actorId,
+        creationLocalDate('2026-01-10 08:00:00'),
+        true
+    );
+    $enrollmentIds[] = $nowStartId;
+    $nowStartStored = $pdo->query(
+        'SELECT inicio_em FROM matriculas WHERE id = ' . $nowStartId
+    )->fetchColumn();
+    assertCreation(
+        $nowStartStored === creationUtc('2026-01-10 08:00:05'),
+        'Início de hoje sem horário deve usar o instante confirmado depois dos bloqueios.'
+    );
+
     $monthly = $pdo->query(
         'SELECT plano_nome_contratado, valor_contratado,
                 duracao_contratada_valor, duracao_contratada_unidade,
