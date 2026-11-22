@@ -260,6 +260,17 @@ curl -fsS -L -c "$NEW_COOKIE_JAR" -b "$NEW_COOKIE_JAR" "$BASE_URL/trocar-senha.p
 assert_contains "$TMP_DIR/new-user-password-changed.html" "Visão geral"
 NOVO_ACESSO_OK="$(db_value "SELECT COUNT(*) FROM usuarios WHERE id = $NOVO_USUARIO_ID AND deve_trocar_senha = 0")"
 [[ "$NOVO_ACESSO_OK" == "1" ]] || fail "A nova conta não concluiu a troca obrigatória de senha."
+
+NOVO_PERFIL="$(db_value "SELECT perfil FROM usuarios WHERE id = $NOVO_USUARIO_ID")"
+[[ "$NOVO_PERFIL" == "OPERADOR" ]] || fail "Novas contas devem receber o perfil OPERADOR por padrão."
+
+RBAC_USERS_HTTP="$(curl -sS -o "$TMP_DIR/operator-users.html" -w '%{http_code}' -c "$NEW_COOKIE_JAR" -b "$NEW_COOKIE_JAR" "$BASE_URL/usuarios.php")"
+[[ "$RBAC_USERS_HTTP" == "403" ]] || fail "Operador deveria receber 403 na gestão de funcionários; recebeu $RBAC_USERS_HTTP."
+RBAC_LEGACY_HTTP="$(curl -sS -o "$TMP_DIR/operator-legacy.html" -w '%{http_code}' -c "$NEW_COOKIE_JAR" -b "$NEW_COOKIE_JAR" "$BASE_URL/revisoes-legado.php")"
+[[ "$RBAC_LEGACY_HTTP" == "403" ]] || fail "Operador deveria receber 403 na revisão de legados; recebeu $RBAC_LEGACY_HTTP."
+RBAC_PLANS_HTTP="$(curl -sS -o "$TMP_DIR/operator-plans.html" -w '%{http_code}' -c "$NEW_COOKIE_JAR" -b "$NEW_COOKIE_JAR" "$BASE_URL/planos.php")"
+[[ "$RBAC_PLANS_HTTP" == "200" ]] || fail "Operador deveria consultar planos; recebeu $RBAC_PLANS_HTTP."
+
 CRIACAO_AUDITADA="$(db_value "SELECT COUNT(*) FROM auditoria WHERE usuario_id = (SELECT id FROM usuarios WHERE email = 'provision-ci@example.test') AND acao = 'usuario_criado' AND entidade_id = $NOVO_USUARIO_ID")"
 [[ "$CRIACAO_AUDITADA" == "1" ]] || fail "A criação da conta não foi auditada com o autor correto."
 
