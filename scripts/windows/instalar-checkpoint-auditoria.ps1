@@ -2,7 +2,8 @@ param(
     [Parameter(Mandatory = $true)][string]$ProjectRoot,
     [string]$StateDirectory = "$env:LOCALAPPDATA\FitControl\AuditCheckpoints",
     [string]$PhpPath = "C:\xampp\php\php.exe",
-    [string]$DailyAt = "08:00"
+    [string]$DailyAt = "08:00",
+    [switch]$ShowRecoveryKey
 )
 $ErrorActionPreference = 'Stop'
 $project = (Resolve-Path -LiteralPath $ProjectRoot).Path
@@ -53,3 +54,9 @@ Write-Host "Horário diário: $DailyAt (horário local do Windows)"
 Write-Host "Checkpoints: $checkpointDirectory"
 Write-Host "Configuração protegida por DPAPI: $configPath"
 Write-Warning "A tarefa roda somente quando este usuário Windows está conectado. Faça backup externo da pasta checkpoints; não copie config.dpapi para outra conta ou computador."
+if ($ShowRecoveryKey) {
+    Write-Warning "A chave será exibida uma única vez. Copie-a diretamente para um cofre de senhas; não a envie por chat, e-mail ou Git."
+    Write-Host "FITCONTROL_AUDIT_CHECKPOINT_SECRET=$secret"
+} else {
+    Write-Warning "Para recuperação em outro computador, reinstale usando a mesma chave; use -ShowRecoveryKey para guardá-la em cofre seguro. A configuração DPAPI só abre neste usuário Windows."
+}
