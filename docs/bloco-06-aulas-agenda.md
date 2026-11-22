@@ -126,52 +126,6 @@ A tabela `instrutores` será o cadastro profissional e operacional, independente
 
 O servidor deve verificar cada permissão em toda página e endpoint. Ocultar controles na interface não é autorização.
 
-## 7. Integridade, transações e concorrência
-
-### Ordem de bloqueios proposta
-
-- **Reservar vaga:** iniciar transação; bloquear aluno; bloquear sessão; validar status/capacidade; validar matrícula para o intervalo completo; verificar sobreposição de reservas; inserir/reativar reserva; registrar auditoria; commit.
-- **Gerar sessões:** bloquear turma/horários em ordem determinística; verificar conflitos do instrutor; inserir ocorrências com chave única; registrar auditoria; commit.
-- **Cancelar sessão:** bloquear sessão; validar que ainda é futura; registrar justificativa, estado e auditoria na mesma transação.
-- **Marcar presença:** bloquear sessão e reserva em ordem fixa; validar início/status; alterar estado da presença e registrar auditoria.
-
-Todas as operações que bloqueiam mais de uma entidade devem manter ordem consistente para reduzir deadlocks. A aplicação deve tratar deadlock/lock timeout de forma segura, com rollback e mensagem operacional; não repetir automaticamente uma escrita sem estratégia idempotente.
-
-MySQL/InnoDB libera locks de `SELECT ... FOR UPDATE` no commit/rollback e usa essas leituras para proteger alterações concorrentes. A CI deve provar a capacidade com duas conexões independentes, tentando ocupar a última vaga ao mesmo tempo: exatamente uma reserva deve ser aceita.
-
-### Integridade no schema
-
-A migration específica será a próxima sequência disponível (proposta: `014_aulas_agenda.sql`), após conferir novamente o histórico de migrations. Deve incluir FKs com `ON DELETE RESTRICT`, índices para consultas da agenda, reservas e conflitos, constraints positivas para capacidade/duração e chave única para impedir reserva duplicada e geração duplicada da mesma ocorrência.
-
-Não implementar a migration antes de fechar o modelo e os critérios de aceite.
-
-## 8. Datas e fuso horário
-
-- Fuso oficial: `America/Sao_Paulo`, consistente com matrículas, check-in e financeiro.
-- Formulários recebem data/hora local; o serviço valida a data civil e converte explicitamente para UTC.
-- Persistir instantes em UTC (`DATETIME`) e converter para o fuso da academia somente na apresentação.
-- `fim_em_utc` deve ser posterior a `inicio_em_utc`; duração é positiva e limitada pelo domínio.
-- Não aceitar sessões no passado ao criar/gerar agenda.
-- Testar mudança de dia local, virada UTC/local, limites de intervalo e horários inválidos.
-
-## 9. Critérios de aceite propostos
-
-- [ ] Modalidades podem ser criadas, editadas e inativadas; registros com histórico não são apagados.
-- [ ] Turmas e horários semanais podem ser criados e validados.
-- [ ] Geração explícita de sessões é idempotente e limitada à janela permitida.
-- [ ] Sessões geradas preservam os valores operacionais da ocorrência.
-- [ ] Instrutor inativo ou com conflito de horário não pode ser escalado.
-- [ ] Aluno inativo, sem matrícula válida ou com matrícula que não cobre toda a sessão não pode reservar.
-- [ ] Capacidade nunca é excedida sob concorrência.
-- [ ] Não há reservas duplicadas nem sobreposição de reservas para o mesmo aluno.
-- [ ] Cancelamento libera vaga e preserva auditoria/histórico.
-- [ ] Sessão cancelada não aceita reserva nem marcação de presença.
-- [ ] Presença/ausência só pode ser marcada a partir do início e fica atribuída ao funcionário.
-- [ ] Cada operação relevante e sua auditoria são atômicas.
-- [ ] RBAC é validado em testes unitários e HTTP para os três perfis.
-- [ ] Testes de domínio, integração MySQL 8.0 e MariaDB 10.11, concorrência e Playwright desktop/mobile passam.
-- [ ] README, matriz RBAC, roadmap, guia de migrations e documentação do bloco refletem o estado real.
-
 ## 10. Decisões confirmadas e decisões ainda abertas
 
 ### Confirmada
@@ -187,10 +141,26 @@ Não implementar a migration antes de fechar o modelo e os critérios de aceite.
 
 As decisões ainda abertas não devem ser tratadas como definitivas até revisão do projeto.
 
+
+### Confirmada
+
+- [x] **Instrutores:** opção C — cadastro independente com vínculo opcional a uma conta existente em `usuarios`. A tabela profissional não concede acesso ao sistema.
+
+### Ainda precisam de confirmação antes da implementação
+
+1. **Janela de geração:** confirmar 30 dias como horizonte padrão de criação de sessões.
+2. **Reserva:** confirmar que a equipe fará reservas no painel interno; aluno não terá login/autoatendimento.
+3. **Lista de espera:** manter fora da primeira versão.
+4. **Presença por aula:** confirmar que será um registro separado do check-in geral da academia.
+
+As decisões ainda abertas não devem ser tratadas como definitivas até revisão do projeto.
+
+
 ## 11. Referências técnicas
 
 - MySQL 8.0 — [InnoDB Locking Reads](https://dev.mysql.com/doc/refman/8.0/en/innodb-locking-reads.html): `SELECT ... FOR UPDATE`, bloqueios e transações.
 - MySQL 8.0 — [Internal Locking Methods](https://dev.mysql.com/doc/refman/8.0/en/internal-locking.html): locks por linha e práticas para evitar deadlocks.
+- MySQL 8.0 — [InnoDB Best Practices](https://dev.mysql.com/doc/refman/8.0/en/innodb-best-practices.html): PKs, FKs, índices e transações curtas.
 - MySQL 8.0 — [InnoDB Best Practices](https://dev.mysql.com/doc/refman/8.0/en/innodb-best-practices.html): PKs, FKs, índices e transações curtas.
 - Scraler (11/11/2026) — [Class Booking Software: 6 Tools Compared](https://scraler.com/blog/class-booking-software): capacidades, horários recorrentes, reservas, lista de espera e políticas de cancelamento como dimensões comuns de sistemas de aulas. Referência de mercado, não norma técnica.
 
