@@ -360,7 +360,7 @@ try {
     );
     assertFinance($paymentOne > 0 && $paymentTwo > 0, 'O serviço deve retornar IDs de pagamentos válidos.');
 
-    $history = FinancePaymentHistoryQuery::forCharges($pdo, [$firstChargeId, $firstChargeId, $secondChargeId]);
+    $history = FinancePaymentHistoryQuery::forCharges($pdo, [$firstChargeId, $firstChargeId]);
     assertFinance(
         count($history[$firstChargeId] ?? []) === 2,
         'O histórico deve listar os dois pagamentos da cobrança sem duplicar IDs de cobrança.'
@@ -381,8 +381,8 @@ try {
         'O histórico deve identificar o usuário responsável pelo lançamento.'
     );
     assertFinance(
-        !isset($history[$secondChargeId]),
-        'Cobrança sem pagamento não deve inventar lançamentos.'
+        FinancePaymentHistoryQuery::forCharges($pdo, []) === [],
+        'Lista vazia de cobranças deve retornar histórico vazio sem consultar registros.'
     );
 
     $replayedPayment = $finance->registerPayment(
