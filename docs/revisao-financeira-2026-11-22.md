@@ -54,7 +54,7 @@ Essas escolhas estão alinhadas com as recomendações de transações PDO, leit
 - Testes tentam INSERT, UPDATE e DELETE diretamente e exigem rejeição; a limpeza das fixtures usa uma variável de sessão reservada ao teardown automatizado.
 - Correções futuras devem ser lançamentos compensatórios (estorno/devolução), com referência ao pagamento original, motivo, ator, instante e auditoria.
 
-**Limite importante:** os guards por variável de sessão protegem contra caminhos SQL acidentais da aplicação, não contra um administrador do banco que controle a própria sessão ou os gatilhos. O ambiente real deve usar uma conta SQL de menor privilégio; acesso administrativo ao banco permanece uma fronteira de confiança.
+**Limite importante:** os guards usam variáveis de sessão MySQL. Qualquer cliente que consiga conectar com as mesmas credenciais SQL da aplicação pode definir essas variáveis; portanto, os gatilhos reduzem gravações acidentais por caminhos normais, mas não constituem uma fronteira de privilégio contra credenciais comprometidas ou SQL arbitrário na mesma sessão. A variável de limpeza do teste também pode ser definida por qualquer sessão com essas credenciais. Para um ambiente exposto, o próximo endurecimento deve usar conta SQL de menor privilégio e separar a escrita por rotina controlada (`SQL SECURITY DEFINER`) ou estratégia equivalente, revogando DML direto da conta da aplicação. O XAMPP local e a conta root da CI não representam esse modelo de produção.
 
 **Ponto ainda não coberto:** o evento geral de auditoria continua encadeando metadados e ID, não um snapshot criptográfico independente dos campos financeiros. Um verificador de conteúdo pode ser considerado em etapa posterior, se o escopo justificar.
 
