@@ -100,6 +100,7 @@ A migration 010 deve ser executada somente após backup e conferência da versã
 - A consulta idempotente ocorre depois do `SELECT ... FOR UPDATE` da cobrança, serializando requisições concorrentes para a mesma cobrança.
 - Pagamentos anteriores à migration permanecem com as colunas novas nulas; a proteção se aplica aos novos registros.
 - Testes de domínio/banco cobrem reenvio idêntico, conflito de conteúdo e preservação da contagem de lançamentos.
+- Teste de concorrência inicia dois processos PHP com conexões PDO independentes, sincronizados atrás do lock da cobrança; ambos devem retornar o mesmo ID, com um único pagamento e um único evento de auditoria.
 
 ## Estado
 
