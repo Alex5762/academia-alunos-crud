@@ -141,21 +141,6 @@ O servidor deve verificar cada permissão em toda página e endpoint. Ocultar co
 
 As decisões ainda abertas não devem ser tratadas como definitivas até revisão do projeto.
 
-
-### Confirmada
-
-- [x] **Instrutores:** opção C — cadastro independente com vínculo opcional a uma conta existente em `usuarios`. A tabela profissional não concede acesso ao sistema.
-
-### Ainda precisam de confirmação antes da implementação
-
-1. **Janela de geração:** confirmar 30 dias como horizonte padrão de criação de sessões.
-2. **Reserva:** confirmar que a equipe fará reservas no painel interno; aluno não terá login/autoatendimento.
-3. **Lista de espera:** manter fora da primeira versão.
-4. **Presença por aula:** confirmar que será um registro separado do check-in geral da academia.
-
-As decisões ainda abertas não devem ser tratadas como definitivas até revisão do projeto.
-
-
 ## 11. Referências técnicas
 
 - MySQL 8.0 — [InnoDB Locking Reads](https://dev.mysql.com/doc/refman/8.0/en/innodb-locking-reads.html): `SELECT ... FOR UPDATE`, bloqueios e transações.
