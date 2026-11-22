@@ -66,7 +66,7 @@ function runFinancePaymentWorker(array $arguments): never
     $service = new FinanceService($pdo, $clock);
 
     // O processo pai mantém a cobrança bloqueada até receber READY dos dois workers.
-    fwrite(STDOUT, "READY\\n");
+    fwrite(STDOUT, "READY\n");
     fflush(STDOUT);
 
     try {
@@ -79,11 +79,11 @@ function runFinancePaymentWorker(array $arguments): never
             (string) $arguments[7],
             (string) $arguments[8]
         );
-        fwrite(STDOUT, 'PAYMENT_ID=' . $paymentId . "\\n");
+        fwrite(STDOUT, 'PAYMENT_ID=' . $paymentId . "\n");
         fflush(STDOUT);
         exit(0);
     } catch (Throwable $exception) {
-        fwrite(STDERR, get_class($exception) . ': ' . $exception->getMessage() . "\\n");
+        fwrite(STDERR, get_class($exception) . ': ' . $exception->getMessage() . "\n");
         exit(1);
     }
 }
@@ -143,7 +143,7 @@ function runFinanceIdempotencyRace(
             $signal = fgets($worker['pipes'][1]);
             $metadata = stream_get_meta_data($worker['pipes'][1]);
             assertFinance(
-                $signal === "READY\\n" && empty($metadata['timed_out']),
+                $signal === "READY\n" && empty($metadata['timed_out']),
                 'Worker financeiro não confirmou prontidão antes da liberação do bloqueio.'
             );
         }
@@ -199,7 +199,7 @@ if (($argv[1] ?? '') === '--idempotency-worker') {
     try {
         runFinancePaymentWorker($argv);
     } catch (Throwable $exception) {
-        fwrite(STDERR, get_class($exception) . ': ' . $exception->getMessage() . "\\n");
+        fwrite(STDERR, get_class($exception) . ': ' . $exception->getMessage() . "\n");
         exit(1);
     }
 }
