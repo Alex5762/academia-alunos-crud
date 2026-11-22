@@ -175,7 +175,9 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && ($_POST['acao'] ?? '') =
             $alunoMatriculaSelecionado,
             $planoMatriculaSelecionado,
             (int) $usuario['id'],
-            $inicioLocal
+            $inicioLocal,
+            $horaInicioMatricula === ''
+                && $dataInicioMatricula === $agoraLocal->format('Y-m-d')
         );
 
         $_SESSION['mensagem'] = 'Matrícula #' . $matriculaId . ' criada com sucesso.';
