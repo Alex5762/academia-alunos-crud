@@ -75,16 +75,22 @@ if ($entidade !== '') {
     $where[] = 'a.entidade = :entidade';
     $parametros['entidade'] = $entidade;
 }
+$fusoAcademia = new DateTimeZone('America/Sao_Paulo');
+$fusoUtc = new DateTimeZone('UTC');
 if ($dataInicial !== null) {
+    $inicioUtc = (new DateTimeImmutable($dataInicial . ' 00:00:00', $fusoAcademia))
+        ->setTimezone($fusoUtc)
+        ->format('Y-m-d H:i:s');
     $where[] = 'a.criado_em >= :data_inicial';
-    $parametros['data_inicial'] = $dataInicial . ' 00:00:00';
+    $parametros['data_inicial'] = $inicioUtc;
 }
 if ($dataFinal !== null) {
-    $fimExclusivo = (new DateTimeImmutable($dataFinal))
+    $fimUtc = (new DateTimeImmutable($dataFinal . ' 00:00:00', $fusoAcademia))
         ->modify('+1 day')
-        ->format('Y-m-d 00:00:00');
+        ->setTimezone($fusoUtc)
+        ->format('Y-m-d H:i:s');
     $where[] = 'a.criado_em < :data_final';
-    $parametros['data_final'] = $fimExclusivo;
+    $parametros['data_final'] = $fimUtc;
 }
 
 $whereSql = $where === [] ? '' : ' WHERE ' . implode(' AND ', $where);
@@ -143,123 +149,87 @@ function urlAuditoria(array $sobrescritas = []): string
     ));
 }
 
-require_once __DIR__ . '/includes/header.php';
 ?>
-<main class="page-shell">
-    <section class="page-heading">
-        <div>
-            <p class="eyebrow">SEGURANÇA E GOVERNANÇA</p>
-            <h1>Central de auditoria</h1>
-            <p>Consulte ações administrativas registradas no FitControl.</p>
-        </div>
-        <a class="button button-search" href="index.php">Voltar ao painel</a>
-    </section>
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Trilha de auditoria administrativa do FitControl.">
+    <title>Auditoria | FitControl</title>
+    <link rel="stylesheet" href="style.css">
+    <?= renderizarMonitorSessao() ?>
+    <script src="theme.js"></script>
+</head>
+<body class="dashboard-body">
+<div class="app-shell">
+    <aside class="sidebar" aria-label="Navegação principal">
+        <a class="brand" href="index.php" aria-label="FitControl - página inicial">
+            <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="M8 11.5h16M8 20.5h16M11 8v16M21 8v16" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg></span>
+            <span class="brand-copy"><strong>fitcontrol</strong><small>GESTÃO DE ACADEMIA</small></span>
+        </a>
+        <div class="sidebar-label">SEGURANÇA</div>
+        <nav class="main-nav" aria-label="Navegação de segurança">
+            <a class="nav-link" href="index.php"><span>Visão geral</span></a>
+            <a class="nav-link active" href="auditoria.php" aria-current="page"><span>Central de auditoria</span></a>
+            <?php if (usuarioTemPermissao($usuario, 'users.manage')) { ?>
+                <a class="nav-link" href="usuarios.php"><span>Funcionários</span></a>
+            <?php } ?>
+            <a class="nav-link" href="configuracoes.php"><span>Configurações</span></a>
+        </nav>
+        <div class="sidebar-bottom"><a class="nav-link" href="logout.php">Sair</a></div>
+    </aside>
+    <main class="app-main">
+        <header class="topbar">
+            <div><span class="eyebrow">SEGURANÇA E GOVERNANÇA</span><h1>Central de auditoria</h1></div>
+            <span class="account-current"><?= escapar($usuario['nome']) ?> · <?= escapar(\\FitControl\\Security\\AccessControl::label($usuario['perfil'])) ?></span>
+        </header>
+        <div class="page-content">
+            <section class="page-heading">
+                <div><h2>Histórico administrativo</h2><p>Consulte ações registradas no FitControl, com filtros e paginação.</p></div>
+                <span class="account-status"><?= number_format($total, 0, ',', '.') ?> evento(s)</span>
+            </section>
 
-    <section class="settings-card account-card" aria-labelledby="audit-filter-title">
-        <div class="settings-card-heading">
-            <span class="settings-icon" aria-hidden="true">⌕</span>
-            <div>
-                <h2 id="audit-filter-title">Filtrar eventos</h2>
-                <p><?= number_format($total, 0, ',', '.') ?> evento(s) encontrado(s)</p>
-            </div>
-        </div>
-        <form method="get" action="auditoria.php" class="account-create-form">
-            <div>
-                <label for="audit-search">Funcionário, e-mail ou ID</label>
-                <input id="audit-search" name="busca" type="search" maxlength="100"
-                       value="<?= escapar($termo) ?>" placeholder="Buscar responsável">
-            </div>
-            <div>
-                <label for="audit-action">Ação</label>
-                <select id="audit-action" name="acao">
-                    <option value="">Todas as ações</option>
-                    <?php foreach ($opcoesAcao as $opcao) { ?>
-                        <option value="<?= escapar($opcao) ?>" <?= $acao === $opcao ? 'selected' : '' ?>>
-                            <?= escapar($opcao) ?>
-                        </option>
-                    <?php } ?>
-                </select>
-            </div>
-            <div>
-                <label for="audit-entity">Entidade</label>
-                <select id="audit-entity" name="entidade">
-                    <option value="">Todas as entidades</option>
-                    <?php foreach ($opcoesEntidade as $opcao) { ?>
-                        <option value="<?= escapar($opcao) ?>" <?= $entidade === $opcao ? 'selected' : '' ?>>
-                            <?= escapar($opcao) ?>
-                        </option>
-                    <?php } ?>
-                </select>
-            </div>
-            <div>
-                <label for="audit-from">De</label>
-                <input id="audit-from" name="de" type="date" value="<?= escapar($dataInicial ?? '') ?>">
-            </div>
-            <div>
-                <label for="audit-to">Até</label>
-                <input id="audit-to" name="ate" type="date" value="<?= escapar($dataFinal ?? '') ?>">
-            </div>
-            <div class="plan-form-actions">
-                <button class="button button-primary" type="submit">Aplicar filtros</button>
-                <a class="button button-search" href="auditoria.php">Limpar</a>
-            </div>
-        </form>
-    </section>
+            <section class="settings-card account-card" aria-labelledby="audit-filter-title">
+                <div class="settings-card-heading"><span class="settings-icon" aria-hidden="true">⌕</span><div><h2 id="audit-filter-title">Filtrar eventos</h2><p>Os períodos usam o fuso horário da academia (America/Sao_Paulo).</p></div></div>
+                <form method="get" action="auditoria.php" class="account-create-form">
+                    <div><label for="audit-search">Funcionário, e-mail ou ID</label><input id="audit-search" name="busca" type="search" maxlength="100" value="<?= escapar($termo) ?>" placeholder="Buscar responsável"></div>
+                    <div><label for="audit-action">Ação</label><select id="audit-action" name="acao"><option value="">Todas as ações</option><?php foreach ($opcoesAcao as $opcao) { ?><option value="<?= escapar($opcao) ?>" <?= $acao === $opcao ? 'selected' : '' ?>><?= escapar($opcao) ?></option><?php } ?></select></div>
+                    <div><label for="audit-entity">Entidade</label><select id="audit-entity" name="entidade"><option value="">Todas as entidades</option><?php foreach ($opcoesEntidade as $opcao) { ?><option value="<?= escapar($opcao) ?>" <?= $entidade === $opcao ? 'selected' : '' ?>><?= escapar($opcao) ?></option><?php } ?></select></div>
+                    <div><label for="audit-from">De</label><input id="audit-from" name="de" type="date" value="<?= escapar($dataInicial ?? '') ?>"></div>
+                    <div><label for="audit-to">Até</label><input id="audit-to" name="ate" type="date" value="<?= escapar($dataFinal ?? '') ?>"></div>
+                    <div class="plan-form-actions"><button class="button button-primary" type="submit">Aplicar filtros</button><a class="button button-search" href="auditoria.php">Limpar</a></div>
+                </form>
+            </section>
 
-    <section class="settings-card account-card" aria-labelledby="audit-list-title">
-        <div class="settings-card-heading account-list-heading">
-            <div>
-                <h2 id="audit-list-title">Eventos registrados</h2>
-                <p>Mais recentes primeiro · <?= $porPagina ?> registros por página</p>
-            </div>
+            <section class="settings-card account-card" aria-labelledby="audit-list-title">
+                <div class="settings-card-heading account-list-heading"><div><h2 id="audit-list-title">Eventos registrados</h2><p>Mais recentes primeiro · <?= $porPagina ?> registros por página</p></div></div>
+                <?php if ($eventos === []) { ?>
+                    <div class="compact-empty"><strong>Nenhum evento encontrado</strong><span>Ajuste os filtros ou consulte outro período.</span></div>
+                <?php } else { ?>
+                    <div class="table-scroll" tabindex="0" aria-label="Tabela de eventos de auditoria">
+                        <table class="students-table accounts-table">
+                            <thead><tr><th scope="col">DATA E HORA</th><th scope="col">RESPONSÁVEL</th><th scope="col">AÇÃO</th><th scope="col">ENTIDADE</th><th scope="col">REGISTRO</th></tr></thead>
+                            <tbody><?php foreach ($eventos as $evento) { ?>
+                                <tr>
+                                    <td><?= escapar(formatarInstanteUtcNaAcademia($evento['criado_em'])) ?></td>
+                                    <td><div class="account-person"><strong><?= escapar($evento['responsavel_nome'] ?? 'Conta indisponível') ?></strong><small><?= escapar($evento['responsavel_email'] ?? ('ID ' . $evento['usuario_id'])) ?></small></div></td>
+                                    <td><span class="account-status"><?= escapar($evento['acao']) ?></span></td>
+                                    <td><?= escapar($evento['entidade']) ?></td>
+                                    <td><?= $evento['entidade_id'] === null ? '—' : '#' . (int) $evento['entidade_id'] ?></td>
+                                </tr>
+                            <?php } ?></tbody>
+                        </table>
+                    </div>
+                    <nav class="pagination" aria-label="Paginação da auditoria"><span>Página <?= $pagina ?> de <?= $totalPaginas ?></span><div class="plan-form-actions">
+                        <?php if ($pagina > 1) { ?><a class="button button-search" href="<?= escapar(urlAuditoria(['pagina' => (string) ($pagina - 1)])) ?>">Anterior</a><?php } ?>
+                        <?php if ($pagina < $totalPaginas) { ?><a class="button button-search" href="<?= escapar(urlAuditoria(['pagina' => (string) ($pagina + 1)])) ?>">Próxima</a><?php } ?>
+                    </div></nav>
+                <?php } ?>
+            </section>
+            <footer class="page-footer"><span>FitControl · Central de auditoria</span><span>Projeto acadêmico de Desenvolvimento Web</span></footer>
         </div>
-        <?php if ($eventos === []) { ?>
-            <div class="compact-empty">
-                <strong>Nenhum evento encontrado</strong>
-                <span>Ajuste os filtros ou consulte outro período.</span>
-            </div>
-        <?php } else { ?>
-            <div class="table-scroll" tabindex="0" aria-label="Tabela de eventos de auditoria">
-                <table class="students-table accounts-table">
-                    <thead>
-                        <tr>
-                            <th scope="col">DATA E HORA</th>
-                            <th scope="col">RESPONSÁVEL</th>
-                            <th scope="col">AÇÃO</th>
-                            <th scope="col">ENTIDADE</th>
-                            <th scope="col">REGISTRO</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php foreach ($eventos as $evento) { ?>
-                            <tr>
-                                <td><?= escapar(formatarInstanteUtcNaAcademia($evento['criado_em'])) ?></td>
-                                <td>
-                                    <div class="account-person">
-                                        <strong><?= escapar($evento['responsavel_nome'] ?? 'Conta indisponível') ?></strong>
-                                        <small><?= escapar($evento['responsavel_email'] ?? ('ID ' . $evento['usuario_id'])) ?></small>
-                                    </div>
-                                </td>
-                                <td><span class="account-status"><?= escapar($evento['acao']) ?></span></td>
-                                <td><?= escapar($evento['entidade']) ?></td>
-                                <td><?= $evento['entidade_id'] === null ? '—' : '#' . (int) $evento['entidade_id'] ?></td>
-                            </tr>
-                        <?php } ?>
-                    </tbody>
-                </table>
-            </div>
-            <nav class="pagination" aria-label="Paginação da auditoria">
-                <span>Página <?= $pagina ?> de <?= $totalPaginas ?></span>
-                <div class="plan-form-actions">
-                    <?php if ($pagina > 1) { ?>
-                        <a class="button button-search" href="<?= escapar(urlAuditoria(['pagina' => (string) ($pagina - 1)])) ?>">Anterior</a>
-                    <?php } ?>
-                    <?php if ($pagina < $totalPaginas) { ?>
-                        <a class="button button-search" href="<?= escapar(urlAuditoria(['pagina' => (string) ($pagina + 1)])) ?>">Próxima</a>
-                    <?php } ?>
-                </div>
-            </nav>
-        <?php } ?>
-    </section>
-</main>
-<?php require_once __DIR__ . '/includes/footer.php'; ?>
+    </main>
+</div>
+</body>
+</html>
