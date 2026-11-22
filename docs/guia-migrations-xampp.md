@@ -1,4 +1,4 @@
-# Procedimento local — migrations 001 a 013 (FitControl)
+# Procedimento local — migrations 001 a 014 (FitControl)
 
 > **Escopo:** ambiente acadêmico/local com XAMPP. Este procedimento não autoriza uso em produção nem aplicação automática em banco com dados reais. A CI valida os fluxos de migrations e os testes de banco em MySQL 8.0 e MariaDB 10.11, incluindo o financeiro (010 a 013); isso não identifica nem valida a versão instalada no computador.
 
@@ -459,8 +459,26 @@ Os dois resultados devem ser zero. Se algum resultado for maior que zero, interr
 
 Referências: [MySQL — CHECK constraints](https://dev.mysql.com/doc/refman/8.0/en/create-table-check-constraints.html) e [MariaDB — Constraints](https://mariadb.com/docs/server/reference/sql-statements/data-definition/constraint).
 
+### 13. Migration 014 — Grade fixa de aulas (Bloco 06)
+
+**Não aplique esta migration como parte da validação pendente dos Blocos 03–05.** Ela pertence ao novo Bloco 06 e só deve ser aplicada quando a versão do código que a utiliza estiver pronta para validação local, após backup restaurável e conferência do estado real do banco.
+
+Pré-requisitos: migrations 001–013 aplicadas e conferidas, cadeia de auditoria inicializada e CI da migration 014 aprovada em MySQL 8.0 e MariaDB 10.11.
+
+Depois de revisar o backup e confirmar os pré-requisitos, execute uma única vez:
+
+```bat
+"C:\xampp\mysql\bin\mysql.exe" --host=127.0.0.1 --port=3306 --user=root academia_alunos < database\migrations\014_grade_fixa_aulas.sql
+```
+
+A migration cria `modalidades`, `instrutores` e `horarios_aula`. O vínculo `instrutores.usuario_id` é opcional e compatível com `usuarios.id INT UNSIGNED`. A grade usa um registro por combinação de modalidade/dia/hora inicial; o dia segue o padrão ISO (1=segunda-feira até 7=domingo). O instrutor do horário também é opcional.
+
+A migration **não** cria sessões datadas, reservas, lista de espera, presença por aula ou integrações com QR Code/catracas. Ela não deve ser aplicada antes da implementação das telas e serviços que vão utilizar essas tabelas.
+
+Como a migration cria três tabelas e constraints, trate-a como DDL não transacional: não a execute novamente às cegas após qualquer falha parcial. Inspecione `information_schema.TABLES`, `COLUMNS`, `STATISTICS` e `TABLE_CONSTRAINTS` antes de decidir qualquer reparo.
+
 ## Estado e cautelas
 
-A CI valida os fluxos de migrations 005 a 013 e os testes de banco em MySQL 8.0 e MariaDB 10.11, incluindo planos/matrículas, importação de legado, perfis, integridade da auditoria, presença, financeiro, idempotência, append-only e constraints de valores positivos. Isso não significa que tenham sido aplicadas no computador.
+A CI valida os fluxos de migrations 005 a 014 e os testes de banco em MySQL 8.0 e MariaDB 10.11, incluindo planos/matrículas, importação de legado, perfis, integridade da auditoria, presença geral, financeiro, idempotência, append-only, constraints financeiras e a estrutura inicial da grade fixa. Isso não significa que tenham sido aplicadas no computador.
 
 A PR #1 deve permanecer em Draft até a validação local, a inspeção física e a revisão final. Não fazer merge para `main` automaticamente.
