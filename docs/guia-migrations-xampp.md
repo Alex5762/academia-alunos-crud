@@ -1,6 +1,6 @@
-# Procedimento local — migrations 005 e 006 (FitControl)
+# Procedimento local — migrations 005, 006 e 007 (FitControl)
 
-> **Escopo:** ambiente acadêmico/local com XAMPP. Este procedimento não autoriza uso em produção nem aplicação automática em banco com dados reais. As migrations 005 e 006 foram executadas na CI em MySQL 8.0 e MariaDB 10.11; isso não identifica nem valida a versão instalada no computador.
+> **Escopo:** ambiente acadêmico/local com XAMPP. Este procedimento não autoriza uso em produção nem aplicação automática em banco com dados reais. As migrations 005, 006 e 007 foram executadas na CI em MySQL 8.0 e MariaDB 10.11; isso não identifica nem valida a versão instalada no computador.
 
 ## 1. Antes de começar
 
@@ -66,7 +66,7 @@ O backup só é útil se puder ser lido/restaurado. Para uma validação rigoros
 
 ## 4. Aplicar as migrations na ordem correta
 
-**Atenção:** a migration 005 cria tabelas e constraints (DDL). MySQL/MariaDB podem confirmar instruções DDL implicitamente; não conte com rollback transacional de toda a migration. Execute-a somente uma vez, após o backup.
+**Atenção:** as migrations 005 e 007 criam/alteram estrutura (DDL). MySQL/MariaDB podem confirmar instruções DDL implicitamente; não conte com rollback transacional de toda a migration. Execute cada uma somente uma vez, após o backup.
 
 No CMD, a partir da raiz do projeto:
 
@@ -80,12 +80,21 @@ Se o comando terminar sem erro, execute a carga inicial:
 "C:\xampp\mysql\bin\mysql.exe" --host=127.0.0.1 --port=3306 --user=root academia_alunos < database\migrations\006_import_legacy_review.sql
 ```
 
-Se houver senha, acrescente `--password` a cada chamada. Não execute a 006 se a 005 tiver apresentado qualquer erro.
+Depois da 006, aplique os perfis de acesso:
+
+```bat
+"C:\xampp\mysql\bin\mysql.exe" --host=127.0.0.1 --port=3306 --user=root academia_alunos < database\migrations\007_administrative_roles.sql
+```
+
+A migration 007 preserva o acesso das contas existentes atribuindo-lhes `ADMINISTRADOR`. Contas criadas pela interface passam a receber `OPERADOR`; o provisionamento inicial via CLI cria um administrador. Revise os perfis depois da migração e reduza os acessos conforme a responsabilidade de cada funcionário.
+
+Se houver senha, acrescente `--password` a cada chamada. Não execute a 006 se a 005 tiver apresentado qualquer erro, nem a 007 se as etapas anteriores não tiverem sido concluídas.
 
 ### O que cada arquivo faz
 
 - **005 — DDL:** cria `planos`, `matriculas`, `revisoes_legado`, `controle_importacao_legado` e `revisoes_legado_eventos`, com InnoDB, índices e chaves estrangeiras.
 - **006 — DML transacional:** registra o maior ID de aluno existente no momento da primeira execução e cria uma revisão `PENDENTE_REVISAO` para cada aluno até esse limite. Não cria matrículas, não decide se havia contrato vigente e não inventa evidências. Reexecuções não sobrescrevem decisões humanas nem incluem alunos criados depois do corte.
+- **007 — DDL de acesso:** adiciona o perfil administrativo em `usuarios`. Contas anteriores à migração recebem `ADMINISTRADOR` para não perder acesso; o valor padrão de novas contas passa a ser `OPERADOR`. Atribuições podem ser ajustadas na tela Funcionários por um administrador.
 
 A 005 não é idempotente: se ela já tiver criado uma ou mais tabelas e falhar antes de terminar, **não a execute novamente às cegas**. Inspecione a estrutura e compare com o arquivo antes de qualquer reparo.
 
@@ -171,6 +180,6 @@ Registre separadamente o que foi executado, o que passou e o que não foi testad
 
 ## Estado e cautelas
 
-As migrations 005/006 foram executadas pela CI em MySQL 8.0 e MariaDB 10.11, incluindo preservação do texto original e reexecução segura da carga inicial. Isso não significa que tenham sido aplicadas no computador.
+As migrations 005/006/007 foram executadas pela CI em MySQL 8.0 e MariaDB 10.11, incluindo preservação do texto original e reexecução segura da carga inicial. Isso não significa que tenham sido aplicadas no computador.
 
 A PR #1 deve permanecer em Draft até a validação local, a inspeção física e a revisão final. Não fazer merge para `main` automaticamente.
