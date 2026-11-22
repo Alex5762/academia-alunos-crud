@@ -533,10 +533,7 @@ try {
         $pdo->exec("DROP TRIGGER IF EXISTS {$triggerName}");
     }
 
-    if ($actorId !== null) {
-        $deleteAudits = $pdo->prepare('DELETE FROM auditoria WHERE usuario_id = :actor_id');
-        $deleteAudits->execute(['actor_id' => $actorId]);
-    }
+    // A trilha é append-only; os eventos e usuários de teste permanecem no banco descartável.
 
     if ($reviewId !== null) {
         $deleteEvents = $pdo->prepare(
@@ -558,11 +555,6 @@ try {
     if ($studentId !== null) {
         $deleteStudent = $pdo->prepare('DELETE FROM alunos WHERE id = :student_id');
         $deleteStudent->execute(['student_id' => $studentId]);
-    }
-
-    if ($actorId !== null) {
-        $deleteUser = $pdo->prepare('DELETE FROM usuarios WHERE id = :user_id');
-        $deleteUser->execute(['user_id' => $actorId]);
     }
 
     $pdo->exec('DROP TABLE IF EXISTS revisoes_legado_eventos');
