@@ -34,6 +34,7 @@ final class AccessControl
             'legacy.view',
             'legacy.review',
             'legacy.rectify',
+            'audit.view',
             'settings.view',
         ],
         self::OPERATOR => [
