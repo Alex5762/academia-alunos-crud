@@ -206,9 +206,37 @@ Depois de inicializar o marco e iniciar a aplicação, execute:
 
 O verificador deve informar `Integridade confirmada.`, a quantidade de eventos incluídos no marco e a quantidade de eventos encadeados depois dele. Execute novamente depois dos testes funcionais.
 
-A cadeia usa SHA-256 sobre uma representação canônica do evento e o hash anterior. O bloqueio transacional da linha de estado serializa gravações concorrentes; o evento e seu hash são confirmados ou revertidos juntos. Gatilhos impedem alteração e exclusão direta dos eventos e hashes.
+A cadeia usa SHA-256 sobre uma representação canônica do evento e o hash anterior. O bloqueio transacional da linha de estado serializa gravações concorrentes; o evento e seu hash são confirmados ou revertidos juntos. Gatilhos impedem inserções fora do registrador e alteração/exclusão direta dos eventos, hashes e estado final.
 
-**Limite de segurança:** isso detecta inconsistências e alterações feitas depois do marco, mas não protege contra alguém com privilégios suficientes para alterar simultaneamente os dados, os hashes, o estado e os gatilhos do próprio banco. Para evidência mais forte contra administradores do banco, exporte periodicamente o último hash para armazenamento externo, imutável e com acesso separado. O hash não substitui backup.
+### 8.1 Checkpoint externo assinado
+
+O checkpoint adiciona uma referência independente por HMAC-SHA-256. A chave não fica no banco nem no repositório. Gere uma chave aleatória uma única vez e guarde-a em um gerenciador de senhas ou cofre offline, separado dos arquivos de checkpoint. Não a coloque no Git, no banco, em capturas de tela ou em logs.
+
+No PowerShell, abra uma sessão local e carregue a chave (guarde o valor produzido em local seguro; não gere outra chave para verificar checkpoints antigos):
+
+```powershell
+$env:FITCONTROL_AUDIT_CHECKPOINT_SECRET = & "C:\xampp\php\php.exe" -r "echo bin2hex(random_bytes(32));"
+```
+
+Crie previamente uma pasta de backup fora do projeto, por exemplo `D:\FitControl-Secure-Backups`. Exporte usando um nome novo a cada execução:
+
+```powershell
+& "C:\xampp\php\php.exe" scripts\exportar-checkpoint-auditoria.php "D:\FitControl-Secure-Backups\checkpoint-20261122-0800.json"
+```
+
+Copie o arquivo para armazenamento independente com controle de acesso e, se possível, retenção imutável. Mantenha a chave HMAC em local separado. O script não sobrescreve arquivos existentes e restringe permissões no sistema operacional quando suportado.
+
+Para verificar o checkpoint:
+
+```powershell
+& "C:\xampp\php\php.exe" scripts\verificar-checkpoint-auditoria.php "D:\FitControl-Secure-Backups\checkpoint-20261122-0800.json"
+```
+
+A verificação confirma a assinatura, a identidade configurada do banco, a cadeia atual e a presença do hash assinado na sequência. Eventos legítimos posteriores ao checkpoint são aceitos e contabilizados. Se o banco estiver atrás do identificador assinado, o verificador acusa possível restauração de backup antigo. Um checkpoint deve ser verificado com a mesma chave secreta usada na exportação.
+
+**Limites:** HMAC prova que o arquivo foi produzido por alguém com a chave; não prova sozinho quando foi produzido. A identidade usa o nome configurado do banco, portanto clones com o mesmo nome e histórico podem compartilhar esse contexto. O checkpoint não detecta restauração para um estado exatamente igual ao checkpoint nem substitui backup, logs externos ou controle de acesso. Proteja a chave e armazene cópias dos checkpoints fora do servidor do banco. No Windows, valide manualmente as ACLs da pasta, pois o PHP não aplica o mesmo modo POSIX de permissões.
+
+**Limite de segurança da cadeia:** alguém com privilégios suficientes para alterar simultaneamente dados, hashes, estado e gatilhos do próprio banco pode reconstruir o histórico. A referência HMAC externa dificulta essa substituição sem a chave.
 
 Não aplique a migration 008 em banco de produção ou com dados reais sem revisão, backup testado e janela de manutenção. A PR permanece em Draft e a aplicação local ainda precisa ser validada separadamente.
 
