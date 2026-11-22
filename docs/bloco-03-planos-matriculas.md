@@ -1,6 +1,6 @@
 # Bloco 03 — Planos e matrículas
 
-> **Estado: especificação funcional aprovada; catálogo, histórico e fluxo inicial de contratação implementados na branch e em validação automatizada.** A criação de matrículas usa o serviço transacional já testado, copia o snapshot do plano, bloqueia aluno/plano inelegíveis, respeita a revisão de legado e impede sobreposição. O perfil do aluno apresenta o histórico e as situações calculadas em tempo de consulta quando o esquema completo está disponível. As migrations 005 e 006 ainda não foram criadas, e nenhuma alteração estrutural foi aplicada à base local/XAMPP. A inspeção física em dispositivo real continua pendente.
+> **Estado: especificação funcional aprovada; catálogo, histórico, contratação e fila inicial de revisão de legados implementados na branch e em validação automatizada.** A fila permite filtrar e pesquisar registros, registrar decisões autenticadas com evidência, intervalo comprovado e justificativa, e consultar eventos especializados no perfil do aluno. O fluxo reutiliza o serviço transacional de domínio e preserva auditoria append-only. As migrations 005 e 006 ainda não foram criadas, e nenhuma alteração estrutural foi aplicada à base local/XAMPP. A inspeção física em dispositivo real continua pendente.
 
 ## 0. Estado de implementação (22/11/2026)
 
@@ -13,6 +13,11 @@
 - Integração com `EnrollmentCreationService`: bloqueios transacionais, validação de elegibilidade, detecção de sobreposição, snapshot do preço/nome/duração e auditoria atômica.
 - Regra de horário aplicada na interface: hoje sem horário resolve o instante depois dos bloqueios; data futura sem horário inicia às 00:00 no fuso da academia.
 - Teste HTTP que confirma o bloqueio quando a revisão está pendente e a contratação após o resultado de fixture `LEGADO_SEM_VIGENCIA`.
+- Fila administrativa de revisão de legados em `revisoes-legado.php`, com pendentes por padrão, filtros por resultado, busca e limite explícito de 100 registros por consulta.
+- Formulário de decisão em `salvar-revisao-legado.php`, protegido por autenticação, POST e CSRF, com validação de fonte, observações, intervalo local exato e condições históricas opcionais comprovadas.
+- Histórico de decisões append-only na fila e no perfil do aluno, com responsável, resultado, fonte, observações e instante do evento.
+- Teste HTTP que valida a fila, bloqueio de CSRF, decisão pendente, evento especializado, auditoria geral e exibição do histórico no perfil.
+- Link administrativo da fila adicionado à navegação principal.
 - Exibição do histórico operacional no perfil individual do aluno, sem substituir o campo legado `alunos.plano`.
 - Derivação de `AGENDADA`, `ATIVA`, `VENCIDA` e `CANCELADA` a partir dos intervalos e do instante consultado; os estados temporais não são persistidos.
 - Apresentação das condições contratadas (nome, preço e duração), início, limite exclusivo, origem e motivo/instante de cancelamento.
@@ -22,7 +27,7 @@
 ### Ainda pendente
 
 - Confirmar a CI da interface de contratação, incluindo o novo cenário HTTP, e a publicação resiliente de capturas.
-- Implementar os fluxos administrativos de cancelamento e revisão/retificação de legado na interface.
+- Implementar e validar o fluxo administrativo de cancelamento de matrículas e a interface específica de retificação de vigência já suportada pelo serviço de domínio.
 - Finalizar e validar as migrations 005 (DDL) e 006 (carga inicial de revisão de legados).
 - Inspecionar a versão real do MySQL/MariaDB e o mecanismo InnoDB no XAMPP antes de aplicar qualquer migration local.
 - Fazer inspeção física em dispositivo real antes de retirar a PR do estado Draft.
