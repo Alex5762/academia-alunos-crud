@@ -110,7 +110,7 @@ $consultaAuditoria = $pdo->prepare(
      LEFT JOIN usuarios u ON u.id = a.usuario_id
      WHERE a.entidade = :entidade
        AND a.entidade_id = :registro_id
-       AND a.acao <> "usuario_perfil_alterado"
+       AND a.acao <> \\'usuario_perfil_alterado\\'
      ORDER BY a.criado_em DESC, a.id DESC'
 );
 $consultaAuditoria->execute([
