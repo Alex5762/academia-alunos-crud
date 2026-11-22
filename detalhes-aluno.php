@@ -61,6 +61,7 @@ $colunasHistoricoEsperadas = [
         'cancelada_em',
         'origem',
         'motivo_cancelamento',
+        'criado_em',
     ],
     'revisoes_legado' => [
         'aluno_id_origem',
