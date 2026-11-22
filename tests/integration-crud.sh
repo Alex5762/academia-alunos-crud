@@ -835,6 +835,12 @@ assert_contains "$TMP_DIR/plan-activated.html" "Plano ativado"
 PLAN_ACTIVE="$(db_value "SELECT COUNT(*) FROM planos WHERE id = $PLAN_ID AND situacao = 'ATIVO'")"
 [[ "$PLAN_ACTIVE" == "1" ]] || fail "A ativação do plano não foi persistida."
 
+PLAN_DETAIL_HTTP="$(curl -sS -G -o "$TMP_DIR/audit-plan-detail.html" -w '%{http_code}' -c "$COOKIE_JAR" -b "$COOKIE_JAR" \
+    --data-urlencode "entidade=planos" --data-urlencode "id=$PLAN_ID" "$BASE_URL/detalhes-auditoria.php")"
+[[ "$PLAN_DETAIL_HTTP" == "200" ]] || fail "Detalhes de auditoria do plano deveriam retornar 200; retornou $PLAN_DETAIL_HTTP."
+assert_contains "$TMP_DIR/audit-plan-detail.html" "Plano CI Mensal · ATIVO"
+assert_contains "$TMP_DIR/audit-plan-detail.html" "Linha do tempo"
+
 db_exec "INSERT INTO matriculas (plano_id, plano_nome_contratado, valor_contratado)
     VALUES ($PLAN_ID, 'Plano CI Mensal', 149.90)"
 
@@ -1213,6 +1219,13 @@ assert_contains "$TMP_DIR/audit-student-timeline.html" "Linha do tempo"
 assert_contains "$TMP_DIR/audit-student-timeline.html" "Decisão de revisão"
 assert_contains "$TMP_DIR/audit-student-timeline.html" "Documento recebido não permite confirmar o período exato."
 
+REVIEW_DETAIL_HTTP="$(curl -sS -G -o "$TMP_DIR/audit-review-detail.html" -w '%{http_code}' -c "$COOKIE_JAR" -b "$COOKIE_JAR" \
+    --data-urlencode "entidade=revisoes_legado" --data-urlencode "id=$REVIEW_ID" "$BASE_URL/detalhes-auditoria.php")"
+[[ "$REVIEW_DETAIL_HTTP" == "200" ]] || fail "Detalhes de auditoria da revisão legada deveriam retornar 200; retornou $REVIEW_DETAIL_HTTP."
+assert_contains "$TMP_DIR/audit-review-detail.html" "Revisão de vínculo legado"
+assert_contains "$TMP_DIR/audit-review-detail.html" "Decisão de revisão"
+assert_contains "$TMP_DIR/audit-review-detail.html" "Documento recebido não permite confirmar o período exato."
+
 echo "9.5/10 - Validando contratação pela interface e bloqueio de revisão pendente..."
 curl -fsS -G -c "$COOKIE_JAR" -b "$COOKIE_JAR" \
     --data-urlencode "nova_matricula=1" \
@@ -1271,6 +1284,13 @@ ENROLLMENT_AUDIT="$(db_value "SELECT COUNT(*) FROM auditoria
       AND entidade = 'matriculas'
       AND entidade_id = $NEW_ENROLLMENT_ID")"
 [[ "$ENROLLMENT_AUDIT" == "1" ]] || fail "A criação da matrícula não foi auditada pelo funcionário autenticado."
+
+ENROLLMENT_DETAIL_HTTP="$(curl -sS -G -o "$TMP_DIR/audit-enrollment-detail.html" -w '%{http_code}' -c "$COOKIE_JAR" -b "$COOKIE_JAR" \
+    --data-urlencode "entidade=matriculas" --data-urlencode "id=$NEW_ENROLLMENT_ID" "$BASE_URL/detalhes-auditoria.php")"
+[[ "$ENROLLMENT_DETAIL_HTTP" == "200" ]] || fail "Detalhes de auditoria da matrícula deveriam retornar 200; retornou $ENROLLMENT_DETAIL_HTTP."
+assert_contains "$TMP_DIR/audit-enrollment-detail.html" "Intervalo contratual"
+assert_contains "$TMP_DIR/audit-enrollment-detail.html" "Plano CI Mensal"
+assert_contains "$TMP_DIR/audit-enrollment-detail.html" "matricula_criada"
 
 # Limpa apenas as tabelas descartáveis criadas por este teste.
 db_exec "DELETE FROM auditoria WHERE entidade = 'planos' AND entidade_id IN ($PLAN_ID, $UNUSED_PLAN_ID)"
