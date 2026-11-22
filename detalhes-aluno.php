@@ -113,7 +113,7 @@ if ($historicoMatriculasDisponivel) {
 
     $fusoUtc = new DateTimeZone('UTC');
     $fusoAcademia = new DateTimeZone(
-        FitControl\\Domain\\Enrollment\\EnrollmentPeriodCalculator::ACADEMY_TIMEZONE
+        FitControl\Domain\Enrollment\EnrollmentPeriodCalculator::ACADEMY_TIMEZONE
     );
     $instanteConsulta = new DateTimeImmutable('now', $fusoAcademia);
 
@@ -127,7 +127,7 @@ if ($historicoMatriculasDisponivel) {
             : (new DateTimeImmutable((string) $matricula['cancelada_em'], $fusoUtc))
                 ->setTimezone($fusoAcademia);
 
-        $matricula['situacao_calculada'] = FitControl\\Domain\\Enrollment\\EnrollmentStatus::derive(
+        $matricula['situacao_calculada'] = FitControl\Domain\Enrollment\EnrollmentStatus::derive(
             $inicioLocal,
             $fimExclusivoLocal,
             $cancelamentoLocal,
