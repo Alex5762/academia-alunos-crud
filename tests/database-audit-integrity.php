@@ -61,26 +61,47 @@ assertAuditIntegrity(
     'Evento novo deve gerar hash válido.'
 );
 
-foreach ([
-    ['UPDATE auditoria SET acao = :acao WHERE id = :id', 'adulteracao'],
-    ['DELETE FROM auditoria WHERE id = :id', null],
-    ['UPDATE auditoria_integridade_eventos SET hash_evento = :hash WHERE evento_id = :id', str_repeat('a', 64)],
-    ['DELETE FROM auditoria_integridade_eventos WHERE evento_id = :id', null],
-] as [$sql, $value]) {
+$blockedOperations = [
+    [
+        'sql' => 'UPDATE auditoria SET acao = :acao WHERE id = :id',
+        'params' => ['id' => $eventId, 'acao' => 'adulteracao'],
+    ],
+    [
+        'sql' => 'DELETE FROM auditoria WHERE id = :id',
+        'params' => ['id' => $eventId],
+    ],
+    [
+        'sql' => 'UPDATE auditoria_integridade_eventos SET hash_evento = :hash WHERE evento_id = :id',
+        'params' => ['id' => $eventId, 'hash' => str_repeat('a', 64)],
+    ],
+    [
+        'sql' => 'DELETE FROM auditoria_integridade_eventos WHERE evento_id = :id',
+        'params' => ['id' => $eventId],
+    ],
+    [
+        'sql' => 'UPDATE auditoria_integridade_estado SET ultimo_hash = :hash WHERE id = 1',
+        'params' => ['hash' => str_repeat('b', 64)],
+    ],
+    [
+        'sql' => 'DELETE FROM auditoria_integridade_estado WHERE id = 1',
+        'params' => [],
+    ],
+    [
+        'sql' => 'INSERT INTO auditoria (usuario_id, acao, entidade, entidade_id) VALUES (NULL, :acao, :entidade, NULL)',
+        'params' => ['acao' => 'insercao_direta', 'entidade' => 'teste'],
+    ],
+];
+
+foreach ($blockedOperations as $operation) {
     $blocked = false;
     try {
-        $statement = $pdo->prepare($sql);
-        $params = ['id' => $eventId];
-        if ($value !== null) {
-            $key = str_contains($sql, 'SET acao') ? 'acao' : 'hash';
-            $params[$key] = $value;
-        }
-        $statement->execute($params);
-    } catch (PDOException $error) {
+        $statement = $pdo->prepare($operation['sql']);
+        $statement->execute($operation['params']);
+    } catch (PDOException) {
         $blocked = true;
     }
 
-    assertAuditIntegrity($blocked, 'Trigger deveria bloquear alteração/exclusão direta da trilha.');
+    assertAuditIntegrity($blocked, 'Trigger deveria bloquear alteração, exclusão ou inserção direta na trilha.');
 }
 
 assertAuditIntegrity(
