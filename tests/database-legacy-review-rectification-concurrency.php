@@ -523,9 +523,7 @@ try {
     }
 
     if ($actorId !== null) {
-        $deleteAudits = $pdo->prepare('DELETE FROM auditoria WHERE usuario_id = :actor_id');
-        $deleteAudits->execute(['actor_id' => $actorId]);
-    }
+}
 
     if ($reviewId !== null) {
         $deleteEvents = $pdo->prepare(
@@ -550,9 +548,7 @@ try {
     }
 
     if ($actorId !== null) {
-        $deleteUser = $pdo->prepare('DELETE FROM usuarios WHERE id = :user_id');
-        $deleteUser->execute(['user_id' => $actorId]);
-    }
+}
 
     $pdo->exec('DROP TABLE IF EXISTS revisoes_legado_eventos');
     $pdo->exec('DROP TABLE IF EXISTS revisoes_legado');
