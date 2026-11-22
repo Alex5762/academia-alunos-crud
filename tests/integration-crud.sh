@@ -312,6 +312,12 @@ MANAGER_AUDIT_HTTP="$(curl -sS -o "$TMP_DIR/manager-audit.html" -w '%{http_code}
 [[ "$MANAGER_AUDIT_HTTP" == "200" ]] || fail "Gestor deveria consultar a central de auditoria; recebeu $MANAGER_AUDIT_HTTP."
 assert_contains "$TMP_DIR/manager-audit.html" "Central de auditoria"
 assert_contains "$TMP_DIR/manager-audit.html" "OPERADOR → GESTOR"
+MANAGER_DETAIL_HTTP="$(curl -sS -o "$TMP_DIR/manager-audit-detail.html" -w '%{http_code}' -c "$NEW_COOKIE_JAR" -b "$NEW_COOKIE_JAR" "$BASE_URL/detalhes-auditoria.php?entidade=usuarios&id=$NOVO_USUARIO_ID")"
+[[ "$MANAGER_DETAIL_HTTP" == "200" ]] || fail "Gestor deveria consultar detalhes de auditoria; recebeu $MANAGER_DETAIL_HTTP."
+assert_contains "$TMP_DIR/manager-audit-detail.html" "Alteração de perfil"
+assert_contains "$TMP_DIR/manager-audit-detail.html" "OPERADOR → GESTOR"
+INVALID_AUDIT_ENTITY_HTTP="$(curl -sS -o "$TMP_DIR/invalid-audit-entity.html" -w '%{http_code}' -c "$NEW_COOKIE_JAR" -b "$NEW_COOKIE_JAR" "$BASE_URL/detalhes-auditoria.php?entidade=usuarios%3BSELECT&id=1")"
+[[ "$INVALID_AUDIT_ENTITY_HTTP" == "400" ]] || fail "Entidade de auditoria manipulada deveria retornar 400."
 
 ADMIN_USERS_HTTP="$(curl -sS -o "$TMP_DIR/admin-users-after-manager.html" -w '%{http_code}' -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/usuarios.php")"
 [[ "$ADMIN_USERS_HTTP" == "200" ]] || fail "Administrador deveria continuar acessando funcionários."
@@ -323,6 +329,8 @@ curl -fsS -L -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/alterar-perfil-usuario
     -o "$TMP_DIR/user-role-operator-second.html"
 OPERATOR_AUDIT_HTTP="$(curl -sS -o "$TMP_DIR/operator-audit-after-demotion.html" -w '%{http_code}' -c "$NEW_COOKIE_JAR" -b "$NEW_COOKIE_JAR" "$BASE_URL/auditoria.php")"
 [[ "$OPERATOR_AUDIT_HTTP" == "403" ]] || fail "A sessão deveria perder a permissão de auditoria após o rebaixamento; recebeu $OPERATOR_AUDIT_HTTP."
+OPERATOR_DETAIL_HTTP="$(curl -sS -o "$TMP_DIR/operator-audit-detail.html" -w '%{http_code}' -c "$NEW_COOKIE_JAR" -b "$NEW_COOKIE_JAR" "$BASE_URL/detalhes-auditoria.php?entidade=usuarios&id=$NOVO_USUARIO_ID")"
+[[ "$OPERATOR_DETAIL_HTTP" == "403" ]] || fail "Operador deveria receber 403 nos detalhes de auditoria; recebeu $OPERATOR_DETAIL_HTTP."
 
 NOVO_PERFIL="$(db_value "SELECT perfil FROM usuarios WHERE id = $NOVO_USUARIO_ID")"
 [[ "$NOVO_PERFIL" == "OPERADOR" ]] || fail "Novas contas devem receber o perfil OPERADOR por padrão."
@@ -1193,6 +1201,12 @@ curl -fsS -G -c "$COOKIE_JAR" -b "$COOKIE_JAR" \
     -o "$TMP_DIR/detail-review-events.html"
 assert_contains "$TMP_DIR/detail-review-events.html" "Últimas decisões registradas"
 assert_contains "$TMP_DIR/detail-review-events.html" "Documento recebido não permite confirmar o período exato."
+curl -fsS -G -c "$COOKIE_JAR" -b "$COOKIE_JAR" \
+    "$BASE_URL/detalhes-auditoria.php?entidade=alunos&id=$ALUNO_ID" \
+    -o "$TMP_DIR/audit-student-timeline.html"
+assert_contains "$TMP_DIR/audit-student-timeline.html" "Linha do tempo"
+assert_contains "$TMP_DIR/audit-student-timeline.html" "Decisão de revisão"
+assert_contains "$TMP_DIR/audit-student-timeline.html" "Documento recebido não permite confirmar o período exato."
 
 echo "9.5/10 - Validando contratação pela interface e bloqueio de revisão pendente..."
 curl -fsS -G -c "$COOKIE_JAR" -b "$COOKIE_JAR" \
