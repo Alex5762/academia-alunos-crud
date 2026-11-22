@@ -394,8 +394,12 @@ if ($estruturaDisponivel) {
                 <?php if ($somenteReabrir) { ?>
                     <p class="legacy-review-warning">
                         Este vínculo já foi confirmado e possui um intervalo histórico materializado.
-                        Para corrigir suas datas, use o fluxo específico de retificação. Nesta tela é possível apenas reabrir a revisão para nova análise.
+                        Para corrigir suas datas com uma nova evidência, use a retificação auditada. A revisão pode ser reaberta se a confirmação anterior deixar de ser confiável.
                     </p>
+                    <a class="button button-primary legacy-review-profile-link"
+                       href="retificar-vigencia-legado.php?review_id=<?= (int) $revisaoSelecionada['revisao_id'] ?>">
+                        Retificar vigência comprovada
+                    </a>
                 <?php } else { ?>
                     <p class="plan-setup-note">
                         <strong>Vínculo confirmado:</strong> exige início e fim exclusivo comprovados.
@@ -514,6 +518,16 @@ if ($estruturaDisponivel) {
                                 </small>
                                 <?php if (!empty($evento['fonte_referencia'])) { ?>
                                     <p><strong>Fonte:</strong> <?= escapar($evento['fonte_referencia']) ?></p>
+                                <?php } ?>
+                                <?php if ($evento['tipo_evento'] === 'RETIFICACAO_VIGENCIA') { ?>
+                                    <p><strong>Intervalo anterior:</strong>
+                                        <?= escapar($evento['inicio_anterior'] ?? 'Não informado') ?>
+                                        → <?= escapar($evento['fim_exclusivo_anterior'] ?? 'Não informado') ?>
+                                    </p>
+                                    <p><strong>Novo intervalo:</strong>
+                                        <?= escapar($evento['inicio_novo'] ?? 'Não informado') ?>
+                                        → <?= escapar($evento['fim_exclusivo_novo'] ?? 'Não informado') ?>
+                                    </p>
                                 <?php } ?>
                                 <?php if (!empty($evento['observacoes'])) { ?>
                                     <p><?= nl2br(escapar($evento['observacoes'])) ?></p>
