@@ -110,6 +110,14 @@ A migration 010 deve ser executada somente após backup e conferência da versã
 - Correções financeiras futuras devem ser lançamentos compensatórios, nunca edição ou exclusão do pagamento original.
 - A proteção por gatilhos reduz alterações acidentais por caminhos SQL da aplicação. Como em qualquer controle dentro do próprio banco, uma conta administrativa capaz de alterar gatilhos ou variáveis de sessão continua sendo uma fronteira privilegiada; o ambiente real deve usar usuário SQL de menor privilégio.
 
+## F-03 — Matrícula cancelada e saldo em revisão
+
+- `FinanceDashboardStatus` classifica a cobrança como **Em revisão** quando a matrícula foi cancelada, mas a cobrança ainda não recebeu decisão financeira.
+- O resumo histórico mantém valor contratado e recebido; o saldo cobrável considera somente matrículas ativas e cobranças não canceladas.
+- Saldo pendente de matrícula cancelada é mostrado separadamente como **Em revisão** e não é oferecido para novo pagamento.
+- Cobrança com cancelamento financeiro concluído aparece como **Cancelada**, sem saldo aberto.
+- Testes unitários e de integração cobrem o estado com pagamento parcial e saldo remanescente de R$ 250,00.
+
 ## Estado
 
-**Núcleo transacional, interface e F-01 implementados na branch de trabalho; F-02 em validação.** As migrations 011 e 012 estão incluídas na CI e no guia XAMPP. Não aplicar migrations no banco local sem backup e validação. PR #1 permanece Draft.
+**F-01 e F-02 implementados; F-03 implementado e aguardando CI.** As migrations 011 e 012 estão incluídas na CI e no guia XAMPP. Não aplicar migrations no banco local sem backup e validação. PR #1 permanece Draft.
