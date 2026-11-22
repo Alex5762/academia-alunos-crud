@@ -666,7 +666,7 @@ curl -fsS -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/planos.php" -o "$TMP_DIR/
 assert_contains "$TMP_DIR/plans-not-installed.html" "Catálogo ainda não instalado"
 
 # O fixture é exclusivo deste processo de CI. Não aplica nem antecipa migrations do projeto.
-PLAN_TABLES_BEFORE="$(db_value "SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME IN ('planos', 'matriculas')")"
+PLAN_TABLES_BEFORE="$(db_value "SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME IN ('planos', 'matriculas', 'revisoes_legado')")"
 [[ "$PLAN_TABLES_BEFORE" == "0" ]] || fail "O fixture de planos encontrou tabelas já existentes; não vai sobrescrevê-las."
 
 db_exec "CREATE TABLE planos (
@@ -857,6 +857,7 @@ assert_contains "$TMP_DIR/detail-enrollments.html" "Fixture automatizado de CI"
 db_exec "DELETE FROM auditoria WHERE entidade = 'planos' AND entidade_id IN ($PLAN_ID, $UNUSED_PLAN_ID)"
 db_exec "DELETE FROM matriculas WHERE plano_id = $PLAN_ID"
 db_exec "DELETE FROM planos WHERE id IN ($PLAN_ID, $UNUSED_PLAN_ID)"
+db_exec "DROP TABLE revisoes_legado"
 db_exec "DROP TABLE matriculas"
 db_exec "DROP TABLE planos"
 
