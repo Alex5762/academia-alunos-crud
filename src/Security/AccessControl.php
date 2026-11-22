@@ -35,6 +35,8 @@ final class AccessControl
             'legacy.review',
             'legacy.rectify',
             'audit.view',
+            'attendance.view',
+            'attendance.register',
             'settings.view',
         ],
         self::OPERATOR => [
@@ -46,6 +48,8 @@ final class AccessControl
             'enrollments.view',
             'enrollments.create',
             'enrollments.cancel',
+            'attendance.view',
+            'attendance.register',
             'settings.view',
         ],
     ];
