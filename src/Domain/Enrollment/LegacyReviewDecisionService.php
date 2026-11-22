@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace FitControl\Domain\Enrollment;
 
+require_once __DIR__ . '/../../Security/AuditIntegrityChain.php';
+
 use Closure;
 use DateTimeImmutable;
 use DateTimeZone;
@@ -395,16 +397,7 @@ final class LegacyReviewDecisionService
             ]);
 
             // 7. Auditoria geral na mesma transação.
-            $audit = $this->pdo->prepare(
-                'INSERT INTO auditoria (usuario_id, acao, entidade, entidade_id)
-                 VALUES (:user_id, :action_name, :entity_name, :entity_id)'
-            );
-            $audit->execute([
-                'user_id' => $actorUserId,
-                'action_name' => 'revisao_legado_decidida',
-                'entity_name' => 'revisoes_legado',
-                'entity_id' => $reviewId,
-            ]);
+            AuditIntegrityChain::append($this->pdo, $actorUserId, 'revisao_legado_decidida', 'revisoes_legado', $reviewId);
 
             $this->pdo->commit();
 
