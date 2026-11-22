@@ -248,11 +248,9 @@ O MVP cobre cadastro de modalidades, instrutores independentes com vínculo opci
 
 **Decisões confirmadas:** o modelo inicial é de participação livre em horários fixos; o aluno consulta a grade e comparece, sem reserva. O check-in geral do Bloco 04 permanece independente. Instrutores têm cadastro profissional independente e vínculo opcional a `usuarios`, sem concessão de acesso. A arquitetura será web-first: painel responsivo acessado pelo navegador, sem aplicativo nativo. Presença por aula, sessões datadas e integrações físicas ficam como possíveis evoluções futuras.
 
-**Recomendação da pesquisa — aguarda confirmação:** fila FIFO administrada por funcionários, sem promoção automática; equipe contata o próximo aluno pelo canal já utilizado e registra a resposta no painel. Uma vaga só é convertida em reserva por ação normal de funcionário, com nova validação de capacidade e elegibilidade.
+**Escopo deliberadamente reduzido:** não há fila de espera, reservas, controle de vagas, sessões datadas ou presença por aula no MVP. O check-in geral do Bloco 04 permanece separado e não será interpretado como participação em uma aula.
 
-**Decisões ainda abertas:** horizonte padrão de geração (proposta: 30 dias), aprovação da fila interna no MVP, detalhes do futuro link de confirmação e se/quando uma PWA teria valor. A presença específica da aula será separada do check-in geral.
-
-A especificação inclui modelo de domínio, elegibilidade, permissões, transações, concorrência, datas, critérios de aceite e pesquisa de soluções web. Não criar migration nem iniciar implementação até fechar as decisões ainda abertas da seção 10 do documento.
+A migration inicial 014 e seu teste de estrutura foram adicionados à branch e conectados ao job de compatibilidade MySQL/MariaDB. A migration cria somente modalidades, instrutores e horários semanais recorrentes. A aplicação local permanece pendente; não executar no XAMPP antes de backup, conferência dos pré-requisitos e validação da CI do HEAD.
 
 ### Bloco 07 — Relatórios e experiência
 
