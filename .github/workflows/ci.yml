@@ -296,6 +296,7 @@ jobs:
           mysql --host=127.0.0.1 --port=3306 --user=root < database/migrations/012_pagamentos_append_only.sql
           mysql --host=127.0.0.1 --port=3306 --user=root < database/migrations/013_financeiro_valores_positivos.sql
           php scripts/inicializar-integridade-auditoria.php
+          mysql --host=127.0.0.1 --port=3306 --user=root < database/migrations/014_grade_fixa_aulas.sql
 
       - name: Validate manual check-in, eligibility and daily uniqueness
         env:
@@ -314,6 +315,15 @@ jobs:
           DB_USER: root
           DB_PASSWORD: root
         run: php tests/database-finance.php
+
+      - name: Validate fixed weekly class schedule schema
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_NAME: academia_alunos
+          DB_USER: root
+          DB_PASSWORD: root
+        run: php tests/database-class-schedule-migration.php
 
 
   php-and-mysql:
@@ -461,6 +471,8 @@ jobs:
           test -f database/migrations/011_pagamento_idempotencia.sql
           test -f database/migrations/012_pagamentos_append_only.sql
           test -f database/migrations/013_financeiro_valores_positivos.sql
+          test -f database/migrations/014_grade_fixa_aulas.sql
+          test -f tests/database-class-schedule-migration.php
           test -f src/Domain/Finance/FinanceService.php
           test -f tests/database-finance.php
           test -f tests/finance-dashboard-status.php
