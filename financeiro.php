@@ -42,8 +42,10 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
             $method = $_POST['forma_pagamento'] ?? '';
             $paymentDate = $_POST['data_pagamento'] ?? '';
             $observation = $_POST['observacao'] ?? '';
+            $idempotencyKey = $_POST['chave_idempotencia'] ?? '';
 
-            if (!is_string($amountReceived) || !is_string($method) || !is_string($paymentDate) || !is_string($observation)) {
+            if (!is_string($amountReceived) || !is_string($method) || !is_string($paymentDate) ||
+                !is_string($observation) || !is_string($idempotencyKey)) {
                 throw new InvalidArgumentException('Os dados do pagamento são inválidos.');
             }
 
@@ -64,9 +66,10 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
                 $amountReceived,
                 $method,
                 $paymentDate,
+                $idempotencyKey,
                 $observation
             );
-            $_SESSION['mensagem'] = 'Pagamento #' . $paymentId . ' registrado com sucesso.';
+            $_SESSION['mensagem'] = 'Pagamento #' . $paymentId . ' confirmado com sucesso.';
         } elseif ($acao === 'cancelar_cobranca') {
             exigirPermissao($usuario, 'finance.cancel_charge');
             $reason = $_POST['motivo_cancelamento'] ?? '';
@@ -294,6 +297,7 @@ $totalSaldoCents = max(0, $totalCobradoCents - $totalPagoCents);
                                         <input type="hidden" name="token" value="<?= escapar($_SESSION['token']) ?>">
                                         <input type="hidden" name="acao" value="registrar_pagamento">
                                         <input type="hidden" name="cobranca_id" value="<?= (int) $charge['id'] ?>">
+                                        <input type="hidden" name="chave_idempotencia" value="<?= escapar(bin2hex(random_bytes(16))) ?>">
                                         <label class="sr-only" for="pagamento-valor-<?= (int) $charge['id'] ?>">Valor do pagamento</label>
                                         <input id="pagamento-valor-<?= (int) $charge['id'] ?>" type="number" name="valor"
                                                min="0.01" max="<?= escapar(number_format($balanceCents / 100, 2, '.', '')) ?>"
