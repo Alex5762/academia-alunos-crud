@@ -427,14 +427,7 @@ try {
 } finally {
     if ($enrollmentIds !== []) {
         $placeholders = implode(',', array_fill(0, count($enrollmentIds), '?'));
-        $deleteAudit = $pdo->prepare(
-            "DELETE FROM auditoria
-             WHERE entidade = 'matriculas'
-               AND entidade_id IN ({$placeholders})"
-        );
-        $deleteAudit->execute($enrollmentIds);
-
-        $deleteEnrollments = $pdo->prepare(
+$deleteEnrollments = $pdo->prepare(
             "DELETE FROM matriculas WHERE id IN ({$placeholders})"
         );
         $deleteEnrollments->execute($enrollmentIds);
@@ -454,9 +447,7 @@ try {
     }
 
     if ($actorId !== null) {
-        $deleteUser = $pdo->prepare('DELETE FROM usuarios WHERE id = :id');
-        $deleteUser->execute(['id' => $actorId]);
-    }
+}
 
     $pdo->exec('DROP TABLE IF EXISTS revisoes_legado');
     $pdo->exec('DROP TABLE IF EXISTS matriculas');
