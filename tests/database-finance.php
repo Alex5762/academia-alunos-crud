@@ -46,6 +46,164 @@ function assertFinanceRejected(callable $operation, string $message): void
     throw new RuntimeException($message);
 }
 
+/**
+ * Worker isolado: cada processo cria sua própria conexão PDO e chama o serviço.
+ */
+function runFinancePaymentWorker(array $arguments): never
+{
+    if (count($arguments) !== 9) {
+        throw new InvalidArgumentException('Argumentos incompletos no worker financeiro.');
+    }
+
+    $chargeId = filter_var($arguments[2], FILTER_VALIDATE_INT);
+    $actorId = filter_var($arguments[3], FILTER_VALIDATE_INT);
+    if (!is_int($chargeId) || $chargeId < 1 || !is_int($actorId) || $actorId < 1) {
+        throw new InvalidArgumentException('Identificadores inválidos no worker financeiro.');
+    }
+
+    $pdo = financeConnection();
+    $clock = static fn (): DateTimeImmutable => financeDate('2026-11-22 10:00:00');
+    $service = new FinanceService($pdo, $clock);
+
+    // O processo pai mantém a cobrança bloqueada até receber READY dos dois workers.
+    fwrite(STDOUT, "READY\\n");
+    fflush(STDOUT);
+
+    try {
+        $paymentId = $service->registerPayment(
+            $chargeId,
+            $actorId,
+            (string) $arguments[4],
+            (string) $arguments[5],
+            (string) $arguments[6],
+            (string) $arguments[7],
+            (string) $arguments[8]
+        );
+        fwrite(STDOUT, 'PAYMENT_ID=' . $paymentId . "\\n");
+        fflush(STDOUT);
+        exit(0);
+    } catch (Throwable $exception) {
+        fwrite(STDERR, get_class($exception) . ': ' . $exception->getMessage() . "\\n");
+        exit(1);
+    }
+}
+
+/**
+ * Mantém a linha da cobrança bloqueada enquanto duas conexões independentes
+ * chegam ao serviço com a mesma chave e exatamente o mesmo conteúdo.
+ */
+function runFinanceIdempotencyRace(
+    PDO $pdo,
+    int $chargeId,
+    int $actorId,
+    string $amount,
+    string $method,
+    string $paymentDate,
+    string $idempotencyKey,
+    string $observation
+): int {
+    $workers = [];
+    $pdo->beginTransaction();
+
+    try {
+        $lock = $pdo->prepare('SELECT id FROM cobrancas WHERE id = :id FOR UPDATE');
+        $lock->execute(['id' => $chargeId]);
+        assertFinance((int) $lock->fetchColumn() === $chargeId, 'Cobrança de teste concorrente não encontrada.');
+
+        for ($index = 0; $index < 2; $index++) {
+            $pipes = [];
+            $process = proc_open(
+                [
+                    PHP_BINARY,
+                    __FILE__,
+                    '--idempotency-worker',
+                    (string) $chargeId,
+                    (string) $actorId,
+                    $amount,
+                    $method,
+                    $paymentDate,
+                    $idempotencyKey,
+                    $observation,
+                ],
+                [
+                    0 => ['pipe', 'r'],
+                    1 => ['pipe', 'w'],
+                    2 => ['pipe', 'w'],
+                ],
+                $pipes
+            );
+
+            assertFinance(is_resource($process), 'Não foi possível iniciar worker financeiro concorrente.');
+            fclose($pipes[0]);
+            stream_set_timeout($pipes[1], 15);
+            $workers[] = ['process' => $process, 'pipes' => $pipes];
+        }
+
+        foreach ($workers as $worker) {
+            $signal = fgets($worker['pipes'][1]);
+            $metadata = stream_get_meta_data($worker['pipes'][1]);
+            assertFinance(
+                $signal === "READY\\n" && empty($metadata['timed_out']),
+                'Worker financeiro não confirmou prontidão antes da liberação do bloqueio.'
+            );
+        }
+
+        $pdo->commit();
+
+        $paymentIds = [];
+        foreach ($workers as $index => $worker) {
+            $stdout = stream_get_contents($worker['pipes'][1]);
+            $stderr = stream_get_contents($worker['pipes'][2]);
+            fclose($worker['pipes'][1]);
+            fclose($worker['pipes'][2]);
+
+            $exitCode = proc_close($worker['process']);
+            $workers[$index]['process'] = null;
+            $workers[$index]['pipes'] = [];
+
+            assertFinance($exitCode === 0, 'Worker financeiro falhou: ' . trim($stderr));
+            assertFinance(
+                preg_match('/^PAYMENT_ID=(\\d+)\\s*$/D', trim($stdout), $matches) === 1,
+                'Worker não retornou um ID de pagamento válido: ' . trim($stdout)
+            );
+            $paymentIds[] = (int) $matches[1];
+        }
+
+        assertFinance(
+            $paymentIds[0] === $paymentIds[1],
+            'Requisições concorrentes da mesma operação devem retornar o mesmo pagamento.'
+        );
+
+        return $paymentIds[0];
+    } catch (Throwable $exception) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        throw $exception;
+    } finally {
+        foreach ($workers as $worker) {
+            foreach ($worker['pipes'] as $pipe) {
+                if (is_resource($pipe)) {
+                    fclose($pipe);
+                }
+            }
+            if (isset($worker['process']) && is_resource($worker['process'])) {
+                proc_terminate($worker['process']);
+                proc_close($worker['process']);
+            }
+        }
+    }
+}
+
+if (($argv[1] ?? '') === '--idempotency-worker') {
+    try {
+        runFinancePaymentWorker($argv);
+    } catch (Throwable $exception) {
+        fwrite(STDERR, get_class($exception) . ': ' . $exception->getMessage() . "\\n");
+        exit(1);
+    }
+}
+
 $pdo = financeConnection();
 $nonce = bin2hex(random_bytes(6));
 $actorId = null;
@@ -70,7 +228,7 @@ try {
         'INSERT INTO alunos (nome, telefone, email, plano, ativo)
          VALUES (:nome, :telefone, :email, :plano, 1)'
     );
-    for ($i = 1; $i <= 2; $i++) {
+    for ($i = 1; $i <= 3; $i++) {
         $createStudent->execute([
             'nome' => 'Aluno teste financeiro ' . $i,
             'telefone' => '217777' . str_pad((string) $i, 5, '0', STR_PAD_LEFT),
@@ -105,6 +263,45 @@ try {
     $chargeIds[] = $firstChargeId;
     assertFinance($charge['valor_total'] === '300.00', 'Plano trimestral deve gerar uma cobrança total de R$ 300,00.');
     assertFinance($charge['data_vencimento'] === '2026-12-01', 'Vencimento padrão deve corresponder à data de início.');
+
+    // Terceira matrícula isolada para a corrida, sem interferir nos cenários sequenciais.
+    $raceEnrollmentId = $enrollmentService->create(
+        $studentIds[2], $planIds[0], $actorId, financeDate('2026-12-08 09:00:00')
+    );
+    $enrollmentIds[] = $raceEnrollmentId;
+    $raceChargeQuery = $pdo->prepare('SELECT id FROM cobrancas WHERE matricula_id = :id');
+    $raceChargeQuery->execute(['id' => $raceEnrollmentId]);
+    $raceChargeId = (int) $raceChargeQuery->fetchColumn();
+    assertFinance($raceChargeId > 0, 'A matrícula concorrente precisa ter uma cobrança própria.');
+    $chargeIds[] = $raceChargeId;
+
+    $raceKey = bin2hex(random_bytes(16));
+    $raceObservation = 'Pagamento simultâneo com a mesma chave';
+    $racePaymentId = runFinanceIdempotencyRace(
+        $pdo, $raceChargeId, $actorId, '50.00', 'PIX', '2026-11-22', $raceKey, $raceObservation
+    );
+
+    $raceCount = $pdo->prepare(
+        'SELECT COUNT(*) FROM pagamentos
+         WHERE cobranca_id = :charge_id AND chave_idempotencia = :idempotency_key'
+    );
+    $raceCount->execute(['charge_id' => $raceChargeId, 'idempotency_key' => $raceKey]);
+    assertFinance((int) $raceCount->fetchColumn() === 1, 'A corrida deve persistir somente um pagamento.');
+
+    $raceAuditCount = $pdo->prepare(
+        'SELECT COUNT(*) FROM auditoria
+         WHERE usuario_id = :actor_id
+           AND acao = :action
+           AND entidade = :entity
+           AND entidade_id = :entity_id'
+    );
+    $raceAuditCount->execute([
+        'actor_id' => $actorId,
+        'action' => 'pagamento_registrado',
+        'entity' => 'pagamentos',
+        'entity_id' => $racePaymentId,
+    ]);
+    assertFinance((int) $raceAuditCount->fetchColumn() === 1, 'A corrida deve gerar exatamente um evento de auditoria.');
 
     $finance = new FinanceService($pdo, $clock);
     $paymentOne = $finance->registerPayment(
