@@ -119,16 +119,16 @@ foreach ($usuarios as $conta) {
                             <td><?= escapar(date('d/m/Y H:i', strtotime($conta['criado_em']))) ?></td>
                             <td>
                                 <?php if ($contaAtual) { ?>
-                                    <span class="account-current"><?= escapar(\\FitControl\\Security\\AccessControl::label($conta['perfil'])) ?></span>
+                                    <span class="account-current"><?= escapar(\FitControl\Security\AccessControl::label($conta['perfil'])) ?></span>
                                 <?php } else { ?>
                                     <form action="alterar-perfil-usuario.php" method="post" class="account-status-form">
                                         <input type="hidden" name="token" value="<?= escapar($_SESSION['token']) ?>">
                                         <input type="hidden" name="id" value="<?= (int) $conta['id'] ?>">
                                         <select name="perfil" aria-label="Perfil de <?= escapar($conta['nome']) ?>">
-                                            <?php foreach (\\FitControl\\Security\\AccessControl::roles() as $perfilDisponivel) { ?>
+                                            <?php foreach (\FitControl\Security\AccessControl::roles() as $perfilDisponivel) { ?>
                                                 <option value="<?= escapar($perfilDisponivel) ?>"
                                                     <?= $conta['perfil'] === $perfilDisponivel ? 'selected' : '' ?>>
-                                                    <?= escapar(\\FitControl\\Security\\AccessControl::label($perfilDisponivel)) ?>
+                                                    <?= escapar(\FitControl\Security\AccessControl::label($perfilDisponivel)) ?>
                                                 </option>
                                             <?php } ?>
                                         </select>
