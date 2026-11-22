@@ -227,17 +227,39 @@ try {
         'Matrícula cancelada não pode habilitar check-in.'
     );
 
-    // Uma falha de FK na gravação da auditoria deve reverter também o check-in.
+    // Simula uma falha na cadeia depois do INSERT do check-in. O serviço
+    // precisa reverter a presença e preservar o estado original da cadeia.
+    $previousChainHash = (string) $pdo->query(
+        'SELECT ultimo_hash FROM auditoria_integridade_estado WHERE id = 1'
+    )->fetchColumn();
+    $pdo->exec('SET @fitcontrol_audit_chain_write = 1');
+    $pdo->exec(
+        "UPDATE auditoria_integridade_estado SET ultimo_hash = 'hash-invalido' WHERE id = 1"
+    );
+    $pdo->exec('SET @fitcontrol_audit_chain_write = NULL');
+
     try {
-        $service->register($studentIds[6], 4294967295);
-        throw new RuntimeException('A autoria inexistente deveria fazer a transação falhar.');
-    } catch (PDOException) {
-        $rollbackCount = $pdo->prepare(
-            'SELECT COUNT(*) FROM checkins WHERE aluno_id = :student_id'
+        $service->register($studentIds[6], $actorId);
+        throw new RuntimeException('A cadeia inválida deveria fazer a transação falhar.');
+    } catch (RuntimeException $exception) {
+        assertAttendance(
+            str_contains($exception->getMessage(), 'SHA-256'),
+            'A falha esperada deve vir da validação do hash da cadeia.'
         );
-        $rollbackCount->execute(['student_id' => $studentIds[6]]);
-        assertAttendance((int) $rollbackCount->fetchColumn() === 0, 'Falha de auditoria precisa reverter o check-in.');
+    } finally {
+        $pdo->exec('SET @fitcontrol_audit_chain_write = 1');
+        $restoreChain = $pdo->prepare(
+            'UPDATE auditoria_integridade_estado SET ultimo_hash = :previous_hash WHERE id = 1'
+        );
+        $restoreChain->execute(['previous_hash' => $previousChainHash]);
+        $pdo->exec('SET @fitcontrol_audit_chain_write = NULL');
     }
+
+    $rollbackCount = $pdo->prepare(
+        'SELECT COUNT(*) FROM checkins WHERE aluno_id = :student_id'
+    );
+    $rollbackCount->execute(['student_id' => $studentIds[6]]);
+    assertAttendance((int) $rollbackCount->fetchColumn() === 0, 'Falha de auditoria precisa reverter o check-in.');
 
     $auditCount = $pdo->prepare(
         'SELECT COUNT(*)
