@@ -3219,3 +3219,113 @@ body:not(.dashboard-body) .theme-option[aria-pressed="true"] {
     .audit-timeline-content { padding: 12px; }
     .audit-timeline-meta { align-items: flex-start; flex-direction: column; }
 }
+
+
+/* Bloco 04 — frequência e check-in */
+.attendance-page {
+    max-width: 1120px;
+}
+.attendance-summary {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+    margin: 24px 0;
+}
+.attendance-stat {
+    display: flex;
+    min-height: 112px;
+    flex-direction: column;
+    justify-content: center;
+    gap: 8px;
+    padding: 22px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+}
+.attendance-stat span {
+    color: var(--muted);
+    font-size: .82rem;
+    font-weight: 650;
+}
+.attendance-stat strong {
+    color: var(--ink);
+    font-size: 2rem;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+}
+.attendance-register-form,
+.attendance-filter-form {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    gap: 14px;
+}
+.attendance-register-form > div,
+.attendance-filter-form > div {
+    display: grid;
+    min-width: 170px;
+    flex: 1 1 170px;
+    gap: 7px;
+}
+.attendance-register-form select,
+.attendance-filter-form input,
+.attendance-filter-form select {
+    width: 100%;
+    min-height: 44px;
+    padding: 10px 12px;
+    color: var(--ink);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    font: inherit;
+}
+.attendance-filter-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.attendance-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+}
+.attendance-table th,
+.attendance-table td {
+    padding: 13px 14px;
+    border-bottom: 1px solid var(--line);
+    white-space: nowrap;
+}
+.attendance-table th {
+    color: var(--muted);
+    font-size: .72rem;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}
+.attendance-table td {
+    color: var(--ink);
+    font-size: .86rem;
+}
+@media (max-width: 600px) {
+    .attendance-summary {
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+    }
+    .attendance-stat {
+        min-height: 96px;
+        padding: 15px;
+    }
+    .attendance-stat strong {
+        font-size: 1.65rem;
+    }
+    .attendance-register-form > div,
+    .attendance-filter-form > div {
+        flex-basis: 100%;
+    }
+    .attendance-filter-actions {
+        width: 100%;
+    }
+    .attendance-filter-actions .button {
+        flex: 1 1 auto;
+    }
+}
