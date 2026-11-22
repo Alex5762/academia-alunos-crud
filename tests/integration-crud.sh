@@ -925,6 +925,114 @@ CANCEL_AUDIT="$(db_value "SELECT COUNT(*) FROM auditoria
       AND entidade_id = $CANCEL_ENROLLMENT_ID")"
 [[ "$CANCEL_AUDIT" == "1" ]] || fail "O cancelamento não foi auditado pelo funcionário autenticado."
 
+echo "9.4/10 - Validando retificação de vigência legada pela interface HTTP..."
+# Cria uma matrícula de origem LEGADO e uma decisão confirmada fictícias.
+LEGACY_START_UTC="$(php -r 'echo (new DateTimeImmutable(\"-30 days\", new DateTimeZone(\"UTC\")))->format(\"Y-m-d H:i:s\");')"
+LEGACY_END_UTC="$(php -r 'echo (new DateTimeImmutable(\"+30 days\", new DateTimeZone(\"UTC\")))->format(\"Y-m-d H:i:s\");')"
+db_exec "INSERT INTO matriculas (
+    aluno_id, plano_id, plano_nome_contratado, valor_contratado,
+    duracao_contratada_valor, duracao_contratada_unidade,
+    inicio_em, fim_exclusivo_em, origem
+) VALUES (
+    $ALUNO_ID, $PLAN_ID, 'Vínculo legado CI', 149.90,
+    NULL, NULL, '$LEGACY_START_UTC', '$LEGACY_END_UTC', 'LEGADO'
+)"
+LEGACY_ENROLLMENT_ID="$(db_value "SELECT id FROM matriculas WHERE aluno_id = $ALUNO_ID AND origem = 'LEGADO' ORDER BY id DESC LIMIT 1")"
+[[ "$LEGACY_ENROLLMENT_ID" =~ ^[0-9]+$ ]] || fail "O fixture não criou a matrícula legada."
+db_exec "UPDATE revisoes_legado
+    SET resultado_atual = 'VINCULO_CONFIRMADO',
+        fonte_referencia = 'Contrato físico, pasta CI'
+    WHERE id = $REVIEW_ID"
+db_exec "INSERT INTO revisoes_legado_eventos (
+    revisao_legado_id, usuario_id, tipo_evento, resultado_anterior,
+    resultado_novo, matricula_id, inicio_novo, fim_exclusivo_novo,
+    fonte_referencia, observacoes
+) VALUES (
+    $REVIEW_ID, $USUARIO_ID, 'DECISAO', 'PENDENTE_REVISAO',
+    'VINCULO_CONFIRMADO', $LEGACY_ENROLLMENT_ID,
+    '$LEGACY_START_UTC', '$LEGACY_END_UTC',
+    'Contrato físico, pasta CI', 'Intervalo fictício comprovado para teste HTTP'
+)"
+
+HTTP_CODE="$(curl -sS -o "$TMP_DIR/rectification-anonymous.html" -w '%{http_code}' \
+    "$BASE_URL/retificar-vigencia-legado.php?review_id=$REVIEW_ID")"
+[[ "$HTTP_CODE" == "303" ]] || fail "Retificação anônima deveria redirecionar para login; retornou $HTTP_CODE."
+curl -fsS -G -c "$COOKIE_JAR" -b "$COOKIE_JAR" \
+    --data-urlencode "review_id=$REVIEW_ID" \
+    "$BASE_URL/retificar-vigencia-legado.php" -o "$TMP_DIR/rectification-form.html"
+assert_contains "$TMP_DIR/rectification-form.html" "Retificar vigência legada"
+assert_contains "$TMP_DIR/rectification-form.html" "Novo início local"
+assert_contains "$TMP_DIR/rectification-form.html" "Novo fim exclusivo local"
+assert_contains "$TMP_DIR/rectification-form.html" "Referência da nova evidência"
+RECTIFICATION_TOKEN="$(get_token "$TMP_DIR/rectification-form.html")"
+
+HTTP_CODE="$(curl -sS -o "$TMP_DIR/rectification-get.html" -w '%{http_code}' \
+    "$BASE_URL/salvar-retificacao-legado.php")"
+[[ "$HTTP_CODE" == "405" ]] || fail "Endpoint de retificação deveria rejeitar GET com 405; retornou $HTTP_CODE."
+
+HTTP_CODE="$(curl -sS -o "$TMP_DIR/rectification-no-csrf.html" -w '%{http_code}' -c "$COOKIE_JAR" -b "$COOKIE_JAR" \
+    "$BASE_URL/salvar-retificacao-legado.php" \
+    --data-urlencode "token=token-invalido" \
+    --data-urlencode "review_id=$REVIEW_ID" \
+    --data-urlencode "enrollment_id=$LEGACY_ENROLLMENT_ID")"
+[[ "$HTTP_CODE" == "403" ]] || fail "Retificação sem CSRF deveria retornar 403; retornou $HTTP_CODE."
+
+NEW_LEGACY_START="$(php -r 'echo (new DateTimeImmutable(\"-20 days\", new DateTimeZone(\"America/Sao_Paulo\")))->format(\"Y-m-d\\\\TH:i:s\");')"
+NEW_LEGACY_END="$(php -r 'echo (new DateTimeImmutable(\"+40 days\", new DateTimeZone(\"America/Sao_Paulo\")))->format(\"Y-m-d\\\\TH:i:s\");')"
+curl -fsS -L -c "$COOKIE_JAR" -b "$COOKIE_JAR" \
+    "$BASE_URL/salvar-retificacao-legado.php" \
+    --data-urlencode "token=$RECTIFICATION_TOKEN" \
+    --data-urlencode "review_id=$REVIEW_ID" \
+    --data-urlencode "enrollment_id=$LEGACY_ENROLLMENT_ID" \
+    --data-urlencode "inicio_em=$NEW_LEGACY_START" \
+    --data-urlencode "fim_exclusivo_em=$NEW_LEGACY_END" \
+    --data-urlencode "fonte_referencia=Contrato original assinado, folha 12" \
+    --data-urlencode "observacoes=Correção baseada na conferência do contrato físico." \
+    -o "$TMP_DIR/rectification-saved.html"
+assert_contains "$TMP_DIR/rectification-saved.html" "Retificação registrada com sucesso."
+RECTIFIED_START_UTC="$(php -r '$d=new DateTimeImmutable(getenv(\"VALUE\"),new DateTimeZone(\"America/Sao_Paulo\")); echo $d->setTimezone(new DateTimeZone(\"UTC\"))->format(\"Y-m-d H:i:s\");' VALUE="$NEW_LEGACY_START")"
+RECTIFIED_END_UTC="$(php -r '$d=new DateTimeImmutable(getenv(\"VALUE\"),new DateTimeZone(\"America/Sao_Paulo\")); echo $d->setTimezone(new DateTimeZone(\"UTC\"))->format(\"Y-m-d H:i:s\");' VALUE="$NEW_LEGACY_END")"
+RECTIFIED_ROW="$(db_value "SELECT COUNT(*) FROM matriculas
+    WHERE id = $LEGACY_ENROLLMENT_ID
+      AND inicio_em = '$RECTIFIED_START_UTC'
+      AND fim_exclusivo_em = '$RECTIFIED_END_UTC'
+      AND origem = 'LEGADO'")"
+[[ "$RECTIFIED_ROW" == "1" ]] || fail "A interface não persistiu o novo intervalo em UTC."
+RECTIFICATION_EVENT_COUNT="$(db_value "SELECT COUNT(*) FROM revisoes_legado_eventos
+    WHERE revisao_legado_id = $REVIEW_ID
+      AND tipo_evento = 'RETIFICACAO_VIGENCIA'
+      AND matricula_id = $LEGACY_ENROLLMENT_ID
+      AND fonte_referencia = 'Contrato original assinado, folha 12'")"
+[[ "$RECTIFICATION_EVENT_COUNT" == "1" ]] || fail "A retificação não gerou exatamente um evento especializado."
+RECTIFICATION_AUDIT_COUNT="$(db_value "SELECT COUNT(*) FROM auditoria
+    WHERE usuario_id = $USUARIO_ID
+      AND acao = 'matricula_corrigida'
+      AND entidade = 'matriculas'
+      AND entidade_id = $LEGACY_ENROLLMENT_ID")"
+[[ "$RECTIFICATION_AUDIT_COUNT" == "1" ]] || fail "A retificação não gerou auditoria geral."
+RECTIFICATION_FORM_TOKEN="$(get_token "$TMP_DIR/rectification-saved.html")"
+curl -fsS -L -c "$COOKIE_JAR" -b "$COOKIE_JAR" \
+    "$BASE_URL/salvar-retificacao-legado.php" \
+    --data-urlencode "token=$RECTIFICATION_FORM_TOKEN" \
+    --data-urlencode "review_id=$REVIEW_ID" \
+    --data-urlencode "enrollment_id=$LEGACY_ENROLLMENT_ID" \
+    --data-urlencode "inicio_em=$NEW_LEGACY_START" \
+    --data-urlencode "fim_exclusivo_em=$NEW_LEGACY_END" \
+    --data-urlencode "fonte_referencia=Contrato original assinado, folha 12" \
+    --data-urlencode "observacoes=Correção baseada na conferência do contrato físico." \
+    -o "$TMP_DIR/rectification-repeated.html"
+RECTIFICATION_EVENT_COUNT_AFTER_REPEAT="$(db_value "SELECT COUNT(*) FROM revisoes_legado_eventos
+    WHERE revisao_legado_id = $REVIEW_ID AND tipo_evento = 'RETIFICACAO_VIGENCIA'")"
+[[ "$RECTIFICATION_EVENT_COUNT_AFTER_REPEAT" == "1" ]] || fail "A repetição idempotente duplicou o evento de retificação."
+
+curl -fsS -G -c "$COOKIE_JAR" -b "$COOKIE_JAR" \
+    --data-urlencode "filtro=todos" --data-urlencode "review_id=$REVIEW_ID" \
+    "$BASE_URL/revisoes-legado.php" -o "$TMP_DIR/rectification-history.html"
+assert_contains "$TMP_DIR/rectification-history.html" "Retificar vigência comprovada"
+assert_contains "$TMP_DIR/rectification-history.html" "Intervalo anterior:"
+assert_contains "$TMP_DIR/rectification-history.html" "Novo intervalo:"
+assert_contains "$TMP_DIR/rectification-history.html" "Contrato original assinado, folha 12"
+
 echo "9.4/10 - Validando fila administrativa e decisão auditada de revisão..."
 curl -fsS -G -c "$COOKIE_JAR" -b "$COOKIE_JAR" \
     --data-urlencode "filtro=pendentes" "$BASE_URL/revisoes-legado.php" \
@@ -996,7 +1104,7 @@ HTTP_CODE="$(curl -sS -o "$TMP_DIR/enrollment-pending.html" -w '%{http_code}' -c
 [[ "$HTTP_CODE" == "422" ]] || fail "Revisão legada pendente deveria bloquear contratação com HTTP 422; retornou $HTTP_CODE."
 assert_contains "$TMP_DIR/enrollment-pending.html" "A matrícula está bloqueada enquanto a revisão do vínculo legado estiver pendente."
 
-# A decisão abaixo é apenas fixture de teste. A tela de decisão auditada será implementada no fluxo próprio.
+# A liberação abaixo prepara o cenário de contratação subsequente; a decisão já foi validada pelo endpoint de revisão.
 db_exec "UPDATE revisoes_legado SET resultado_atual = 'LEGADO_SEM_VIGENCIA' WHERE aluno_id_origem = $ALUNO_ID"
 
 ENROLLMENT_TOKEN="$(get_token "$TMP_DIR/enrollment-pending.html")"
