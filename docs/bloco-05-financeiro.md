@@ -168,4 +168,4 @@ A migration 010 deve ser executada somente após backup e conferência da versã
 
 ## Estado
 
-**F-01 a F-04 validados na CI #1332; F-05 validado na CI #1361; F-06 validado integralmente na CI #1362; F-07 validado integralmente na CI #1385; F-08 validado integralmente na CI #1397.** A execução geral da CI ainda está concluindo os jobs de integração; não aplicar migrations no banco local sem backup e validação. PR #1 permanece Draft. Migration 013 documentada com pré-verificação dos dados e cautela para falha parcial dos dois comandos DDL. As migrations 011 e 012 estão incluídas na CI e no guia XAMPP. Não aplicar migrations no banco local sem backup e validação. PR #1 permanece Draft.
+**F-01 a F-08 implementados e validados:** F-01 a F-04 na CI #1332; F-05 na CI #1361; F-06 na CI #1362; F-07 na CI #1385; F-08 na CI #1397. A CI #1412 também passou integralmente após a revisão do workflow, com sete jobs funcionais aprovados e publicação de screenshots ignorada condicionalmente. O workflow evita disparos duplicados por `push` na branch da PR e cancela execuções obsoletas. Nenhuma migration foi aplicada no banco local. PR #1 permanece Draft e `main` intocada.
