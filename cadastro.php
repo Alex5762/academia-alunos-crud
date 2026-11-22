@@ -10,6 +10,7 @@ $aluno = ['id' => '', 'nome' => '', 'telefone' => '', 'email' => '', 'plano' => 
 $editando = isset($_GET['id']);
 
 if ($editando) {
+    exigirPermissao($usuario, 'students.update');
     $id = validarId($_GET['id']);
     if ($id === false) {
         http_response_code(400);
