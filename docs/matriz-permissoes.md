@@ -23,7 +23,7 @@ A autorização é aplicada no servidor por `exigirPermissao()`; ocultar um link
 - O provisionamento inicial via CLI cria uma conta `ADMINISTRADOR`; o script é restrito ao terminal.
 - Um funcionário não pode alterar o próprio perfil pela interface.
 - Não é permitido remover o perfil do último administrador ativo.
-- A desativação de contas e as alterações de perfil são registradas na auditoria.
+- A desativação de contas é registrada na auditoria; alterações de perfil também preservam perfil anterior, perfil novo e responsável em `usuarios_perfis_eventos`.
 - As operações de gestão de funcionários são exclusivas de administradores.
 - O acesso negado para usuário autenticado retorna HTTP 403.
 - O perfil é consultado no banco em cada requisição, portanto uma alteração de perfil passa a valer na próxima requisição autenticada.
