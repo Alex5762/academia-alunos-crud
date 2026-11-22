@@ -782,6 +782,28 @@ db_exec "CREATE TABLE matriculas (
         ON UPDATE CASCADE ON DELETE RESTRICT
 ) ENGINE=InnoDB"
 
+db_exec "CREATE TABLE cobrancas (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    matricula_id BIGINT UNSIGNED NOT NULL,
+    valor_total DECIMAL(10,2) NOT NULL,
+    data_vencimento DATE NOT NULL,
+    criado_por INT UNSIGNED NOT NULL,
+    criado_em_utc DATETIME NOT NULL,
+    cancelada_em_utc DATETIME NULL,
+    cancelada_por INT UNSIGNED NULL,
+    motivo_cancelamento VARCHAR(255) NULL,
+    UNIQUE KEY uq_ci_charge_enrollment (matricula_id),
+    CONSTRAINT fk_ci_charge_enrollment
+        FOREIGN KEY (matricula_id) REFERENCES matriculas (id)
+        ON UPDATE CASCADE ON DELETE RESTRICT,
+    CONSTRAINT fk_ci_charge_actor
+        FOREIGN KEY (criado_por) REFERENCES usuarios (id)
+        ON UPDATE CASCADE ON DELETE RESTRICT,
+    CONSTRAINT fk_ci_charge_cancel_actor
+        FOREIGN KEY (cancelada_por) REFERENCES usuarios (id)
+        ON UPDATE CASCADE ON DELETE RESTRICT
+) ENGINE=InnoDB"
+
 curl -fsS -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/planos.php" -o "$TMP_DIR/plans-ready.html"
 assert_contains "$TMP_DIR/plans-ready.html" "Adicionar plano"
 HTTP_CODE="$(curl -sS -o "$TMP_DIR/manage-get.html" -w '%{http_code}' "$BASE_URL/gerenciar-plano.php")"
@@ -1278,6 +1300,20 @@ ENROLLMENT_SNAPSHOT="$(db_value "SELECT COUNT(*) FROM matriculas
       AND duracao_contratada_valor = 1
       AND duracao_contratada_unidade = 'MES'")"
 [[ "$ENROLLMENT_SNAPSHOT" == "1" ]] || fail "A nova matrícula não preservou o snapshot do plano."
+
+AUTO_CHARGE="$(db_value "SELECT COUNT(*) FROM cobrancas
+    WHERE matricula_id = $NEW_ENROLLMENT_ID
+      AND valor_total = 149.90
+      AND data_vencimento = '$START_DATE'
+      AND criado_por = $USUARIO_ID")"
+[[ "$AUTO_CHARGE" == "1" ]] || fail "A matrícula não gerou uma cobrança única pelo valor total e vencimento padrão."
+CHARGE_AUDIT="$(db_value "SELECT COUNT(*) FROM auditoria
+    WHERE usuario_id = $USUARIO_ID
+      AND acao = 'cobranca_criada'
+      AND entidade = 'cobrancas'
+      AND entidade_id = (SELECT id FROM cobrancas WHERE matricula_id = $NEW_ENROLLMENT_ID)")"
+[[ "$CHARGE_AUDIT" == "1" ]] || fail "A cobrança automática não foi registrada na cadeia de auditoria."
+
 ENROLLMENT_AUDIT="$(db_value "SELECT COUNT(*) FROM auditoria
     WHERE usuario_id = $USUARIO_ID
       AND acao = 'matricula_criada'
@@ -1294,12 +1330,14 @@ assert_contains "$TMP_DIR/audit-enrollment-detail.html" "matricula_criada"
 
 # A trilha é append-only. Eventos de teste permanecem no banco descartável
 # da CI; somente os registros de domínio e as tabelas temporárias são removidos.
+db_exec "DELETE FROM cobrancas WHERE matricula_id IN (SELECT id FROM matriculas WHERE plano_id = $PLAN_ID)"
 db_exec "DELETE FROM matriculas WHERE plano_id = $PLAN_ID"
 db_exec "DELETE FROM planos WHERE id IN ($PLAN_ID, $UNUSED_PLAN_ID)"
 db_exec "DELETE FROM revisoes_legado_eventos WHERE revisao_legado_id = $REVIEW_ID"
 db_exec "DROP TABLE revisoes_legado_eventos"
 db_exec "DELETE FROM revisoes_legado WHERE aluno_id_origem = $ALUNO_ID"
 db_exec "DROP TABLE revisoes_legado"
+db_exec "DROP TABLE cobrancas"
 db_exec "DROP TABLE matriculas"
 db_exec "DROP TABLE planos"
 

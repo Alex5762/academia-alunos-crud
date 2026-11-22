@@ -92,4 +92,4 @@ A migration 010 deve ser executada somente após backup e conferência da versã
 
 ## Estado
 
-**Núcleo transacional em implementação.** As regras de cobrança única, vencimento, pagamentos parciais e cancelamento foram definidas; interface, RBAC financeiro e validação completa permanecem pendentes.
+**Núcleo transacional e primeira interface implementados.** A CI está em validação; o Bloco 05 continua aberto para revisão, eventuais correções e inspeção local após backup/migration.

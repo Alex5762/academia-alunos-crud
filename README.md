@@ -38,7 +38,7 @@ As imagens abaixo são capturadas automaticamente pelo GitHub Actions com regist
 
 ## Bloco 05 — Financeiro (em implementação)
 
-O núcleo transacional cria uma cobrança única pelo valor total do contrato ao registrar uma matrícula nova; pagamentos parciais e cancelamento condicionado ficam registrados com auditoria. Consulte `docs/bloco-05-financeiro.md`. A interface e as permissões financeiras ainda não estão concluídas.
+O núcleo transacional cria uma cobrança única pelo valor total do contrato ao registrar uma matrícula nova; pagamentos parciais e cancelamento condicionado ficam registrados com auditoria. Consulte `docs/bloco-05-financeiro.md`. A tela `financeiro.php` e as permissões RBAC `finance.*` foram adicionadas; o bloco segue em validação e não deve ser considerado pronto para produção.
 
 ## Funcionalidades
 

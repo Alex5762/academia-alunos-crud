@@ -133,6 +133,20 @@ for (const engine of engines) {
     await assertNoDocumentOverflow(page, engine.name, "frequência mobile estreito de 320px");
 
     await page.setViewportSize({ width: 1280, height: 900 });
+    const financeResponse = await page.goto(baseUrl + "/financeiro.php", {
+      waitUntil: "domcontentloaded",
+    });
+    ensure(financeResponse?.ok(), engine.name + ": a página financeira não abriu.");
+    await page.getByRole("heading", { name: "Financeiro" }).waitFor();
+    await page.getByRole("heading", { name: "Cobranças" }).waitFor();
+    await page.getByText("Nenhuma cobrança registrada").waitFor();
+    await assertNoDocumentOverflow(page, engine.name, "financeiro desktop");
+    await page.setViewportSize({ width: 390, height: 844 });
+    await assertNoDocumentOverflow(page, engine.name, "financeiro mobile de 390px");
+    await page.setViewportSize({ width: 320, height: 780 });
+    await assertNoDocumentOverflow(page, engine.name, "financeiro mobile estreito de 320px");
+
+    await page.setViewportSize({ width: 1280, height: 900 });
     const formResponse = await page.goto(baseUrl + "/cadastro.php", {
       waitUntil: "domcontentloaded",
     });
