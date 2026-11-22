@@ -5,6 +5,7 @@ require_once __DIR__ . '/src/Domain/Enrollment/EnrollmentPeriodCalculator.php';
 require_once __DIR__ . '/src/Domain/Enrollment/EnrollmentStatus.php';
 
 $usuario = exigirAutenticacao($pdo);
+exigirPermissao($usuario, 'students.view');
 $contextoLista = obterContextoListaAlunos($_GET);
 $id = validarId($_GET['id'] ?? null);
 
