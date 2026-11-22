@@ -555,7 +555,6 @@ function classeSituacaoPlano(string $situacao): string {
                                             <?php if ($plano['descricao'] !== null && $plano['descricao'] !== '') { ?>
                                                 <small><?= escapar($plano['descricao']) ?></small>
                                             <?php } ?>
-                                        <?php } ?>
                                         </div>
                                     </td>
                                     <td><?= escapar(rotuloDuracaoPlano($plano)) ?></td>
@@ -593,6 +592,7 @@ function classeSituacaoPlano(string $situacao): string {
                                                 <input type="hidden" name="acao" value="excluir">
                                                 <button class="button button-danger" type="submit">Excluir</button>
                                             </form>
+                                            <?php } ?>
                                         </div>
                                     </td>
                                 </tr>
