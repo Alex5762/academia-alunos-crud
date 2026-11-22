@@ -46,6 +46,18 @@ function assertFinanceRejected(callable $operation, string $message): void
     throw new RuntimeException($message);
 }
 
+function assertFinanceSqlRejected(PDO $pdo, string $sql, array $parameters, string $message): void
+{
+    try {
+        $statement = $pdo->prepare($sql);
+        $statement->execute($parameters);
+    } catch (PDOException) {
+        return;
+    }
+
+    throw new RuntimeException($message);
+}
+
 /**
  * Worker isolado: cada processo cria sua própria conexão PDO e chama o serviço.
  */
@@ -337,6 +349,40 @@ try {
     $paymentCount->execute(['charge_id' => $firstChargeId]);
     assertFinance((int) $paymentCount->fetchColumn() === 2, 'Reenvios e tentativas inválidas não devem criar pagamentos adicionais.');
 
+    // A tabela deve impedir escrita direta, edição e exclusão fora do serviço.
+    assertFinanceSqlRejected(
+        $pdo,
+        'INSERT INTO pagamentos (
+            cobranca_id, valor, forma_pagamento, data_pagamento,
+            registrado_por, registrado_em_utc, chave_idempotencia, hash_requisicao
+         ) VALUES (
+            :charge_id, 1.00, \'PIX\', \'2026-11-22\',
+            :actor_id, \'2026-11-22 13:00:00\', :idempotency_key, :request_hash
+         )',
+        [
+            'charge_id' => $firstChargeId,
+            'actor_id' => $actorId,
+            'idempotency_key' => str_repeat('e', 32),
+            'request_hash' => str_repeat('f', 64),
+        ],
+        'INSERT direto não deve contornar o serviço financeiro.'
+    );
+    assertFinanceSqlRejected(
+        $pdo,
+        'UPDATE pagamentos SET valor = \'101.00\' WHERE id = :payment_id',
+        ['payment_id' => $paymentOne],
+        'Pagamento confirmado não pode ser editado.'
+    );
+    assertFinanceSqlRejected(
+        $pdo,
+        'DELETE FROM pagamentos WHERE id = :payment_id',
+        ['payment_id' => $paymentOne],
+        'Pagamento confirmado não pode ser excluído.'
+    );
+    $immutableValue = $pdo->prepare('SELECT valor FROM pagamentos WHERE id = :id');
+    $immutableValue->execute(['id' => $paymentOne]);
+    assertFinance($immutableValue->fetchColumn() === '100.00', 'Tentativa de edição não pode alterar o valor original.');
+
     try {
         $duplicate = $pdo->prepare(
             'INSERT INTO cobrancas (matricula_id, valor_total, data_vencimento, criado_por, criado_em_utc)
@@ -409,11 +455,16 @@ try {
     echo "Financeiro transacional: OK; cobrança única, pagamentos parciais, limite de saldo, cancelamento condicionado e auditoria validados.\n";
 } finally {
     if ($chargeIds !== []) {
-        $placeholders = implode(',', array_fill(0, count($chargeIds), '?'));
-        $deletePayments = $pdo->prepare("DELETE FROM pagamentos WHERE cobranca_id IN ({$placeholders})");
-        $deletePayments->execute($chargeIds);
-        $deleteCharges = $pdo->prepare("DELETE FROM cobrancas WHERE id IN ({$placeholders})");
-        $deleteCharges->execute($chargeIds);
+        $pdo->exec('SET @fitcontrol_finance_test_cleanup = 1');
+        try {
+            $placeholders = implode(',', array_fill(0, count($chargeIds), '?'));
+            $deletePayments = $pdo->prepare("DELETE FROM pagamentos WHERE cobranca_id IN ({$placeholders})");
+            $deletePayments->execute($chargeIds);
+            $deleteCharges = $pdo->prepare("DELETE FROM cobrancas WHERE id IN ({$placeholders})");
+            $deleteCharges->execute($chargeIds);
+        } finally {
+            $pdo->exec('SET @fitcontrol_finance_test_cleanup = NULL');
+        }
     }
     if ($enrollmentIds !== []) {
         $placeholders = implode(',', array_fill(0, count($enrollmentIds), '?'));
