@@ -127,6 +127,14 @@ A migration 010 deve ser executada somente após backup e conferência da versã
 - O histórico é somente leitura: F-02 continua impedindo alteração ou exclusão de pagamentos confirmados.
 - Testes de integração verificam agrupamento, ordenação, campos históricos e cobrança sem pagamentos.
 
+## F-05 — Constraints de valores positivos
+
+- Migration `013_financeiro_valores_positivos.sql` adiciona `CHECK (valor_total > 0.00)` em `cobrancas` e `CHECK (valor > 0.00)` em `pagamentos`.
+- Os nomes são explícitos: `chk_cobrancas_valor_total_positivo` e `chk_pagamentos_valor_positivo`.
+- Nenhum dado legado é alterado automaticamente; a migration deve interromper se encontrar valor inválido.
+- Testes de integração tentam gravar cobrança zero e pagamento negativo diretamente no banco, cobrindo a defesa independente da camada PHP.
+- CI aplica a migration em MySQL 8.0 e MariaDB 10.11.
+
 ## Estado
 
-**F-01 a F-03 validados na CI #1312; F-04 implementado e aguardando CI.** As migrations 011 e 012 estão incluídas na CI e no guia XAMPP. Não aplicar migrations no banco local sem backup e validação. PR #1 permanece Draft.
+**F-01 a F-04 validados na CI #1332; F-05 implementado e aguardando CI.** As migrations 011 e 012 estão incluídas na CI e no guia XAMPP. Não aplicar migrations no banco local sem backup e validação. PR #1 permanece Draft.
