@@ -246,9 +246,6 @@ curl -fsS -L -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/alterar-perfil-usuario
     --data-urlencode "perfil=GESTOR" \
     -o "$TMP_DIR/user-role-manager.html"
 assert_contains "$TMP_DIR/user-role-manager.html" "Perfil do funcionário atualizado com sucesso."
-MANAGER_AUDIT_HTTP="$(curl -sS -o "$TMP_DIR/manager-audit.html" -w '%{http_code}' -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/auditoria.php")"
-[[ "$MANAGER_AUDIT_HTTP" == "200" ]] || fail "Gestor deveria consultar a central de auditoria; recebeu $MANAGER_AUDIT_HTTP."
-assert_contains "$TMP_DIR/manager-audit.html" "Central de auditoria"
 MANAGER_ROLE="$(db_value "SELECT perfil FROM usuarios WHERE id = $NOVO_USUARIO_ID")"
 [[ "$MANAGER_ROLE" == "GESTOR" ]] || fail "O perfil de gestor não foi persistido."
 ROLE_AUDIT="$(db_value "SELECT COUNT(*) FROM auditoria WHERE usuario_id = $USUARIO_ID AND acao = 'usuario_perfil_alterado' AND entidade_id = $NOVO_USUARIO_ID")"
@@ -303,6 +300,28 @@ curl -fsS -L -c "$NEW_COOKIE_JAR" -b "$NEW_COOKIE_JAR" "$BASE_URL/trocar-senha.p
 assert_contains "$TMP_DIR/new-user-password-changed.html" "Visão geral"
 NOVO_ACESSO_OK="$(db_value "SELECT COUNT(*) FROM usuarios WHERE id = $NOVO_USUARIO_ID AND deve_trocar_senha = 0")"
 [[ "$NOVO_ACESSO_OK" == "1" ]] || fail "A nova conta não concluiu a troca obrigatória de senha."
+
+echo "1.2.2/10 - Validando atualização de permissões sem encerrar a sessão..."
+ADMIN_TOKEN="$(get_token "$TMP_DIR/self-demotion.html")"
+curl -fsS -L -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/alterar-perfil-usuario.php" \
+    --data-urlencode "token=$ADMIN_TOKEN" \
+    --data-urlencode "id=$NOVO_USUARIO_ID" \
+    --data-urlencode "perfil=GESTOR" \
+    -o "$TMP_DIR/user-role-manager-second.html"
+MANAGER_AUDIT_HTTP="$(curl -sS -o "$TMP_DIR/manager-audit.html" -w '%{http_code}' -c "$NEW_COOKIE_JAR" -b "$NEW_COOKIE_JAR" "$BASE_URL/auditoria.php")"
+[[ "$MANAGER_AUDIT_HTTP" == "200" ]] || fail "Gestor deveria consultar a central de auditoria; recebeu $MANAGER_AUDIT_HTTP."
+assert_contains "$TMP_DIR/manager-audit.html" "Central de auditoria"
+
+ADMIN_USERS_HTTP="$(curl -sS -o "$TMP_DIR/admin-users-after-manager.html" -w '%{http_code}' -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/usuarios.php")"
+[[ "$ADMIN_USERS_HTTP" == "200" ]] || fail "Administrador deveria continuar acessando funcionários."
+ADMIN_TOKEN="$(get_token "$TMP_DIR/admin-users-after-manager.html")"
+curl -fsS -L -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/alterar-perfil-usuario.php" \
+    --data-urlencode "token=$ADMIN_TOKEN" \
+    --data-urlencode "id=$NOVO_USUARIO_ID" \
+    --data-urlencode "perfil=OPERADOR" \
+    -o "$TMP_DIR/user-role-operator-second.html"
+OPERATOR_AUDIT_HTTP="$(curl -sS -o "$TMP_DIR/operator-audit-after-demotion.html" -w '%{http_code}' -c "$NEW_COOKIE_JAR" -b "$NEW_COOKIE_JAR" "$BASE_URL/auditoria.php")"
+[[ "$OPERATOR_AUDIT_HTTP" == "403" ]] || fail "A sessão deveria perder a permissão de auditoria após o rebaixamento; recebeu $OPERATOR_AUDIT_HTTP."
 
 NOVO_PERFIL="$(db_value "SELECT perfil FROM usuarios WHERE id = $NOVO_USUARIO_ID")"
 [[ "$NOVO_PERFIL" == "OPERADOR" ]] || fail "Novas contas devem receber o perfil OPERADOR por padrão."
