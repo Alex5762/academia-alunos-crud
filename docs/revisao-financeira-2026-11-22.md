@@ -140,8 +140,6 @@ Essas escolhas estão alinhadas com as recomendações de transações PDO, leit
 
 Não recomendo adicionar agora um razão contábil de partidas dobradas, conciliação bancária ou integração com gateway. Para o escopo local/acadêmico, um registro de contas a receber e pagamentos com histórico imutável, idempotência, saldo exato, transações e auditoria é proporcional.
 
-Não recomendo adicionar agora um razão contábil de partidas dobradas, conciliação bancária ou integração com gateway. Para o escopo local/acadêmico, um registro de contas a receber e pagamentos com histórico imutável, idempotência, saldo exato, transações e auditoria é proporcional.
-
 ## Estado de validação
 
 - CI #1312 foi aprovada integralmente: sete jobs verdes, incluindo MySQL 8.0, MariaDB 10.11, migrations, concorrência financeira, classificação de revisão e integração CRUD.
@@ -150,6 +148,8 @@ Não recomendo adicionar agora um razão contábil de partidas dobradas, concili
 - F-06 foi validado nos jobs de Bloco 04 da CI #1362 em MySQL 8.0 e MariaDB 10.11: duas conexões independentes disputaram uma cobrança de R$ 300,00 com pagamentos de R$ 200,00; um foi aceito, o outro foi recusado por saldo, e houve somente um lançamento e um evento de auditoria.
 - F-07 foi validado integralmente na CI #1385: formatação decimal/centavos sem `float`, rejeição de tipos aproximados e integração CRUD aprovadas.
 - F-08 foi validado nos jobs financeiros da CI #1397 em MySQL 8.0 e MariaDB 10.11: retroativo sem justificativa rejeitado, retroativo com justificativa persistido e data futura recusada.
+- CI #1412 foi aprovada após a simplificação do workflow: sete jobs funcionais concluídos com sucesso; a publicação de screenshots foi ignorada pelo critério condicional do workflow.
+- O workflow agora valida pushes somente em `main` e atualizações da PR pelo evento `pull_request`; a concorrência cancela execuções obsoletas da mesma PR.
 - Nenhuma migration foi aplicada no banco local do usuário.
 - PR #1 permanece Draft e não integrada; não fazer merge antes da validação final.
 
