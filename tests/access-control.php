@@ -17,18 +17,18 @@ $matrix = [
         'dashboard.view', 'students.view', 'students.create', 'students.update',
         'students.status', 'plans.view', 'plans.manage', 'enrollments.view',
         'enrollments.create', 'enrollments.cancel', 'legacy.view', 'legacy.review',
-        'legacy.rectify', 'users.manage', 'audit.view', 'settings.view',
+        'legacy.rectify', 'users.manage', 'audit.view', 'attendance.view', 'attendance.register', 'settings.view',
     ],
     'GESTOR' => [
         'dashboard.view', 'students.view', 'students.create', 'students.update',
         'students.status', 'plans.view', 'plans.manage', 'enrollments.view',
         'enrollments.create', 'enrollments.cancel', 'legacy.view', 'legacy.review',
-        'legacy.rectify', 'audit.view', 'settings.view',
+        'legacy.rectify', 'audit.view', 'attendance.view', 'attendance.register', 'settings.view',
     ],
     'OPERADOR' => [
         'dashboard.view', 'students.view', 'students.create', 'students.update',
         'plans.view', 'enrollments.view', 'enrollments.create',
-        'enrollments.cancel', 'settings.view',
+        'enrollments.cancel', 'attendance.view', 'attendance.register', 'settings.view',
     ],
 ];
 
