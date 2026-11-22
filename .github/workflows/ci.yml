@@ -331,6 +331,7 @@ jobs:
           test -f alterar-perfil-usuario.php
           test -f alterar-status-aluno.php
           test -f docs/matriz-permissoes.md
+          test -f auditoria.php
           test -f detalhes-aluno.php
           test -f tests/assert-user-provisioned.php
           test -f tests/provision-user.sh
