@@ -9,6 +9,7 @@ use FitControl\Domain\Enrollment\EnrollmentCreationService;
 use FitControl\Domain\Enrollment\EnrollmentPeriodCalculator;
 
 $usuario = exigirAutenticacao($pdo);
+exigirPermissao($usuario, 'plans.view');
 
 function planosTabelaDisponivel(PDO $pdo): bool {
     $consulta = $pdo->query(
