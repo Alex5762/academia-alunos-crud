@@ -145,6 +145,10 @@ function iniciaisNome($nome) {
                 <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>
                 <span>Novo cadastro</span>
             </a>
+            <a class="nav-link" href="planos.php">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/><path d="M7 4v16M17 4v16"/></svg>
+                <span>Planos</span>
+            </a>
             <a class="nav-link" href="usuarios.php">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 20v-1.5a3.5 3.5 0 0 0-3.5-3.5h-5A3.5 3.5 0 0 0 4 18.5V20"/><circle cx="10" cy="7.5" r="3.5"/><path d="M17 11a3.5 3.5 0 0 0 0-7M17 15h1a3 3 0 0 1 3 3v2"/></svg>
                 <span>Funcionários</span>
