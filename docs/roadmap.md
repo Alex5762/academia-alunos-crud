@@ -1,5 +1,38 @@
 # Roadmap do FitControl
 
+## Estado de continuidade — 22/11/2026
+
+**A validação manual no XAMPP e em aparelho físico está temporariamente indisponível. Essa pendência foi aceita e não bloqueia a continuidade do desenvolvimento na branch.** Não executar migrations no banco local, não inserir dados reais e não declarar validação local concluída.
+
+### Evidências automatizadas disponíveis
+
+- Blocos 01–05 possuem implementação relevante e cobertura automatizada na branch.
+- Bloco 03: migrations de planos/matrículas e preservação de legado aprovadas em MySQL 8.0 e MariaDB 10.11.
+- Bloco 04: regras de check-in, duplicidade diária, auditoria, integração HTTP e compatibilidade visual aprovadas em MySQL 8.0 e MariaDB 10.11.
+- Bloco 05: F-01 a F-08 validados pelas CIs financeiras #1332, #1361, #1362, #1385 e #1397; integração HTTP/Playwright e bloqueio do perfil OPERADOR aprovados na CI #1420.
+- CI #1420 aprovou oito jobs (sete funcionais e publicação de screenshots ignorada pela condição do workflow). As mudanças posteriores de documentação/roadmap devem continuar passando pela CI do HEAD atual antes de iniciar o próximo bloco.
+- A CI executa em bancos efêmeros e navegadores automatizados. Ela não substitui backup, inspeção de versão/engine, aplicação local de migrations, smoke test no XAMPP ou inspeção física.
+
+### Pendências adiadas — não bloqueiam o próximo bloco
+
+1. Aplicar as migrations 005–013 em uma cópia local descartável, somente após confirmar versão, InnoDB, backup restaurável e estado prévio do schema.
+2. Executar o smoke test manual descrito em `docs/guia-migrations-xampp.md`, usando exclusivamente alunos, planos, matrículas e pagamentos fictícios.
+3. Inspecionar em aparelho físico/navegador instalado os fluxos e capturas responsivas dos Blocos 00–05.
+4. Registrar os resultados locais e reconciliar o estado da PR #1 antes de qualquer decisão de sair de Draft ou integrar à `main`.
+
+Enquanto o acesso ao XAMPP/dispositivo não estiver disponível, continuar com especificação, implementação, testes automatizados, migrations testadas na CI, revisão de segurança e documentação dos blocos seguintes.
+
+### Blocos ainda por desenvolver
+
+- **Bloco 06 — Aulas e agenda:** ainda requer escopo funcional e decisões de domínio antes de implementação.
+- **Bloco 07 — Relatórios e experiência:** ainda requer definição de indicadores, filtros, exportação e permissões.
+- **Bloco 08 — Preparação para produção:** etapa futura, não iniciar como se fosse apenas deploy; depende de revisão independente e plano operacional/de segurança.
+
+**Próximo bloco recomendado: Bloco 06 — Aulas e agenda**, começando pela especificação e critérios de aceite. A validação local dos Blocos 03–05 permanece registrada como adiada, não como concluída.
+
+---
+
+
 ## Objetivo
 
 Evoluir o CRUD acadêmico de alunos para um painel de gestão de academia, mantendo entregas pequenas, testáveis e documentadas. O roadmap é uma direção de trabalho, não uma promessa de que todos os módulos serão implementados. O escopo de cada bloco será confirmado antes de começar.
@@ -22,8 +55,10 @@ Já existe:
 Limites conhecidos:
 - O RBAC possui três perfis (Administrador, Gestor e Operador), com permissões documentadas em `docs/matriz-permissoes.md`.
 - Não há recuperação de senha por e-mail nem MFA.
-- O campo `alunos.plano` permanece preservado como texto legado; catálogo, matrículas e revisão dos vínculos estão implementados e validados pela CI. A aplicação das migrations no XAMPP local continua pendente.
-- O financeiro, aulas, agenda e relatórios operacionais continuam fora dos blocos já implementados.
+- O campo `alunos.plano` permanece preservado como texto legado; catálogo, matrículas e revisão dos vínculos estão implementados e validados por CI. A aplicação das migrations 005/006 no XAMPP local continua pendente.
+- Frequência/check-in (Bloco 04) e financeiro (Bloco 05) estão implementados na branch e validados por CI em MySQL 8.0 e MariaDB 10.11; a validação local/manual continua pendente.
+- Aulas/agenda (Bloco 06) e relatórios operacionais (Bloco 07) ainda não foram especificados nem implementados.
+- A preparação para produção (Bloco 08) continua pendente e exige revisão de segurança, privilégios SQL, backups/restauração, HTTPS, monitoramento e privacidade.
 - A aplicação permanece acadêmica/local; não está preparada para uso público ou dados reais.
 
 ## Regras de execução
@@ -181,7 +216,7 @@ A migration 009 cria a estrutura de check-ins vinculada a alunos, matrículas e 
 
 ### Bloco 05 — Financeiro
 
-**Estado: núcleo transacional e primeira interface implementados; CI automatizada aprovada, validação manual/local pendente.** Especificação em [Bloco 05 — Financeiro](bloco-05-financeiro.md).
+**Estado: F-01 a F-08 implementados e validados pela CI em MySQL 8.0 e MariaDB 10.11; validação local/manual adiada.** A revisão final e o smoke test automatizado/HTTP estão documentados em [Bloco 05 — Financeiro](bloco-05-financeiro.md) e [Revisão financeira F-01 a F-08](revisao-financeira-2026-11-22.md). Não tratar a CI como validação do XAMPP nem como autorização para uso em produção.
 
 Decisões confirmadas:
 - Cada matrícula nova criada pelo sistema gera automaticamente uma única cobrança pelo valor total do plano.
@@ -192,15 +227,16 @@ Decisões confirmadas:
 - Preço e duração são configuráveis no catálogo; snapshots de matrículas/cobranças preservam o contrato. Não há override pontual de preço neste primeiro corte.
 - Matrículas legadas não recebem cobranças retroativas.
 
-Entregas iniciais:
-- Migration 010 cria as tabelas cobrancas e pagamentos.
+Entregas implementadas e validadas pela CI:
+- Migration 010 cria cobranças e pagamentos; migrations 011–013 adicionam idempotência, proteção append-only e constraints positivas.
 - Criação automática da cobrança dentro da transação de matrícula e auditoria.
-- Serviço financeiro para pagamentos parciais e cancelamento condicionado.
-- Tela financeiro.php, resumo de valores, status calculado e ações com CSRF.
-- RBAC finance.*: Administrador e Gestor; Operador sem acesso.
-- Testes de domínio, integração HTTP e compatibilidade visual aprovados na CI #1243–#1245, em MySQL 8.0/MariaDB 10.11.
+- Serviço de pagamentos parciais, cancelamento condicionado, fingerprint/idempotência e proteção de saldo sob concorrência.
+- Painel financeiro com saldo cobrável e saldo em revisão, histórico individual sem N+1, datas retroativas justificadas e formatação monetária sem `float`.
+- RBAC `finance.*`: Administrador e Gestor; Operador sem acesso. Teste HTTP direto confirma 403 para Operador na CI #1420.
+- F-01 a F-08: CIs #1332, #1361, #1362, #1385 e #1397 aprovadas em MySQL 8.0 e MariaDB 10.11.
+- CI #1420 validou integração HTTP/Playwright e regressão geral após as mudanças financeiras.
 
-**Ainda pendente:** revisar os fluxos de ponta a ponta, aplicar migration 010 no XAMPP somente após backup/inspeção e fazer teste manual. O Bloco 05 não deve ser considerado concluído nem pronto para produção.
+**Pendente e adiado:** aplicar migrations 010–013 no XAMPP após backup/inspeção e executar o smoke test local de `docs/guia-migrations-xampp.md`. Essa validação manual não bloqueia o início do Bloco 06, mas o Bloco 05 não deve ser descrito como validado no ambiente local nem pronto para produção.
 
 **Fora do escopo inicial:** gateways, cartão, Pix/boleto integrado, débito recorrente, parcelamento automático, estorno/devolução e multi-tenancy.
 
