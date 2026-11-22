@@ -506,6 +506,7 @@ $deleteCharges = $pdo->prepare(
     if ($actorId !== null) {
 }
 
+    $pdo->exec('DROP TABLE IF EXISTS cobrancas');
     $pdo->exec('DROP TABLE IF EXISTS revisoes_legado');
     $pdo->exec('DROP TABLE IF EXISTS matriculas');
     $pdo->exec('DROP TABLE IF EXISTS planos');
