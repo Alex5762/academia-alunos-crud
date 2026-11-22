@@ -684,6 +684,9 @@ db_exec "CREATE TABLE matriculas (
 
 curl -fsS -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/planos.php" -o "$TMP_DIR/plans-ready.html"
 assert_contains "$TMP_DIR/plans-ready.html" "Adicionar plano"
+HTTP_CODE="$(curl -sS -o "$TMP_DIR/manage-get.html" -w '%{http_code}' "$BASE_URL/gerenciar-plano.php")"
+[[ "$HTTP_CODE" == "405" ]] || fail "GET em gerenciar-plano.php deveria retornar 405; retornou $HTTP_CODE."
+
 PLAN_TOKEN="$(get_token "$TMP_DIR/plans-ready.html")"
 
 HTTP_CODE="$(curl -sS -o "$TMP_DIR/plans-csrf.html" -w '%{http_code}' -c "$COOKIE_JAR" -b "$COOKIE_JAR" -X POST "$BASE_URL/salvar-plano.php" \
@@ -701,6 +704,11 @@ PLAN_ID="$(db_value "SELECT id FROM planos WHERE nome = 'Plano CI em preparaçã
 PLAN_DRAFT="$(db_value "SELECT COUNT(*) FROM planos WHERE id = $PLAN_ID AND situacao = 'RASCUNHO' AND valor_atual IS NULL AND duracao_valor IS NULL")"
 [[ "$PLAN_DRAFT" == "1" ]] || fail "O plano incompleto não permaneceu como rascunho."
 
+curl -fsS -G -c "$COOKIE_JAR" -b "$COOKIE_JAR" \
+    --data-urlencode "editar=$PLAN_ID" "$BASE_URL/planos.php" -o "$TMP_DIR/plan-edit-form.html"
+assert_contains "$TMP_DIR/plan-edit-form.html" "Editar plano"
+assert_contains "$TMP_DIR/plan-edit-form.html" 'value="Plano CI em preparação"'
+
 PLAN_TOKEN="$(get_token "$TMP_DIR/plan-created.html")"
 curl -fsS -L -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/salvar-plano.php" \
     --data-urlencode "token=$PLAN_TOKEN" \
@@ -714,6 +722,10 @@ curl -fsS -L -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/salvar-plano.php" \
 assert_contains "$TMP_DIR/plan-updated.html" "Plano atualizado com sucesso."
 PLAN_VALID="$(db_value "SELECT COUNT(*) FROM planos WHERE id = $PLAN_ID AND nome = 'Plano CI Mensal' AND valor_atual = 149.90 AND duracao_valor = 1 AND duracao_unidade = 'MES'")"
 [[ "$PLAN_VALID" == "1" ]] || fail "A edição não normalizou nem persistiu os dados do plano."
+
+HTTP_CODE="$(curl -sS -o "$TMP_DIR/plan-manage-csrf.html" -w '%{http_code}' -c "$COOKIE_JAR" -b "$COOKIE_JAR" -X POST "$BASE_URL/gerenciar-plano.php" \
+    --data-urlencode "token=token-invalido" --data-urlencode "id=$PLAN_ID" --data-urlencode "acao=ativar")"
+[[ "$HTTP_CODE" == "403" ]] || fail "Gerenciar plano sem CSRF deveria retornar 403; retornou $HTTP_CODE."
 
 PLAN_TOKEN="$(get_token "$TMP_DIR/plan-updated.html")"
 curl -fsS -L -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/gerenciar-plano.php" \
