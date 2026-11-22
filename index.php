@@ -146,6 +146,12 @@ function iniciaisNome($nome) {
                 <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>
                 <span>Novo cadastro</span>
             </a>
+            <?php if (usuarioTemPermissao($usuario, 'attendance.view')) { ?>
+            <a class="nav-link" href="checkins.php">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5 9.5 17 19 7.5"/><circle cx="12" cy="12" r="9"/></svg>
+                <span>Frequência</span>
+            </a>
+            <?php } ?>
             <a class="nav-link" href="planos.php">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/><path d="M7 4v16M17 4v16"/></svg>
                 <span>Planos</span>
