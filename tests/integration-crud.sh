@@ -311,6 +311,7 @@ curl -fsS -L -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/alterar-perfil-usuario
 MANAGER_AUDIT_HTTP="$(curl -sS -o "$TMP_DIR/manager-audit.html" -w '%{http_code}' -c "$NEW_COOKIE_JAR" -b "$NEW_COOKIE_JAR" "$BASE_URL/auditoria.php")"
 [[ "$MANAGER_AUDIT_HTTP" == "200" ]] || fail "Gestor deveria consultar a central de auditoria; recebeu $MANAGER_AUDIT_HTTP."
 assert_contains "$TMP_DIR/manager-audit.html" "Central de auditoria"
+assert_contains "$TMP_DIR/manager-audit.html" "OPERADOR → GESTOR"
 
 ADMIN_USERS_HTTP="$(curl -sS -o "$TMP_DIR/admin-users-after-manager.html" -w '%{http_code}' -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/usuarios.php")"
 [[ "$ADMIN_USERS_HTTP" == "200" ]] || fail "Administrador deveria continuar acessando funcionários."
