@@ -94,6 +94,18 @@ try {
         throw new RuntimeException('O perfil do funcionário não foi alterado.');
     }
 
+    $registrarHistoricoPerfil = $pdo->prepare(
+        'INSERT INTO usuarios_perfis_eventos
+            (usuario_id, responsavel_id, perfil_anterior, perfil_novo)
+         VALUES (:usuario_id, :responsavel_id, :perfil_anterior, :perfil_novo)'
+    );
+    $registrarHistoricoPerfil->execute([
+        'usuario_id' => $usuarioAlvoId,
+        'responsavel_id' => $usuarioAtualId,
+        'perfil_anterior' => $perfilAtual,
+        'perfil_novo' => $perfilRecebido,
+    ]);
+
     registrarAuditoria(
         $pdo,
         $usuarioAtualId,
