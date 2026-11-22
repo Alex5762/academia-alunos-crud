@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace FitControl\Domain\Enrollment;
 
+require_once __DIR__ . '/../../Security/AuditIntegrityChain.php';
+
 use Closure;
 use DateTimeImmutable;
 use DateTimeZone;
@@ -149,17 +151,13 @@ final class EnrollmentCancellationService
                 );
             }
 
-            // Usa o mesmo contrato da função registrarAuditoria() do projeto.
-            $audit = $this->pdo->prepare(
-                'INSERT INTO auditoria (usuario_id, acao, entidade, entidade_id)
-                 VALUES (:usuario_id, :acao, :entidade, :entidade_id)'
+            AuditIntegrityChain::append(
+                $this->pdo,
+                $actorUserId,
+                'matricula_cancelada',
+                'matriculas',
+                $enrollmentId
             );
-            $audit->execute([
-                'usuario_id' => $actorUserId,
-                'acao' => 'matricula_cancelada',
-                'entidade' => 'matriculas',
-                'entidade_id' => $enrollmentId,
-            ]);
 
             $this->pdo->commit();
         } catch (Throwable $exception) {
