@@ -96,48 +96,74 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
     }
 }
 
-$charges = $pdo->query(
-    'SELECT
-        c.id,
-        c.valor_total,
-        c.data_vencimento,
-        c.cancelada_em_utc,
-        c.motivo_cancelamento,
-        m.id AS matricula_id,
-        m.aluno_id,
-        m.plano_nome_contratado,
-        m.cancelada_em AS matricula_cancelada_em,
-        a.nome AS aluno_nome,
-        COALESCE(SUM(p.valor), 0.00) AS valor_pago,
-        COUNT(p.id) AS quantidade_pagamentos
-     FROM cobrancas c
-     INNER JOIN matriculas m ON m.id = c.matricula_id
-     INNER JOIN alunos a ON a.id = m.aluno_id
-     LEFT JOIN pagamentos p ON p.cobranca_id = c.id
-     GROUP BY
-        c.id, c.valor_total, c.data_vencimento, c.cancelada_em_utc,
-        c.motivo_cancelamento, m.id, m.aluno_id, m.plano_nome_contratado,
-        m.cancelada_em, a.nome
-     ORDER BY c.data_vencimento DESC, c.id DESC
-     LIMIT 200'
-)->fetchAll(PDO::FETCH_ASSOC);
+$structureCheck = $pdo->query(
+    "SELECT COUNT(*)
+     FROM information_schema.TABLES
+     WHERE TABLE_SCHEMA = DATABASE()
+       AND TABLE_NAME IN ('alunos', 'matriculas', 'cobrancas', 'pagamentos')"
+);
+$financialStructureAvailable = (int) $structureCheck->fetchColumn() === 4;
 
-$summary = $pdo->query(
-    'SELECT
-        COALESCE(SUM(CASE WHEN c.cancelada_em_utc IS NULL THEN c.valor_total ELSE 0 END), 0.00) AS total_cobrado,
-        COALESCE(SUM(CASE WHEN c.cancelada_em_utc IS NULL THEN COALESCE(p.valor_pago, 0.00) ELSE 0 END), 0.00) AS total_pago,
-        COUNT(CASE WHEN c.cancelada_em_utc IS NULL THEN 1 END) AS total_cobrancas
-     FROM cobrancas c
-     LEFT JOIN (
-        SELECT cobranca_id, SUM(valor) AS valor_pago
-        FROM pagamentos
-        GROUP BY cobranca_id
-     ) p ON p.cobranca_id = c.id'
-)->fetch(PDO::FETCH_ASSOC);
+$charges = [];
+$summary = [
+    'total_cobrado' => '0.00',
+    'total_pago' => '0.00',
+    'total_cobrancas' => 0,
+];
+
+if ($financialStructureAvailable) {
+    $charges = $pdo->query(
+        'SELECT
+            c.id,
+            c.valor_total,
+            c.data_vencimento,
+            c.cancelada_em_utc,
+            c.motivo_cancelamento,
+            m.id AS matricula_id,
+            m.aluno_id,
+            m.plano_nome_contratado,
+            m.cancelada_em AS matricula_cancelada_em,
+            a.nome AS aluno_nome,
+            COALESCE(SUM(p.valor), 0.00) AS valor_pago,
+            COUNT(p.id) AS quantidade_pagamentos
+         FROM cobrancas c
+         INNER JOIN matriculas m ON m.id = c.matricula_id
+         INNER JOIN alunos a ON a.id = m.aluno_id
+         LEFT JOIN pagamentos p ON p.cobranca_id = c.id
+         GROUP BY
+            c.id, c.valor_total, c.data_vencimento, c.cancelada_em_utc,
+            c.motivo_cancelamento, m.id, m.aluno_id, m.plano_nome_contratado,
+            m.cancelada_em, a.nome
+         ORDER BY c.data_vencimento DESC, c.id DESC
+         LIMIT 200'
+    )->fetchAll(PDO::FETCH_ASSOC);
+
+    $summary = $pdo->query(
+        'SELECT
+            COALESCE(SUM(CASE WHEN c.cancelada_em_utc IS NULL THEN c.valor_total ELSE 0 END), 0.00) AS total_cobrado,
+            COALESCE(SUM(CASE WHEN c.cancelada_em_utc IS NULL THEN COALESCE(p.valor_pago, 0.00) ELSE 0 END), 0.00) AS total_pago,
+            COUNT(CASE WHEN c.cancelada_em_utc IS NULL THEN 1 END) AS total_cobrancas
+         FROM cobrancas c
+         LEFT JOIN (
+            SELECT cobranca_id, SUM(valor) AS valor_pago
+            FROM pagamentos
+            GROUP BY cobranca_id
+         ) p ON p.cobranca_id = c.id'
+    )->fetch(PDO::FETCH_ASSOC);
+}
 
 function financeiroMoeda(string|int|float|null $value): string
 {
     return 'R$ ' . number_format((float) ($value ?? 0), 2, ',', '.');
+}
+
+function financeiroCentavos(string|int|float|null $value): int
+{
+    $normalized = (string) ($value ?? '0.00');
+    if (preg_match('/^(\\d{1,8})\\.(\\d{2})$/D', $normalized, $parts) !== 1) {
+        throw new UnexpectedValueException('Valor monetário inválido retornado pelo banco.');
+    }
+    return ((int) $parts[1] * 100) + (int) $parts[2];
 }
 
 function financeiroStatus(array $charge, string $today): array
@@ -145,22 +171,22 @@ function financeiroStatus(array $charge, string $today): array
     if ($charge['cancelada_em_utc'] !== null) {
         return ['Cancelada', 'is-inactive'];
     }
-    $totalCents = (int) round((float) $charge['valor_total'] * 100);
-    $paidCents = (int) round((float) $charge['valor_pago'] * 100);
+    $totalCents = financeiroCentavos($charge['valor_total']);
+    $paidCents = financeiroCentavos($charge['valor_pago']);
     if ($paidCents >= $totalCents) {
         return ['Quitada', 'is-active'];
+    }
+    if ((string) $charge['data_vencimento'] < $today) {
+        return [$paidCents > 0 ? 'Parcial vencida' : 'Vencida', 'is-expired'];
     }
     if ($paidCents > 0) {
         return ['Parcial', 'is-pending'];
     }
-    if ((string) $charge['data_vencimento'] < $today) {
-        return ['Vencida', 'is-expired'];
-    }
     return ['Em aberto', 'is-scheduled'];
 }
 
-$totalCobradoCents = (int) round((float) ($summary['total_cobrado'] ?? 0) * 100);
-$totalPagoCents = (int) round((float) ($summary['total_pago'] ?? 0) * 100);
+$totalCobradoCents = financeiroCentavos($summary['total_cobrado'] ?? '0.00');
+$totalPagoCents = financeiroCentavos($summary['total_pago'] ?? '0.00');
 $totalSaldoCents = max(0, $totalCobradoCents - $totalPagoCents);
 ?>
 <!DOCTYPE html>
@@ -211,7 +237,12 @@ $totalSaldoCents = max(0, $totalCobradoCents - $totalPagoCents);
             </div>
         </div>
 
-        <?php if ($charges === []) { ?>
+        <?php if (!$financialStructureAvailable) { ?>
+            <div class="compact-empty">
+                <strong>Financeiro ainda não instalado</strong>
+                <span>Depois de backup e validação das migrations 005–010, esta tela exibirá cobranças e pagamentos. Nenhuma alteração foi feita no banco.</span>
+            </div>
+        <?php } elseif ($charges === []) { ?>
             <div class="compact-empty">
                 <strong>Nenhuma cobrança registrada</strong>
                 <span>Uma cobrança será criada automaticamente ao confirmar uma nova matrícula.</span>
@@ -233,8 +264,8 @@ $totalSaldoCents = max(0, $totalCobradoCents - $totalPagoCents);
                     <tbody>
                     <?php foreach ($charges as $charge) {
                         [$statusLabel, $statusClass] = financeiroStatus($charge, $dataHoje);
-                        $totalCents = (int) round((float) $charge['valor_total'] * 100);
-                        $paidCents = (int) round((float) $charge['valor_pago'] * 100);
+                        $totalCents = financeiroCentavos($charge['valor_total']);
+                        $paidCents = financeiroCentavos($charge['valor_pago']);
                         $balanceCents = max(0, $totalCents - $paidCents);
                         $cancelledEnrollment = $charge['matricula_cancelada_em'] !== null;
                         $chargeCancelled = $charge['cancelada_em_utc'] !== null;

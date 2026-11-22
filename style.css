@@ -3329,3 +3329,33 @@ body:not(.dashboard-body) .theme-option[aria-pressed="true"] {
         flex: 1 1 auto;
     }
 }
+
+
+/* Bloco 05 — ações financeiras em linha, com quebra segura em telas estreitas. */
+.finance-inline-form {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    min-width: 15rem;
+}
+
+.finance-inline-form input,
+.finance-inline-form select {
+    min-width: 7rem;
+    max-width: 10rem;
+}
+
+@media (max-width: 640px) {
+    .finance-inline-form {
+        min-width: 12rem;
+        align-items: stretch;
+    }
+
+    .finance-inline-form input,
+    .finance-inline-form select,
+    .finance-inline-form .button {
+        width: 100%;
+        max-width: none;
+    }
+}
