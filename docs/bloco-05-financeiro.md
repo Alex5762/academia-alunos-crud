@@ -138,6 +138,15 @@ A migration 010 deve ser executada somente após backup e conferência da versã
 - A CI aplica a migration 013 nos jobs MySQL 8.0 e MariaDB 10.11, além do caminho de integração/browser.
 - Requisito de compatibilidade: MySQL 8.0.16+; conferir dados inválidos antes da migration e não corrigir histórico automaticamente.
 
+## F-06 — Concorrência no limite do saldo
+
+- O teste mantém a linha da cobrança bloqueada na conexão principal e inicia dois processos PHP com conexões PDO independentes.
+- As duas requisições usam chaves idempotentes distintas e tentam registrar R$ 200,00 cada em uma cobrança de R$ 300,00.
+- Após a liberação do lock, uma requisição deve confirmar e a outra deve receber a rejeição de domínio por exceder o saldo restante.
+- O teste verifica exatamente um pagamento de R$ 200,00 e exatamente um evento de auditoria para o lançamento aceito.
+- O cenário anterior de F-01 permanece: reenvio concorrente da mesma operação e mesma chave deve retornar o mesmo ID sem duplicar pagamento.
+- **Estado:** implementado na branch; aguarda validação da CI #1362 em MySQL 8.0 e MariaDB 10.11.
+
 ## Estado
 
-**F-01 a F-04 validados na CI #1332; F-05 implementado e aguardando CI #1350.** Migration 013 documentada com pré-verificação dos dados e cautela para falha parcial dos dois comandos DDL. As migrations 011 e 012 estão incluídas na CI e no guia XAMPP. Não aplicar migrations no banco local sem backup e validação. PR #1 permanece Draft.
+**F-01 a F-04 validados na CI #1332; F-05 validado na CI #1361; F-06 implementado e aguardando CI #1362.** Migration 013 documentada com pré-verificação dos dados e cautela para falha parcial dos dois comandos DDL. As migrations 011 e 012 estão incluídas na CI e no guia XAMPP. Não aplicar migrations no banco local sem backup e validação. PR #1 permanece Draft.
