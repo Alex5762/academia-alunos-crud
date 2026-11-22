@@ -235,6 +235,91 @@ final class AuditIntegrityCheckpoint
     }
 
     /**
+     * Compara dois checkpoints assinados do mesmo banco e da mesma linhagem.
+     * Ambos também precisam continuar presentes na cadeia atual.
+     *
+     * @return array{ok: bool, message: string, older_event_id?: int, newer_event_id?: int, events_between?: int}
+     */
+    public static function compare(
+        PDO $pdo,
+        string $databaseName,
+        string $secret,
+        string $olderPath,
+        string $newerPath
+    ): array {
+        try {
+            $olderEnvelope = self::readEnvelope($olderPath);
+            $newerEnvelope = self::readEnvelope($newerPath);
+            $olderPayload = $olderEnvelope['payload'];
+            $newerPayload = $newerEnvelope['payload'];
+
+            self::validatePayload($olderPayload);
+            self::validatePayload($newerPayload);
+            self::assertConfiguration($databaseName, $secret);
+            self::assertConnectedDatabase($pdo, $databaseName);
+
+            if (
+                !hash_equals($databaseName, $olderPayload['database_name'])
+                || !hash_equals($databaseName, $newerPayload['database_name'])
+            ) {
+                throw new RuntimeException('Os checkpoints não pertencem ao banco conectado.');
+            }
+
+            $expectedOlderSignature = hash_hmac('sha256', self::canonicalPayload($olderPayload), $secret);
+            $expectedNewerSignature = hash_hmac('sha256', self::canonicalPayload($newerPayload), $secret);
+            if (
+                !hash_equals($expectedOlderSignature, $olderEnvelope['signature'])
+                || !hash_equals($expectedNewerSignature, $newerEnvelope['signature'])
+            ) {
+                throw new RuntimeException('Um dos checkpoints possui assinatura HMAC inválida.');
+            }
+
+            if (
+                $olderPayload['baseline_event_id'] !== $newerPayload['baseline_event_id']
+                || !hash_equals($olderPayload['baseline_hash'], $newerPayload['baseline_hash'])
+            ) {
+                throw new RuntimeException('Os checkpoints pertencem a marcos históricos diferentes.');
+            }
+
+            $olderId = $olderPayload['checkpoint_event_id'];
+            $newerId = $newerPayload['checkpoint_event_id'];
+            if ($olderId > $newerId) {
+                throw new RuntimeException('A ordem dos checkpoints está invertida.');
+            }
+
+            if (
+                $olderId === $newerId
+                && !hash_equals($olderPayload['checkpoint_hash'], $newerPayload['checkpoint_hash'])
+            ) {
+                throw new RuntimeException('Mesmo identificador com hashes diferentes: checkpoints incompatíveis.');
+            }
+
+            $olderVerification = self::verify($pdo, $databaseName, $secret, $olderPath);
+            if (!$olderVerification['ok']) {
+                throw new RuntimeException('Checkpoint anterior inválido: ' . $olderVerification['message']);
+            }
+
+            $newerVerification = self::verify($pdo, $databaseName, $secret, $newerPath);
+            if (!$newerVerification['ok']) {
+                throw new RuntimeException('Checkpoint posterior inválido: ' . $newerVerification['message']);
+            }
+
+            return [
+                'ok' => true,
+                'message' => 'Checkpoints válidos e pertencentes à mesma cadeia.',
+                'older_event_id' => $olderId,
+                'newer_event_id' => $newerId,
+                'events_between' => max(0, $newerId - $olderId),
+            ];
+        } catch (Throwable $error) {
+            return [
+                'ok' => false,
+                'message' => $error->getMessage(),
+            ];
+        }
+    }
+
+    /**
      * Serialização canônica pública para permitir interoperabilidade e testes.
      * As chaves extras são rejeitadas antes desta função ser usada para verificar.
      */
