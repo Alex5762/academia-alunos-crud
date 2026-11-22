@@ -356,9 +356,11 @@ Depois de aplicar e validar as migrations 010 e 011, faça backup e execute uma 
 "C:\\xampp\\mysql\\bin\\mysql.exe" --host=127.0.0.1 --port=3306 --user=root academia_alunos < database\\migrations\\012_pagamentos_append_only.sql
 ```
 
-A migration bloqueia INSERT direto fora do serviço financeiro e impede UPDATE/DELETE de pagamentos confirmados. Correções futuras deverão usar lançamentos compensatórios, como estorno/devolução, sem alterar o recebimento original. A variável de sessão de limpeza existe somente para o teardown dos testes automatizados e manutenção controlada; não deve ser usada pelo fluxo da aplicação.
+A migration instala guards que bloqueiam INSERT pelo fluxo normal sem a variável de sessão esperada e impedem UPDATE/DELETE de pagamentos confirmados. Correções futuras deverão usar lançamentos compensatórios, como estorno/devolução, sem alterar o recebimento original.
 
-### 13. Migration 013 — Valores financeiros positivos
+**Limite de segurança:** variáveis de sessão podem ser definidas por qualquer conexão que tenha as mesmas credenciais SQL; portanto, esses guards não substituem privilégios de banco. A variável de limpeza usada no teardown dos testes é uma convenção de teste, não uma permissão restrita pelo servidor. Em ambiente exposto, use conta SQL de menor privilégio e rotina controlada/definer com DML direto revogado. No XAMPP local, não reutilize root sem senha em rede ou ambiente público.
+
+### 12. Migration 013 — Valores financeiros positivos
 
 Depois de validar as migrations 010, 011 e 012, faça backup e execute uma única vez:
 
