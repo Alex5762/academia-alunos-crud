@@ -519,7 +519,15 @@ if ($estruturaDisponivel) {
                                 <?php if (!empty($evento['fonte_referencia'])) { ?>
                                     <p><strong>Fonte:</strong> <?= escapar($evento['fonte_referencia']) ?></p>
                                 <?php } ?>
-                                <?php if ($evento['tipo_evento'] === 'RETIFICACAO_VIGENCIA') { ?>
+                                <?php if (
+                                    $evento['tipo_evento'] === 'DECISAO'
+                                    && $evento['resultado_novo'] === 'VINCULO_CONFIRMADO'
+                                ) { ?>
+                                    <p><strong>Intervalo comprovado na decisão:</strong>
+                                        <?= escapar($evento['inicio_novo'] ?? 'Não informado') ?>
+                                        → <?= escapar($evento['fim_exclusivo_novo'] ?? 'Não informado') ?>
+                                    </p>
+                                <?php } elseif ($evento['tipo_evento'] === 'RETIFICACAO_VIGENCIA') { ?>
                                     <p><strong>Intervalo anterior:</strong>
                                         <?= escapar($evento['inicio_anterior'] ?? 'Não informado') ?>
                                         → <?= escapar($evento['fim_exclusivo_anterior'] ?? 'Não informado') ?>
