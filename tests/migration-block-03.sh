@@ -11,6 +11,16 @@ mysql_cmd() {
   "${MYSQL_BIN}" --host="${MYSQL_HOST}" --port="${MYSQL_PORT}" --user="${MYSQL_USER}" --database="${MYSQL_DATABASE}" --batch --skip-column-names "$@"
 }
 
+assert_equals() {
+  local expected="$1"
+  local actual="$2"
+  local message="$3"
+  if [[ "${expected}" != "${actual}" ]]; then
+    printf 'FALHA: %s (esperado=%s, obtido=%s)\n' "${message}" "${expected}" "${actual}" >&2
+    exit 1
+  fi
+}
+
 migration_dir="database/migrations"
 
 echo "Importando schema base e migrations 001–004..."
@@ -52,15 +62,7 @@ VALUES ('Nova conta RBAC', 'rbac-new@example.test', 'hash-ficticio', 1, 1);
 SQL
 assert_equals "OPERADOR" "$(mysql_cmd -e "SELECT perfil FROM usuarios WHERE email = 'rbac-new@example.test'")" "novas contas devem receber o perfil de menor privilégio"
 
-assert_equals() {
-  local expected="$1"
-  local actual="$2"
-  local message="$3"
-  if [[ "${expected}" != "${actual}" ]]; then
-    printf 'FALHA: %s (esperado=%s, obtido=%s)\n' "${message}" "${expected}" "${actual}" >&2
-    exit 1
-  fi
-}
+
 
 assert_equals "2" "$(mysql_cmd -e "SELECT COUNT(*) FROM revisoes_legado")" "deve criar uma revisão por aluno legado"
 assert_equals "2" "$(mysql_cmd -e "SELECT COUNT(*) FROM revisoes_legado WHERE resultado_atual = 'PENDENTE_REVISAO' AND fonte_referencia IS NULL")" "revisões iniciais devem ficar pendentes e sem evidência inventada"
