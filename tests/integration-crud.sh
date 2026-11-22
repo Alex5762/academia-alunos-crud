@@ -1033,6 +1033,17 @@ assert_contains "$TMP_DIR/rectification-history.html" "Intervalo anterior:"
 assert_contains "$TMP_DIR/rectification-history.html" "Novo intervalo:"
 assert_contains "$TMP_DIR/rectification-history.html" "Contrato original assinado, folha 12"
 
+# Restaura o fixture ao estado pendente para executar, em seguida, o teste original de decisão.
+db_exec "UPDATE revisoes_legado SET resultado_atual = 'PENDENTE_REVISAO' WHERE id = $REVIEW_ID"
+db_exec "INSERT INTO revisoes_legado_eventos (
+    revisao_legado_id, usuario_id, tipo_evento, resultado_anterior,
+    resultado_novo, fonte_referencia, observacoes
+) VALUES (
+    $REVIEW_ID, $USUARIO_ID, 'DECISAO', 'VINCULO_CONFIRMADO',
+    'PENDENTE_REVISAO', 'Fixture automatizado de CI',
+    'Retificação validada; cenário seguinte testa reabertura da revisão'
+)"
+
 echo "9.4/10 - Validando fila administrativa e decisão auditada de revisão..."
 curl -fsS -G -c "$COOKIE_JAR" -b "$COOKIE_JAR" \
     --data-urlencode "filtro=pendentes" "$BASE_URL/revisoes-legado.php" \
