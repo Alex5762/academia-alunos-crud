@@ -221,7 +221,7 @@ Para conferir os resultados, consulte a aba **Actions** do GitHub. Uma execuçã
 - [Pesquisa, implementação e estado do Bloco 03 — planos e matrículas](docs/bloco-03-planos-matriculas.md)
 - [Bloco 04 — frequência e check-in](docs/bloco-04-frequencia-checkin.md)
 - [Bloco 05 — financeiro](docs/bloco-05-financeiro.md)
-- [Bloco 06 — especificação inicial de aulas e agenda](docs/bloco-06-aulas-agenda.md)
+- [Bloco 06 — grade fixa de aulas](docs/bloco-06-aulas-agenda.md)
 - [Revisão técnica do financeiro](docs/revisao-financeira-2026-11-22.md)
 - [Procedimento seguro para aplicar migrations 005–013 e validar o XAMPP](docs/guia-migrations-xampp.md)
 - [Bloco 05 — financeiro: arquitetura, implementação e validação](docs/bloco-05-financeiro.md)
