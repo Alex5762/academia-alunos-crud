@@ -196,7 +196,7 @@ try {
         'A leitura autenticada deve expor o identificador assinado sem exigir consulta mutável.'
     );
 
-    $consistentReport = \\FitControl\\Security\\AuditRecoveryDiagnostic::diagnose(
+    $consistentReport = \FitControl\Security\AuditRecoveryDiagnostic::diagnose(
         $pdo,
         $databaseName,
         $secret,
@@ -208,7 +208,7 @@ try {
     );
     assertCheckpoint($consistentReport['read_only'] === true, 'O relatório deve declarar execução somente leitura.');
 
-    $rollbackReport = \\FitControl\\Security\\AuditRecoveryDiagnostic::diagnose(
+    $rollbackReport = \FitControl\Security\AuditRecoveryDiagnostic::diagnose(
         $pdo,
         $databaseName,
         $secret,
@@ -223,7 +223,7 @@ try {
         'O relatório deve identificar o checkpoint posterior à restauração.'
     );
 
-    $tamperedReport = \\FitControl\\Security\\AuditRecoveryDiagnostic::diagnose(
+    $tamperedReport = \FitControl\Security\AuditRecoveryDiagnostic::diagnose(
         $pdo,
         $databaseName,
         $secret,
