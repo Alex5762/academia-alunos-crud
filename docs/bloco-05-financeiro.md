@@ -154,8 +154,18 @@ A migration 010 deve ser executada somente após backup e conferência da versã
 - `toCents()` centraliza a conversão exata de decimal para inteiro, com proteção contra overflow.
 - O formatador usa separadores brasileiros de milhar e decimal, valida exatamente duas casas e rejeita entradas inválidas e `float`.
 - Testes unitários cobrem valores zero, centavos, milhares, valores grandes, negativos e rejeição de tipos aproximados.
-- **Estado:** implementado; aguarda CI.
+- **Validação:** suíte unitária, sintaxe PHP e integração CRUD aprovadas integralmente na CI #1385.
+
+## F-08 — Política de datas retroativas
+
+- A política permite registrar um recebimento passado, desde que o responsável informe uma observação/justificativa.
+- Datas futuras são proibidas tanto no serviço quanto no formulário.
+- O formulário apresenta data de pagamento visível, inicia em hoje no fuso da academia e usa hoje como limite máximo da interface.
+- O serviço normaliza a observação e exige justificativa quando `data_pagamento` for anterior à data local da academia; não confia no limite HTML.
+- Testes de integração verificam retroativo sem observação (rejeitado), retroativo com observação (aceito e preservado) e data futura (rejeitada mesmo com observação).
+- Data e observação permanecem incluídas no fingerprint de idempotência e na consulta de histórico.
+- **Estado:** implementado; aguardando validação na CI.
 
 ## Estado
 
-**F-01 a F-04 validados na CI #1332; F-05 validado na CI #1361; F-06 validado nos jobs financeiros da CI #1362; F-07 implementado e aguardando CI.** A execução geral da CI ainda está concluindo os jobs de integração; não aplicar migrations no banco local sem backup e validação. PR #1 permanece Draft. Migration 013 documentada com pré-verificação dos dados e cautela para falha parcial dos dois comandos DDL. As migrations 011 e 012 estão incluídas na CI e no guia XAMPP. Não aplicar migrations no banco local sem backup e validação. PR #1 permanece Draft.
+**F-01 a F-04 validados na CI #1332; F-05 validado na CI #1361; F-06 validado integralmente na CI #1362; F-07 validado integralmente na CI #1385; F-08 implementado e aguardando CI.** A execução geral da CI ainda está concluindo os jobs de integração; não aplicar migrations no banco local sem backup e validação. PR #1 permanece Draft. Migration 013 documentada com pré-verificação dos dados e cautela para falha parcial dos dois comandos DDL. As migrations 011 e 012 estão incluídas na CI e no guia XAMPP. Não aplicar migrations no banco local sem backup e validação. PR #1 permanece Draft.
