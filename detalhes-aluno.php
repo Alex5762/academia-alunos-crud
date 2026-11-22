@@ -413,6 +413,24 @@ unset($_SESSION['mensagem']);
                                         · <?= escapar($matricula['motivo_cancelamento']) ?>
                                     <?php } ?>
                                 </p>
+                            <?php } elseif (in_array($situacao, ['AGENDADA', 'ATIVA'], true)) { ?>
+                                <form action="cancelar-matricula.php" method="post" class="enrollment-cancel-form">
+                                    <input type="hidden" name="token" value="<?= escapar($_SESSION['token']) ?>">
+                                    <input type="hidden" name="student_id" value="<?= (int) $aluno['id'] ?>">
+                                    <input type="hidden" name="enrollment_id" value="<?= (int) $matricula['id'] ?>">
+                                    <label for="motivo-cancelamento-<?= (int) $matricula['id'] ?>">
+                                        Motivo do cancelamento <span class="optional-label">opcional</span>
+                                    </label>
+                                    <input type="text"
+                                           id="motivo-cancelamento-<?= (int) $matricula['id'] ?>"
+                                           name="motivo_cancelamento"
+                                           maxlength="255"
+                                           placeholder="Ex.: solicitação do aluno">
+                                    <button class="button button-search" type="submit">Cancelar matrícula</button>
+                                    <small class="field-hint">
+                                        O cancelamento é imediato e ficará registrado no histórico com o funcionário responsável.
+                                    </small>
+                                </form>
                             <?php } ?>
                         </li>
                     <?php } ?>
