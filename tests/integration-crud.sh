@@ -791,6 +791,66 @@ UNUSED_PLAN_AUDIT="$(db_value "SELECT COUNT(*) FROM auditoria WHERE usuario_id =
 PLAN_ACTOR_AUDIT="$(db_value "SELECT COUNT(*) FROM auditoria WHERE usuario_id = $USUARIO_ID AND acao = 'plano_ativado' AND entidade = 'planos' AND entidade_id = $PLAN_ID")"
 [[ "$PLAN_ACTOR_AUDIT" == "2" ]] || fail "Ativação inicial e reativação não foram auditadas pelo funcionário correto."
 
+# Amplia o fixture descartável para validar o histórico no perfil do aluno.
+db_exec "ALTER TABLE matriculas
+    ADD COLUMN aluno_id INT UNSIGNED NULL AFTER id,
+    ADD COLUMN duracao_contratada_valor SMALLINT UNSIGNED NULL,
+    ADD COLUMN duracao_contratada_unidade ENUM('DIA','SEMANA','MES') NULL,
+    ADD COLUMN inicio_em DATETIME NULL,
+    ADD COLUMN fim_exclusivo_em DATETIME NULL,
+    ADD COLUMN cancelada_em DATETIME NULL,
+    ADD COLUMN origem ENUM('SISTEMA','LEGADO') NOT NULL DEFAULT 'SISTEMA',
+    ADD COLUMN motivo_cancelamento VARCHAR(255) NULL,
+    ADD COLUMN criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP"
+
+db_exec "CREATE TABLE revisoes_legado (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    aluno_id_origem INT UNSIGNED NOT NULL,
+    resultado_atual ENUM('VINCULO_CONFIRMADO','LEGADO_SEM_VIGENCIA','PENDENTE_REVISAO')
+        NOT NULL DEFAULT 'PENDENTE_REVISAO',
+    fonte_referencia VARCHAR(255) NULL,
+    atualizado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_profile_legacy_student (aluno_id_origem)
+) ENGINE=InnoDB"
+
+db_exec "INSERT INTO matriculas (
+    aluno_id, plano_id, plano_nome_contratado, valor_contratado,
+    duracao_contratada_valor, duracao_contratada_unidade,
+    inicio_em, fim_exclusivo_em, origem
+) VALUES (
+    $ALUNO_ID, $PLAN_ID, 'Plano CI Mensal', 149.90,
+    1, 'MES', UTC_TIMESTAMP() - INTERVAL 1 DAY,
+    UTC_TIMESTAMP() + INTERVAL 30 DAY, 'SISTEMA'
+)"
+
+db_exec "INSERT INTO matriculas (
+    aluno_id, plano_id, plano_nome_contratado, valor_contratado,
+    duracao_contratada_valor, duracao_contratada_unidade,
+    inicio_em, fim_exclusivo_em, cancelada_em, origem, motivo_cancelamento
+) VALUES (
+    $ALUNO_ID, $PLAN_ID, 'Plano CI Cancelado', 99.90,
+    1, 'MES', UTC_TIMESTAMP() - INTERVAL 2 DAY,
+    UTC_TIMESTAMP() + INTERVAL 28 DAY,
+    UTC_TIMESTAMP() - INTERVAL 1 HOUR, 'SISTEMA', 'Teste de preservação histórica'
+)"
+
+db_exec "INSERT INTO revisoes_legado (
+    aluno_id_origem, resultado_atual, fonte_referencia
+) VALUES ($ALUNO_ID, 'PENDENTE_REVISAO', 'Fixture automatizado de CI')"
+
+curl -fsS -G -c "$COOKIE_JAR" -b "$COOKIE_JAR" \
+    --data-urlencode "id=$ALUNO_ID" "$BASE_URL/detalhes-aluno.php" \
+    -o "$TMP_DIR/detail-enrollments.html"
+assert_contains "$TMP_DIR/detail-enrollments.html" "Histórico de matrículas"
+assert_contains "$TMP_DIR/detail-enrollments.html" "Plano CI Mensal"
+assert_contains "$TMP_DIR/detail-enrollments.html" "Plano CI Cancelado"
+assert_contains "$TMP_DIR/detail-enrollments.html" "Ativa"
+assert_contains "$TMP_DIR/detail-enrollments.html" "Cancelada"
+assert_contains "$TMP_DIR/detail-enrollments.html" "R$ 149,90"
+assert_contains "$TMP_DIR/detail-enrollments.html" "Teste de preservação histórica"
+assert_contains "$TMP_DIR/detail-enrollments.html" "Revisão do vínculo pendente"
+assert_contains "$TMP_DIR/detail-enrollments.html" "Fixture automatizado de CI"
+
 # Limpa apenas as tabelas descartáveis criadas por este teste.
 db_exec "DELETE FROM auditoria WHERE entidade = 'planos' AND entidade_id IN ($PLAN_ID, $UNUSED_PLAN_ID)"
 db_exec "DELETE FROM matriculas WHERE plano_id = $PLAN_ID"
