@@ -208,6 +208,15 @@ unset($_SESSION['mensagem']);
         </dl>
         <div class="student-detail-actions">
             <a class="button button-primary" href="<?= escapar(urlCadastroAluno((int) $aluno['id'], $contextoLista)) ?>">Editar cadastro</a>
+            <?php if (
+                $historicoMatriculasDisponivel
+                && $ativo
+                && ($revisaoLegado === null || $revisaoLegado['resultado_atual'] !== 'PENDENTE_REVISAO')
+            ) { ?>
+                <a class="button button-primary" href="planos.php?nova_matricula=1&amp;aluno_id=<?= (int) $aluno['id'] ?>">
+                    Registrar matrícula
+                </a>
+            <?php } ?>
             <form action="alterar-status-aluno.php" method="post">
                 <input type="hidden" name="token" value="<?= escapar($_SESSION['token']) ?>">
                 <input type="hidden" name="id" value="<?= (int) $aluno['id'] ?>">
