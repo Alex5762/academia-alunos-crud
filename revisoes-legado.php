@@ -3,6 +3,7 @@ require_once __DIR__ . '/funcoes.php';
 require_once __DIR__ . '/conexao.php';
 
 $usuario = exigirAutenticacao($pdo);
+exigirPermissao($usuario, 'legacy.view');
 
 function rotuloResultadoRevisaoLegado(string $resultado): string
 {
