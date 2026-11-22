@@ -1083,7 +1083,7 @@ assert_contains "$TMP_DIR/legacy-review-saved.html" "$RESPONSAVEL_REVISAO"
 
 REVIEW_STATE="$(db_value "SELECT resultado_atual FROM revisoes_legado WHERE id = $REVIEW_ID")"
 [[ "$REVIEW_STATE" == "PENDENTE_REVISAO" ]] || fail "A decisão não preservou o bloqueio da revisão pendente."
-REVIEW_EVENT_COUNT="$(db_value "SELECT COUNT(*) FROM revisoes_legado_eventos WHERE revisao_legado_id = $REVIEW_ID AND resultado_novo = 'PENDENTE_REVISAO'")"
+REVIEW_EVENT_COUNT="$(db_value "SELECT COUNT(*) FROM revisoes_legado_eventos WHERE revisao_legado_id = $REVIEW_ID AND resultado_novo = 'PENDENTE_REVISAO' AND fonte_referencia = 'Documento ilegível, pasta CI'")"
 [[ "$REVIEW_EVENT_COUNT" == "1" ]] || fail "A decisão não gerou exatamente um evento especializado."
 REVIEW_AUDIT_COUNT="$(db_value "SELECT COUNT(*) FROM auditoria WHERE usuario_id = $USUARIO_ID AND acao = 'revisao_legado_decidida' AND entidade = 'revisoes_legado' AND entidade_id = $REVIEW_ID")"
 [[ "$REVIEW_AUDIT_COUNT" == "1" ]] || fail "A decisão não gerou exatamente uma auditoria geral."
