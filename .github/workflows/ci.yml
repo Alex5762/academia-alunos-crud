@@ -351,6 +351,8 @@ jobs:
           test -f scripts/verificar-integridade-auditoria.php
           test -f scripts/registrar-eventos-demo.php
           test -f src/Security/AuditIntegrityCheckpoint.php
+          test -f src/Security/AuditRecoveryDiagnostic.php
+          test -f scripts/diagnosticar-recuperacao-auditoria.php
           test -f scripts/exportar-checkpoint-auditoria.php
           test -f scripts/verificar-checkpoint-auditoria.php
           test -f scripts/comparar-checkpoints-auditoria.php
@@ -438,7 +440,7 @@ jobs:
           MYSQL_PWD: root
         run: php tests/database-audit-integrity.php
 
-      - name: Test signed external audit checkpoints
+      - name: Test signed checkpoints and read-only recovery diagnosis
         env:
           DB_HOST: 127.0.0.1
           DB_PORT: 3306
