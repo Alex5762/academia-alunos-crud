@@ -63,6 +63,8 @@ As imagens abaixo são capturadas automaticamente pelo GitHub Actions com regist
 - Expiração após 30 minutos sem interação ou 8 horas desde o login, com aviso antecipado e opção de continuar conectado.
 - Sincronização autenticada da sessão enquanto o funcionário interage com a página, sem renovar sessões abandonadas.
 - Auditoria de login/logout e das operações de cadastro, edição, inativação e reativação de alunos.
+- Registro manual de frequência, com check-in diário vinculado à matrícula vigente e ao funcionário responsável.
+- Histórico de presenças filtrável por aluno e período, com indicadores de check-ins do dia e do mês.
 - Catálogo administrativo de planos, com rascunho, ativação, inativação e proteção de planos vinculados a matrículas.
 - Contratação e histórico de matrículas com snapshot de preço/duração, cálculo de vigência, detecção de sobreposição e cancelamento auditado.
 - Fila de revisão de vínculos legados, decisões fundamentadas por evidência e histórico append-only.
@@ -160,6 +162,12 @@ O projeto mantém os padrões comuns do XAMPP (host `127.0.0.1`, porta `3306`, b
 
 Não coloque credenciais reais no repositório. Em ambientes compartilhados, configure os valores no ambiente de execução ou nos secrets do provedor.
 
+## Frequência e check-in
+
+A página `checkins.php` permite registrar entradas manualmente e consultar o histórico por período e aluno. O servidor aceita check-in apenas para aluno ativo com exatamente uma matrícula vigente, registra o instante em UTC e a data civil no fuso `America/Sao_Paulo`, e impede mais de uma entrada por aluno no mesmo dia. Cada registro identifica a matrícula e o funcionário responsável e gera evento na cadeia de auditoria. QR Code, catraca, registro retroativo e edição/exclusão de presenças não fazem parte deste bloco.
+
+A estrutura é criada pela migration `database/migrations/009_attendance_checkins.sql`, após as migrations 005–008. Antes de aplicar no XAMPP, faça backup, confira versão e InnoDB e siga o procedimento local; não execute a migration em banco com dados reais.
+
 ## Testes automatizados
 
 O workflow [CI - Academia Alunos CRUD](https://github.com/Alex5762/academia-alunos-crud/actions/workflows/ci.yml) é executado em pushes para \`main\` e \`feat/dashboard-portfolio\`, além de pull requests destinados a \`main\`.
@@ -203,6 +211,7 @@ Para conferir os resultados, consulte a aba **Actions** do GitHub. Uma execuçã
 - [Planejamento do Bloco 01 — autenticação e auditoria](docs/bloco-01-autenticacao.md)
 - [Planejamento do Bloco 02 — gestão de alunos](docs/bloco-02-gestao-alunos.md)
 - [Pesquisa, implementação e estado do Bloco 03 — planos e matrículas](docs/bloco-03-planos-matriculas.md)
+- [Bloco 04 — frequência e check-in](docs/bloco-04-frequencia-checkin.md)
 - [Procedimento seguro para aplicar migrations 005/006 no XAMPP](docs/guia-migrations-xampp.md)
 - [Roadmap e critérios de evolução por blocos](docs/roadmap.md)
 - [Modelo de dados e migração de autenticação/auditoria](docs/modelo-dados-autenticacao-auditoria.md)
@@ -211,7 +220,7 @@ Para conferir os resultados, consulte a aba **Actions** do GitHub. Uma execuçã
 
 Depois de entrar com uma conta ativa, abra **Funcionários** no menu lateral. Informe nome e e-mail para criar uma conta; o sistema gera uma senha temporária e a mostra uma única vez na tela. Copie-a e entregue ao funcionário por canal seguro. No primeiro acesso, ele deverá definir uma senha pessoal com pelo menos 12 caracteres.
 
-Na lista, é possível desativar e reativar outras contas. A própria conta não pode ser desativada, e o sistema bloqueia a operação que deixaria a base sem contas ativas. Contas inativas não conseguem entrar; o histórico de auditoria permanece associado à conta. Nesta versão, todas as contas ativas têm as mesmas permissões administrativas.
+Na lista, é possível desativar e reativar outras contas. A própria conta não pode ser desativada, e o sistema bloqueia a operação que deixaria a base sem contas ativas. Contas inativas não conseguem entrar; o histórico de auditoria permanece associado à conta. O sistema possui três perfis — Administrador, Gestor e Operador — com permissões diferentes. Consulte a [matriz de permissões](docs/matriz-permissoes.md).
 
 Para alterar sua senha depois do primeiro acesso, abra **Configurações → Segurança da conta → Alterar senha**. O sistema solicita a senha atual, exige uma nova senha com pelo menos 12 caracteres, rejeita a reutilização da senha atual e registra a alteração na auditoria.
 
