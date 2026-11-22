@@ -65,3 +65,41 @@ O commit da ADR foi criado depois da consulta inicial do HEAD. Portanto, a refer
 ## 5. Regra de segurança para a retomada
 
 Este registro é um checkpoint, não uma autorização para executar todas as etapas. Trabalhar incrementalmente, confirmar os resultados, preservar o banco local e a branch `main`, e pedir confirmação antes de qualquer operação de integração ou mudança destrutiva.
+
+
+## 6. Atualização após a implementação do Bloco 04 — 22/11/2026
+
+Esta seção atualiza e substitui as pendências de implementação do Bloco 04 descritas anteriormente neste checkpoint.
+
+### Estado confirmado
+
+- Bloco 04 — Frequência e check-in implementado na branch `feat/dashboard-portfolio`.
+- Migration 009, serviço transacional, endpoint POST, página de frequência, histórico filtrável e indicadores implementados.
+- Regras: aluno ativo, exatamente uma matrícula vigente, uma presença por aluno/dia em `America/Sao_Paulo`, instante UTC persistido, autoria do funcionário e auditoria na mesma transação.
+- Testes cobrem aluno inexistente/inativo, ausência de matrícula, matrícula futura/vencida/cancelada/ambígua, duplicidade, novo dia, virada do dia local, rollback por falha na cadeia e verificação de integridade.
+- A página de frequência foi verificada automaticamente em Chromium, Firefox e WebKit, nos viewports desktop, 390px e 320px.
+- CI #1221: todos os sete jobs aprovados — [execução](https://github.com/Alex5762/academia-alunos-crud/actions/runs/45027184228).
+- README, roadmap, matriz de permissões, guia XAMPP, especificação do Bloco 04 e descrição da PR foram atualizados.
+
+### Estado da PR e branch
+
+- PR #1 permanece aberta em Draft e não integrada.
+- A branch permanece `feat/dashboard-portfolio`; a comparação consultada após a documentação indicava 744 commits à frente e 4 atrás de `main`.
+- A diferença de quatro commits de `main` ainda precisa ser inspecionada antes de qualquer reconciliação.
+- Nenhum merge foi executado; `main` não foi alterada por esta retomada.
+- O CI #1226 foi disparado pelos commits documentais finais e estava pendente na última consulta; o código funcional já havia passado na CI #1221.
+
+### Pendências reais antes de encerrar o Bloco 04
+
+1. Aplicar migrations 005–009 no XAMPP local somente após backup, inspeção da versão e confirmação de InnoDB, seguindo `docs/guia-migrations-xampp.md`.
+2. Fazer inspeção manual em dispositivo físico e navegador instalado.
+3. Confirmar a experiência local de registrar e consultar um check-in.
+4. Manter a PR em Draft até essas verificações e aprovação explícita.
+
+### Próximo bloco
+
+O Bloco 05 é **Financeiro**. Ainda não foi implementado nem iniciado. Antes de desenhar o modelo de dados, decidir se as cobranças serão geradas automaticamente a partir das matrículas ou lançadas manualmente. Integrações com gateways e cobrança automática continuam fora do escopo inicial até decisão específica.
+
+### Observação sobre a política de commits
+
+A implementação do Bloco 04 gerou commits separados por arquivo devido ao fluxo de publicação utilizado. A ADR-001 registra que isso foi uma exceção operacional e que futuras entregas devem agrupar mudanças relacionadas em commits lógicos. Não reescrever o histórico publicado para reduzir o contador.
