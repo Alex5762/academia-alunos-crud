@@ -50,12 +50,27 @@ function assertFinanceRejected(callable $operation, string $message): void
     throw new RuntimeException($message);
 }
 
-function assertFinanceSqlRejected(PDO $pdo, string $sql, array $parameters, string $message): void
-{
+function assertFinanceSqlRejected(
+    PDO $pdo,
+    string $sql,
+    array $parameters,
+    string $message,
+    ?string $expectedConstraint = null
+): void {
     try {
         $statement = $pdo->prepare($sql);
         $statement->execute($parameters);
-    } catch (PDOException) {
+    } catch (PDOException $exception) {
+        if (
+            $expectedConstraint !== null
+            && !str_contains($exception->getMessage(), $expectedConstraint)
+        ) {
+            throw new RuntimeException(
+                $message . ' A rejeição ocorreu por outro motivo: ' . $exception->getMessage(),
+                previous: $exception
+            );
+        }
+
         return;
     }
 
@@ -415,7 +430,8 @@ try {
         $pdo,
         'UPDATE cobrancas SET valor_total = :amount WHERE id = :charge_id',
         ['amount' => '0.00', 'charge_id' => $firstChargeId],
-        'A constraint deve rejeitar cobrança com valor total zero.'
+        'A constraint deve rejeitar cobrança com valor total zero.',
+        'chk_cobrancas_valor_total_positivo'
     );
     $pdo->exec('SET @fitcontrol_payment_write = 1');
     try {
@@ -436,7 +452,8 @@ try {
                 'actor_id' => $actorId,
                 'registered_at' => '2026-11-22 13:00:00',
             ],
-            'A constraint deve rejeitar pagamento negativo mesmo com a permissão de escrita do serviço.'
+            'A constraint deve rejeitar pagamento negativo mesmo com a permissão de escrita do serviço.',
+            'chk_pagamentos_valor_positivo'
         );
     } finally {
         $pdo->exec('SET @fitcontrol_payment_write = NULL');
