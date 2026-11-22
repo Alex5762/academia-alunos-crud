@@ -115,7 +115,69 @@ Use uma conta fictícia de teste. Não registre nem compartilhe senhas temporár
 - [ ] Registrar diferenças de fonte, espaçamento, rolagem, teclado virtual, foco e comportamento dos controles.
 - [ ] Não considerar Playwright/WebKit emulado como substituto de Safari instalado no iPhone ou de um navegador real no celular.
 
-## 10. Encerramento e registro de defeitos
+## 10. Bloco 03 — planos, matrículas e revisão de legados
+
+Execute esta seção somente depois da aplicação local das migrations 005/006 pelo procedimento em `docs/guia-migrations-xampp.md`, com backup conferido e exclusivamente com alunos/funcionários fictícios.
+
+### Banco e migração
+
+- [ ] Registrar versão e distribuição retornadas por `SELECT VERSION(), @@version_comment`.
+- [ ] Confirmar InnoDB em `alunos`, `usuarios`, `auditoria` e nas cinco tabelas novas.
+- [ ] Conferir as definições com `SHOW CREATE TABLE` e verificar FKs/índices.
+- [ ] Confirmar que todos os alunos até o corte em `controle_importacao_legado` possuem exatamente uma revisão.
+- [ ] Conferir que `plano_texto_original` corresponde byte a byte ao valor original de `alunos.plano`.
+- [ ] Confirmar que a carga inicial não criou matrículas nem decisões humanas fictícias.
+- [ ] Registrar contagens antes/depois e guardar evidências sem dados pessoais.
+- [ ] Não reexecutar a migration 005. A 006 só pode ser reexecutada conforme o guia e depois de confirmar o estado da carga.
+
+### Catálogo e contratação
+
+- [ ] Criar um rascunho incompleto e confirmar que não pode ser ativado.
+- [ ] Completar dados e preço, ativar e conferir situação/auditoria.
+- [ ] Inativar e reativar um plano válido.
+- [ ] Confirmar que plano vinculado a matrícula não pode ser excluído.
+- [ ] Tentar contratar com plano rascunho/inativo e confirmar bloqueio.
+- [ ] Contratar com plano ativo para aluno fictício.
+- [ ] Conferir snapshot de nome, preço e duração após alterar os dados atuais do catálogo.
+- [ ] Testar início hoje sem horário, hoje com horário futuro e data futura sem horário.
+- [ ] Confirmar rejeição de início no passado e de sobreposição de períodos.
+- [ ] Confirmar que aluno inativo ou com revisão pendente não pode receber nova matrícula.
+
+### Histórico, revisão e retificação
+
+- [ ] Conferir estados derivados `AGENDADA`, `ATIVA`, `VENCIDA` e `CANCELADA` em dados fictícios com datas controladas.
+- [ ] Cancelar uma matrícula agendada e outra ativa, conferindo motivo opcional, funcionário e horário.
+- [ ] Confirmar bloqueio de cancelamento repetido e de matrícula vencida.
+- [ ] Abrir a fila de revisão e conferir busca, filtros e pendentes por padrão.
+- [ ] Decidir um caso como `LEGADO_SEM_VIGENCIA` com evidência de teste e confirmar liberação de nova matrícula.
+- [ ] Decidir outro caso como `VINCULO_CONFIRMADO`, informando intervalo exato; conferir criação/associação da matrícula `LEGADO`.
+- [ ] Manter um terceiro caso `PENDENTE_REVISAO` e conferir bloqueio de contratação.
+- [ ] Retificar a vigência de um vínculo confirmado com nova fonte e justificativa.
+- [ ] Conferir no histórico os instantes anterior e novo, o funcionário, a fonte e as observações.
+- [ ] Repetir exatamente a mesma retificação e confirmar que não duplica evento/auditoria.
+- [ ] Tentar intervalo inválido ou sobreposto e confirmar rollback sem alteração parcial.
+- [ ] Reabrir/reavaliar revisão e confirmar que decisões antigas continuam visíveis.
+
+### Responsividade do Bloco 03
+
+- [ ] Repetir catálogo, contratação, cancelamento, revisão e retificação em celular real.
+- [ ] Conferir formulários, campos de data/hora, teclado virtual, botões e mensagens.
+- [ ] Verificar tabelas/históricos sem rolagem horizontal inesperada na página.
+- [ ] Testar foco por teclado e leitura de rótulos nos formulários de revisão e retificação.
+
+**Registro específico do Bloco 03**
+
+| Campo | Preencher durante a validação |
+|---|---|
+| Versão do banco | — |
+| Backup conferido | Pendente |
+| Migrations 005/006 | Pendente |
+| Contagens/constraints | Pendente |
+| Fluxos funcionais | Pendente |
+| Dispositivo/navegador | — |
+| Resultado | Pendente |
+
+## 11. Encerramento e registro de defeitos
 
 Para cada problema encontrado, registrar:
 - tela e caminho para reproduzir;
