@@ -5,11 +5,13 @@ require_once __DIR__ . '/src/Domain/Enrollment/EnrollmentPeriodCalculator.php';
 require_once __DIR__ . '/src/Domain/Finance/FinanceService.php';
 require_once __DIR__ . '/src/Domain/Finance/FinanceDashboardStatus.php';
 require_once __DIR__ . '/src/Domain/Finance/FinancePaymentHistoryQuery.php';
+require_once __DIR__ . '/src/Domain/Finance/FinanceMoneyFormatter.php';
 
 use FitControl\Domain\Enrollment\EnrollmentPeriodCalculator;
 use FitControl\Domain\Finance\FinanceService;
 use FitControl\Domain\Finance\FinanceDashboardStatus;
 use FitControl\Domain\Finance\FinancePaymentHistoryQuery;
+use FitControl\Domain\Finance\FinanceMoneyFormatter;
 
 $usuario = exigirAutenticacao($pdo);
 exigirPermissao($usuario, 'finance.view');
@@ -181,18 +183,19 @@ if ($financialStructureAvailable) {
     $paymentHistory = FinancePaymentHistoryQuery::forCharges($pdo, $historyChargeIds);
 }
 
-function financeiroMoeda(string|int|float|null $value): string
+function financeiroMoeda(string|int|null $value): string
 {
-    return 'R$ ' . number_format((float) ($value ?? 0), 2, ',', '.');
+    return FinanceMoneyFormatter::formatDecimal($value);
 }
 
-function financeiroCentavos(string|int|float|null $value): int
+function financeiroMoedaCentavos(int $cents): string
 {
-    $normalized = (string) ($value ?? '0.00');
-    if (preg_match('/^(\\d{1,8})\\.(\\d{2})$/D', $normalized, $parts) !== 1) {
-        throw new UnexpectedValueException('Valor monetário inválido retornado pelo banco.');
-    }
-    return ((int) $parts[1] * 100) + (int) $parts[2];
+    return FinanceMoneyFormatter::formatCents($cents);
+}
+
+function financeiroCentavos(string|int|null $value): int
+{
+    return FinanceMoneyFormatter::toCents($value);
 }
 
 $totalSaldoCobravelCents = financeiroCentavos($summary['saldo_cobravel'] ?? '0.00');
@@ -234,11 +237,11 @@ $totalSaldoRevisaoCents = financeiroCentavos($summary['saldo_em_revisao'] ?? '0.
         </article>
         <article class="plan-summary-card">
             <span>Saldo cobrável</span>
-            <strong><?= escapar(financeiroMoeda($totalSaldoCobravelCents / 100)) ?></strong>
+            <strong><?= escapar(financeiroMoedaCentavos($totalSaldoCobravelCents)) ?></strong>
         </article>
         <article class="plan-summary-card">
             <span>Em revisão</span>
-            <strong><?= escapar(financeiroMoeda($totalSaldoRevisaoCents / 100)) ?></strong>
+            <strong><?= escapar(financeiroMoedaCentavos($totalSaldoRevisaoCents)) ?></strong>
         </article>
     </section>
 
@@ -293,7 +296,7 @@ $totalSaldoRevisaoCents = financeiroCentavos($summary['saldo_em_revisao'] ?? '0.
                             <td><?= escapar(DateTimeImmutable::createFromFormat('!Y-m-d', (string) $charge['data_vencimento'], $fusoAcademia)->format('d/m/Y')) ?></td>
                             <td><?= escapar(financeiroMoeda($charge['valor_total'])) ?></td>
                             <td><?= escapar(financeiroMoeda($charge['valor_pago'])) ?></td>
-                            <td><?= escapar(financeiroMoeda($balanceCents / 100)) ?></td>
+                            <td><?= escapar(financeiroMoedaCentavos($balanceCents)) ?></td>
                             <td><span class="account-status <?= escapar($statusClass) ?>"><?= escapar($statusLabel) ?></span></td>
                             <td>
                                 <div class="plan-actions">
