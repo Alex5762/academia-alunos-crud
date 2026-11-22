@@ -494,24 +494,11 @@ try {
 
     if ($legacyEnrollmentIds !== []) {
         $placeholders = implode(',', array_fill(0, count($legacyEnrollmentIds), '?'));
-        $deleteAudits = $pdo->prepare(
-            "DELETE FROM auditoria
-             WHERE entidade = 'matriculas'
-               AND entidade_id IN ({$placeholders})"
-        );
-        $deleteAudits->execute($legacyEnrollmentIds);
-    }
+}
 
     if ($studentIds !== []) {
         $placeholders = implode(',', array_fill(0, count($studentIds), '?'));
-        $deleteAudits = $pdo->prepare(
-            "DELETE FROM auditoria
-             WHERE entidade = 'revisoes_legado'
-               AND entidade_id IN ({$placeholders})"
-        );
-        $deleteAudits->execute($reviewIds);
-
-        $deleteEnrollments = $pdo->prepare(
+$deleteEnrollments = $pdo->prepare(
             "DELETE FROM matriculas WHERE aluno_id IN ({$placeholders})"
         );
         $deleteEnrollments->execute($studentIds);
@@ -528,9 +515,7 @@ try {
     }
 
     if ($actorId !== null) {
-        $deleteUser = $pdo->prepare('DELETE FROM usuarios WHERE id = :id');
-        $deleteUser->execute(['id' => $actorId]);
-    }
+}
 
     $pdo->exec('DROP TABLE IF EXISTS revisoes_legado_eventos');
     $pdo->exec('DROP TABLE IF EXISTS revisoes_legado');
