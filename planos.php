@@ -106,10 +106,14 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && ($_POST['acao'] ?? '') =
     $planoMatriculaSelecionado = $planoValidado === false ? null : (int) $planoValidado;
     $dataRecebida = $_POST['data_inicio'] ?? '';
     $horaRecebida = $_POST['hora_inicio'] ?? '';
+    $dadosDataHoraValidos = is_string($dataRecebida) && is_string($horaRecebida);
     $dataInicioMatricula = is_string($dataRecebida) ? $dataRecebida : '';
     $horaInicioMatricula = is_string($horaRecebida) ? $horaRecebida : '';
 
     try {
+        if (!$dadosDataHoraValidos) {
+            throw new InvalidArgumentException('Informe uma data e um horário válidos.');
+        }
         if (!$estruturaMatriculasDisponivel) {
             throw new DomainException('A estrutura de matrículas ainda não está instalada.');
         }
