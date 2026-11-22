@@ -91,7 +91,9 @@ Essas escolhas estão alinhadas com as recomendações de transações PDO, leit
 - `chk_cobrancas_valor_total_positivo`: exige `cobrancas.valor_total > 0.00`.
 - `chk_pagamentos_valor_positivo`: exige `pagamentos.valor > 0.00`.
 - A migration não altera nem normaliza dados existentes; se encontrar registros inválidos, o `ALTER TABLE` deve falhar para revisão manual.
-- O teste de integração tenta zerar uma cobrança e inserir pagamento negativo diretamente no banco, habilitando apenas a guarda de escrita necessária para alcançar a constraint de pagamento.
+- Testes de integração tentam atualizar cobrança para zero e valor negativo e inserir pagamento com zero e valor negativo diretamente no banco.
+- O teste de pagamento habilita apenas a variável de sessão exigida pelo guard append-only para que o INSERT alcance a CHECK; a variável é limpa em `finally`.
+- Os casos positivos do fluxo continuam sendo conferidos: cobrança de R$ 300,00 e dois pagamentos positivos.
 - CI aplica a migration 013 nos dois ambientes e executa o teste financeiro em MySQL 8.0 e MariaDB 10.11.
 
 ### F-06 — Médio: a proteção de concorrência ainda não tem teste de corrida financeira
@@ -133,9 +135,9 @@ Não recomendo adicionar agora um razão contábil de partidas dobradas, concili
 ## Estado de validação
 
 - CI #1312 foi aprovada integralmente: sete jobs verdes, incluindo MySQL 8.0, MariaDB 10.11, migrations, concorrência financeira, classificação de revisão e integração CRUD.
-- F-01, F-02 e F-03 estão implementados e validados na CI #1312.
-- F-04 foi implementado na branch `feat/dashboard-portfolio`; consulta em lote, histórico expansível e testes de integração aguardam a próxima execução completa da CI.
-- A concorrência de F-06 sobre o limite de saldo ainda requer cenário próprio.
+- F-01 a F-04 estão implementados e validados na CI #1332, com sete jobs verdes nos fluxos MySQL 8.0 e MariaDB 10.11.
+- F-05: migration 013 e testes de rejeição para cobrança/pagamento com zero e valores negativos estão na branch; a execução atual da CI está pendente.
+- F-06: ainda falta um cenário concorrente específico para confirmar que duas conexões não ultrapassam o saldo restante.
 - Nenhuma migration foi aplicada no banco local do usuário.
 - PR #1 permanece Draft e não integrada; não fazer merge antes da validação final.
 
