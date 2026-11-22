@@ -57,8 +57,8 @@ try {
     $pdo->beginTransaction();
 
     $inserirUsuario = $pdo->prepare(
-        'INSERT INTO usuarios (nome, email, senha_hash, ativo, deve_trocar_senha)
-         VALUES (:nome, :email, :senha_hash, 1, 1)'
+        'INSERT INTO usuarios (nome, email, senha_hash, ativo, perfil, deve_trocar_senha)
+         VALUES (:nome, :email, :senha_hash, 1, 'ADMINISTRADOR', 1)'
     );
     $inserirUsuario->execute([
         'nome' => $nome,
