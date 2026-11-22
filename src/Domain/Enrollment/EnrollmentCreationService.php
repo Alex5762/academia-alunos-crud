@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace FitControl\Domain\Enrollment;
 
-require_once __DIR__ . '/../../Security/AuditIntegrityChain.php';
 
 use Closure;
 use DateTimeImmutable;
@@ -13,7 +12,9 @@ use InvalidArgumentException;
 use LogicException;
 use PDO;
 use Throwable;
-use UnexpectedValueException;
+use UnexpectedValueException
+require_once __DIR__ . '/../../Security/AuditIntegrityChain.php';
+;
 
 /**
  * Cria uma matrícula operacional com snapshot do plano e trilha de auditoria.
