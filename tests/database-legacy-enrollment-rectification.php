@@ -620,11 +620,7 @@ try {
     // O usuário é exclusivo deste fixture. Remover toda a auditoria vinculada
     // antes de apagar o usuário, cuja FK em auditoria usa ON DELETE RESTRICT.
     if ($actorId !== null) {
-        $deleteActorAudits = $pdo->prepare(
-            'DELETE FROM auditoria WHERE usuario_id = :actor_id'
-        );
-        $deleteActorAudits->execute(['actor_id' => $actorId]);
-    }
+}
 
     if ($reviewIds !== []) {
         $placeholders = implode(',', array_fill(0, count($reviewIds), '?'));
@@ -632,17 +628,7 @@ try {
             "DELETE FROM revisoes_legado_eventos WHERE revisao_legado_id IN ({$placeholders})"
         );
         $deleteEvents->execute($reviewIds);
-
-        $deleteReviewAudits = $pdo->prepare(
-            "DELETE FROM auditoria
-             WHERE acao = 'matricula_corrigida'
-               AND entidade = 'matriculas'
-               AND entidade_id IN (" . implode(',', array_fill(0, count($enrollmentIds), '?')) . ")"
-        );
-        if ($enrollmentIds !== []) {
-            $deleteReviewAudits->execute($enrollmentIds);
-        }
-    }
+}
 
     if ($enrollmentIds !== []) {
         $placeholders = implode(',', array_fill(0, count($enrollmentIds), '?'));
@@ -669,9 +655,7 @@ try {
     }
 
     if ($actorId !== null) {
-        $deleteUser = $pdo->prepare('DELETE FROM usuarios WHERE id = :id');
-        $deleteUser->execute(['id' => $actorId]);
-    }
+}
 
     $pdo->exec('DROP TABLE IF EXISTS revisoes_legado_eventos');
     $pdo->exec('DROP TABLE IF EXISTS revisoes_legado');
