@@ -88,47 +88,50 @@ Cada aluno possui nome, telefone, e-mail, plano (Mensal, Trimestral, Semestral o
 
 ```text
 academia-alunos-crud/
-├── .github/
-│   └── workflows/
-│       └── ci.yml
+├── .github/workflows/ci.yml
+├── database/migrations/
+│   ├── 001_authentication_audit.sql
+│   ├── 002_force_password_change.sql
+│   ├── 003_login_rate_limit.sql
+│   ├── 004_student_status.sql
+│   ├── 005_plans_enrollments_schema.sql
+│   ├── 006_import_legacy_review.sql
+│   ├── 007_administrative_roles.sql
+│   ├── 008_audit_integrity_chain.sql
+│   └── 009_attendance_checkins.sql
 ├── docs/
+│   ├── decisoes/
+│   ├── bloco-01-autenticacao.md
+│   ├── bloco-02-gestao-alunos.md
+│   ├── bloco-03-planos-matriculas.md
+│   ├── bloco-04-frequencia-checkin.md
 │   ├── guia-migrations-xampp.md
-│   ├── relatorio-testes-academia-alunos.md
+│   ├── matriz-permissoes.md
+│   ├── roadmap.md
 │   └── screenshots/
-│       ├── dashboard-desktop.png
-│       ├── dashboard-mobile.png
-│       ├── aluno-detalhes-desktop.png
-│       ├── aluno-detalhes-mobile.png
-│       ├── aluno-detalhes-desktop-escuro.png
-│       ├── aluno-detalhes-mobile-escuro.png
-│       ├── alunos-mobile.png
-│       └── cadastro-desktop.png
-├── database/
-│   └── migrations/
-│       ├── 001_authentication_audit.sql
-│       ├── 002_force_password_change.sql
-│       ├── 003_login_rate_limit.sql
-│       ├── 004_student_status.sql
-│       ├── 005_plans_enrollments_schema.sql
-│       └── 006_import_legacy_review.sql
+├── scripts/
+│   ├── inicializar-integridade-auditoria.php
+│   ├── provisionar-usuario.php
+│   └── ferramentas de checkpoint e diagnóstico
+├── src/
+│   ├── Domain/Attendance/AttendanceCheckinService.php
+│   ├── Domain/Enrollment/
+│   └── Security/
 ├── tests/
 │   ├── browser-compatibility.mjs
-│   ├── capture-screenshots.mjs
+│   ├── database-attendance-checkin.php
 │   ├── integration-crud.sh
-│   ├── migration-block-03.sh
-│   └── migration-student-status.sh
-├── banco.sql
-├── conexao.php
-├── configuracoes.php
-├── funcoes.php
+│   └── testes de domínio, banco e migrations
+├── checkins.php
+├── registrar-checkin.php
+├── login.php
 ├── index.php
-├── cadastro.php
 ├── detalhes-aluno.php
-├── salvar.php
-├── excluir.php
-├── style.css
-├── script.js
-└── theme.js
+├── usuarios.php
+├── planos.php
+├── conexao.php
+├── funcoes.php
+└── style.css
 ```
 
 ## Como executar localmente com XAMPP
