@@ -381,6 +381,9 @@ jobs:
     needs: php-and-mysql
     if: github.event_name == 'push' && github.ref == 'refs/heads/feat/dashboard-portfolio'
     runs-on: ubuntu-latest
+    concurrency:
+      group: fitcontrol-screenshot-publish-${{ github.ref }}
+      cancel-in-progress: false
     permissions:
       contents: write
       actions: read
@@ -396,15 +399,42 @@ jobs:
           path: docs/screenshots
 
       - name: Commit screenshots when changed
+        shell: bash
         run: |
+          set -Eeuo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add docs/screenshots/*.png
 
-          if git diff --cached --quiet; then
-            echo "Screenshots are already up to date."
-            exit 0
-          fi
+          # Preserva o artefato enquanto sincroniza o checkout com o HEAD atual.
+          mkdir -p "$RUNNER_TEMP/fitcontrol-screenshots"
+          cp docs/screenshots/*.png "$RUNNER_TEMP/fitcontrol-screenshots/"
 
-          git commit -m "chore: atualiza screenshots do FitControl [skip ci]"
-          git push origin "HEAD:$GITHUB_REF_NAME"
+          for attempt in 1 2 3; do
+            git fetch origin "+refs/heads/$GITHUB_REF_NAME:refs/remotes/origin/$GITHUB_REF_NAME"
+            remote_sha="$(git rev-parse "origin/$GITHUB_REF_NAME")"
+
+            # Não publicar capturas de um commit antigo sobre uma versão mais nova.
+            if [[ "$remote_sha" != "$GITHUB_SHA" ]]; then
+              echo "A branch avançou desde esta execução; as capturas antigas serão descartadas."
+              exit 0
+            fi
+
+            git reset --hard "origin/$GITHUB_REF_NAME"
+            cp "$RUNNER_TEMP/fitcontrol-screenshots/"*.png docs/screenshots/
+            git add docs/screenshots/*.png
+
+            if git diff --cached --quiet; then
+              echo "Screenshots are already up to date."
+              exit 0
+            fi
+
+            git commit -m "chore: atualiza screenshots do FitControl [skip ci]"
+            if git push origin "HEAD:$GITHUB_REF_NAME"; then
+              exit 0
+            fi
+
+            echo "A branch mudou durante a publicação (tentativa $attempt); verificando novamente."
+          done
+
+          echo "Não foi possível publicar as capturas após três tentativas." >&2
+          exit 1
