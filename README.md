@@ -36,9 +36,9 @@ As imagens abaixo são capturadas automaticamente pelo GitHub Actions com regist
 
 > **Escopo atual:** aplicação acadêmica/local com primeira versão de autenticação individual, gestão de funcionários, auditoria e controle de sessão. Ainda faltam revisão de segurança para produção, HTTPS de produção, monitoramento, backups e controles adicionais. Não exponha o painel à internet nem use dados reais de alunos.
 
-## Bloco 05 — Financeiro (em implementação)
+## Bloco 05 — Financeiro (CI validada; validação local pendente)
 
-O núcleo transacional cria uma cobrança única pelo valor total do contrato ao registrar uma matrícula nova; pagamentos parciais e cancelamento condicionado ficam registrados com auditoria. Consulte `docs/bloco-05-financeiro.md`. A tela `financeiro.php` e as permissões RBAC `finance.*` foram adicionadas; o bloco segue em validação e não deve ser considerado pronto para produção.
+O módulo cria uma cobrança única pelo contrato, registra pagamentos parciais com transações, idempotência, histórico append-only, auditoria e controle de saldo. O painel separa valores cobráveis de valores em revisão e restringe as operações por RBAC. Os achados F-01 a F-08 foram implementados e validados nas CIs financeiras #1332, #1361, #1362, #1385 e #1397; a CI geral #1420 passou com integração CRUD/Playwright e teste HTTP de bloqueio do perfil Operador. Consulte `docs/bloco-05-financeiro.md` e `docs/revisao-financeira-2026-11-22.md`. O banco local/XAMPP ainda não foi migrado nem testado manualmente; o módulo não deve ser considerado pronto para produção.
 
 ## Funcionalidades
 
@@ -152,8 +152,9 @@ academia-alunos-crud/
    - \`database/migrations/004_student_status.sql\`
 7. Antes de habilitar os módulos posteriores, confirme a versão do banco, crie e confira um backup e siga o [guia de migrations para XAMPP](docs/guia-migrations-xampp.md) para aplicar 005–008 na ordem documentada. Não repita migrations DDL já aplicadas.
 8. Depois da migration 008 e da inicialização da cadeia de auditoria pelo procedimento do guia, aplique a migration 009 uma única vez: `database/migrations/009_attendance_checkins.sql`. Faça isso somente após backup e inspeção de InnoDB; a CI não aplica migrations no seu computador.
-9. No CMD, na raiz do projeto, execute `C:\\xampp\\php\\php.exe scripts\\provisionar-usuario.php`. Informe nome e e-mail e copie a senha temporária exibida: ela aparece uma única vez e não deve ser colocada no repositório.
-10. Acesse `http://localhost/academia-alunos-crud/login.php`, entre com o e-mail e a senha temporária e defina sua senha pessoal no primeiro acesso.
+9. Depois de validar a 009, aplique as migrations financeiras 010, 011, 012 e 013, exatamente nessa ordem e conforme as seções 9 a 12 do [guia de migrations para XAMPP](docs/guia-migrations-xampp.md). Faça backup antes; confira os dados existentes antes da 013; não reexecute arquivos DDL já aplicados.
+10. No CMD, na raiz do projeto, execute `C:\\xampp\\php\\php.exe scripts\\provisionar-usuario.php`. Informe nome e e-mail e copie a senha temporária exibida: ela aparece uma única vez e não deve ser colocada no repositório.
+11. Acesse `http://localhost/academia-alunos-crud/login.php`, entre com o e-mail e a senha temporária e defina sua senha pessoal no primeiro acesso.
 
 ### Configuração do banco por variáveis de ambiente
 
@@ -177,7 +178,7 @@ A estrutura é criada pela migration `database/migrations/009_attendance_checkin
 
 ## Testes automatizados
 
-O workflow [CI - Academia Alunos CRUD](https://github.com/Alex5762/academia-alunos-crud/actions/workflows/ci.yml) é executado em pushes para \`main\` e \`feat/dashboard-portfolio\`, além de pull requests destinados a \`main\`.
+O workflow [CI - Academia Alunos CRUD](https://github.com/Alex5762/academia-alunos-crud/actions/workflows/ci.yml) é executado em pushes para \`main\` e em eventos de pull request destinados a \`main\` (incluindo novos commits na branch da PR). O grupo de concorrência cancela execuções obsoletas da mesma PR para priorizar o HEAD mais recente.
 
 O pipeline:
 
