@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace FitControl\Domain\Enrollment;
 
+require_once __DIR__ . '/../../Security/AuditIntegrityChain.php';
+
 use DomainException;
 use InvalidArgumentException;
 use LogicException;
@@ -265,16 +267,7 @@ final class PlanManagementService
 
     private function recordAudit(int $actorUserId, string $action, int $planId): void
     {
-        $audit = $this->pdo->prepare(
-            'INSERT INTO auditoria (usuario_id, acao, entidade, entidade_id)
-             VALUES (:user_id, :action_name, :entity_name, :entity_id)'
-        );
-        $audit->execute([
-            'user_id' => $actorUserId,
-            'action_name' => $action,
-            'entity_name' => 'planos',
-            'entity_id' => $planId,
-        ]);
+        AuditIntegrityChain::append($this->pdo, $actorUserId, $action, 'planos', $planId);
     }
 
     private function beginOwnedTransaction(): void
