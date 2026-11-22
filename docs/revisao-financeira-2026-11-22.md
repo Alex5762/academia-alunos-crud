@@ -74,11 +74,14 @@ Essas escolhas estão alinhadas com as recomendações de transações PDO, leit
 
 ### F-04 — Médio: falta consulta do histórico individual de pagamentos
 
-**Evidência:** a página calcula `SUM(p.valor)` e `COUNT(p.id)`, mas não apresenta cada pagamento com valor, data, forma, observação e funcionário responsável.
+**Estado: implementado na branch `feat/dashboard-portfolio`; CI pendente.**
 
-**Risco concreto:** o Gestor vê apenas o total recebido e não consegue conferir quais lançamentos formam aquele total, nem identificar facilmente um pagamento duplicado.
-
-**Correção recomendada:** incluir uma área expansível ou detalhe da cobrança com a lista cronológica dos pagamentos, exibindo os campos relevantes e mantendo a interface utilizável em telas estreitas. O resumo agregado pode continuar na tabela principal.
+**Correção entregue:**
+- Criada `FinancePaymentHistoryQuery`, que consulta os pagamentos das cobranças exibidas em uma única ida ao banco, evitando N+1.
+- O histórico expansível apresenta valor, data efetiva do pagamento, forma, observação, data/hora de registro convertida de UTC para o fuso da academia, responsável e ID do lançamento.
+- Os lançamentos são ordenados por data de pagamento e ID, ambos em ordem decrescente por cobrança.
+- Testes de integração verificam quantidade, ordenação, forma, observação, responsável e ausência de histórico para cobrança sem pagamentos.
+- A tabela mantém os totais agregados e a interface usa painel expansível, com estilos responsivos e suporte ao tema escuro.
 
 ### F-05 — Médio: faltam restrições positivas no próprio schema
 
