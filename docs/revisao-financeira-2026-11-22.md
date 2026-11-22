@@ -85,11 +85,14 @@ Essas escolhas estão alinhadas com as recomendações de transações PDO, leit
 
 ### F-05 — Médio: faltam restrições positivas no próprio schema
 
-**Evidência:** `valor_total` e `valor` são `DECIMAL(10,2) NOT NULL`, mas a migration não declara `CHECK (valor_total > 0)` e `CHECK (valor > 0)`.
+**Estado: migration 013 e testes implementados na branch `feat/dashboard-portfolio`; CI pendente.**
 
-**Risco concreto:** os serviços PHP rejeitam valores inválidos, mas uma rotina SQL, importação ou futuro caminho de escrita pode inserir cobrança/pagamento zero ou negativo. O banco deve proteger invariantes simples independentemente da interface.
-
-**Correção recomendada:** adicionar constraints nomeadas para valores positivos. MySQL aplica CHECK a partir da versão 8.0.16; validar a mesma migration no MySQL 8.0 e MariaDB 10.11 já usados pela CI.
+**Correção entregue:**
+- `chk_cobrancas_valor_total_positivo`: exige `cobrancas.valor_total > 0.00`.
+- `chk_pagamentos_valor_positivo`: exige `pagamentos.valor > 0.00`.
+- A migration não altera nem normaliza dados existentes; se encontrar registros inválidos, o `ALTER TABLE` deve falhar para revisão manual.
+- O teste de integração tenta zerar uma cobrança e inserir pagamento negativo diretamente no banco, habilitando apenas a guarda de escrita necessária para alcançar a constraint de pagamento.
+- CI aplica a migration 013 nos dois ambientes e executa o teste financeiro em MySQL 8.0 e MariaDB 10.11.
 
 ### F-06 — Médio: a proteção de concorrência ainda não tem teste de corrida financeira
 
