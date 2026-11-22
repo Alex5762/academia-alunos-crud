@@ -233,7 +233,13 @@ function urlAuditoria(array $sobrescritas = []): string
                                     <td><div class="account-person"><strong><?= escapar($evento['responsavel_nome'] ?? 'Conta indisponível') ?></strong><small><?= escapar($evento['responsavel_email'] ?? ('ID ' . $evento['usuario_id'])) ?></small></div></td>
                                     <td><span class="account-status"><?= escapar($evento['acao']) ?></span></td>
                                     <td><?= escapar($evento['entidade']) ?></td>
-                                    <td><?= $evento['entidade_id'] === null ? '—' : '#' . (int) $evento['entidade_id'] ?></td>
+                                    <td>
+                                        <?php if (in_array($evento['entidade'], ['alunos', 'usuarios', 'planos', 'matriculas', 'revisoes_legado'], true) && $evento['entidade_id'] !== null) { ?>
+                                            <a class="audit-record-link" href="detalhes-auditoria.php?entidade=<?= rawurlencode($evento['entidade']) ?>&amp;id=<?= (int) $evento['entidade_id'] ?>">#<?= (int) $evento['entidade_id'] ?> · Ver histórico</a>
+                                        <?php } else { ?>
+                                            —
+                                        <?php } ?>
+                                    </td>
                                     <td><?= escapar($evento['detalhes'] ?? '—') ?></td>
                                 </tr>
                             <?php } ?></tbody>
