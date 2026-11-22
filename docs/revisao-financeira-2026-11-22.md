@@ -99,7 +99,7 @@ Essas escolhas estão alinhadas com as recomendações de transações PDO, leit
 
 ### F-06 — Médio: concorrência no limite do saldo
 
-**Estado: teste concorrente implementado na branch `feat/dashboard-portfolio`; CI #1362 pendente.**
+**Estado: teste concorrente validado nos jobs financeiros MySQL 8.0 e MariaDB 10.11 da CI #1362; execução geral ainda em andamento.**
 
 **Cobertura adicionada:**
 - O teste mantém a cobrança bloqueada na conexão principal e inicia dois processos PHP independentes, cada um com sua própria conexão PDO.
@@ -141,7 +141,7 @@ Não recomendo adicionar agora um razão contábil de partidas dobradas, concili
 - CI #1312 foi aprovada integralmente: sete jobs verdes, incluindo MySQL 8.0, MariaDB 10.11, migrations, concorrência financeira, classificação de revisão e integração CRUD.
 - F-01 a F-04 estão implementados e validados na CI #1332, com sete jobs verdes nos fluxos MySQL 8.0 e MariaDB 10.11.
 - F-05 foi validado integralmente na CI #1361: migration 013 e rejeição de zero/negativos em cobranças e pagamentos, em MySQL 8.0 e MariaDB 10.11.
-- F-06: teste com duas conexões, valores que somados excederiam o saldo e auditoria única foi publicado; aguarda validação na CI #1362.
+- F-06 foi validado nos jobs de Bloco 04 da CI #1362 em MySQL 8.0 e MariaDB 10.11: duas conexões independentes disputaram uma cobrança de R$ 300,00 com pagamentos de R$ 200,00; um foi aceito, o outro foi recusado por saldo, e houve somente um lançamento e um evento de auditoria.
 - Nenhuma migration foi aplicada no banco local do usuário.
 - PR #1 permanece Draft e não integrada; não fazer merge antes da validação final.
 
