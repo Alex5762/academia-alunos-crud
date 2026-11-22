@@ -1,4 +1,4 @@
-# Procedimento local — migrations 005 a 013 (FitControl)
+# Procedimento local — migrations 001 a 013 (FitControl)
 
 > **Escopo:** ambiente acadêmico/local com XAMPP. Este procedimento não autoriza uso em produção nem aplicação automática em banco com dados reais. A CI valida os fluxos de migrations e os testes de banco em MySQL 8.0 e MariaDB 10.11, incluindo o financeiro (010 a 013); isso não identifica nem valida a versão instalada no computador.
 
@@ -193,18 +193,36 @@ Guarde os resultados da versão do banco, engines, contagens e definições das 
 
 ## 7. Smoke test da aplicação
 
-Somente depois de confirmar as tabelas e constraints:
+Execute somente com alunos, funcionários e matrículas fictícios, em um banco descartável restaurado do backup. Não use dados reais nem valores recebidos de clientes.
 
-1. Entre com uma conta fictícia já provisionada.
-2. Abra Planos; crie um rascunho e confirme que ele não pode ser contratado antes de estar completo e ativo.
-3. Complete os campos, ative o plano e confira a auditoria.
-4. Contrate para um aluno fictício e confira snapshot, período e histórico.
-5. Teste cancelamento de uma matrícula agendada e de uma ativa, sem usar registros reais.
-6. Abra Revisão de legados; valide a fila pendente e registre uma decisão somente com evidência fictícia/adequada ao exercício.
-7. Em um vínculo confirmado de teste, verifique a tela de retificação e confira que intervalo anterior e novo aparecem no histórico.
+### Fluxo geral
 
-Registre separadamente o que foi executado, o que passou e o que não foi testado. A CI verde não equivale à validação no XAMPP nem à inspeção em celular real.
+1. Entre com uma conta fictícia provisionada e defina a senha temporária.
+2. Crie um plano de teste, confira que um rascunho incompleto não pode ser contratado, complete os campos e ative-o.
+3. Cadastre um aluno fictício e faça uma matrícula com o plano de teste.
+4. Confira se foi criada exatamente uma cobrança pelo valor total contratado, com vencimento esperado e evento de auditoria.
+5. Teste cancelamento de matrícula agendada e ativa em registros separados, verificando os estados e o histórico.
+6. Abra Revisão de legados; valide a fila pendente e registre decisões somente com evidência fictícia/adequada ao exercício.
 
+### Financeiro
+
+1. Entre como Administrador ou Gestor e abra `financeiro.php`. Confira total, valores pagos, saldo e situação da cobrança criada no passo anterior.
+2. Registre um pagamento parcial (por exemplo, R$ 40,00 de uma cobrança de R$ 100,00). Confira saldo de R$ 60,00 e os detalhes do lançamento: valor, data, forma, observação, responsável e instante de registro.
+3. Registre um segundo pagamento parcial de R$ 60,00. Confira saldo zero, situação quitada e dois lançamentos no histórico, sem alteração do primeiro.
+4. Tente registrar valor superior ao saldo restante em outra cobrança fictícia. O servidor deve rejeitar a operação e o banco não deve ganhar lançamento.
+5. Tente data futura; a operação deve ser rejeitada. Para data anterior a hoje, informe justificativa e confira que data e observação aparecem no histórico.
+6. Cancele uma matrícula fictícia que ainda não tenha pagamentos. A cobrança deve permanecer visível até o cancelamento explícito, com motivo e responsável registrados.
+7. Em outra matrícula fictícia que já tenha pagamento, cancele a matrícula e confirme que a cobrança/pagamento não é apagada nem aceita novo recebimento; o caso deve indicar necessidade de revisão/estorno próprio.
+8. Entre como Operador e tente abrir diretamente `financeiro.php`. A resposta esperada é HTTP 403; volte ao perfil Gestor/Administrador para confirmar que a consulta e o registro financeiro continuam disponíveis.
+
+A proteção contra reenvio idempotente da mesma requisição e a concorrência de pagamentos já é coberta por testes automatizados na CI; não tente simular manualmente alterando chaves ocultas ou editando registros no banco.
+
+### Evidências e encerramento
+
+- Execute `scripts/verificar-integridade-auditoria.php` depois dos testes e confirme `Integridade confirmada.`.
+- Registre versão do PHP, versão do MySQL/MariaDB, migrations aplicadas, perfil usado, operações realizadas e resultados.
+- Anote separadamente qualquer etapa não executada. A CI verde não equivale à validação no XAMPP nem à inspeção em celular real.
+- Remova os dados fictícios apenas pelo procedimento de limpeza previsto para o banco descartável; não apague pagamentos nem eventos de auditoria à mão no banco principal.
 ## 8. Smoke test financeiro (somente dados fictícios)
 
 Execute esta etapa apenas depois de aplicar e conferir as migrations 010–013 em uma cópia descartável do banco. Não use alunos, contratos ou pagamentos reais. Crie um aluno de teste e um plano fictício de valor conhecido (por exemplo, R$ 300,00), com matrícula criada pelo fluxo normal da aplicação.
