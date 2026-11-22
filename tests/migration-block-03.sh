@@ -63,6 +63,13 @@ SQL
 assert_equals "OPERADOR" "$(mysql_cmd -e "SELECT perfil FROM usuarios WHERE email = 'rbac-new@example.test'")" "novas contas devem receber o perfil de menor privilégio"
 assert_equals "1" "$(mysql_cmd -e "SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'usuarios_perfis_eventos'")" "histórico especializado de perfis deve existir"
 
+echo "Aplicando migration 008 (cadeia de integridade da auditoria)..."
+"${MYSQL_BIN}" --host="${MYSQL_HOST}" --port="${MYSQL_PORT}" --user="${MYSQL_USER}" --database="${MYSQL_DATABASE}" < "${migration_dir}/008_audit_integrity_chain.sql"
+
+assert_equals "1" "$(mysql_cmd -e "SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'auditoria_integridade_estado'")" "estado da cadeia de auditoria deve existir"
+assert_equals "1" "$(mysql_cmd -e "SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'auditoria_integridade_eventos'")" "eventos encadeados devem existir"
+assert_equals "4" "$(mysql_cmd -e "SELECT COUNT(*) FROM information_schema.TRIGGERS WHERE TRIGGER_SCHEMA = DATABASE() AND TRIGGER_NAME IN ('trg_auditoria_no_update', 'trg_auditoria_no_delete', 'trg_auditoria_integridade_no_update', 'trg_auditoria_integridade_no_delete')")" "gatilhos append-only devem existir"
+
 
 
 assert_equals "2" "$(mysql_cmd -e "SELECT COUNT(*) FROM revisoes_legado")" "deve criar uma revisão por aluno legado"
