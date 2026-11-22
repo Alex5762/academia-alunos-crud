@@ -6,6 +6,7 @@ use FitControl\Domain\Enrollment\EnrollmentCreationService;
 use FitControl\Domain\Enrollment\EnrollmentPeriodCalculator;
 use FitControl\Domain\Finance\FinanceService;
 use FitControl\Domain\Finance\FinanceDashboardStatus;
+use FitControl\Domain\Finance\FinancePaymentHistoryQuery;
 
 require_once dirname(__DIR__) . '/src/Domain/Enrollment/EnrollmentPeriodCalculator.php';
 require_once dirname(__DIR__) . '/src/Domain/Enrollment/EnrollmentInterval.php';
@@ -14,6 +15,7 @@ require_once dirname(__DIR__) . '/src/Domain/Enrollment/EnrollmentCreationServic
 require_once dirname(__DIR__) . '/src/Domain/Enrollment/EnrollmentCancellationService.php';
 require_once dirname(__DIR__) . '/src/Domain/Finance/FinanceService.php';
 require_once dirname(__DIR__) . '/src/Domain/Finance/FinanceDashboardStatus.php';
+require_once dirname(__DIR__) . '/src/Domain/Finance/FinancePaymentHistoryQuery.php';
 
 function financeConnection(): PDO
 {
@@ -357,6 +359,31 @@ try {
         $firstChargeId, $actorId, '200.00', 'DINHEIRO', '2026-11-22', 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb', 'Quitação do saldo'
     );
     assertFinance($paymentOne > 0 && $paymentTwo > 0, 'O serviço deve retornar IDs de pagamentos válidos.');
+
+    $history = FinancePaymentHistoryQuery::forCharges($pdo, [$firstChargeId, $firstChargeId, $secondChargeId]);
+    assertFinance(
+        count($history[$firstChargeId] ?? []) === 2,
+        'O histórico deve listar os dois pagamentos da cobrança sem duplicar IDs de cobrança.'
+    );
+    assertFinance(
+        (int) $history[$firstChargeId][0]['id'] === $paymentTwo
+            && (int) $history[$firstChargeId][1]['id'] === $paymentOne,
+        'O histórico deve apresentar os lançamentos do mais recente para o mais antigo.'
+    );
+    assertFinance(
+        $history[$firstChargeId][0]['forma_pagamento'] === 'DINHEIRO'
+            && $history[$firstChargeId][0]['observacao'] === 'Quitação do saldo',
+        'O histórico deve preservar forma de pagamento e observação.'
+    );
+    assertFinance(
+        (int) $history[$firstChargeId][0]['registrado_por'] === $actorId
+            && $history[$firstChargeId][0]['responsavel_nome'] !== '',
+        'O histórico deve identificar o usuário responsável pelo lançamento.'
+    );
+    assertFinance(
+        $history[$secondChargeId] === null ?? true,
+        'Cobrança sem pagamento não deve inventar lançamentos.'
+    );
 
     $replayedPayment = $finance->registerPayment(
         $firstChargeId, $actorId, '100.00', 'PIX', '2026-11-22',
