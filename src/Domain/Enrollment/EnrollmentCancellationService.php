@@ -13,9 +13,9 @@ use LogicException;
 use PDO;
 use RuntimeException;
 use Throwable;
-use UnexpectedValueException
+use UnexpectedValueException;
+
 require_once __DIR__ . '/../../Security/AuditIntegrityChain.php';
-;
 
 /**
  * Executa o cancelamento de matrícula em uma única transação.
