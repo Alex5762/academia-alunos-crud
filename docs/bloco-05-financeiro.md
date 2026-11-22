@@ -164,7 +164,7 @@ A migration 010 deve ser executada somente após backup e conferência da versã
 - O serviço normaliza a observação e exige justificativa quando `data_pagamento` for anterior à data local da academia; não confia no limite HTML.
 - Testes de integração verificam retroativo sem observação (rejeitado), retroativo com observação (aceito e preservado) e data futura (rejeitada mesmo com observação).
 - Data e observação permanecem incluídas no fingerprint de idempotência e na consulta de histórico.
-- **Estado:** implementado; aguardando validação na CI.
+- **Validação:** testes financeiros aprovados nos jobs Block 04 da CI #1397 em MySQL 8.0 e MariaDB 10.11; integração CRUD geral ainda em execução.
 
 ## Estado
 
