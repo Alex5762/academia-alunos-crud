@@ -1,6 +1,12 @@
 <?php
 require_once __DIR__ . '/funcoes.php';
 require_once __DIR__ . '/conexao.php';
+require_once __DIR__ . '/src/Domain/Enrollment/EnrollmentPeriodCalculator.php';
+require_once __DIR__ . '/src/Domain/Enrollment/EnrollmentInterval.php';
+require_once __DIR__ . '/src/Domain/Enrollment/EnrollmentCreationService.php';
+
+use FitControl\\Domain\\Enrollment\\EnrollmentCreationService;
+use FitControl\\Domain\\Enrollment\\EnrollmentPeriodCalculator;
 
 $usuario = exigirAutenticacao($pdo);
 
@@ -18,6 +24,181 @@ function planosTabelaDisponivel(PDO $pdo): bool {
 $estruturaDisponivel = planosTabelaDisponivel($pdo);
 $mensagem = $_SESSION['mensagem'] ?? '';
 unset($_SESSION['mensagem']);
+$mensagemErroMatricula = '';
+$novaMatriculaSolicitada = ($_GET['nova_matricula'] ?? '') === '1';
+$alunoMatriculaSelecionado = null;
+$planoMatriculaSelecionado = null;
+$dataInicioMatricula = (new DateTimeImmutable(
+    'now',
+    new DateTimeZone(EnrollmentPeriodCalculator::ACADEMY_TIMEZONE)
+))->format('Y-m-d');
+$horaInicioMatricula = '';
+$estruturaMatriculasDisponivel = false;
+$alunosAtivosMatricula = [];
+$planosAtivosMatricula = [];
+
+$colunasMatriculaObrigatorias = [
+    'planos' => ['id', 'nome', 'duracao_valor', 'duracao_unidade', 'valor_atual', 'situacao'],
+    'matriculas' => [
+        'id', 'aluno_id', 'plano_id', 'plano_nome_contratado', 'valor_contratado',
+        'duracao_contratada_valor', 'duracao_contratada_unidade', 'inicio_em',
+        'fim_exclusivo_em', 'dia_referencia_calendario', 'cancelada_em',
+        'origem', 'motivo_cancelamento', 'criado_em',
+    ],
+    'revisoes_legado' => ['aluno_id_origem', 'resultado_atual'],
+];
+
+if ($estruturaDisponivel) {
+    $estruturaMatriculasDisponivel = true;
+
+    foreach ($colunasMatriculaObrigatorias as $tabela => $colunas) {
+        $placeholders = [];
+        $parametros = ['tabela' => $tabela];
+
+        foreach ($colunas as $indice => $coluna) {
+            $placeholder = 'coluna_' . $indice;
+            $placeholders[] = ':' . $placeholder;
+            $parametros[$placeholder] = $coluna;
+        }
+
+        $consultaColunas = $pdo->prepare(
+            'SELECT COUNT(*)
+             FROM information_schema.COLUMNS
+             WHERE TABLE_SCHEMA = DATABASE()
+               AND TABLE_NAME = :tabela
+               AND COLUMN_NAME IN (' . implode(', ', $placeholders) . ')'
+        );
+        $consultaColunas->execute($parametros);
+
+        if ((int) $consultaColunas->fetchColumn() !== count($colunas)) {
+            $estruturaMatriculasDisponivel = false;
+            break;
+        }
+    }
+}
+
+if ($estruturaMatriculasDisponivel) {
+    $alunosAtivosMatricula = $pdo->query(
+        'SELECT id, nome FROM alunos WHERE ativo = 1 ORDER BY nome ASC, id ASC'
+    )->fetchAll(PDO::FETCH_ASSOC);
+
+    $planosAtivosMatricula = $pdo->query(
+        "SELECT id, nome, duracao_valor, duracao_unidade, valor_atual
+         FROM planos
+         WHERE situacao = 'ATIVO'
+           AND valor_atual > 0
+           AND duracao_valor > 0
+           AND duracao_unidade IN ('DIA', 'SEMANA', 'MES')
+         ORDER BY nome ASC, id ASC"
+    )->fetchAll(PDO::FETCH_ASSOC);
+}
+
+if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && ($_POST['acao'] ?? '') === 'criar_matricula') {
+    validarToken();
+    $novaMatriculaSolicitada = true;
+
+    $alunoRecebido = $_POST['aluno_id'] ?? '';
+    $alunoValidado = validarId($alunoRecebido);
+    $planoRecebido = $_POST['plano_id'] ?? '';
+    $planoValidado = validarId($planoRecebido);
+
+    $alunoMatriculaSelecionado = $alunoValidado === false ? null : (int) $alunoValidado;
+    $planoMatriculaSelecionado = $planoValidado === false ? null : (int) $planoValidado;
+    $dataRecebida = $_POST['data_inicio'] ?? '';
+    $horaRecebida = $_POST['hora_inicio'] ?? '';
+    $dataInicioMatricula = is_string($dataRecebida) ? $dataRecebida : '';
+    $horaInicioMatricula = is_string($horaRecebida) ? $horaRecebida : '';
+
+    try {
+        if (!$estruturaMatriculasDisponivel) {
+            throw new DomainException('A estrutura de matrículas ainda não está instalada.');
+        }
+        if ($alunoMatriculaSelecionado === null) {
+            throw new InvalidArgumentException('Selecione um aluno ativo.');
+        }
+        if ($planoMatriculaSelecionado === null) {
+            throw new InvalidArgumentException('Selecione um plano válido.');
+        }
+        if (preg_match('/^\\d{4}-\\d{2}-\\d{2}$/D', $dataInicioMatricula) !== 1) {
+            throw new InvalidArgumentException('Informe uma data de início válida.');
+        }
+
+        $fusoAcademia = new DateTimeZone(EnrollmentPeriodCalculator::ACADEMY_TIMEZONE);
+        $agoraLocal = new DateTimeImmutable('now', $fusoAcademia);
+        $diaInicio = DateTimeImmutable::createFromFormat('!Y-m-d', $dataInicioMatricula, $fusoAcademia);
+        $errosData = DateTimeImmutable::getLastErrors();
+
+        if (
+            !$diaInicio instanceof DateTimeImmutable
+            || $diaInicio->format('Y-m-d') !== $dataInicioMatricula
+            || (is_array($errosData) && ($errosData['warning_count'] > 0 || $errosData['error_count'] > 0))
+        ) {
+            throw new InvalidArgumentException('Informe uma data de início válida.');
+        }
+        if ($diaInicio->format('Y-m-d') < $agoraLocal->format('Y-m-d')) {
+            throw new DomainException('A data de início não pode estar no passado.');
+        }
+
+        if ($horaInicioMatricula === '') {
+            $inicioLocal = $diaInicio->format('Y-m-d') === $agoraLocal->format('Y-m-d')
+                ? $agoraLocal
+                : $diaInicio;
+        } else {
+            if (preg_match('/^(?:[01]\\d|2[0-3]):[0-5]\\d$/D', $horaInicioMatricula) !== 1) {
+                throw new InvalidArgumentException('Informe um horário válido.');
+            }
+
+            $inicioLocal = DateTimeImmutable::createFromFormat(
+                '!Y-m-d H:i',
+                $dataInicioMatricula . ' ' . $horaInicioMatricula,
+                $fusoAcademia
+            );
+            $errosHora = DateTimeImmutable::getLastErrors();
+
+            if (
+                !$inicioLocal instanceof DateTimeImmutable
+                || $inicioLocal->format('Y-m-d H:i') !== $dataInicioMatricula . ' ' . $horaInicioMatricula
+                || (is_array($errosHora) && ($errosHora['warning_count'] > 0 || $errosHora['error_count'] > 0))
+            ) {
+                throw new InvalidArgumentException('Informe um horário válido.');
+            }
+        }
+
+        $service = new EnrollmentCreationService(
+            $pdo,
+            static fn (): DateTimeImmutable => new DateTimeImmutable(
+                'now',
+                new DateTimeZone(EnrollmentPeriodCalculator::ACADEMY_TIMEZONE)
+            )
+        );
+        $matriculaId = $service->create(
+            $alunoMatriculaSelecionado,
+            $planoMatriculaSelecionado,
+            (int) $usuario['id'],
+            $inicioLocal
+        );
+
+        $_SESSION['mensagem'] = 'Matrícula #' . $matriculaId . ' criada com sucesso.';
+        header('Location: detalhes-aluno.php?id=' . $alunoMatriculaSelecionado, true, 303);
+        exit;
+    } catch (DomainException | InvalidArgumentException $exception) {
+        $mensagemErroMatricula = $exception->getMessage();
+        http_response_code(422);
+    } catch (Throwable $exception) {
+        error_log($exception->getMessage());
+        http_response_code(500);
+        $mensagemErroMatricula = 'Não foi possível criar a matrícula. Consulte o log do servidor.';
+    }
+}
+
+if ($novaMatriculaSolicitada && isset($_GET['aluno_id'])) {
+    $alunoGet = validarId($_GET['aluno_id']);
+    if ($alunoGet === false) {
+        http_response_code(400);
+        exit('Identificador de aluno inválido.');
+    }
+    $alunoMatriculaSelecionado = (int) $alunoGet;
+}
 
 $planoEdicao = null;
 $erroConsulta = '';
@@ -132,6 +313,9 @@ function classeSituacaoPlano(string $situacao): string {
     <span class="eyebrow">CATÁLOGO COMERCIAL</span>
     <h1>Planos</h1>
     <p class="settings-intro">Organize as opções disponíveis para novas matrículas sem alterar o histórico das contratações existentes.</p>
+    <?php if ($estruturaMatriculasDisponivel) { ?>
+        <a class="button button-primary enrollment-create-cta" href="planos.php?nova_matricula=1">Registrar matrícula</a>
+    <?php } ?>
 
     <?php if ($mensagem !== '') { ?>
         <div class="flash-message" role="status">
@@ -154,6 +338,91 @@ function classeSituacaoPlano(string $situacao): string {
             </p>
         </section>
     <?php } else { ?>
+        <?php if ($novaMatriculaSolicitada) { ?>
+            <section class="settings-card account-card" aria-labelledby="enrollment-form-title">
+                <div class="settings-card-heading">
+                    <span class="settings-icon" aria-hidden="true">＋</span>
+                    <div>
+                        <h2 id="enrollment-form-title">Nova matrícula</h2>
+                        <p>O preço, o nome e a duração do plano serão registrados como snapshot da contratação.</p>
+                    </div>
+                </div>
+
+                <?php if ($mensagemErroMatricula !== '') { ?>
+                    <div class="flash-message enrollment-error" role="alert"><?= escapar($mensagemErroMatricula) ?></div>
+                <?php } ?>
+
+                <?php if (!$estruturaMatriculasDisponivel) { ?>
+                    <p class="plan-setup-note">O fluxo de contratação será habilitado após a instalação e validação das migrations do Bloco 03.</p>
+                <?php } elseif ($alunosAtivosMatricula === [] || $planosAtivosMatricula === []) { ?>
+                    <p class="plan-setup-note">
+                        <?php if ($alunosAtivosMatricula === []) { ?>Não há alunos ativos disponíveis.<?php } ?>
+                        <?php if ($planosAtivosMatricula === []) { ?>Não há planos ativos com preço e duração válidos.<?php } ?>
+                    </p>
+                <?php } else { ?>
+                    <form action="planos.php?nova_matricula=1" method="post" class="account-create-form enrollment-create-form">
+                        <input type="hidden" name="token" value="<?= escapar($_SESSION['token']) ?>">
+                        <input type="hidden" name="acao" value="criar_matricula">
+
+                        <div>
+                            <label for="matricula-aluno">Aluno</label>
+                            <select id="matricula-aluno" name="aluno_id" required>
+                                <option value="">Selecione um aluno</option>
+                                <?php foreach ($alunosAtivosMatricula as $alunoMatricula) { ?>
+                                    <option value="<?= (int) $alunoMatricula['id'] ?>"
+                                        <?= $alunoMatriculaSelecionado === (int) $alunoMatricula['id'] ? 'selected' : '' ?>>
+                                        <?= escapar($alunoMatricula['nome']) ?> · #<?= (int) $alunoMatricula['id'] ?>
+                                    </option>
+                                <?php } ?>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="matricula-plano">Plano</label>
+                            <select id="matricula-plano" name="plano_id" required>
+                                <option value="">Selecione um plano ativo</option>
+                                <?php foreach ($planosAtivosMatricula as $planoMatricula) {
+                                    $unidadesMatricula = [
+                                        'DIA' => ((int) $planoMatricula['duracao_valor'] === 1 ? 'dia' : 'dias'),
+                                        'SEMANA' => ((int) $planoMatricula['duracao_valor'] === 1 ? 'semana' : 'semanas'),
+                                        'MES' => ((int) $planoMatricula['duracao_valor'] === 1 ? 'mês' : 'meses'),
+                                    ];
+                                    $duracaoMatricula = (int) $planoMatricula['duracao_valor'] . ' '
+                                        . ($unidadesMatricula[$planoMatricula['duracao_unidade']] ?? 'unidades');
+                                ?>
+                                    <option value="<?= (int) $planoMatricula['id'] ?>"
+                                        <?= $planoMatriculaSelecionado === (int) $planoMatricula['id'] ? 'selected' : '' ?>>
+                                        <?= escapar($planoMatricula['nome']) ?>
+                                        · R$ <?= escapar(number_format((float) $planoMatricula['valor_atual'], 2, ',', '.')) ?>
+                                        · <?= escapar($duracaoMatricula) ?>
+                                    </option>
+                                <?php } ?>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="matricula-data-inicio">Data de início</label>
+                            <input type="date" id="matricula-data-inicio" name="data_inicio"
+                                   min="<?= escapar((new DateTimeImmutable('now', new DateTimeZone(EnrollmentPeriodCalculator::ACADEMY_TIMEZONE)))->format('Y-m-d')) ?>"
+                                   value="<?= escapar($dataInicioMatricula) ?>" required>
+                        </div>
+
+                        <div>
+                            <label for="matricula-hora-inicio">Horário <span class="optional-label">opcional</span></label>
+                            <input type="time" id="matricula-hora-inicio" name="hora_inicio"
+                                   value="<?= escapar($horaInicioMatricula) ?>">
+                            <small class="field-hint">Hoje sem horário usa o instante atual; uma data futura começa às 00:00 no fuso da academia.</small>
+                        </div>
+
+                        <div class="enrollment-create-actions">
+                            <button class="button button-primary" type="submit">Confirmar matrícula</button>
+                            <a class="button button-search" href="planos.php">Cancelar</a>
+                        </div>
+                    </form>
+                <?php } ?>
+            </section>
+        <?php } ?>
+
         <section class="plan-summary-grid" aria-label="Resumo do catálogo">
             <article class="plan-summary-card">
                 <span>Ativos</span>
