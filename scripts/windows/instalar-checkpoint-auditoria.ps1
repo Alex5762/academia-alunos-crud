@@ -41,7 +41,7 @@ $secureConfig = ConvertTo-SecureString -String $config -AsPlainText -Force
 $encrypted = ConvertFrom-SecureString -SecureString $secureConfig
 Set-Content -LiteralPath $configPath -Value $encrypted -Encoding ASCII
 $runner = Join-Path $PSScriptRoot "executar-checkpoint-auditoria.ps1"
-$actionArgs = '-NoProfile -NonInteractive -ExecutionPolicy Bypass -File "' + $runner + '" -ProjectRoot "' + $project + '" -StateDirectory "' + $state + '" -EncryptedConfigPath "' + $configPath + '"'
+$actionArgs = '-NoProfile -NonInteractive -ExecutionPolicy Bypass -File "' + $runner + '" -ProjectRoot "' + $project + '" -StateDirectory "' + $state + '" -EncryptedConfigPath "' + $configPath + '" -PhpPath "' + $PhpPath + '"'
 $action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument $actionArgs
 $trigger = New-ScheduledTaskTrigger -Daily -At $DailyAt
 $principal = New-ScheduledTaskPrincipal -UserId $identity -LogonType Interactive -RunLevel Limited
