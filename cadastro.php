@@ -2,6 +2,7 @@
 require_once __DIR__ . '/funcoes.php';
 require_once __DIR__ . '/conexao.php';
 $usuario = exigirAutenticacao($pdo);
+exigirPermissao($usuario, 'students.view');
 $contextoLista = obterContextoListaAlunos($_GET);
 
 // Sem ID: formulário novo. Com ID: formulário de edição.
