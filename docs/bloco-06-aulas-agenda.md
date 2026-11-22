@@ -1,215 +1,164 @@
-# Bloco 06 — Aulas e agenda
+# Bloco 06 — Grade fixa de aulas
 
-> **Estado:** especificação inicial proposta; implementação não iniciada.
-> **Dependências:** Blocos 01–05 (autenticação/RBAC, alunos, matrículas, frequência e financeiro).
-> **Ambiente:** continuar na branch `feat/dashboard-portfolio`; a validação XAMPP permanece adiada e não bloqueia a especificação nem a implementação automatizada.
+> **Estado:** escopo inicial do MVP definido; implementação ainda não iniciada.
+> **Branch de trabalho:** `feat/dashboard-portfolio`.
+> **Dependências:** autenticação/RBAC, cadastro de funcionários e auditoria existentes. A validação manual pelo XAMPP continua adiada e não bloqueia a especificação nem os testes automatizados.
+>
+> **Diretriz central:** começar com uma grade semanal fixa. A academia informa quais aulas oferece, em quais dias e horários e com quais instrutores. O aluno consulta a programação e comparece; o MVP não exige reserva nem check-in específico de aula.
 
 ## 1. Objetivo
 
-Permitir que a equipe da academia organize aulas coletivas, mantenha horários recorrentes, gere sessões concretas na agenda, controle vagas e reservas e registre a presença específica em cada aula.
+Disponibilizar no FitControl uma forma simples de cadastrar e consultar a programação recorrente de aulas coletivas de uma academia.
 
-O módulo deve reutilizar alunos, matrículas, funcionários, fuso horário, transações e auditoria existentes. Não deve duplicar o check-in geral da academia nem criar um sistema de cobrança paralelo.
+O projeto é um sistema web acadêmico/de portfólio. O objetivo deste bloco é demonstrar modelagem de dados, CRUD, regras de consistência, autorização, auditoria e interface responsiva — sem presumir que toda academia precise de reservas ou de integração com equipamentos de acesso.
 
-## 2. Escopo proposto para a primeira versão
+## 2. Escopo do MVP
 
 ### Incluído
 
-1. **Modalidades:** cadastro, edição e ativação/inativação de modalidades (por exemplo: funcional, spinning, yoga ou dança).
-2. **Turmas recorrentes:** nome da turma, modalidade, instrutor, capacidade, duração e situação.
-3. **Horários semanais:** um ou mais horários por turma, com dia da semana, hora local e período de vigência.
-4. **Geração explícita de sessões:** ação autenticada gera as próximas sessões dentro de uma janela limitada (proposta inicial: 30 dias). Não haverá cron, worker ou geração em background. A operação será idempotente: executar novamente não cria sessões duplicadas.
-5. **Agenda:** visão diária/semanal, filtros por modalidade, turma e instrutor, com estados de sessão programada/cancelada.
-6. **Reservas internas:** somente funcionário reserva uma vaga para aluno elegível no MVP; cancelamento da reserva preserva o registro histórico e libera capacidade.
-7. **Capacidade:** nunca permitir que reservas ativas excedam a capacidade da sessão, mesmo sob requisições concorrentes.
-8. **Conflitos:** impedir que o mesmo instrutor seja escalado para duas sessões sobrepostas e que o mesmo aluno mantenha reservas sobrepostas.
-9. **Presença na aula:** lista de participantes e marcação individual como presente/ausente depois do início da sessão. Essa presença é diferente do check-in geral da academia.
-10. **Cancelamento de sessão:** Gestor/Admin pode cancelar uma sessão futura com justificativa; reservas permanecem consultáveis e não são apagadas.
-11. **Auditoria:** criação/alteração de modalidade, turma, horário, sessão, reserva, cancelamento e marcação de presença gera evento na cadeia geral, dentro da mesma transação da escrita.
-12. **Acessibilidade e responsividade:** agenda e lista de participantes utilizáveis em desktop, mobile e teclado.
+1. **Modalidades:** cadastrar, editar, ativar e inativar modalidades, como funcional, spinning, yoga ou dança.
+2. **Instrutores:** manter cadastro profissional independente, com vínculo opcional a uma conta de funcionário já existente.
+3. **Horários fixos:** cadastrar cada ocorrência semanal da grade com modalidade, dia da semana, hora de início, hora de término e instrutor responsável, quando definido.
+4. **Visualização da grade:** apresentar a programação organizada por dia e horário, com filtros simples por modalidade e instrutor.
+5. **Manutenção da programação:** permitir editar e inativar horários, preservando a trilha de auditoria.
+6. **Consistência:** validar horários, impedir término anterior ou igual ao início e impedir conflito de horários do mesmo instrutor no mesmo dia.
+7. **Permissões:** restringir alterações a Administrador/Gestor; permitir consulta aos perfis autorizados.
+8. **Acessibilidade e responsividade:** a grade e os formulários devem funcionar em desktop, mobile e navegação por teclado.
 
-### Fora do escopo inicial
+### Como a grade funciona
 
-- Portal completo de autoatendimento, escolha de aulas, criação e cancelamento de reservas pelo aluno (fora do MVP).
-- QR Code, catraca, biometria ou check-in automático.
-- Portal de autoatendimento do aluno, criação/cancelamento de reservas pelo aluno e lista de espera autoatendida/automática.
-- Promoção automática de vagas, notificações automáticas e push no MVP.
-- Cobrança por aula, pacotes de aulas, créditos ou integração com o financeiro.
-- Gestão de salas, quadras, equipamentos ou recursos físicos.
-- Notificações automáticas por e-mail, WhatsApp ou push.
-- Aplicativo nativo, sincronização com Google/Outlook ou integrações externas.
-- Multiunidade/multitenancy.
-- Relatórios avançados (Bloco 07).
+- Cada registro representa uma regra recorrente semanal, não uma aula em uma data específica.
+- Para representar uma aula que ocorre em mais de um dia, cadastrar um horário por dia. Exemplo: Funcional às segundas às 19h e Funcional às quartas às 19h são dois horários recorrentes.
+- Os horários são horários civis locais da academia, usando inicialmente o fuso `America/Sao_Paulo`.
+- O horário pode ter instrutor não definido, caso a academia ainda não tenha atribuído um profissional.
+- Alterar um horário altera a programação recorrente vigente e gera auditoria. O MVP não mantém histórico de cada ocorrência semanal.
+- A grade é informativa. Ela não representa matrícula individual do aluno nem garante vaga em uma sessão.
 
-### Pesquisa aplicada: lista de espera sem aplicativo nativo
+### Fora do MVP
 
-A pesquisa de soluções de agendamento para academias/estúdios encontrou três padrões relevantes:
+- Reservas, cancelamentos de reserva e controle de vagas.
+- Lista de espera ou promoção automática de vagas.
+- Registro de presença por aula ou lista de alunos esperados.
+- Histórico individual de participação em aulas.
+- QR Code, catraca, biometria ou integração com sistemas de acesso.
+- Conta, portal ou autoatendimento do aluno.
+- Geração de sessões datadas, calendário de ocorrências e exceções por feriados.
+- Notificações, push, aplicativo nativo ou PWA.
+- Cobrança por aula, créditos ou integração com o financeiro.
+- Gestão de salas, quadras, equipamentos, multiunidade ou relatórios avançados.
 
-1. **Fila com oferta da próxima vaga:** GettingBooked descreve que, quando uma pessoa cancela, a vaga é oferecida à próxima da fila; Luma descreve oferta automática antes de um horário-limite; Glofox descreve notificação e promoção conforme as políticas do estúdio. Avana descreve notificação ao primeiro da fila e passagem ao próximo quando a vaga não é aceita. São descrições dos próprios fornecedores sobre seus produtos, úteis como referência de mercado, não normas técnicas.
-2. **Acesso por navegador:** GettingBooked oferece página de reservas no browser sem aplicativo; Luma compartilha uma página/URL ou widget incorporável; Glofox oferece app e web portal; Avana declara que o membro pode usar o browser do celular e código de acesso por e-mail, sem instalar app.
-3. **PWA como aprimoramento opcional:** uma Progressive Web App usa tecnologias web e uma base de código para várias plataformas. O usuário pode abrir por URL no navegador e, se desejar, instalar um ícone na tela inicial e abrir em modo standalone. Isso não exige publicar nem manter um aplicativo nativo separado. Push é um recurso posterior, condicionado a suporte do navegador, HTTPS, service worker e consentimento explícito; no iOS/iPadOS, Web Push exige que a web app esteja adicionada à tela inicial e que o usuário autorize.
+O check-in geral já existente no Bloco 04 continua independente. Uma entrada registrada na academia não será interpretada como presença em uma modalidade ou aula específica.
 
-**Recomendação para o FitControl: web-first, sem app nativo.** O painel da equipe permanece no próprio sistema web responsivo. Para o MVP, a lista de espera pode ser interna e operada por funcionário; a equipe comunica a oferta pelo canal já usado pela academia (telefone/WhatsApp/e-mail) e registra a resposta no painel. Não precisamos criar portal de reservas do aluno, app Android/iOS, integração de notificações ou PWA agora.
+## 3. Modelo de domínio inicial
 
-### Lista de espera interna — proposta recomendada para o MVP (aguarda confirmação)
-
-- Quando a sessão estiver cheia, funcionário autorizado pode adicionar aluno elegível à fila.
-- A ordem é FIFO por `criado_em`, com `id` como desempate estável.
-- A fila não ocupa vaga e não altera a capacidade. Só uma reserva ativa confirmada ocupa a vaga.
-- Quando surge uma vaga, o painel sinaliza o próximo aluno elegível. Um funcionário entra em contato pelo canal habitual e registra: ofertada, aceita, recusada ou sem resposta.
-- A aceitação só vira reserva quando um funcionário executa a operação normal de reservar; a transação de reserva revalida matrícula, conflito e capacidade. Se outra pessoa ocupar a vaga antes, a operação informa que não há mais disponibilidade e a equipe oferece a próxima posição.
-- Recusa ou desistência encerra aquela entrada e libera a próxima posição. Não há promoção automática, bloqueio temporário de vaga ou expiração automática no MVP.
-- Um aluno não pode estar duas vezes na fila da mesma sessão nem manter simultaneamente reserva ativa e entrada ativa na fila da mesma sessão.
-- Toda inclusão, oferta, recusa, conversão em reserva e remoção é auditada. A fila preserva histórico em vez de apagar registros.
-
-Esse desenho entrega o benefício operacional de uma waitlist sem obrigar o aluno a instalar um app nem exigir automação de mensagens. A promoção automática pode ser reavaliada após observar uso real.
-
-### Acesso futuro do aluno por web link — sem aplicativo nativo
-
-A confirmação seletiva de intenção de comparecer pode ser implementada como uma página mobile-first no próprio FitControl, aberta por link em navegador. Não requer app nativo nem PWA. A PWA seria opcional apenas se, mais tarde, houver valor em ícone de tela inicial ou push.
-
-Para essa fase futura:
-- O link deve dar acesso a uma única ação e a uma única reserva; nunca abrir agenda, dados financeiros, cadastro completo ou outras reservas.
-- Usar token aleatório de alta entropia, armazenado somente como hash, associado à reserva e com expiração/revogação. O token não deve conter aluno_id ou outros dados pessoais legíveis.
-- GET apenas apresenta a página; a confirmação ocorre em POST explícito para evitar que pré-visualizadores de e-mail/WhatsApp consumam o token.
-- A resposta registra intenção de comparecer, instante e origem; não altera presença real, não cria/cancela reserva nem libera vaga.
-- A funcionalidade fica desabilitada por padrão e é habilitada por reserva/aluno escolhido pela equipe. Não há conta de aluno no MVP.
-
-
-## 3. Modelo de domínio proposto
+O modelo deve permanecer pequeno e refletir a operação de grade aberta.
 
 | Entidade | Responsabilidade |
 |---|---|
-| `modalidades` | Catálogo de tipos de aula; inativar em vez de excluir quando houver histórico. |
-| `turmas` | Definição da atividade recorrente, instrutor, capacidade padrão e duração. |
-| `horarios_turma` | Regra semanal: dia da semana, hora local e vigência da recorrência. |
-| `aulas` | Ocorrência concreta com início/fim UTC, capacidade e instrutor preservados como snapshot operacional. |
-| `reservas_aulas` | Vínculo aluno–sessão, estado da reserva e autoria. |
+| `modalidades` | Catálogo de atividades, com nome, descrição opcional e situação ativa/inativa. |
+| `instrutores` | Cadastro profissional independente, com dados de contato e vínculo opcional a `usuarios`. |
+| `horarios_aula` | Regra semanal com modalidade, dia da semana, hora inicial/final, instrutor opcional e situação. |
 
-**Distinção essencial:** turma/horário é a regra recorrente; aula é uma ocorrência datada. Reservas e presenças pertencem à ocorrência, nunca diretamente à regra semanal.
+**Não criar no MVP** tabelas de reservas, lista de espera, presenças por sessão, tokens de confirmação ou ocorrências datadas de aulas.
 
-### Geração de sessões
+A tabela `horarios_aula` pode usar uma linha por combinação de dia/horário. Não é necessário introduzir uma entidade de turma/coorte ou uma tabela de sessões concretas enquanto a operação for de participação livre.
 
-- A geração será acionada por POST autenticado e protegido por CSRF.
-- A janela padrão proposta é de 30 dias, com limite máximo configurável/validado pelo serviço.
-- A geração converte data/hora de `America/Sao_Paulo` para UTC antes da persistência.
-- Uma chave única por horário recorrente e instante da ocorrência impede duplicidade em reexecuções.
-- Sessões já geradas não serão reescritas automaticamente quando a turma ou o horário semanal mudar. A alteração valerá para ocorrências ainda não geradas; sessões existentes exigem ajuste/cancelamento explícito e auditado.
-- A geração deve informar quantas sessões foram criadas e quantas já existiam, sem tratar duplicidade idempotente como erro.
+Os nomes e tipos finais das colunas, chaves estrangeiras, índices e restrições serão confirmados após inspeção do schema real e antes de escrever a migration. A implementação ainda não começou.
 
-## 4. Regras de elegibilidade e reserva
+## 4. Regras de negócio
 
-- Somente aluno cadastralmente ativo pode reservar.
-- O aluno precisa ter exatamente uma matrícula válida que cubra **todo o intervalo** da sessão: início da matrícula <= início da aula e fim efetivo da matrícula >= fim da aula. Matrículas canceladas, agendadas depois da aula, vencidas antes do término ou ambíguas não habilitam reserva.
-- A elegibilidade será revalidada no serviço de domínio; não confiar apenas nas opções mostradas na tela.
-- O primeiro corte não bloqueará reserva por inadimplência: financeiro e reservas permanecem desacoplados até uma decisão explícita posterior.
-- Uma turma/sessão cancelada ou iniciada/concluída não aceita nova reserva.
-- Uma reserva ativa ocupa uma vaga; reserva cancelada não ocupa vaga.
-- A lista de espera interna proposta não ocupa vaga; a posição é ordenada por `criado_em` e `id` e só funcionário autorizado administra a fila.
-- Uma vaga aberta apenas sinaliza o próximo aluno elegível à equipe. Não há promoção automática, reserva temporária nem liberação automática baseada em resposta do aluno no MVP.
-- A entrada de espera só vira reserva após confirmação operacional e nova validação transacional de capacidade, elegibilidade e conflito.
-- Uma pessoa não pode possuir duas reservas ativas em sessões cujos intervalos se sobreponham.
-- O mesmo aluno não pode ter duas reservas para a mesma sessão. Se cancelar e voltar atrás antes do início, o serviço poderá reativar o registro existente em vez de inserir duplicata, mantendo a trilha de auditoria.
-- A capacidade é conferida dentro da transação, após bloquear a linha da sessão. O índice único continua protegendo a duplicidade por aluno/sessão.
-- Cancelamento de reserva é permitido antes do início da sessão. Não haverá multa nem cobrança por falta nesta versão.
-- Presença (presente/ausente) só pode ser marcada a partir do início da sessão e não pode ser marcada em sessão cancelada.
-- A sessão cancelada não apaga reservas nem registros de presença anteriores; o estado da sessão prevalece para a apresentação da agenda.
+- Modalidade inativa não pode receber novos horários ativos.
+- Instrutor inativo não pode ser atribuído a novos horários ativos.
+- Instrutor pode existir sem conta de funcionário.
+- Uma conta de funcionário pode estar vinculada a no máximo um cadastro de instrutor.
+- O vínculo opcional não cria credenciais, não concede acesso e não altera o RBAC.
+- O mesmo instrutor não pode ter dois horários ativos sobrepostos no mesmo dia.
+- Horários devem ter início e término válidos; não aceitar duração zero ou negativa.
+- A inativação de modalidade ou instrutor não apaga horários ou registros existentes. A interface deve indicar vínculos que precisam ser revisados.
+- Mudanças na programação devem ser auditadas com o funcionário responsável.
+- Não validar elegibilidade de aluno, matrícula, inadimplência ou capacidade neste bloco, pois a grade não contém reservas nem inscrições individuais.
 
-### Confirmação opcional de participação pelo aluno — fase futura
+## 5. Instrutores — decisão confirmada
 
-- Não faz parte do MVP: reservas e cancelamentos são operados por funcionários.
-- Em uma fase posterior e habilitada seletivamente, o aluno poderá responder somente sobre uma reserva que já esteja vinculada a ele.
-- A resposta será armazenada separadamente da presença efetiva. Estados candidatos: pendente, confirmou que pretende comparecer e informou que não pretende comparecer; o vocabulário final será definido com o fluxo.
-- Uma resposta do aluno não altera a presença, não cancela a reserva nem libera vaga automaticamente. Qualquer liberação continuará sob regra explícita e/ou ação autorizada da equipe.
-- O evento de confirmação deve registrar instante e origem, sem permitir que o cliente envie livremente aluno_id, presença final ou ator administrativo.
+**Decisão:** cadastro independente com vínculo opcional a uma conta existente em `usuarios`.
 
-## 5. Instrutores — decisão C confirmada
+O instrutor pode aparecer na grade sem possuir login no FitControl. Caso também seja funcionário, os dois cadastros podem ser vinculados, sem que isso conceda permissões adicionais.
 
-**Decisão confirmada:** cadastro independente de instrutores, com vínculo opcional a uma conta existente em `usuarios`. O instrutor pode constar na agenda sem receber credenciais ou acesso ao FitControl.
-
-### Modelo proposto
-
-A tabela `instrutores` será o cadastro profissional e operacional, independente do cadastro de autenticação:
+Modelo conceitual proposto:
 
 | Campo | Regra |
 |---|---|
-| `id` | Chave primária `BIGINT UNSIGNED` |
-| `nome` | Obrigatório, nome de exibição |
-| `email` | Opcional |
-| `telefone` | Opcional |
-| `usuario_id` | Opcional, FK para `usuarios.id`, com índice UNIQUE |
-| `ativo` | Obrigatório, inicia ativo; inativar em vez de excluir |
-| `criado_em` / `atualizado_em` | Datas de controle |
+| `id` | Chave primária, tipo compatível com o padrão do projeto. |
+| `nome` | Obrigatório. |
+| `email` | Opcional. |
+| `telefone` | Opcional. |
+| `usuario_id` | Opcional, FK para `usuarios.id`, UNIQUE quando não nulo. |
+| `ativo` | Situação do cadastro; inativar em vez de excluir. |
+| timestamps | Datas de criação e atualização. |
 
-- `usuario_id = NULL` significa instrutor sem conta de acesso.
-- O índice UNIQUE permite que uma conta seja vinculada a no máximo um cadastro de instrutor, preservando múltiplos registros sem vínculo.
-- O vínculo não cria conta, não concede permissões e não altera o perfil RBAC. Ele apenas relaciona o cadastro profissional a uma identidade já existente.
-- Qualquer perfil atual (ADMINISTRADOR, GESTOR ou OPERADOR) pode ser vinculado, desde que a conta esteja ativa. Não será criado um papel novo de instrutor nesta versão.
-- Um instrutor inativo não pode ser atribuído a novas turmas nem receber novas sessões. Inativar um instrutor não apaga nem cancela sessões futuras automaticamente: a agenda deve sinalizar o conflito para resolução explícita.
-- Uma conta vinculada que seja desativada não apaga o cadastro profissional, mas impede novas atribuições enquanto a conta estiver inativa. O vínculo pode ser removido ou trocado por um administrador/gestor autorizado.
-- Nome, e-mail e telefone do instrutor pertencem ao cadastro profissional e não são sincronizados automaticamente com `usuarios`. Alterações de conta não devem sobrescrever os dados profissionais.
-- A primeira versão não terá login, painel ou permissões próprias para instrutores. Toda gestão é feita por Administrador/Gestor; o vínculo opcional não transforma o instrutor em usuário do módulo.
-
-### Histórico e integridade
-
-- Instrutores com turmas, sessões ou presenças associadas não podem ser excluídos fisicamente; devem ser inativados.
-- A FK `instrutores.usuario_id` usa `ON DELETE RESTRICT`; o projeto já evita exclusão física de contas e mantém histórico de auditoria.
-- Cada sessão gerada preserva `instrutor_id` e `instrutor_nome_snapshot`, para que renomear o cadastro profissional não reescreva a informação histórica da aula já programada.
-- Criar, editar, inativar e vincular/desvincular conta gera evento na cadeia geral de auditoria, com o funcionário autenticado como responsável.
-- A migration futura deve validar que `usuario_id` tem exatamente o mesmo tipo/unsigned da PK real de `usuarios.id`; confirmar isso na inspeção do schema de autenticação antes de escrever DDL.
+Antes da migration, verificar o tipo exato de `usuarios.id`, incluindo sinalização UNSIGNED, engine e regras de exclusão. Não presumir o tipo da chave estrangeira.
 
 ## 6. Permissões RBAC propostas
 
 | Permissão | Administrador | Gestor | Operador |
 |---|---:|---:|---:|
-| `classes.view` | Sim | Sim | Sim |
-| `classes.manage` (modalidades, turmas e horários) | Sim | Sim | Não |
-| `instructors.view` | Sim | Sim | Sim |
-| `instructors.manage` (cadastro, edição, inativação e vínculo opcional) | Sim | Sim | Não |
-| `classes.generate` (gerar sessões) | Sim | Sim | Não |
-| `classes.reserve` | Sim | Sim | Sim |
-| `classes.cancel_reservation` | Sim | Sim | Sim |
-| `classes.cancel_session` | Sim | Sim | Não |
-| `classes.attendance` (marcar presença/ausência) | Sim | Sim | Sim |
+| `classes.view` — consultar grade e modalidades | Sim | Sim | Sim |
+| `classes.manage` — criar/editar/inativar modalidades e horários | Sim | Sim | Não |
+| `instructors.view` — consultar instrutores | Sim | Sim | Sim |
+| `instructors.manage` — criar/editar/inativar e vincular instrutores | Sim | Sim | Não |
 
-O servidor deve verificar cada permissão em toda página e endpoint. Ocultar controles na interface não é autorização.
+A autorização deve ser verificada no servidor em toda página e endpoint. Ocultar controles na interface não substitui RBAC.
 
-## 10. Decisões confirmadas e decisões ainda abertas
+## 7. Critérios de aceite
+
+- A equipe consegue cadastrar, editar e inativar uma modalidade.
+- A equipe consegue cadastrar e inativar um instrutor sem criar conta de acesso.
+- Um instrutor existente pode ser vinculado opcionalmente a um funcionário.
+- A equipe consegue cadastrar mais de um horário para a mesma modalidade em dias diferentes.
+- A grade pode ser consultada por dia e filtrada por modalidade/instrutor.
+- Horários inválidos e conflitos de um mesmo instrutor são rejeitados no servidor.
+- Operadores conseguem consultar, mas não alterar a programação.
+- Alterações relevantes geram eventos na auditoria.
+- A interface funciona nos viewports mobile e desktop cobertos pela CI.
+- Nenhuma funcionalidade de reserva, presença por aula, QR Code ou catraca é necessária para considerar o MVP concluído.
+
+## 8. Evoluções possíveis, sem compromisso para o MVP
+
+Se o projeto precisar demonstrar uma operação mais avançada, a grade pode evoluir em etapas independentes:
+
+1. **Ocorrências datadas:** gerar sessões para datas específicas, permitindo feriados, cancelamentos pontuais e substituição de instrutor sem alterar a regra semanal.
+2. **Presença por aula:** registrar participantes de uma sessão específica, sem confundir com o check-in geral da academia.
+3. **Confirmação por QR Code:** oferecer uma forma opcional de confirmar a presença, com identificação segura e prevenção de duplicidade.
+4. **Integração com catracas:** estudar integração apenas quando houver equipamento e API/documentação compatíveis.
+5. **Reservas:** adicionar somente se o modelo de operação de uma academia realmente exigir controle antecipado de vagas.
+
+Essas evoluções não devem criar dependências no primeiro MVP. Em particular, não se deve inferir presença em aula a partir do check-in geral da academia.
+
+## 9. Decisões registradas
 
 ### Confirmadas
 
-- [x] **Instrutores:** opção C — cadastro profissional independente, com vínculo opcional a uma conta existente em `usuarios`. O cadastro não concede acesso ao sistema.
-- [x] **Reservas no MVP:** opção A — somente Administrador/Gestor/Operador autorizado faz reservas e cancelamentos pelo painel interno. O aluno não terá conta ou portal de autoatendimento na primeira versão.
-- [x] **Evolução limitada:** considerar futuramente a opção C apenas para alunos selecionados confirmarem intenção de participar de reservas já feitas pela equipe. Essa confirmação não será presença real, não cria reserva e não libera vaga automaticamente.
+- [x] **Grade semanal fixa como núcleo do MVP:** modalidades, instrutores e horários recorrentes.
+- [x] **Participação livre:** o aluno consulta os horários e comparece; não precisa reservar vaga.
+- [x] **Sem controle de vagas ou lista de espera no MVP.**
+- [x] **Sem histórico de presença por aula no MVP:** o histórico de participação fica em aberto para uma evolução posterior.
+- [x] **Check-in geral separado:** o registro de entrada do Bloco 04 não será automaticamente associado a uma aula.
+- [x] **QR Code e catracas fora do MVP:** podem ser avaliados como evoluções independentes.
+- [x] **Instrutores:** cadastro independente, com vínculo opcional a uma conta existente em `usuarios`.
+- [x] **Web-first:** painel responsivo no navegador, sem aplicativo nativo.
 
-### Ainda abertas antes da implementação
+### Antes da implementação
 
-1. **Janela de geração:** confirmar 30 dias como horizonte padrão de criação de sessões.
-2. **Lista de espera:** decidir se aprovamos a fila interna operada por funcionários no MVP. A recomendação da pesquisa é incluir essa versão simples e deixar promoção automática fora.
-3. **Presença por aula:** confirmar que será um registro separado do check-in geral da academia (a especificação recomenda separação).
-4. **Confirmação seletiva futura:** a recomendação é uma página web mobile-first com token individual e limitado à reserva; decidir canal de entrega e política de expiração antes de implementar.
-5. **PWA:** não faz parte do MVP. Reavaliar somente se houver necessidade real de instalação em tela inicial ou push; não criar app nativo dedicado.
+1. Inspecionar o schema atual de `usuarios` e confirmar tipos das chaves e padrão de timestamps.
+2. Confirmar os campos finais da modalidade e do horário, incluindo se a descrição será necessária.
+3. Confirmar a migration e os índices para evitar conflito de instrutor e duplicidade de horários.
+4. Definir telas, estados vazios, mensagens de validação e testes de RBAC.
 
-A decisão sobre reservas internas define o MVP. As evoluções futuras não devem aumentar o escopo inicial nem bloquear sua implementação.
+## 10. Referências e fronteiras com os outros blocos
 
-## 11. Referências técnicas e pesquisa de mercado
+- **Bloco 04 — Frequência e check-in:** continua responsável pelo check-in geral da academia. Este Bloco 06 não reaproveita esse registro como presença em aula.
+- **Bloco 05 — Financeiro:** não há cobrança por aula nem bloqueio financeiro associado à grade.
+- **Bloco 07 — Relatórios:** relatórios de participação ou ocupação podem ser avaliados quando houver dados de sessões e presenças.
+- **Bloco 08 — Preparação para produção:** continua dependendo de validações e revisão próprias.
 
-### Produto e operação de aulas
-
-- [GettingBooked — booking software](https://gettingbooked.app/): página pública no navegador; a documentação comercial descreve fila de espera em que a vaga é oferecida à próxima pessoa quando há cancelamento.
-- [Luma — gym scheduling](https://www.lumaos.app/gym-scheduling-software): página de agenda compartilhável/incorporável e waitlist com oferta da vaga antes de um cutoff.
-- [ABC Glofox — FAQ](https://www.glofox.com/faq/): app e web portal; descreve notificação da próxima pessoa na fila, promoção conforme políticas e confirmação da vaga.
-- [Avana — member app and browser](https://www.getavana.com/studio-software/app-voor-leden): descreve reserva pelo browser do celular com código por e-mail, sem download, além de lista de espera e notificação. As descrições são material dos fornecedores e não auditoria independente dos produtos.
-
-### Plataforma web
-
-- MDN — [Progressive Web Apps](https://developer.mozilla.org/pt-BR/docs/Web/Progressive_web_apps): tecnologias web e base de código compartilhada entre plataformas.
-- MDN — [Making PWAs installable](https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/Guides/Making_PWAs_installable): manifest, instalação e modo standalone.
-- WebKit — [Web Push for Web Apps on iOS and iPadOS](https://webkit.org/blog/13878/web-push-for-web-apps-on-ios-and-ipados/): Web Push para web apps adicionadas à tela inicial no iOS/iPadOS 16.4+, mediante permissão do usuário.
-- MDN — [Notifications API](https://developer.mozilla.org/en-US/docs/Web/API/Notifications_API): permissão para notificações deve ser solicitada em resposta a gesto do usuário.
-
-### Concorrência e banco
-
-- MySQL 8.0 — [InnoDB Locking Reads](https://dev.mysql.com/doc/refman/8.0/en/innodb-locking-reads.html): `SELECT ... FOR UPDATE`, bloqueios e transações.
-- MySQL 8.0 — [Internal Locking Methods](https://dev.mysql.com/doc/refman/8.0/en/internal-locking.html): locks por linha e práticas para evitar deadlocks.
-- MySQL 8.0 — [InnoDB Best Practices](https://dev.mysql.com/doc/refman/8.0/en/innodb-best-practices.html): PKs, FKs, índices e transações curtas.
-
+**Estado técnico:** esta é uma especificação de escopo. Nenhuma migration, tabela, tela ou fluxo de aulas foi implementado ainda.
