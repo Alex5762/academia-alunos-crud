@@ -910,6 +910,8 @@ HTTP_CODE="$(curl -sS -L -o "$TMP_DIR/enrollment-cancelled.html" -w '%{http_code
 [[ "$HTTP_CODE" == "200" ]] || fail "Cancelamento válido não retornou ao perfil com HTTP 200."
 assert_contains "$TMP_DIR/enrollment-cancelled.html" "Matrícula cancelada com sucesso."
 assert_contains "$TMP_DIR/enrollment-cancelled.html" "Solicitação do aluno pelo teste HTTP"
+RESPONSAVEL_CANCELAMENTO="$(db_value "SELECT nome FROM usuarios WHERE id = $USUARIO_ID")"
+assert_contains "$TMP_DIR/enrollment-cancelled.html" "$RESPONSAVEL_CANCELAMENTO"
 
 CANCELLED_ROW="$(db_value "SELECT COUNT(*) FROM matriculas
     WHERE id = $CANCEL_ENROLLMENT_ID
