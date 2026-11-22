@@ -291,7 +291,7 @@ final class LegacyEnrollmentRectificationService
             ]);
 
             // 9. Auditoria geral na mesma transação das demais três alterações.
-            \\FitControl\\Security\\AuditIntegrityChain::append($this->pdo, $actorUserId, 'matricula_corrigida', 'matriculas', $enrollmentId);
+            \FitControl\Security\AuditIntegrityChain::append($this->pdo, $actorUserId, 'matricula_corrigida', 'matriculas', $enrollmentId);
 
             $this->pdo->commit();
         } catch (Throwable $exception) {
