@@ -164,9 +164,9 @@ foreach ($usuarios as $conta) {
     </section>
 
     <p class="account-policy">
-        Nesta versão, todas as contas ativas têm as mesmas permissões administrativas.
+        Novas contas começam como Operador. Administradores podem atribuir os perfis Gestor ou Administrador conforme a responsabilidade do funcionário.
         Contas não são apagadas: desative o acesso para preservar o histórico de auditoria.
-        Não é permitido desativar a própria conta nem a última conta ativa.
+        Não é permitido desativar a própria conta, alterar o próprio perfil nem remover o último administrador ativo.
     </p>
 </main>
 </body>
