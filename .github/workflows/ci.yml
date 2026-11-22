@@ -260,6 +260,9 @@ jobs:
       - name: Test UTC audit timestamp formatting in academy timezone
         run: php tests/utc-academy-time-format.php
 
+      - name: Test role-based access control matrix
+        run: php tests/access-control.php
+
       - name: Check required project files
         run: |
           test -f index.php
@@ -286,6 +289,9 @@ jobs:
           test -f src/Domain/Enrollment/EnrollmentStatus.php
           test -f tests/enrollment-status.php
           test -f tests/utc-academy-time-format.php
+          test -f src/Security/AccessControl.php
+          test -f tests/access-control.php
+          test -f database/migrations/007_administrative_roles.sql
           test -f src/Domain/Enrollment/EnrollmentCancellationService.php
           test -f src/Domain/Enrollment/EnrollmentCreationService.php
           test -f src/Domain/Enrollment/PlanManagementService.php
@@ -346,6 +352,11 @@ jobs:
         env:
           MYSQL_PWD: root
         run: mysql --host=127.0.0.1 --port=3306 --user=root < database/migrations/003_login_rate_limit.sql
+
+      - name: Validate role-based access control migration
+        env:
+          MYSQL_PWD: root
+        run: mysql --host=127.0.0.1 --port=3306 --user=root < database/migrations/007_administrative_roles.sql
 
       - name: Validate student status migration and legacy data preservation
         env:
