@@ -181,7 +181,7 @@ A migration 009 cria a estrutura de check-ins vinculada a alunos, matrículas e 
 
 ### Bloco 05 — Financeiro
 
-**Estado: núcleo transacional e primeira interface implementados; validação da CI e revisão ainda em andamento.** Especificação em [Bloco 05 — Financeiro](bloco-05-financeiro.md).
+**Estado: núcleo transacional e primeira interface implementados; CI automatizada aprovada, validação manual/local pendente.** Especificação em [Bloco 05 — Financeiro](bloco-05-financeiro.md).
 
 Decisões confirmadas:
 - Cada matrícula nova criada pelo sistema gera automaticamente uma única cobrança pelo valor total do plano.
@@ -198,9 +198,9 @@ Entregas iniciais:
 - Serviço financeiro para pagamentos parciais e cancelamento condicionado.
 - Tela financeiro.php, resumo de valores, status calculado e ações com CSRF.
 - RBAC finance.*: Administrador e Gestor; Operador sem acesso.
-- Testes de domínio, integração HTTP e compatibilidade visual planejados na CI para MySQL 8.0/MariaDB 10.11.
+- Testes de domínio, integração HTTP e compatibilidade visual aprovados na CI #1243–#1245, em MySQL 8.0/MariaDB 10.11.
 
-**Ainda pendente:** confirmar CI do commit mais recente, revisar os fluxos de ponta a ponta, aplicar migration 010 no XAMPP somente após backup/inspeção e fazer teste manual. O Bloco 05 não deve ser considerado concluído nem pronto para produção.
+**Ainda pendente:** revisar os fluxos de ponta a ponta, aplicar migration 010 no XAMPP somente após backup/inspeção e fazer teste manual. O Bloco 05 não deve ser considerado concluído nem pronto para produção.
 
 **Fora do escopo inicial:** gateways, cartão, Pix/boleto integrado, débito recorrente, parcelamento automático, estorno/devolução e multi-tenancy.
 

@@ -92,4 +92,4 @@ A migration 010 deve ser executada somente após backup e conferência da versã
 
 ## Estado
 
-**Núcleo transacional e primeira interface implementados.** A CI está em validação; o Bloco 05 continua aberto para revisão, eventuais correções e inspeção local após backup/migration.
+**Núcleo transacional e primeira interface implementados.** CI #1243–#1245 aprovada; o Bloco 05 continua aberto para revisão e inspeção local após backup/migration.
