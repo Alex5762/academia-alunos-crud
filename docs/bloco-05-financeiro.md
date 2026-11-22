@@ -102,6 +102,14 @@ A migration 010 deve ser executada somente após backup e conferência da versã
 - Testes de domínio/banco cobrem reenvio idêntico, conflito de conteúdo e preservação da contagem de lançamentos.
 - Teste de concorrência inicia dois processos PHP com conexões PDO independentes, sincronizados atrás do lock da cobrança; ambos devem retornar o mesmo ID, com um único pagamento e um único evento de auditoria.
 
+## F-02 — Pagamentos append-only
+
+- Migration 012 cria gatilhos que bloqueiam INSERT direto fora do `FinanceService` e impedem UPDATE/DELETE em pagamentos confirmados.
+- `FinanceService::registerPayment()` habilita a escrita somente durante o INSERT transacional e limpa a variável de sessão mesmo quando a operação falha.
+- O teste financeiro tenta INSERT, UPDATE e DELETE diretamente e exige rejeição; a limpeza de fixtures usa uma variável de sessão reservada ao teardown automatizado.
+- Correções financeiras futuras devem ser lançamentos compensatórios, nunca edição ou exclusão do pagamento original.
+- A proteção por gatilhos reduz alterações acidentais por caminhos SQL da aplicação. Como em qualquer controle dentro do próprio banco, uma conta administrativa capaz de alterar gatilhos ou variáveis de sessão continua sendo uma fronteira privilegiada; o ambiente real deve usar usuário SQL de menor privilégio.
+
 ## Estado
 
-**Núcleo transacional, interface e F-01 implementados na branch de trabalho.** A migration 011 está incluída na CI e no guia XAMPP. Aguardando execução dos jobs e revisão adicional de concorrência real; não aplicar migration no banco local sem backup e validação. PR #1 permanece Draft.
+**Núcleo transacional, interface e F-01 implementados na branch de trabalho; F-02 em validação.** As migrations 011 e 012 estão incluídas na CI e no guia XAMPP. Não aplicar migrations no banco local sem backup e validação. PR #1 permanece Draft.
