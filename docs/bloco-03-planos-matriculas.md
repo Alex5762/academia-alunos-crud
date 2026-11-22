@@ -14,6 +14,7 @@
 - Regra de horário aplicada na interface: hoje sem horário resolve o instante depois dos bloqueios; data futura sem horário inicia às 00:00 no fuso da academia.
 - Teste HTTP que confirma o bloqueio quando a revisão está pendente e a contratação após o resultado de fixture `LEGADO_SEM_VIGENCIA`.
 - Fila administrativa de revisão de legados em `revisoes-legado.php`, com pendentes por padrão, filtros por resultado, busca e limite explícito de 100 registros por consulta.
+- Cancelamento de matrículas agendadas/ativas diretamente no histórico do perfil, com motivo opcional, proteção CSRF, revalidação transacional e auditoria atômica.
 - Formulário de decisão em `salvar-revisao-legado.php`, protegido por autenticação, POST e CSRF, com validação de fonte, observações, intervalo local exato e condições históricas opcionais comprovadas.
 - Histórico de decisões append-only na fila e no perfil do aluno, com responsável, resultado, fonte, observações e instante do evento.
 - Teste HTTP que valida a fila, bloqueio de CSRF, decisão pendente, evento especializado, auditoria geral e exibição do histórico no perfil.
@@ -27,7 +28,7 @@
 ### Ainda pendente
 
 - Confirmar a CI da interface de contratação, incluindo o novo cenário HTTP, e a publicação resiliente de capturas.
-- Implementar e validar o fluxo administrativo de cancelamento de matrículas e a interface específica de retificação de vigência já suportada pelo serviço de domínio.
+- Implementar e validar a interface específica de retificação de vigência já suportada pelo serviço de domínio.
 - Finalizar e validar as migrations 005 (DDL) e 006 (carga inicial de revisão de legados).
 - Inspecionar a versão real do MySQL/MariaDB e o mecanismo InnoDB no XAMPP antes de aplicar qualquer migration local.
 - Fazer inspeção física em dispositivo real antes de retirar a PR do estado Draft.
