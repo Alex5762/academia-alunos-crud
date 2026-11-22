@@ -4,10 +4,12 @@ require_once __DIR__ . '/conexao.php';
 require_once __DIR__ . '/src/Domain/Enrollment/EnrollmentPeriodCalculator.php';
 require_once __DIR__ . '/src/Domain/Finance/FinanceService.php';
 require_once __DIR__ . '/src/Domain/Finance/FinanceDashboardStatus.php';
+require_once __DIR__ . '/src/Domain/Finance/FinancePaymentHistoryQuery.php';
 
 use FitControl\Domain\Enrollment\EnrollmentPeriodCalculator;
 use FitControl\Domain\Finance\FinanceService;
 use FitControl\Domain\Finance\FinanceDashboardStatus;
+use FitControl\Domain\Finance\FinancePaymentHistoryQuery;
 
 $usuario = exigirAutenticacao($pdo);
 exigirPermissao($usuario, 'finance.view');
@@ -170,6 +172,12 @@ if ($financialStructureAvailable) {
             GROUP BY cobranca_id
          ) p ON p.cobranca_id = c.id'
     )->fetch(PDO::FETCH_ASSOC);
+
+    $historyChargeIds = array_map(
+        static fn (array $charge): int => (int) $charge['id'],
+        $charges
+    );
+    $paymentHistory = FinancePaymentHistoryQuery::forCharges($pdo, $historyChargeIds);
 }
 
 function financeiroMoeda(string|int|float|null $value): string
