@@ -70,7 +70,7 @@ try {
     $usuarioId = (int) $pdo->lastInsertId();
 
     // O provisionamento local não tem sessão web; a autoria fica explicitamente nula.
-    \\FitControl\\Security\\AuditIntegrityChain::append(
+    \FitControl\Security\AuditIntegrityChain::append(
         $pdo,
         null,
         'usuario_provisionado_cli',
