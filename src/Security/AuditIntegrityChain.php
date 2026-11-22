@@ -100,9 +100,12 @@ final class AuditIntegrityChain
 
         $createdAt = self::validateTimestamp($criadoEmUtc ?? gmdate('Y-m-d H:i:s'));
         $ownsTransaction = !$pdo->inTransaction();
+        $savepoint = 'audit_integrity_append';
 
         if ($ownsTransaction) {
             $pdo->beginTransaction();
+        } else {
+            $pdo->exec('SAVEPOINT ' . $savepoint);
         }
 
         try {
@@ -179,12 +182,17 @@ final class AuditIntegrityChain
 
             if ($ownsTransaction) {
                 $pdo->commit();
+            } else {
+                $pdo->exec('RELEASE SAVEPOINT ' . $savepoint);
             }
 
             return $eventId;
         } catch (Throwable $error) {
             if ($ownsTransaction && $pdo->inTransaction()) {
                 $pdo->rollBack();
+            } elseif ($pdo->inTransaction()) {
+                $pdo->exec('ROLLBACK TO SAVEPOINT ' . $savepoint);
+                $pdo->exec('RELEASE SAVEPOINT ' . $savepoint);
             }
 
             throw $error;
