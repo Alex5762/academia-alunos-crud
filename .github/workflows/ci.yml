@@ -350,6 +350,10 @@ jobs:
           test -f scripts/inicializar-integridade-auditoria.php
           test -f scripts/verificar-integridade-auditoria.php
           test -f scripts/registrar-eventos-demo.php
+          test -f src/Security/AuditIntegrityCheckpoint.php
+          test -f scripts/exportar-checkpoint-auditoria.php
+          test -f scripts/verificar-checkpoint-auditoria.php
+          test -f tests/database-audit-checkpoint.php
           test -f tests/database-audit-integrity.php
           test -f detalhes-aluno.php
           test -f tests/assert-user-provisioned.php
@@ -429,6 +433,15 @@ jobs:
           DB_PASSWORD: root
           MYSQL_PWD: root
         run: php tests/database-audit-integrity.php
+
+      - name: Test signed external audit checkpoints
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_NAME: academia_alunos
+          DB_USER: root
+          DB_PASSWORD: root
+        run: php tests/database-audit-checkpoint.php
 
       - name: Run CRUD integration tests and capture screenshots
         env:
