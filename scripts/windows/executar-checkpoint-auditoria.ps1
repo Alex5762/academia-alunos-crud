@@ -1,7 +1,8 @@
 param(
     [Parameter(Mandatory = $true)][string]$ProjectRoot,
     [Parameter(Mandatory = $true)][string]$StateDirectory,
-    [Parameter(Mandatory = $true)][string]$EncryptedConfigPath
+    [Parameter(Mandatory = $true)][string]$EncryptedConfigPath,
+    [Parameter(Mandatory = $true)][string]$PhpPath
 )
 $ErrorActionPreference = 'Stop'
 $logPath = Join-Path $StateDirectory ("checkpoint-" + (Get-Date).ToUniversalTime().ToString("yyyyMMdd-HHmmss") + ".log")
@@ -14,8 +15,8 @@ try {
     finally { [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($pointer) }
     $config = $configJson | ConvertFrom-Json
     if ([string]::IsNullOrWhiteSpace($config.checkpointSecret) -or $config.checkpointSecret.Length -lt 64) { throw "Chave HMAC protegida inválida." }
-    $php = "C:\xampp\php\php.exe"
-    if (-not (Test-Path -LiteralPath $php -PathType Leaf)) { throw "PHP do XAMPP não encontrado em $php." }
+    $php = (Resolve-Path -LiteralPath $PhpPath).Path
+    if (-not (Test-Path -LiteralPath $php -PathType Leaf)) { throw "Executável PHP não encontrado em $PhpPath." }
     $env:FITCONTROL_AUDIT_CHECKPOINT_SECRET = [string]$config.checkpointSecret
     $env:DB_HOST = [string]$config.dbHost
     $env:DB_PORT = [string]$config.dbPort
@@ -25,7 +26,7 @@ try {
     $project = (Resolve-Path -LiteralPath $ProjectRoot).Path
     $checkpointDirectory = Join-Path $StateDirectory "checkpoints"
     if (-not (Test-Path -LiteralPath $checkpointDirectory)) { New-Item -ItemType Directory -Path $checkpointDirectory | Out-Null }
-    $stamp = (Get-Date).ToUniversalTime().ToString("yyyyMMdd-HHmmss")
+    $stamp = (Get-Date).ToUniversalTime().ToString("yyyyMMdd-HHmmss") + "-" + ([Guid]::NewGuid().ToString("N").Substring(0, 6))
     $checkpointPath = Join-Path $checkpointDirectory ("fitcontrol-audit-" + $stamp + ".json")
     $exportScript = Join-Path $project "scripts\exportar-checkpoint-auditoria.php"
     $verifyScript = Join-Path $project "scripts\verificar-checkpoint-auditoria.php"
