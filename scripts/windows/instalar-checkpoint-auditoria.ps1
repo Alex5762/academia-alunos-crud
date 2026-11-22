@@ -8,14 +8,14 @@ $ErrorActionPreference = 'Stop'
 $project = (Resolve-Path -LiteralPath $ProjectRoot).Path
 if (-not (Test-Path -LiteralPath (Join-Path $project "scripts\exportar-checkpoint-auditoria.php"))) { throw "A pasta informada não parece ser a raiz do FitControl." }
 if (-not (Test-Path -LiteralPath $PhpPath -PathType Leaf)) { throw "PHP não encontrado: $PhpPath" }
-if ($StateDirectory.StartsWith($project, [System.StringComparison]::OrdinalIgnoreCase)) { throw "O armazenamento dos checkpoints deve ficar fora da pasta do projeto." }
+if ($state.Equals($project, [System.StringComparison]::OrdinalIgnoreCase) -or $state.StartsWith($project.TrimEnd("\") + "\", [System.StringComparison]::OrdinalIgnoreCase)) { throw "O armazenamento dos checkpoints deve ficar fora da pasta do projeto." }
 if ($DailyAt -notmatch '^(?:[01]\d|2[0-3]):[0-5]\d$') { throw "Informe o horário no formato HH:mm." }
 $taskName = "FitControl - Checkpoint externo da auditoria"
 $state = [System.IO.Path]::GetFullPath($StateDirectory)
 $checkpointDirectory = Join-Path $state "checkpoints"
 New-Item -ItemType Directory -Force -Path $checkpointDirectory | Out-Null
 $identity = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
-& icacls.exe $state /inheritance:r /grant:r "$($identity):(OI)(CI)F" | Out-Null
+& icacls.exe $state /inheritance:r /grant:r "$($identity):(OI)(CI)F" /T /C | Out-Null
 if ($LASTEXITCODE -ne 0) { throw "Não foi possível restringir as permissões da pasta de estado." }
 $configPath = Join-Path $state "config.dpapi"
 if (Test-Path -LiteralPath $configPath) { throw "Já existe uma configuração protegida em $configPath. Não será sobrescrita; preserve a chave anterior." }
