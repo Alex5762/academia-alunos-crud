@@ -156,7 +156,7 @@ try {
     assertCheckpoint(!$tampered['ok'], 'Alteração do payload sem nova assinatura deve ser detectada.');
 
     $currentState = $pdo->query(
-        'SELECT baseline_ultimo_id, baseline_hash, ultimo_evento_id
+        'SELECT baseline_ultimo_id, baseline_hash, ultimo_evento_id, ultimo_hash
          FROM auditoria_integridade_estado WHERE id = 1'
     )->fetch(PDO::FETCH_ASSOC);
     $futurePayload = [
