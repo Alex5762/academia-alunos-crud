@@ -118,6 +118,15 @@ A migration 010 deve ser executada somente após backup e conferência da versã
 - Cobrança com cancelamento financeiro concluído aparece como **Cancelada**, sem saldo aberto.
 - Testes unitários e de integração cobrem o estado com pagamento parcial e saldo remanescente de R$ 250,00.
 
+## F-04 — Histórico individual de pagamentos
+
+- `FinancePaymentHistoryQuery::forCharges()` recebe os IDs das cobranças da página e busca todos os pagamentos em uma consulta parametrizada, evitando N+1.
+- A consulta agrupa os registros por cobrança e ordena por data do pagamento e ID, do mais recente para o mais antigo.
+- A interface exibe painel expansível com valor, data do pagamento, forma, observação, data/hora de registro, responsável e identificador.
+- O instante de registro armazenado em UTC é convertido para o fuso da academia apenas na apresentação.
+- O histórico é somente leitura: F-02 continua impedindo alteração ou exclusão de pagamentos confirmados.
+- Testes de integração verificam agrupamento, ordenação, campos históricos e cobrança sem pagamentos.
+
 ## Estado
 
-**F-01 e F-02 implementados; F-03 implementado e aguardando CI.** As migrations 011 e 012 estão incluídas na CI e no guia XAMPP. Não aplicar migrations no banco local sem backup e validação. PR #1 permanece Draft.
+**F-01 a F-03 validados na CI #1312; F-04 implementado e aguardando CI.** As migrations 011 e 012 estão incluídas na CI e no guia XAMPP. Não aplicar migrations no banco local sem backup e validação. PR #1 permanece Draft.
