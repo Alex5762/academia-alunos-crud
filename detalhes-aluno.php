@@ -1,6 +1,8 @@
 <?php
 require_once __DIR__ . '/funcoes.php';
 require_once __DIR__ . '/conexao.php';
+require_once __DIR__ . '/src/Domain/Enrollment/EnrollmentPeriodCalculator.php';
+require_once __DIR__ . '/src/Domain/Enrollment/EnrollmentStatus.php';
 
 $usuario = exigirAutenticacao($pdo);
 $contextoLista = obterContextoListaAlunos($_GET);
@@ -43,6 +45,108 @@ $historico->execute([
     'reativado' => 'aluno_reativado'
 ]);
 $eventos = $historico->fetchAll(PDO::FETCH_ASSOC);
+
+// A consulta do histórico operacional só é habilitada quando a estrutura inteira
+// necessária estiver instalada. Isso protege a tela durante migrations parciais.
+$colunasHistoricoEsperadas = [
+    'matriculas' => [
+        'id',
+        'aluno_id',
+        'plano_nome_contratado',
+        'valor_contratado',
+        'duracao_contratada_valor',
+        'duracao_contratada_unidade',
+        'inicio_em',
+        'fim_exclusivo_em',
+        'cancelada_em',
+        'origem',
+        'motivo_cancelamento',
+    ],
+    'revisoes_legado' => [
+        'aluno_id_origem',
+        'resultado_atual',
+        'fonte_referencia',
+    ],
+];
+
+$condicoesColunas = [];
+$parametrosColunas = ['tabela_matriculas' => 'matriculas', 'tabela_revisao' => 'revisoes_legado'];
+foreach ($colunasHistoricoEsperadas as $tabela => $colunas) {
+    $parametroTabela = $tabela === 'matriculas' ? 'tabela_matriculas' : 'tabela_revisao';
+    $placeholders = [];
+
+    foreach ($colunas as $indice => $coluna) {
+        $parametroColuna = 'coluna_' . ($tabela === 'matriculas' ? 'm' : 'r') . '_' . $indice;
+        $placeholders[] = ':' . $parametroColuna;
+        $parametrosColunas[$parametroColuna] = $coluna;
+    }
+
+    $condicoesColunas[] = '(TABLE_NAME = :' . $parametroTabela
+        . ' AND COLUMN_NAME IN (' . implode(', ', $placeholders) . '))';
+}
+
+$consultaEstrutura = $pdo->prepare(
+    'SELECT COUNT(*)
+     FROM information_schema.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE()
+       AND (' . implode(' OR ', $condicoesColunas) . ')'
+);
+$consultaEstrutura->execute($parametrosColunas);
+$totalColunasEsperadas = array_sum(array_map('count', $colunasHistoricoEsperadas));
+$historicoMatriculasDisponivel = (int) $consultaEstrutura->fetchColumn() === $totalColunasEsperadas;
+
+$matriculas = [];
+$revisaoLegado = null;
+
+if ($historicoMatriculasDisponivel) {
+    $consultaMatriculas = $pdo->prepare(
+        'SELECT id, plano_nome_contratado, valor_contratado,
+                duracao_contratada_valor, duracao_contratada_unidade,
+                inicio_em, fim_exclusivo_em, cancelada_em, origem,
+                motivo_cancelamento, criado_em
+         FROM matriculas
+         WHERE aluno_id = :aluno_id
+         ORDER BY inicio_em DESC, id DESC'
+    );
+    $consultaMatriculas->execute(['aluno_id' => $id]);
+
+    $fusoUtc = new DateTimeZone('UTC');
+    $fusoAcademia = new DateTimeZone(
+        FitControl\\Domain\\Enrollment\\EnrollmentPeriodCalculator::ACADEMY_TIMEZONE
+    );
+    $instanteConsulta = new DateTimeImmutable('now', $fusoAcademia);
+
+    foreach ($consultaMatriculas->fetchAll(PDO::FETCH_ASSOC) as $matricula) {
+        $inicioLocal = (new DateTimeImmutable((string) $matricula['inicio_em'], $fusoUtc))
+            ->setTimezone($fusoAcademia);
+        $fimExclusivoLocal = (new DateTimeImmutable((string) $matricula['fim_exclusivo_em'], $fusoUtc))
+            ->setTimezone($fusoAcademia);
+        $cancelamentoLocal = $matricula['cancelada_em'] === null
+            ? null
+            : (new DateTimeImmutable((string) $matricula['cancelada_em'], $fusoUtc))
+                ->setTimezone($fusoAcademia);
+
+        $matricula['situacao_calculada'] = FitControl\\Domain\\Enrollment\\EnrollmentStatus::derive(
+            $inicioLocal,
+            $fimExclusivoLocal,
+            $cancelamentoLocal,
+            $instanteConsulta
+        );
+        $matricula['inicio_local'] = $inicioLocal;
+        $matricula['fim_exclusivo_local'] = $fimExclusivoLocal;
+        $matricula['cancelamento_local'] = $cancelamentoLocal;
+        $matriculas[] = $matricula;
+    }
+
+    $consultaRevisao = $pdo->prepare(
+        'SELECT resultado_atual, fonte_referencia, atualizado_em
+         FROM revisoes_legado
+         WHERE aluno_id_origem = :aluno_id
+         LIMIT 1'
+    );
+    $consultaRevisao->execute(['aluno_id' => $id]);
+    $revisaoLegado = $consultaRevisao->fetch(PDO::FETCH_ASSOC) ?: null;
+}
 
 $rotulosEventos = [
     'aluno_criado' => 'Cadastro criado',
@@ -115,6 +219,123 @@ unset($_SESSION['mensagem']);
                 </button>
             </form>
         </div>
+    </section>
+
+    <section class="settings-card detail-card" aria-labelledby="enrollment-history-title">
+        <div class="settings-card-heading">
+            <span class="settings-icon" aria-hidden="true">▤</span>
+            <div>
+                <h2 id="enrollment-history-title">Histórico de matrículas</h2>
+                <p>Contratos e condições registrados para este aluno.</p>
+            </div>
+        </div>
+
+        <?php if (!$historicoMatriculasDisponivel) { ?>
+            <p class="student-history-empty">
+                O histórico operacional será habilitado após a instalação e validação das migrations do Bloco 03.
+                Os dados cadastrais e o histórico de atividade continuam disponíveis.
+            </p>
+        <?php } else { ?>
+            <?php if ($revisaoLegado !== null) {
+                $situacaoRevisao = (string) $revisaoLegado['resultado_atual'];
+                $rotulosRevisao = [
+                    'VINCULO_CONFIRMADO' => 'Vínculo legado confirmado',
+                    'LEGADO_SEM_VIGENCIA' => 'Sem vigência legada confirmada',
+                    'PENDENTE_REVISAO' => 'Revisão do vínculo pendente',
+                ];
+                $classesRevisao = [
+                    'VINCULO_CONFIRMADO' => 'is-active',
+                    'LEGADO_SEM_VIGENCIA' => 'is-inactive',
+                    'PENDENTE_REVISAO' => 'is-pending',
+                ];
+            ?>
+                <div class="legacy-review-summary">
+                    <div>
+                        <strong>Revisão do vínculo antigo</strong>
+                        <span class="account-status <?= escapar($classesRevisao[$situacaoRevisao] ?? 'is-pending') ?>">
+                            <?= escapar($rotulosRevisao[$situacaoRevisao] ?? 'Situação não reconhecida') ?>
+                        </span>
+                    </div>
+                    <?php if (!empty($revisaoLegado['fonte_referencia'])) { ?>
+                        <small>Fonte registrada: <?= escapar($revisaoLegado['fonte_referencia']) ?></small>
+                    <?php } ?>
+                    <?php if ($situacaoRevisao === 'PENDENTE_REVISAO') { ?>
+                        <p>Novas matrículas permanecem bloqueadas até uma decisão baseada em evidências.</p>
+                    <?php } elseif ($situacaoRevisao === 'LEGADO_SEM_VIGENCIA') { ?>
+                        <p>Não há vínculo antigo vigente confirmado. Uma nova contratação pode seguir o fluxo normal.</p>
+                    <?php } else { ?>
+                        <p>O vínculo anterior foi confirmado. Consulte abaixo o intervalo comprovado e seu histórico.</p>
+                    <?php } ?>
+                </div>
+            <?php } ?>
+
+            <?php if ($matriculas === []) { ?>
+                <p class="student-history-empty">Nenhuma matrícula operacional registrada para este aluno.</p>
+            <?php } else { ?>
+                <ol class="enrollment-history-list">
+                    <?php foreach ($matriculas as $matricula) {
+                        $situacao = $matricula['situacao_calculada'];
+                        $rotulosSituacao = [
+                            'AGENDADA' => 'Agendada',
+                            'ATIVA' => 'Ativa',
+                            'VENCIDA' => 'Vencida',
+                            'CANCELADA' => 'Cancelada',
+                        ];
+                        $classesSituacao = [
+                            'AGENDADA' => 'is-scheduled',
+                            'ATIVA' => 'is-active',
+                            'VENCIDA' => 'is-expired',
+                            'CANCELADA' => 'is-cancelled',
+                        ];
+                        $unidadesDuracao = [
+                            'DIA' => ((int) $matricula['duracao_contratada_valor'] === 1 ? 'dia' : 'dias'),
+                            'SEMANA' => ((int) $matricula['duracao_contratada_valor'] === 1 ? 'semana' : 'semanas'),
+                            'MES' => ((int) $matricula['duracao_contratada_valor'] === 1 ? 'mês' : 'meses'),
+                        ];
+                        $duracaoContratada = $matricula['duracao_contratada_valor'] === null
+                            || $matricula['duracao_contratada_unidade'] === null
+                            ? 'Não informada'
+                            : (int) $matricula['duracao_contratada_valor'] . ' '
+                                . ($unidadesDuracao[$matricula['duracao_contratada_unidade']] ?? 'unidades');
+                        $precoContratado = $matricula['valor_contratado'] === null
+                            ? 'Não informado'
+                            : 'R$ ' . number_format((float) $matricula['valor_contratado'], 2, ',', '.');
+                    ?>
+                        <li class="enrollment-history-item">
+                            <div class="enrollment-history-heading">
+                                <div>
+                                    <strong><?= escapar($matricula['plano_nome_contratado'] ?? 'Plano legado sem identificação') ?></strong>
+                                    <small><?= $matricula['origem'] === 'LEGADO' ? 'Registro legado' : 'Contratação pelo sistema' ?></small>
+                                </div>
+                                <span class="enrollment-status <?= escapar($classesSituacao[$situacao] ?? 'is-expired') ?>">
+                                    <?= escapar($rotulosSituacao[$situacao] ?? $situacao) ?>
+                                </span>
+                            </div>
+                            <dl class="enrollment-detail-grid">
+                                <div>
+                                    <dt>Início</dt>
+                                    <dd><?= escapar($matricula['inicio_local']->format('d/m/Y H:i')) ?></dd>
+                                </div>
+                                <div>
+                                    <dt>Fim exclusivo</dt>
+                                    <dd><?= escapar($matricula['fim_exclusivo_local']->format('d/m/Y H:i')) ?></dd>
+                                </div>
+                                <div><dt>Preço contratado</dt><dd><?= escapar($precoContratado) ?></dd></div>
+                                <div><dt>Duração contratada</dt><dd><?= escapar($duracaoContratada) ?></dd></div>
+                            </dl>
+                            <?php if ($matricula['cancelamento_local'] !== null) { ?>
+                                <p class="enrollment-cancellation-note">
+                                    Cancelada em <?= escapar($matricula['cancelamento_local']->format('d/m/Y H:i')) ?>
+                                    <?php if (!empty($matricula['motivo_cancelamento'])) { ?>
+                                        · <?= escapar($matricula['motivo_cancelamento']) ?>
+                                    <?php } ?>
+                                </p>
+                            <?php } ?>
+                        </li>
+                    <?php } ?>
+                </ol>
+            <?php } ?>
+        <?php } ?>
     </section>
 
     <section class="settings-card detail-card" aria-labelledby="student-history-title">
