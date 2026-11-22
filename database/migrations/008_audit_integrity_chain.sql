@@ -45,6 +45,16 @@ CREATE TABLE auditoria_integridade_eventos (
 
 DELIMITER //
 
+CREATE TRIGGER trg_auditoria_insert_guard
+BEFORE INSERT ON auditoria
+FOR EACH ROW
+BEGIN
+    IF COALESCE(@fitcontrol_audit_chain_write, 0) <> 1 THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Use o registrador transacional da cadeia de auditoria.';
+    END IF;
+END//
+
 CREATE TRIGGER trg_auditoria_no_update
 BEFORE UPDATE ON auditoria
 FOR EACH ROW
@@ -59,6 +69,16 @@ FOR EACH ROW
 BEGIN
     SIGNAL SQLSTATE '45000'
         SET MESSAGE_TEXT = 'A trilha de auditoria não permite exclusão.';
+END//
+
+CREATE TRIGGER trg_auditoria_integridade_insert_guard
+BEFORE INSERT ON auditoria_integridade_eventos
+FOR EACH ROW
+BEGIN
+    IF COALESCE(@fitcontrol_audit_chain_write, 0) <> 1 THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Use o registrador transacional da cadeia de auditoria.';
+    END IF;
 END//
 
 CREATE TRIGGER trg_auditoria_integridade_no_update
