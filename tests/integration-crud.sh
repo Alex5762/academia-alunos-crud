@@ -246,6 +246,9 @@ curl -fsS -L -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/alterar-perfil-usuario
     --data-urlencode "perfil=GESTOR" \
     -o "$TMP_DIR/user-role-manager.html"
 assert_contains "$TMP_DIR/user-role-manager.html" "Perfil do funcionário atualizado com sucesso."
+MANAGER_AUDIT_HTTP="$(curl -sS -o "$TMP_DIR/manager-audit.html" -w '%{http_code}' -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/auditoria.php")"
+[[ "$MANAGER_AUDIT_HTTP" == "200" ]] || fail "Gestor deveria consultar a central de auditoria; recebeu $MANAGER_AUDIT_HTTP."
+assert_contains "$TMP_DIR/manager-audit.html" "Central de auditoria"
 MANAGER_ROLE="$(db_value "SELECT perfil FROM usuarios WHERE id = $NOVO_USUARIO_ID")"
 [[ "$MANAGER_ROLE" == "GESTOR" ]] || fail "O perfil de gestor não foi persistido."
 ROLE_AUDIT="$(db_value "SELECT COUNT(*) FROM auditoria WHERE usuario_id = $USUARIO_ID AND acao = 'usuario_perfil_alterado' AND entidade_id = $NOVO_USUARIO_ID")"
@@ -304,6 +307,8 @@ NOVO_ACESSO_OK="$(db_value "SELECT COUNT(*) FROM usuarios WHERE id = $NOVO_USUAR
 NOVO_PERFIL="$(db_value "SELECT perfil FROM usuarios WHERE id = $NOVO_USUARIO_ID")"
 [[ "$NOVO_PERFIL" == "OPERADOR" ]] || fail "Novas contas devem receber o perfil OPERADOR por padrão."
 
+RBAC_AUDIT_HTTP="$(curl -sS -o "$TMP_DIR/operator-audit.html" -w '%{http_code}' -c "$NEW_COOKIE_JAR" -b "$NEW_COOKIE_JAR" "$BASE_URL/auditoria.php")"
+[[ "$RBAC_AUDIT_HTTP" == "403" ]] || fail "Operador deveria receber 403 na central de auditoria; recebeu $RBAC_AUDIT_HTTP."
 RBAC_USERS_HTTP="$(curl -sS -o "$TMP_DIR/operator-users.html" -w '%{http_code}' -c "$NEW_COOKIE_JAR" -b "$NEW_COOKIE_JAR" "$BASE_URL/usuarios.php")"
 [[ "$RBAC_USERS_HTTP" == "403" ]] || fail "Operador deveria receber 403 na gestão de funcionários; recebeu $RBAC_USERS_HTTP."
 RBAC_LEGACY_HTTP="$(curl -sS -o "$TMP_DIR/operator-legacy.html" -w '%{http_code}' -c "$NEW_COOKIE_JAR" -b "$NEW_COOKIE_JAR" "$BASE_URL/revisoes-legado.php")"
