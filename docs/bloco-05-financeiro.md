@@ -166,6 +166,12 @@ A migration 010 deve ser executada somente após backup e conferência da versã
 - Data e observação permanecem incluídas no fingerprint de idempotência e na consulta de histórico.
 - **Validação:** testes financeiros e integração CRUD/Playwright aprovados na CI #1397 em MySQL 8.0 e MariaDB 10.11.
 
+## Revisão final de autorização HTTP
+
+- O teste de integração HTTP agora confirma que um usuário OPERADOR recebe HTTP 403 ao solicitar diretamente `financeiro.php`, mesmo sem depender de ocultar links na interface.
+- A matriz unitária RBAC também verifica que Operador não recebe `finance.view`, `finance.register_payment` ou `finance.cancel_charge`.
+- **Estado:** caso HTTP acrescentado; aguarda CI.
+
 ## Estado
 
 **F-01 a F-08 implementados e validados:** F-01 a F-04 na CI #1332; F-05 na CI #1361; F-06 na CI #1362; F-07 na CI #1385; F-08 na CI #1397. A CI #1412 também passou integralmente após a revisão do workflow, com sete jobs funcionais aprovados e publicação de screenshots ignorada condicionalmente. O workflow evita disparos duplicados por `push` na branch da PR e cancela execuções obsoletas. Nenhuma migration foi aplicada no banco local. PR #1 permanece Draft e `main` intocada.
