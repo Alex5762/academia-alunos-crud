@@ -65,6 +65,7 @@ try {
     throw new Error("O atalho de detalhes não abriu o perfil individual do aluno.");
   }
   await desktop.getByRole("heading", { name: "Informações cadastrais" }).waitFor();
+  await desktop.getByRole("heading", { name: "Histórico de matrículas" }).waitFor();
   await desktop.getByRole("heading", { name: "Histórico de atividade" }).waitFor();
   await desktop.getByText("Cadastro criado").waitFor();
   await desktop.getByText("Dados cadastrais atualizados").waitFor();
