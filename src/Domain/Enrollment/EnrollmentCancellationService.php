@@ -152,7 +152,7 @@ final class EnrollmentCancellationService
                 );
             }
 
-            \\FitControl\\Security\\AuditIntegrityChain::append(
+            \FitControl\Security\AuditIntegrityChain::append(
                 $this->pdo,
                 $actorUserId,
                 'matricula_cancelada',
