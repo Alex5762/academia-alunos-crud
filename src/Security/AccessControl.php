@@ -37,6 +37,9 @@ final class AccessControl
             'audit.view',
             'attendance.view',
             'attendance.register',
+            'finance.view',
+            'finance.register_payment',
+            'finance.cancel_charge',
             'settings.view',
         ],
         self::OPERATOR => [

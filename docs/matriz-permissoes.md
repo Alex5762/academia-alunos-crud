@@ -17,6 +17,9 @@ A autorização é aplicada no servidor por `exigirPermissao()`; ocultar um link
 | Consultar central de auditoria | ✓ | ✓ | — |
 | Consultar histórico e indicadores de frequência | ✓ | ✓ | ✓ |
 | Registrar check-in manual | ✓ | ✓ | ✓ |
+| Consultar cobranças e situação financeira | ✓ | ✓ | — |
+| Registrar pagamentos parciais/integrais | ✓ | ✓ | — |
+| Cancelar cobrança sem pagamentos após cancelamento da matrícula | ✓ | ✓ | — |
 | Preferências locais e alteração da própria senha | ✓ | ✓ | ✓ |
 
 ## Regras de segurança
@@ -37,6 +40,7 @@ A autorização é aplicada no servidor por `exigirPermissao()`; ocultar um link
 - Todos os administradores têm acesso integral.
 - O operador pode criar e editar dados cadastrais de alunos, mas não alterar seu status.
 - Gestor e Operador podem consultar frequência e registrar check-in; a elegibilidade do aluno e a matrícula vigente são verificadas no serviço transacional, independentemente da interface.
+- O módulo financeiro é restrito a Administrador e Gestor. O Operador não consulta cobranças nem registra pagamentos. O cancelamento de cobrança exige matrícula cancelada, ausência total de pagamentos e justificativa; pagamentos existentes não são apagados.
 - A matriz não substitui a validação de sessão, CSRF, regras de domínio ou transações.
 
 

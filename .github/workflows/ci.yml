@@ -445,6 +445,7 @@ jobs:
           test -f database/migrations/010_financeiro.sql
           test -f src/Domain/Finance/FinanceService.php
           test -f tests/database-finance.php
+          test -f financeiro.php
           test -f database/migrations/009_attendance_checkins.sql
           test -f tests/database-attendance-checkin.php
           test -f docs/registro-retomada-2026-11-22.md
