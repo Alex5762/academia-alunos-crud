@@ -927,8 +927,8 @@ CANCEL_AUDIT="$(db_value "SELECT COUNT(*) FROM auditoria
 
 echo "9.4/10 - Validando retificação de vigência legada pela interface HTTP..."
 # Cria uma matrícula de origem LEGADO e uma decisão confirmada fictícias.
-LEGACY_START_UTC="$(php -r 'echo (new DateTimeImmutable(\"-30 days\", new DateTimeZone(\"UTC\")))->format(\"Y-m-d H:i:s\");')"
-LEGACY_END_UTC="$(php -r 'echo (new DateTimeImmutable(\"+30 days\", new DateTimeZone(\"UTC\")))->format(\"Y-m-d H:i:s\");')"
+LEGACY_START_UTC="$(php -r 'echo (new DateTimeImmutable("-90 days", new DateTimeZone(\"UTC\")))->format(\"Y-m-d H:i:s\");')"
+LEGACY_END_UTC="$(php -r 'echo (new DateTimeImmutable("-60 days", new DateTimeZone(\"UTC\")))->format(\"Y-m-d H:i:s\");')"
 db_exec "INSERT INTO matriculas (
     aluno_id, plano_id, plano_nome_contratado, valor_contratado,
     duracao_contratada_valor, duracao_contratada_unidade,
@@ -977,8 +977,8 @@ HTTP_CODE="$(curl -sS -o "$TMP_DIR/rectification-no-csrf.html" -w '%{http_code}'
     --data-urlencode "enrollment_id=$LEGACY_ENROLLMENT_ID")"
 [[ "$HTTP_CODE" == "403" ]] || fail "Retificação sem CSRF deveria retornar 403; retornou $HTTP_CODE."
 
-NEW_LEGACY_START="$(php -r 'echo (new DateTimeImmutable(\"-20 days\", new DateTimeZone(\"America/Sao_Paulo\")))->format(\"Y-m-d\\\\TH:i:s\");')"
-NEW_LEGACY_END="$(php -r 'echo (new DateTimeImmutable(\"+40 days\", new DateTimeZone(\"America/Sao_Paulo\")))->format(\"Y-m-d\\\\TH:i:s\");')"
+NEW_LEGACY_START="$(php -r 'echo (new DateTimeImmutable("-80 days", new DateTimeZone(\"America/Sao_Paulo\")))->format(\"Y-m-d\\\\TH:i:s\");')"
+NEW_LEGACY_END="$(php -r 'echo (new DateTimeImmutable("-50 days", new DateTimeZone(\"America/Sao_Paulo\")))->format(\"Y-m-d\\\\TH:i:s\");')"
 curl -fsS -L -c "$COOKIE_JAR" -b "$COOKIE_JAR" \
     "$BASE_URL/salvar-retificacao-legado.php" \
     --data-urlencode "token=$RECTIFICATION_TOKEN" \
@@ -990,8 +990,8 @@ curl -fsS -L -c "$COOKIE_JAR" -b "$COOKIE_JAR" \
     --data-urlencode "observacoes=Correção baseada na conferência do contrato físico." \
     -o "$TMP_DIR/rectification-saved.html"
 assert_contains "$TMP_DIR/rectification-saved.html" "Retificação registrada com sucesso."
-RECTIFIED_START_UTC="$(php -r '$d=new DateTimeImmutable(getenv(\"VALUE\"),new DateTimeZone(\"America/Sao_Paulo\")); echo $d->setTimezone(new DateTimeZone(\"UTC\"))->format(\"Y-m-d H:i:s\");' VALUE="$NEW_LEGACY_START")"
-RECTIFIED_END_UTC="$(php -r '$d=new DateTimeImmutable(getenv(\"VALUE\"),new DateTimeZone(\"America/Sao_Paulo\")); echo $d->setTimezone(new DateTimeZone(\"UTC\"))->format(\"Y-m-d H:i:s\");' VALUE="$NEW_LEGACY_END")"
+RECTIFIED_START_UTC="$(VALUE="$NEW_LEGACY_START")"
+RECTIFIED_END_UTC="$(VALUE="$NEW_LEGACY_END")"
 RECTIFIED_ROW="$(db_value "SELECT COUNT(*) FROM matriculas
     WHERE id = $LEGACY_ENROLLMENT_ID
       AND inicio_em = '$RECTIFIED_START_UTC'
