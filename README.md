@@ -178,7 +178,7 @@ A estrutura é criada pela migration `database/migrations/009_attendance_checkin
 
 ## Testes automatizados
 
-O workflow [CI - Academia Alunos CRUD](https://github.com/Alex5762/academia-alunos-crud/actions/workflows/ci.yml) é executado em pushes para \`main\` e em eventos de pull request destinados a \`main\` (incluindo novos commits na branch da PR). O grupo de concorrência cancela execuções obsoletas da mesma PR para priorizar o HEAD mais recente.
+O workflow [CI - Academia Alunos CRUD](https://github.com/Alex5762/academia-alunos-crud/actions/workflows/ci.yml) é executado em pushes para `main` e em eventos de pull request destinados a `main` (incluindo novos commits na branch da PR). O grupo de concorrência cancela execuções obsoletas da mesma PR para priorizar o HEAD mais recente.
 
 O pipeline:
 
@@ -220,6 +220,8 @@ Para conferir os resultados, consulte a aba **Actions** do GitHub. Uma execuçã
 - [Planejamento do Bloco 02 — gestão de alunos](docs/bloco-02-gestao-alunos.md)
 - [Pesquisa, implementação e estado do Bloco 03 — planos e matrículas](docs/bloco-03-planos-matriculas.md)
 - [Bloco 04 — frequência e check-in](docs/bloco-04-frequencia-checkin.md)
+- [Bloco 05 — financeiro](docs/bloco-05-financeiro.md)
+- [Revisão técnica do financeiro](docs/revisao-financeira-2026-11-22.md)
 - [Procedimento seguro para aplicar migrations 005/006 no XAMPP](docs/guia-migrations-xampp.md)
 - [Roadmap e critérios de evolução por blocos](docs/roadmap.md)
 - [Modelo de dados e migração de autenticação/auditoria](docs/modelo-dados-autenticacao-auditoria.md)
