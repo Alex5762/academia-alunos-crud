@@ -193,6 +193,11 @@ function financeiroMoedaCentavos(int $cents): string
     return FinanceMoneyFormatter::formatCents($cents);
 }
 
+function financeiroDecimalCentavos(int $cents): string
+{
+    return FinanceMoneyFormatter::decimalFromCents($cents);
+}
+
 function financeiroCentavos(string|int|null $value): int
 {
     return FinanceMoneyFormatter::toCents($value);
@@ -313,7 +318,7 @@ $totalSaldoRevisaoCents = financeiroCentavos($summary['saldo_em_revisao'] ?? '0.
                                         <input type="hidden" name="chave_idempotencia" value="<?= escapar(bin2hex(random_bytes(16))) ?>">
                                         <label class="sr-only" for="pagamento-valor-<?= (int) $charge['id'] ?>">Valor do pagamento</label>
                                         <input id="pagamento-valor-<?= (int) $charge['id'] ?>" type="number" name="valor"
-                                               min="0.01" max="<?= escapar(number_format($balanceCents / 100, 2, '.', '')) ?>"
+                                               min="0.01" max="<?= escapar(financeiroDecimalCentavos($balanceCents)) ?>"
                                                step="0.01" inputmode="decimal" placeholder="Valor R$" required>
                                         <label class="sr-only" for="pagamento-forma-<?= (int) $charge['id'] ?>">Forma de pagamento</label>
                                         <select id="pagamento-forma-<?= (int) $charge['id'] ?>" name="forma_pagamento" required>
@@ -323,7 +328,12 @@ $totalSaldoRevisaoCents = financeiroCentavos($summary['saldo_em_revisao'] ?? '0.
                                             <option value="CARTAO">Cartão</option>
                                             <option value="OUTRO">Outro</option>
                                         </select>
-                                        <input type="hidden" name="data_pagamento" value="<?= escapar($dataHoje) ?>">
+                                        <label class="sr-only" for="pagamento-data-<?= (int) $charge['id'] ?>">Data do pagamento</label>
+                                        <input id="pagamento-data-<?= (int) $charge['id'] ?>" type="date" name="data_pagamento"
+                                               value="<?= escapar($dataHoje) ?>" max="<?= escapar($dataHoje) ?>" required>
+                                        <label class="sr-only" for="pagamento-observacao-<?= (int) $charge['id'] ?>">Observação ou justificativa</label>
+                                        <input id="pagamento-observacao-<?= (int) $charge['id'] ?>" type="text" name="observacao"
+                                               maxlength="255" placeholder="Observação (obrigatória se retroativa)">
                                         <button class="button button-primary" type="submit">Registrar</button>
                                     </form>
                                 <?php } elseif ($cancelledEnrollment && !$chargeCancelled && (int) $charge['quantidade_pagamentos'] === 0 && usuarioTemPermissao($usuario, 'finance.cancel_charge')) { ?>
