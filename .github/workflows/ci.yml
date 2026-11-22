@@ -285,6 +285,7 @@ jobs:
           mysql --host=127.0.0.1 --port=3306 --user=root academia_alunos -e "INSERT INTO auditoria (usuario_id, acao, entidade, entidade_id) VALUES (NULL, 'evento_legado_baseline', 'teste', NULL)"
           mysql --host=127.0.0.1 --port=3306 --user=root < database/migrations/008_audit_integrity_chain.sql
           mysql --host=127.0.0.1 --port=3306 --user=root < database/migrations/009_attendance_checkins.sql
+          mysql --host=127.0.0.1 --port=3306 --user=root < database/migrations/010_financeiro.sql
           php scripts/inicializar-integridade-auditoria.php
 
       - name: Validate manual check-in, eligibility and daily uniqueness
@@ -295,6 +296,15 @@ jobs:
           DB_USER: root
           DB_PASSWORD: root
         run: php tests/database-attendance-checkin.php
+
+      - name: Validate automatic charges and financial ledger
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_NAME: academia_alunos
+          DB_USER: root
+          DB_PASSWORD: root
+        run: php tests/database-finance.php
 
 
   php-and-mysql:
@@ -432,6 +442,9 @@ jobs:
           test -f checkins.php
           test -f registrar-checkin.php
           test -f src/Domain/Attendance/AttendanceCheckinService.php
+          test -f database/migrations/010_financeiro.sql
+          test -f src/Domain/Finance/FinanceService.php
+          test -f tests/database-finance.php
           test -f database/migrations/009_attendance_checkins.sql
           test -f tests/database-attendance-checkin.php
           test -f docs/registro-retomada-2026-11-22.md
@@ -572,6 +585,7 @@ jobs:
           mysql --host=127.0.0.1 --port=3306 --user=root < database/migrations/005_plans_enrollments_schema.sql
           mysql --host=127.0.0.1 --port=3306 --user=root < database/migrations/006_import_legacy_review.sql
           mysql --host=127.0.0.1 --port=3306 --user=root < database/migrations/009_attendance_checkins.sql
+          mysql --host=127.0.0.1 --port=3306 --user=root < database/migrations/010_financeiro.sql
 
           echo "Preparing fictional records for visual capture..."
           mysql --host=127.0.0.1 --port=3306 --user=root academia_alunos <<'SQL'

@@ -60,14 +60,25 @@ Não haverá divisão automática do preço em parcelas. Se a academia quiser co
 - Multi-tenancy: a configuração é por instalação da aplicação, não por várias academias isoladas no mesmo banco.
 - Migração automática de dívidas históricas de matrículas legadas.
 
-## Decisões pendentes antes da migration e implementação
+## Decisões operacionais adotadas para o primeiro corte
 
-1. **Vencimento inicial:** usar a data de início da matrícula como vencimento padrão ou permitir que o funcionário escolha a data ao matricular?
-2. **Pagamento parcial:** permitir vários pagamentos parciais até quitar a cobrança ou exigir pagamento integral em um único lançamento?
-3. **Cancelamento de matrícula:** definir o tratamento de cobranças ainda não pagas e de cobranças já pagas. Pagamentos históricos não devem desaparecer; eventual devolução precisa ser um evento próprio.
-4. **Ajuste excepcional de valor:** confirmar se haverá override pontual do preço do catálogo na matrícula, com permissão e justificativa, ou se o preço será sempre exatamente o do plano.
+- **Vencimento:** data civil local de início da matrícula; sem edição individual nesta primeira versão.
+- **Pagamento parcial:** permitido. Uma cobrança recebe vários pagamentos até atingir o total; valores acima do saldo são rejeitados.
+- **Cancelamento contratual:** não apaga nem cancela automaticamente a cobrança e não apaga pagamentos.
+- **Cancelamento financeiro:** cobrança sem pagamentos pode ser cancelada separadamente, somente depois do cancelamento da matrícula, com justificativa obrigatória, funcionário e instante UTC.
+- **Cobrança com pagamentos:** fica bloqueada para cancelamento simples. Estorno/devolução exigirá fluxo próprio e lançamento compensatório; nunca editar/excluir pagamento original.
+- **Preço excepcional:** não haverá override individual no primeiro corte; o preço contratado é copiado do plano e congelado.
 
-Nenhuma migration financeira foi criada nesta etapa. O modelo de tabelas e a migration 010 só devem ser definidos após fechar as regras pendentes e revisar os fluxos atuais de matrícula/cancelamento.
+## Estrutura do primeiro incremento
+
+- Migration 010 cria \`cobrancas\` e \`pagamentos\`, com DECIMAL, chaves estrangeiras e unicidade de uma cobrança por matrícula.
+- A migration não cria cobranças retroativas para matrículas legadas.
+- \`EnrollmentCreationService\` cria a cobrança única pelo preço total do plano, vencendo na data de início, dentro da transação da matrícula e da auditoria.
+- \`FinanceService\` registra pagamentos parciais, bloqueia concorrência na cobrança, rejeita excesso de saldo e grava eventos na cadeia de auditoria.
+- \`FinanceService\` permite cancelar somente cobrança sem pagamentos após cancelamento contratual.
+- Interface e permissões RBAC financeiras ainda não foram entregues; o Bloco 05 não está concluído.
+
+A migration 010 deve ser executada somente após backup e conferência da versão/engine, seguindo o guia local.
 
 ## Critérios de aceite preliminares
 
@@ -81,4 +92,4 @@ Nenhuma migration financeira foi criada nesta etapa. O modelo de tabelas e a mig
 
 ## Estado
 
-**Modelagem parcialmente definida.** Regra de preço total e cobrança única automática aprovada em 22/11/2026. Pendências listadas acima precisam ser decididas antes da implementação.
+**Núcleo transacional em implementação.** As regras de cobrança única, vencimento, pagamentos parciais e cancelamento foram definidas; interface, RBAC financeiro e validação completa permanecem pendentes.

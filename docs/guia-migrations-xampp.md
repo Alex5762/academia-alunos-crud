@@ -322,6 +322,22 @@ Unregister-ScheduledTask -TaskName "FitControl - Checkpoint externo da auditoria
 
 Não aplique a migration 008 em banco de produção ou com dados reais sem revisão, backup testado e janela de manutenção. A PR permanece em Draft e a aplicação local ainda precisa ser validada separadamente.
 
+### 9. Migration 010 — Financeiro
+
+Após aplicar e validar as migrations 001–009, faça backup do banco e execute uma única vez:
+
+\`\`\`bash
+mysql -u root -p academia_alunos < database/migrations/010_financeiro.sql
+\`\`\`
+
+No XAMPP padrão, se o usuário root não tiver senha, remova \`-p\`:
+
+\`\`\`bash
+mysql -u root academia_alunos < database/migrations/010_financeiro.sql
+\`\`\`
+
+A migration cria \`cobrancas\` e \`pagamentos\`; não cria cobranças retroativas para matrículas antigas. Confirme as duas tabelas e suas chaves no phpMyAdmin ou no cliente SQL. Não execute novamente uma migration de criação de tabelas já aplicada. A CI valida MySQL 8.0 e MariaDB 10.11, mas isso não substitui backup nem validação local.
+
 ## Estado e cautelas
 
 A CI valida as migrations 005/006/007/008 em MySQL 8.0 e MariaDB 10.11, incluindo preservação do texto original, reexecução segura da carga inicial, atribuição compatível dos perfis e cadeia de integridade. Isso não significa que tenham sido aplicadas no computador.

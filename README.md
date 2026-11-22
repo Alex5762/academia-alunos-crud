@@ -36,6 +36,10 @@ As imagens abaixo são capturadas automaticamente pelo GitHub Actions com regist
 
 > **Escopo atual:** aplicação acadêmica/local com primeira versão de autenticação individual, gestão de funcionários, auditoria e controle de sessão. Ainda faltam revisão de segurança para produção, HTTPS de produção, monitoramento, backups e controles adicionais. Não exponha o painel à internet nem use dados reais de alunos.
 
+## Bloco 05 — Financeiro (em implementação)
+
+O núcleo transacional cria uma cobrança única pelo valor total do contrato ao registrar uma matrícula nova; pagamentos parciais e cancelamento condicionado ficam registrados com auditoria. Consulte `docs/bloco-05-financeiro.md`. A interface e as permissões financeiras ainda não estão concluídas.
+
 ## Funcionalidades
 
 - Dashboard com total de alunos cadastrados.
