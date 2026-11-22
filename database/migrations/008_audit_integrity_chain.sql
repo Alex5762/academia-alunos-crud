@@ -77,4 +77,22 @@ BEGIN
         SET MESSAGE_TEXT = 'Os hashes da auditoria não podem ser excluídos.';
 END//
 
+CREATE TRIGGER trg_auditoria_integridade_estado_no_update
+BEFORE UPDATE ON auditoria_integridade_estado
+FOR EACH ROW
+BEGIN
+    IF COALESCE(@fitcontrol_audit_chain_write, 0) <> 1 THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'O estado da cadeia só pode ser atualizado pelo registrador.';
+    END IF;
+END//
+
+CREATE TRIGGER trg_auditoria_integridade_estado_no_delete
+BEFORE DELETE ON auditoria_integridade_estado
+FOR EACH ROW
+BEGIN
+    SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'O estado da cadeia de auditoria não pode ser excluído.';
+END//
+
 DELIMITER ;
