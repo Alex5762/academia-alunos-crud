@@ -126,6 +126,7 @@ final class AuditIntegrityChain
             $previousHash = (string) $state['ultimo_hash'];
             self::assertHash($previousHash);
 
+            $pdo->exec('SET @fitcontrol_audit_chain_write = 1');
             $insertAudit = $pdo->prepare(
                 'INSERT INTO auditoria (usuario_id, acao, entidade, entidade_id, criado_em)
                  VALUES (:usuario_id, :acao, :entidade, :entidade_id, :criado_em)'
@@ -180,6 +181,7 @@ final class AuditIntegrityChain
                 throw new RuntimeException('O estado da cadeia de auditoria mudou inesperadamente.');
             }
 
+            $pdo->exec('SET @fitcontrol_audit_chain_write = NULL');
             if ($ownsTransaction) {
                 $pdo->commit();
             } else {
@@ -188,6 +190,11 @@ final class AuditIntegrityChain
 
             return $eventId;
         } catch (Throwable $error) {
+            try {
+                $pdo->exec('SET @fitcontrol_audit_chain_write = NULL');
+            } catch (Throwable) {
+                // A conexão pode estar indisponível; o rollback será tentado abaixo.
+            }
             if ($ownsTransaction && $pdo->inTransaction()) {
                 $pdo->rollBack();
             } elseif ($pdo->inTransaction()) {
@@ -255,6 +262,7 @@ final class AuditIntegrityChain
                 $lastId = (int) $event['id'];
             }
 
+            $pdo->exec('SET @fitcontrol_audit_chain_write = 1');
             $update = $pdo->prepare(
                 'UPDATE auditoria_integridade_estado
                  SET baseline_ultimo_id = :ultimo_id,
@@ -275,6 +283,7 @@ final class AuditIntegrityChain
                 throw new RuntimeException('Não foi possível confirmar o marco inicial da auditoria.');
             }
 
+            $pdo->exec('SET @fitcontrol_audit_chain_write = NULL');
             if ($ownsTransaction) {
                 $pdo->commit();
             }
@@ -285,6 +294,11 @@ final class AuditIntegrityChain
                 'baseline_hash' => $previousHash,
             ];
         } catch (Throwable $error) {
+            try {
+                $pdo->exec('SET @fitcontrol_audit_chain_write = NULL');
+            } catch (Throwable) {
+                // A conexão pode estar indisponível; o rollback será tentado abaixo.
+            }
             if ($ownsTransaction && $pdo->inTransaction()) {
                 $pdo->rollBack();
             }
