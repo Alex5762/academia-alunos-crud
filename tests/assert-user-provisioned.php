@@ -12,7 +12,7 @@ if ($senha === '') {
 }
 
 $consulta = $pdo->prepare(
-    'SELECT id, senha_hash, ativo
+    'SELECT id, senha_hash, ativo, perfil
      FROM usuarios
      WHERE email = :email'
 );
@@ -21,6 +21,11 @@ $usuario = $consulta->fetch();
 
 if (!$usuario || (int) $usuario['ativo'] !== 1) {
     fwrite(STDERR, "Conta de teste não encontrada ou inativa." . PHP_EOL);
+    exit(1);
+}
+
+if ($usuario['perfil'] !== 'ADMINISTRADOR') {
+    fwrite(STDERR, "A conta inicial provisionada não recebeu o perfil de administrador." . PHP_EOL);
     exit(1);
 }
 
