@@ -236,6 +236,50 @@ A verificação confirma a assinatura, a identidade configurada do banco, a cade
 
 **Limites:** HMAC prova que o arquivo foi produzido por alguém com a chave; não prova sozinho quando foi produzido. A identidade usa o nome configurado do banco, portanto clones com o mesmo nome e histórico podem compartilhar esse contexto. O checkpoint não detecta restauração para um estado exatamente igual ao checkpoint nem substitui backup, logs externos ou controle de acesso. Proteja a chave e armazene cópias dos checkpoints fora do servidor do banco. No Windows, valide manualmente as ACLs da pasta, pois o PHP não aplica o mesmo modo POSIX de permissões.
 
+### 8.2 Listar e comparar checkpoints
+
+Liste e valide todos os arquivos JSON da pasta externa:
+
+```powershell
+& "C:\xampp\php\php.exe" scripts\listar-checkpoints-auditoria.php "D:\FitControl-Secure-Backups\checkpoints"
+```
+
+Compare dois arquivos assinados, informando primeiro o mais antigo:
+
+```powershell
+& "C:\xampp\php\php.exe" scripts\comparar-checkpoints-auditoria.php "D:\FitControl-Secure-Backups\checkpoints\checkpoint-antigo.json" "D:\FitControl-Secure-Backups\checkpoints\checkpoint-novo.json"
+```
+
+A comparação valida as duas assinaturas, a mesma identidade de banco, o mesmo marco histórico, a ordem dos identificadores e a presença dos dois pontos na cadeia atual. A diferença informada é de identificadores, não uma contagem de eventos garantida quando há lacunas na sequência.
+
+### 8.3 Agendamento diário no Windows
+
+Os scripts PowerShell automatizam a exportação e a verificação pós-exportação. O instalador cria uma chave HMAC aleatória e guarda a configuração (chave e credenciais do banco) protegida pelo DPAPI do usuário Windows atual. A tarefa usa privilégio limitado e roda diariamente enquanto esse usuário estiver conectado.
+
+Abra o PowerShell na raiz do repositório e execute:
+
+```powershell
+Set-ExecutionPolicy -Scope Process Bypass
+.\scripts\windows\instalar-checkpoint-auditoria.ps1 -ProjectRoot (Get-Location).Path -PhpPath "C:\xampp\php\php.exe" -DailyAt "08:00"
+```
+
+O instalador solicita host, porta, banco, usuário e senha do MySQL; a senha pode ficar vazia no XAMPP padrão. Os arquivos são armazenados por padrão em `%LOCALAPPDATA%\FitControl\AuditCheckpoints`, fora do repositório. A pasta recebe ACL restrita ao usuário atual. Cada execução cria um JSON novo e um log; não há limpeza automática nem sobrescrita.
+
+Para executar manualmente a tarefa após instalá-la:
+
+```powershell
+Start-ScheduledTask -TaskName "FitControl - Checkpoint externo da auditoria"
+Get-ScheduledTaskInfo -TaskName "FitControl - Checkpoint externo da auditoria"
+```
+
+Para removê-la sem apagar os checkpoints:
+
+```powershell
+Unregister-ScheduledTask -TaskName "FitControl - Checkpoint externo da auditoria" -Confirm:$false
+```
+
+**Operação e recuperação:** a tarefa usa DPAPI ligado ao usuário e ao computador Windows que a instalou. Não copie `config.dpapi` para outro perfil/computador esperando que funcione; preserve a chave em um cofre seguro e faça um procedimento de recuperação separado. A tarefa com logon interativo não roda enquanto o usuário estiver desconectado. A pasta local não é armazenamento externo imutável: copie periodicamente os JSON para outro dispositivo/conta com acesso separado. Não exclua checkpoints antigos automaticamente. Se a pasta local ou o perfil forem perdidos, os arquivos remotos e a chave recuperada são necessários para validar a cadeia.
+
 **Limite de segurança da cadeia:** alguém com privilégios suficientes para alterar simultaneamente dados, hashes, estado e gatilhos do próprio banco pode reconstruir o histórico. A referência HMAC externa dificulta essa substituição sem a chave.
 
 Não aplique a migration 008 em banco de produção ou com dados reais sem revisão, backup testado e janela de manutenção. A PR permanece em Draft e a aplicação local ainda precisa ser validada separadamente.
