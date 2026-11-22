@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace FitControl\Domain\Enrollment;
 
+require_once __DIR__ . '/../../Security/AuditIntegrityChain.php';
+
 use DateTimeImmutable;
 use DateTimeZone;
 use DomainException;
@@ -288,16 +290,7 @@ final class LegacyEnrollmentRectificationService
             ]);
 
             // 9. Auditoria geral na mesma transação das demais três alterações.
-            $audit = $this->pdo->prepare(
-                'INSERT INTO auditoria (usuario_id, acao, entidade, entidade_id)
-                 VALUES (:user_id, :action_name, :entity_name, :entity_id)'
-            );
-            $audit->execute([
-                'user_id' => $actorUserId,
-                'action_name' => 'matricula_corrigida',
-                'entity_name' => 'matriculas',
-                'entity_id' => $enrollmentId,
-            ]);
+            AuditIntegrityChain::append($this->pdo, $actorUserId, 'matricula_corrigida', 'matriculas', $enrollmentId);
 
             $this->pdo->commit();
         } catch (Throwable $exception) {
