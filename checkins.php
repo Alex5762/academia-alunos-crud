@@ -73,10 +73,14 @@ $alunosElegiveis = $pdo->prepare(
              AND m.fim_exclusivo_em > :now_end
              AND m.cancelada_em IS NULL
        ) = 1
+       AND NOT EXISTS (
+           SELECT 1 FROM checkins c
+           WHERE c.aluno_id = a.id AND c.data_local = :today
+       )
      ORDER BY a.nome ASC, a.id ASC'
 );
 $agoraUtc = $agoraLocal->setTimezone($fusoUtc)->format('Y-m-d H:i:s');
-$alunosElegiveis->execute(['now_start' => $agoraUtc, 'now_end' => $agoraUtc]);
+$alunosElegiveis->execute(['now_start' => $agoraUtc, 'now_end' => $agoraUtc, 'today' => $hoje]);
 $opcoesAlunos = $alunosElegiveis->fetchAll(PDO::FETCH_ASSOC);
 
 $condicoes = ['c.data_local >= :date_from', 'c.data_local <= :date_to'];
