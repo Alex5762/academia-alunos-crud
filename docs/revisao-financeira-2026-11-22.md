@@ -30,20 +30,21 @@ Essas escolhas estão alinhadas com as recomendações de transações PDO, leit
 
 ## Achados priorizados
 
-### F-01 — Alto: falta idempotência no lançamento de pagamento
+### F-01 — Alto: idempotência no lançamento de pagamento
 
-**Evidência:** `FinanceService::registerPayment()` insere um novo registro em `pagamentos` toda vez que a operação chega ao serviço. A tabela não possui chave de idempotência nem unicidade que represente uma tentativa de pagamento.
+<badge>Implementado na branch `feat/dashboard-portfolio`; validação em andamento</badge>
 
-**Risco concreto:** uma cobrança de R$ 300 pode receber um pagamento parcial de R$ 100. Se o navegador reenviar o mesmo POST (duplo clique, repetição do formulário ou resposta perdida), o segundo envio também será aceito enquanto houver saldo — registrando R$ 200, embora só tenha ocorrido um recebimento real.
+**Correção entregue:**
+- Migration 011 adiciona `chave_idempotencia` e `hash_requisicao`, com índice único por cobrança. Registros antigos permanecem válidos com as colunas nulas.
+- O formulário gera um token aleatório de 128 bits por operação.
+- `FinanceService::registerPayment()` calcula SHA-256 dos campos normalizados: cobrança, ator, valor, forma, data e observação.
+- Reenvio com mesma chave e mesmo conteúdo retorna o ID original sem criar pagamento ou evento de auditoria adicional.
+- Reutilização da chave com conteúdo diferente é recusada.
+- A leitura idempotente ocorre após o bloqueio da cobrança com `SELECT ... FOR UPDATE`, serializando tentativas concorrentes na mesma cobrança.
 
-**Correção recomendada:**
-- Gerar um identificador aleatório por operação/formulário (por exemplo, UUID).
-- Persistir a chave junto ao pagamento, com índice único no escopo da cobrança.
-- Calcular e guardar uma impressão dos campos significativos (cobrança, funcionário, valor, forma, data e observação).
-- Reenvio com a mesma chave e mesmos dados deve devolver o ID do lançamento original sem criar outro evento.
-- Reutilização da chave com conteúdo diferente deve ser recusada.
+**Cobertura adicionada:** teste sequencial de reenvio, conflito de conteúdo e teste de corrida com dois processos PHP e conexões PDO independentes. O cenário concorrente exige um único pagamento, o mesmo ID nos dois processos e exatamente um evento de auditoria.
 
-**Teste necessário:** repetir o mesmo POST sequencialmente e em duas conexões concorrentes; deve existir um único lançamento e um único evento de auditoria.
+**Validação observada:** no run CI #1266, o job financeiro em MariaDB 10.11 concluiu com sucesso, incluindo migration 011 e o teste concorrente. O job equivalente em MySQL 8.0 ainda estava em execução na última consulta. A confirmação final depende dos dois motores.
 
 ### F-02 — Alto: o histórico de pagamentos não é imutável no banco
 
@@ -112,7 +113,7 @@ Essas escolhas estão alinhadas com as recomendações de transações PDO, leit
 
 ## Plano de correção recomendado
 
-1. **F-01:** idempotência, para impedir duplicidade em reenvios.
+1. **F-01:** implementado; aguardar confirmação final em MySQL 8.0 além do MariaDB 10.11.
 2. **F-02 e F-05:** proteção de imutabilidade e invariantes no schema.
 3. **F-03:** separar valores cobraveis de valores em revisão por cancelamento contratual.
 4. **F-04:** disponibilizar o histórico de pagamentos por cobrança.
@@ -123,9 +124,9 @@ Não recomendo adicionar agora um razão contábil de partidas dobradas, concili
 
 ## Estado de validação
 
-- CI #1243, #1244 e #1245 foram aprovadas nos jobs existentes.
-- A cobertura atual valida migration, criação automática, pagamentos sequenciais, limite de saldo, cancelamento condicionado e auditoria.
-- A CI verde não cobre ainda os cenários F-01, F-02, F-03, F-04 e a corrida de concorrência de F-06.
+- CI #1243–#1245 foram aprovadas nos jobs anteriores.
+- CI #1266: job financeiro em MariaDB 10.11 aprovado, incluindo migration 011 e concorrência idempotente; MySQL 8.0 ainda em execução na última consulta.
+- F-01 agora possui cobertura sequencial e concorrente; F-02, F-03 e F-04 permanecem pendentes. A concorrência de F-06 sobre o limite de saldo ainda requer cenário próprio.
 - Nenhuma migration foi aplicada no banco local do usuário.
 - PR #1 permanece Draft e não integrada. Esta revisão não altera a decisão de manter a PR aberta.
 
