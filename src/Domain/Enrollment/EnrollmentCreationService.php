@@ -288,7 +288,7 @@ final class EnrollmentCreationService
             }
 
             // 7. A auditoria faz parte da mesma transação do contrato.
-            \\FitControl\\Security\\AuditIntegrityChain::append($this->pdo, $actorUserId, 'matricula_criada', 'matriculas', $enrollmentId);
+            \FitControl\Security\AuditIntegrityChain::append($this->pdo, $actorUserId, 'matricula_criada', 'matriculas', $enrollmentId);
 
             $this->pdo->commit();
 
