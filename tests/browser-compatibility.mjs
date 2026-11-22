@@ -199,11 +199,12 @@ for (const engine of engines) {
     // Perfil sem eventos: valida o estado vazio e a semântica da página em todos os motores.
     await page.getByRole("link", { name: "Ver detalhes de Ana Beatriz Costa" }).click();
     await page.getByRole("heading", { name: "Informações cadastrais" }).waitFor();
+    await page.getByRole("heading", { name: "Histórico de matrículas" }).waitFor();
     await page.getByRole("heading", { name: "Histórico de atividade" }).waitFor();
     const profileHeadings = page.locator("main.student-detail-page");
     ensure(
       await profileHeadings.locator("h1").count() === 1 &&
-        await profileHeadings.locator("h2").count() === 2,
+        await profileHeadings.locator("h2").count() === 3,
       engine.name + ": hierarquia de títulos dentro do perfil está inesperada.",
     );
     ensure(
