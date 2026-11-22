@@ -244,13 +244,15 @@ Entregas implementadas e validadas pela CI:
 
 **Estado: especificação em evolução; implementação ainda não iniciada.** Documento: [Bloco 06 — Aulas e agenda](bloco-06-aulas-agenda.md).
 
-O MVP proposto cobre modalidades, instrutores independentes com vínculo opcional a funcionário, turmas recorrentes, horários semanais, geração explícita e idempotente de sessões, agenda, reservas internas, capacidade concorrente, cancelamento e presença por aula.
+O MVP proposto cobre modalidades, instrutores independentes com vínculo opcional a funcionário, turmas recorrentes, horários semanais, geração explícita e idempotente de sessões, agenda, reservas internas, capacidade concorrente, cancelamento, fila de espera interna e presença por aula.
 
-**Decisões confirmadas:** reservas e cancelamentos são feitos por funcionários autorizados no painel; alunos não terão portal no MVP. Instrutores têm cadastro profissional independente e vínculo opcional a `usuarios`, sem concessão de acesso. Como evolução futura e seletiva, alguns alunos poderão apenas confirmar intenção de comparecer a uma reserva já criada pela equipe. Essa confirmação não é presença real, não cria/cancela reserva e não libera vaga automaticamente.
+**Decisões confirmadas:** reservas e cancelamentos são feitos por funcionários autorizados no painel; alunos não terão portal no MVP. Instrutores têm cadastro profissional independente e vínculo opcional a `usuarios`, sem concessão de acesso. A arquitetura será web-first: painel responsivo acessado pelo navegador, sem aplicativo nativo. A confirmação seletiva de intenção pelo aluno e uma PWA instalável ficam como evoluções futuras.
 
-**Decisões ainda abertas:** horizonte padrão de geração (proposta: 30 dias), lista de espera e detalhes do fluxo futuro de confirmação seletiva. A presença específica da aula será separada do check-in geral.
+**Recomendação da pesquisa — aguarda confirmação:** fila FIFO administrada por funcionários, sem promoção automática; equipe contata o próximo aluno pelo canal já utilizado e registra a resposta no painel. Uma vaga só é convertida em reserva por ação normal de funcionário, com nova validação de capacidade e elegibilidade.
 
-A especificação inclui modelo de domínio, elegibilidade, permissões, transações, concorrência, datas e critérios de aceite. Não criar migration nem iniciar implementação até fechar as decisões ainda abertas da seção 10 do documento.
+**Decisões ainda abertas:** horizonte padrão de geração (proposta: 30 dias), aprovação da fila interna no MVP, detalhes do futuro link de confirmação e se/quando uma PWA teria valor. A presença específica da aula será separada do check-in geral.
+
+A especificação inclui modelo de domínio, elegibilidade, permissões, transações, concorrência, datas, critérios de aceite e pesquisa de soluções web. Não criar migration nem iniciar implementação até fechar as decisões ainda abertas da seção 10 do documento.
 
 ### Bloco 07 — Relatórios e experiência
 
