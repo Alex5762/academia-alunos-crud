@@ -331,7 +331,7 @@ try {
     ]);
     assertAttendance((int) $uniqueIndex->fetchColumn() === 2, 'A proteção de duplicidade deve usar chave única por aluno/dia.');
 
-    $integrity = \\FitControl\\Security\\AuditIntegrityChain::verify($pdo);
+    $integrity = \FitControl\Security\AuditIntegrityChain::verify($pdo);
     assertAttendance($integrity['ok'], 'A cadeia geral de auditoria precisa permanecer íntegra.');
 
     echo "Check-in: elegibilidade, UTC, unicidade diária e auditoria aprovados.\n";
