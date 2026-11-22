@@ -242,11 +242,11 @@ Entregas implementadas e validadas pela CI:
 
 ### Bloco 06 — Aulas e agenda
 
-**Estado: especificação inicial proposta; implementação ainda não iniciada.** Documento: [Bloco 06 — Aulas e agenda](bloco-06-aulas-agenda.md).
+**Estado: especificação inicial em evolução; implementação ainda não iniciada.** Documento: [Bloco 06 — Aulas e agenda](bloco-06-aulas-agenda.md).
 
-O MVP proposto cobre modalidades, turmas recorrentes, horários semanais, geração explícita e idempotente de sessões para 30 dias, agenda, reservas internas, capacidade concorrente, cancelamento e presença por aula. Reutiliza alunos, matrículas, funcionários/usuários, RBAC, fuso `America/Sao_Paulo` e auditoria existentes.
+O MVP proposto cobre modalidades, turmas recorrentes, horários semanais, geração explícita e idempotente de sessões, agenda, reservas internas, capacidade concorrente, cancelamento e presença por aula.
 
-**Decisão confirmada:** instrutores terão cadastro profissional independente, com vínculo opcional e único a uma conta existente em `usuarios`. O cadastro não concede acesso nem altera RBAC. A especificação detalha inativação, histórico e snapshot do nome nas sessões.
+**Decisão confirmada:** instrutores terão cadastro profissional independente, com vínculo opcional e único a uma conta existente em `usuarios`. O cadastro não concede acesso nem altera RBAC. O documento detalha inativação, histórico e snapshot do nome nas sessões.
 
 **Decisões ainda abertas:** reservas serão feitas pela equipe no painel interno; não haverá portal do aluno nem lista de espera automática na primeira versão; presença na aula será separada do check-in geral; horizonte padrão de geração será 30 dias.
 
