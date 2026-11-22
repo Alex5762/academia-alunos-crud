@@ -6,6 +6,7 @@ require_once __DIR__ . '/src/Domain/Enrollment/EnrollmentPeriodCalculator.php';
 use FitControl\Domain\Enrollment\EnrollmentPeriodCalculator;
 
 $usuario = exigirAutenticacao($pdo);
+exigirPermissao($usuario, 'legacy.rectify');
 $reviewId = validarId($_GET['review_id'] ?? null);
 
 if ($reviewId === false) {
