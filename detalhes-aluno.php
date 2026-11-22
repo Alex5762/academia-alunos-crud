@@ -286,6 +286,7 @@ unset($_SESSION['mensagem']);
                     Registrar matrícula
                 </a>
             <?php } ?>
+            <?php if (usuarioTemPermissao($usuario, 'students.status')) { ?>
             <form action="alterar-status-aluno.php" method="post">
                 <input type="hidden" name="token" value="<?= escapar($_SESSION['token']) ?>">
                 <input type="hidden" name="id" value="<?= (int) $aluno['id'] ?>">
@@ -297,6 +298,7 @@ unset($_SESSION['mensagem']);
                     <?= $ativo ? 'Inativar aluno' : 'Reativar aluno' ?>
                 </button>
             </form>
+            <?php } ?>
         </div>
     </section>
 
