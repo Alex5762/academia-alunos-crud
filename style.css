@@ -2692,3 +2692,64 @@ body:not(.dashboard-body) .theme-option[aria-pressed="true"] {
     .enrollment-history-heading { flex-direction: column; }
     .enrollment-detail-grid { grid-template-columns: 1fr; }
 }
+
+
+/* Acesso ao fluxo de contratação a partir do catálogo e do perfil */
+.enrollment-create-cta {
+    display: inline-flex;
+    margin: 4px 0 20px;
+}
+.enrollment-create-form {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.enrollment-create-form label {
+    display: block;
+    margin: 0 0 6px;
+    color: var(--ink);
+    font-size: .8rem;
+    font-weight: 700;
+}
+.enrollment-create-form input,
+.enrollment-create-form select {
+    width: 100%;
+    min-height: 44px;
+    padding: 10px 12px;
+    color: var(--ink);
+    background: var(--canvas);
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    font: inherit;
+}
+.enrollment-create-form input:focus,
+.enrollment-create-form select:focus {
+    outline: 3px solid var(--blue-soft);
+    border-color: var(--blue);
+}
+.enrollment-create-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    gap: 9px;
+}
+.enrollment-error {
+    color: #a02d3a;
+    background: #fff0f1;
+    border-color: #f1d2d6;
+}
+:root[data-theme="dark"] .enrollment-create-form input,
+:root[data-theme="dark"] .enrollment-create-form select {
+    color: #e8edf7;
+    background: #111c2d;
+    border-color: #35435a;
+}
+:root[data-theme="dark"] .enrollment-error {
+    color: #ffb4bd;
+    background: #492a36;
+    border-color: #70404c;
+}
+@media (max-width: 640px) {
+    .enrollment-create-form { grid-template-columns: 1fr; }
+    .enrollment-create-actions { flex-direction: column; align-items: stretch; }
+    .enrollment-create-actions .button { width: 100%; }
+    .enrollment-create-cta { width: 100%; justify-content: center; }
+}
