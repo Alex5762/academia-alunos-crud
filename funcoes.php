@@ -214,7 +214,7 @@ function usuarioAtual(PDO $pdo): ?array {
     }
 
     $consulta = $pdo->prepare(
-        'SELECT id, nome, email, deve_trocar_senha
+        'SELECT id, nome, email, deve_trocar_senha, perfil
          FROM usuarios
          WHERE id = :id AND ativo = 1
          LIMIT 1'
@@ -248,6 +248,30 @@ function exigirAutenticacao(PDO $pdo): array {
     }
 
     return $usuario;
+}
+
+/**
+ * Autoriza uma permissão de domínio usando o perfil carregado do banco.
+ * O perfil nunca é aceito a partir de GET, POST ou de um campo de formulário.
+ */
+function usuarioTemPermissao(array $usuario, string $permissao): bool {
+    require_once __DIR__ . '/src/Security/AccessControl.php';
+
+    $perfil = $usuario['perfil'] ?? null;
+    if (!is_string($perfil)) {
+        return false;
+    }
+
+    return \\FitControl\\Security\\AccessControl::allows($perfil, $permissao);
+}
+
+/** Retorna 403 sem redirecionar para login quando o usuário está autenticado. */
+function exigirPermissao(array $usuario, string $permissao): void {
+    if (!usuarioTemPermissao($usuario, $permissao)) {
+        http_response_code(403);
+        header('Content-Type: text/plain; charset=UTF-8');
+        exit('Você não tem permissão para realizar esta operação.');
+    }
 }
 
 /**
