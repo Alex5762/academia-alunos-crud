@@ -41,6 +41,8 @@ A autorização é aplicada no servidor por `exigirPermissao()`; ocultar um link
 
 A página `auditoria.php` reúne eventos gerais e alterações de perfil, incluindo responsável, data/hora, ação, entidade, identificador do registro e detalhe do perfil anterior e novo. Permite filtrar por funcionário/e-mail/ID, ação, entidade e período local da academia, com paginação. O acesso é restrito a Administrador e Gestor; Operador recebe HTTP 403.
 
+A página `detalhes-auditoria.php` consolida a linha do tempo por registro para alunos, funcionários, planos, matrículas e revisões legadas. Ela combina a trilha geral com eventos especializados de perfil e de revisão/retificação, quando aplicáveis. Os parâmetros de entidade são allowlisted, o identificador precisa ser inteiro positivo, e a página é somente leitura. Administrador e Gestor podem consultar; Operador recebe HTTP 403.
+
 
 ## Detalhes por registro
 
