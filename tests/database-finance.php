@@ -410,6 +410,38 @@ try {
     $paymentCount->execute(['charge_id' => $firstChargeId]);
     assertFinance((int) $paymentCount->fetchColumn() === 2, 'Reenvios e tentativas inválidas não devem criar pagamentos adicionais.');
 
+    // F-05: o próprio banco rejeita valores nulos ou negativos, mesmo fora do serviço.
+    assertFinanceSqlRejected(
+        $pdo,
+        'UPDATE cobrancas SET valor_total = :amount WHERE id = :charge_id',
+        ['amount' => '0.00', 'charge_id' => $firstChargeId],
+        'A constraint deve rejeitar cobrança com valor total zero.'
+    );
+    $pdo->exec('SET @fitcontrol_payment_write = 1');
+    try {
+        assertFinanceSqlRejected(
+            $pdo,
+            'INSERT INTO pagamentos (
+                cobranca_id, valor, forma_pagamento, data_pagamento,
+                registrado_por, registrado_em_utc
+             ) VALUES (
+                :charge_id, :amount, :method, :payment_date,
+                :actor_id, :registered_at
+             )',
+            [
+                'charge_id' => $firstChargeId,
+                'amount' => '-0.01',
+                'method' => 'PIX',
+                'payment_date' => '2026-11-22',
+                'actor_id' => $actorId,
+                'registered_at' => '2026-11-22 13:00:00',
+            ],
+            'A constraint deve rejeitar pagamento negativo mesmo com a permissão de escrita do serviço.'
+        );
+    } finally {
+        $pdo->exec('SET @fitcontrol_payment_write = NULL');
+    }
+
     // A tabela deve impedir escrita direta, edição e exclusão fora do serviço.
     assertFinanceSqlRejected(
         $pdo,
