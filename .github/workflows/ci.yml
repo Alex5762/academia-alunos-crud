@@ -376,6 +376,9 @@ jobs:
       - name: Test finance dashboard review classification
         run: php tests/finance-dashboard-status.php
 
+      - name: Test exact financial money formatting
+        run: php tests/finance-money-format.php
+
       - name: Check required project files
         run: |
           test -f index.php
@@ -456,6 +459,8 @@ jobs:
           test -f tests/database-finance.php
           test -f tests/finance-dashboard-status.php
           test -f src/Domain/Finance/FinanceDashboardStatus.php
+          test -f tests/finance-money-format.php
+          test -f src/Domain/Finance/FinanceMoneyFormatter.php
           test -f src/Domain/Finance/FinancePaymentHistoryQuery.php
           test -f financeiro.php
           test -f database/migrations/009_attendance_checkins.sql
