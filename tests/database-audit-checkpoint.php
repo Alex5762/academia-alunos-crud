@@ -9,6 +9,7 @@ if (PHP_SAPI !== 'cli') {
 require_once __DIR__ . '/../conexao.php';
 require_once __DIR__ . '/../src/Security/AuditIntegrityChain.php';
 require_once __DIR__ . '/../src/Security/AuditIntegrityCheckpoint.php';
+require_once __DIR__ . '/../src/Security/AuditRecoveryDiagnostic.php';
 
 function assertCheckpoint(bool $condition, string $message): void
 {
@@ -185,7 +186,56 @@ try {
     );
     assertCheckpoint(!$restored['ok'], 'Banco atrás do checkpoint deve ser rejeitado como possível restauração.');
 
-    echo "Checkpoint HMAC, exportação sem sobrescrita, extensão legítima, segredo incorreto, banco incompatível, adulteração e restauração: OK." . PHP_EOL;
+    $signedPayload = \\FitControl\\Security\\AuditIntegrityCheckpoint::readSignedPayload(
+        $databaseName,
+        $secret,
+        $checkpointPath
+    );
+    assertCheckpoint(
+        $signedPayload['payload']['checkpoint_event_id'] === $created['checkpoint_event_id'],
+        'A leitura autenticada deve expor o identificador assinado sem exigir consulta mutável.'
+    );
+
+    $consistentReport = \\FitControl\\Security\\AuditRecoveryDiagnostic::diagnose(
+        $pdo,
+        $databaseName,
+        $secret,
+        [$checkpointPath]
+    );
+    assertCheckpoint(
+        $consistentReport['status'] === 'consistent_through_checkpoint',
+        'O diagnóstico deve reconhecer cadeia válida que contém o checkpoint.'
+    );
+    assertCheckpoint($consistentReport['read_only'] === true, 'O relatório deve declarar execução somente leitura.');
+
+    $rollbackReport = \\FitControl\\Security\\AuditRecoveryDiagnostic::diagnose(
+        $pdo,
+        $databaseName,
+        $secret,
+        [$checkpointPath, $futurePath]
+    );
+    assertCheckpoint(
+        $rollbackReport['status'] === 'possible_older_restore',
+        'Checkpoint assinado posterior deve sinalizar possível restauração antiga.'
+    );
+    assertCheckpoint(
+        $rollbackReport['latest_checkpoint_ahead']['event_id'] === $futurePayload['checkpoint_event_id'],
+        'O relatório deve identificar o checkpoint posterior à restauração.'
+    );
+
+    $tamperedReport = \\FitControl\\Security\\AuditRecoveryDiagnostic::diagnose(
+        $pdo,
+        $databaseName,
+        $secret,
+        [$tamperedPath]
+    );
+    assertCheckpoint(
+        $tamperedReport['status'] === 'insufficient_evidence'
+        && count($tamperedReport['rejected_checkpoints']) === 1,
+        'Checkpoint adulterado não deve ser tratado como evidência confiável.'
+    );
+
+    echo "Checkpoint HMAC, comparação, diagnóstico somente leitura, possível rollback, segredo incorreto, banco incompatível e adulteração: OK." . PHP_EOL;
 } finally {
     foreach ([$checkpointPath, $tamperedPath, $futurePath] as $path) {
         if (is_file($path)) {
