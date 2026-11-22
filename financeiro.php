@@ -112,6 +112,7 @@ $structureCheck = $pdo->query(
 $financialStructureAvailable = (int) $structureCheck->fetchColumn() === 4;
 
 $charges = [];
+$paymentHistory = [];
 $summary = [
     'total_cobrado' => '0.00',
     'total_pago' => '0.00',
@@ -271,6 +272,7 @@ $totalSaldoRevisaoCents = financeiroCentavos($summary['saldo_em_revisao'] ?? '0.
                             <th scope="col">SALDO</th>
                             <th scope="col">STATUS</th>
                             <th scope="col">AÇÕES</th>
+                            <th scope="col">HISTÓRICO</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -337,6 +339,41 @@ $totalSaldoRevisaoCents = financeiroCentavos($summary['saldo_em_revisao'] ?? '0.
                                     <span class="field-hint">Sem ações disponíveis</span>
                                 <?php } ?>
                                 </div>
+                            </td>
+                            <td>
+                                <details class="payment-history">
+                                    <summary>Ver <?= (int) $charge['quantidade_pagamentos'] ?> lançamento(s)</summary>
+                                    <?php $chargePayments = $paymentHistory[(int) $charge['id']] ?? []; ?>
+                                    <?php if ($chargePayments === []) { ?>
+                                        <p class="field-hint">Nenhum pagamento registrado.</p>
+                                    <?php } else { ?>
+                                        <ol class="payment-history-list">
+                                            <?php foreach ($chargePayments as $payment) {
+                                                $registeredAt = new DateTimeImmutable(
+                                                    (string) $payment['registrado_em_utc'],
+                                                    new DateTimeZone('UTC')
+                                                );
+                                                $registeredAt = $registeredAt->setTimezone($fusoAcademia);
+                                            ?>
+                                                <li>
+                                                    <div class="payment-history-heading">
+                                                        <strong><?= escapar(financeiroMoeda($payment['valor'])) ?></strong>
+                                                        <span><?= escapar(DateTimeImmutable::createFromFormat('!Y-m-d', (string) $payment['data_pagamento'], $fusoAcademia)->format('d/m/Y')) ?></span>
+                                                    </div>
+                                                    <dl>
+                                                        <div><dt>Forma</dt><dd><?= escapar($payment['forma_pagamento']) ?></dd></div>
+                                                        <div><dt>Registrado em</dt><dd><?= escapar($registeredAt->format('d/m/Y H:i')) ?></dd></div>
+                                                        <div><dt>Responsável</dt><dd><?= escapar($payment['responsavel_nome']) ?></dd></div>
+                                                        <?php if ($payment['observacao'] !== null && $payment['observacao'] !== '') { ?>
+                                                            <div><dt>Observação</dt><dd><?= escapar($payment['observacao']) ?></dd></div>
+                                                        <?php } ?>
+                                                        <div><dt>Identificador</dt><dd>#<?= (int) $payment['id'] ?></dd></div>
+                                                    </dl>
+                                                </li>
+                                            <?php } ?>
+                                        </ol>
+                                    <?php } ?>
+                                </details>
                             </td>
                         </tr>
                     <?php } ?>
