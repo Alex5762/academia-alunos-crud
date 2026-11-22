@@ -88,19 +88,23 @@ $colunasHistoricoEsperadas = [
 ];
 
 $condicoesColunas = [];
-$parametrosColunas = ['tabela_matriculas' => 'matriculas', 'tabela_revisao' => 'revisoes_legado'];
+$parametrosColunas = [];
+$indiceTabela = 0;
+
 foreach ($colunasHistoricoEsperadas as $tabela => $colunas) {
-    $parametroTabela = $tabela === 'matriculas' ? 'tabela_matriculas' : 'tabela_revisao';
+    $parametroTabela = 'tabela_' . $indiceTabela;
+    $parametrosColunas[$parametroTabela] = $tabela;
     $placeholders = [];
 
     foreach ($colunas as $indice => $coluna) {
-        $parametroColuna = 'coluna_' . ($tabela === 'matriculas' ? 'm' : 'r') . '_' . $indice;
+        $parametroColuna = 'coluna_' . $indiceTabela . '_' . $indice;
         $placeholders[] = ':' . $parametroColuna;
         $parametrosColunas[$parametroColuna] = $coluna;
     }
 
     $condicoesColunas[] = '(TABLE_NAME = :' . $parametroTabela
         . ' AND COLUMN_NAME IN (' . implode(', ', $placeholders) . '))';
+    $indiceTabela++;
 }
 
 $consultaEstrutura = $pdo->prepare(
