@@ -95,6 +95,7 @@ if ($estruturaMatriculasDisponivel) {
 }
 
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && ($_POST['acao'] ?? '') === 'criar_matricula') {
+    exigirPermissao($usuario, 'enrollments.create');
     validarToken();
     $novaMatriculaSolicitada = true;
 
