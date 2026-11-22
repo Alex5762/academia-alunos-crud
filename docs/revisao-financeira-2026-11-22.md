@@ -130,15 +130,18 @@ Essas escolhas estão alinhadas com as recomendações de transações PDO, leit
 - O teste financeiro cobre três casos: retroativo sem observação é rejeitado; retroativo com justificativa é aceito e preserva data/observação; data futura é rejeitada mesmo com justificativa.
 - A data e justificativa fazem parte do fingerprint idempotente e do histórico individual.
 
-## Plano de correção recomendado
+## Plano de correção — estado atual
 
-1. **F-01:** implementado e validado em MySQL 8.0 e MariaDB 10.11 no CI #1266; integração CRUD/visual ainda estava em execução.
-2. **F-02:** implementado com guards append-only; aguardar CI e avaliar snapshot criptográfico independente em etapa posterior.
-3. **F-05:** adicionar constraints positivas no schema.
-4. **F-03:** implementado; aguardar CI nos dois bancos.
-5. **F-04:** disponibilizar o histórico de pagamentos por cobrança.
-6. **F-06:** adicionar testes de concorrência do limite de saldo e HTTP para registro de pagamento/cancelamento.
-7. **F-07 e F-08:** acabamento da apresentação e explicitação da política de datas.
+1. **F-01 — Idempotência:** validado na CI em MySQL 8.0 e MariaDB 10.11, incluindo reenvio sequencial e duas conexões com a mesma chave.
+2. **F-02 — Imutabilidade:** validado na CI; pagamentos confirmados são append-only no fluxo normal da aplicação. Snapshot criptográfico independente do conteúdo permanece como melhoria futura, não requisito do escopo atual.
+3. **F-03 — Revisão de cancelamentos:** validado; saldo de contratos cancelados fica separado do saldo cobrável.
+4. **F-04 — Histórico individual:** validado; consulta em lote e painel expansível com responsável, data, método e observação.
+5. **F-05 — Constraints:** validado; cobranças e pagamentos exigem valores positivos no banco.
+6. **F-06 — Concorrência:** validado; duas operações distintas que excederiam o saldo foram serializadas, com um lançamento aceito e outro recusado.
+7. **F-07 — Formatação monetária:** validado na CI #1385; interface e cálculo usam texto decimal/centavos inteiros sem conversão para `float`.
+8. **F-08 — Datas retroativas:** regra e testes implementados; jobs financeiros MySQL/MariaDB da CI #1397 aprovados. A execução geral de integração visual ainda está terminando.
+
+Não recomendo adicionar agora um razão contábil de partidas dobradas, conciliação bancária ou integração com gateway. Para o escopo local/acadêmico, um registro de contas a receber e pagamentos com histórico imutável, idempotência, saldo exato, transações e auditoria é proporcional.
 
 Não recomendo adicionar agora um razão contábil de partidas dobradas, conciliação bancária ou integração com gateway. Para o escopo local/acadêmico, um registro de contas a receber e pagamentos com histórico imutável, idempotência, saldo exato, transações e auditoria é proporcional.
 
