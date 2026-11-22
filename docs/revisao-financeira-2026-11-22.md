@@ -108,13 +108,16 @@ Essas escolhas estão alinhadas com as recomendações de transações PDO, leit
 - A suíte também preserva o cenário F-01 de duas requisições concorrentes com a mesma chave, que devem retornar o mesmo ID de pagamento.
 - O teste verifica no banco quantidade, soma dos pagamentos e quantidade de eventos de auditoria.
 
-### F-07 — Baixo: formatação monetária converte DECIMAL para float
+### F-07 — Baixo: formatação monetária exata
 
-**Evidência:** `financeiroMoeda()` usa `number_format((float) ...)`, apesar de os cálculos de saldo já usarem centavos inteiros.
+**Estado: implementado na branch `feat/dashboard-portfolio`; CI pendente.**
 
-**Risco:** não é um erro observado nos testes atuais, mas mistura representação aproximada na camada de apresentação com o restante do domínio baseado em centavos.
-
-**Correção recomendada:** formatar a partir de centavos inteiros ou de texto decimal validado, sem converter valores monetários para float.
+**Correção entregue:**
+- Criada `FinanceMoneyFormatter`, que formata DECIMAL vindo do PDO como texto e valores calculados a partir de centavos inteiros.
+- Removida a conversão para `float` e o uso de `number_format((float) ...)` na tela financeira.
+- O formatador valida duas casas decimais, agrupa milhares no padrão brasileiro e rejeita entradas inválidas ou do tipo `float`.
+- A conversão decimal→centavos foi centralizada para a tela e para a classificação de saldo do dashboard.
+- Testes unitários cobrem zeros, centavos, separador de milhares, números grandes, sinal negativo, conversão exata e rejeição de `float`.
 
 ### F-08 — Baixo: política de data do pagamento está implícita na interface
 
@@ -142,6 +145,7 @@ Não recomendo adicionar agora um razão contábil de partidas dobradas, concili
 - F-01 a F-04 estão implementados e validados na CI #1332, com sete jobs verdes nos fluxos MySQL 8.0 e MariaDB 10.11.
 - F-05 foi validado integralmente na CI #1361: migration 013 e rejeição de zero/negativos em cobranças e pagamentos, em MySQL 8.0 e MariaDB 10.11.
 - F-06 foi validado nos jobs de Bloco 04 da CI #1362 em MySQL 8.0 e MariaDB 10.11: duas conexões independentes disputaram uma cobrança de R$ 300,00 com pagamentos de R$ 200,00; um foi aceito, o outro foi recusado por saldo, e houve somente um lançamento e um evento de auditoria.
+- F-07: formatação sem `float` e suíte unitária estão implementadas; aguardando CI.
 - Nenhuma migration foi aplicada no banco local do usuário.
 - PR #1 permanece Draft e não integrada; não fazer merge antes da validação final.
 
