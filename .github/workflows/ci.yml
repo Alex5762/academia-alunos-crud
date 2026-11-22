@@ -372,6 +372,9 @@ jobs:
       - name: Test role-based access control matrix
         run: php tests/access-control.php
 
+      - name: Test finance dashboard review classification
+        run: php tests/finance-dashboard-status.php
+
       - name: Check required project files
         run: |
           test -f index.php
@@ -449,6 +452,8 @@ jobs:
           test -f database/migrations/012_pagamentos_append_only.sql
           test -f src/Domain/Finance/FinanceService.php
           test -f tests/database-finance.php
+          test -f tests/finance-dashboard-status.php
+          test -f src/Domain/Finance/FinanceDashboardStatus.php
           test -f financeiro.php
           test -f database/migrations/009_attendance_checkins.sql
           test -f tests/database-attendance-checkin.php
