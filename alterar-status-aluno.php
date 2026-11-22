@@ -9,6 +9,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 require_once __DIR__ . '/conexao.php';
 $usuario = exigirAutenticacao($pdo);
+exigirPermissao($usuario, 'students.status');
 validarToken();
 $contextoLista = obterContextoListaAlunos($_POST);
 $retornoDetalhes = isset($_POST['retorno']) && $_POST['retorno'] === 'detalhes';
