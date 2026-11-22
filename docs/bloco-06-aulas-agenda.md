@@ -19,7 +19,7 @@ O módulo deve reutilizar alunos, matrículas, funcionários, fuso horário, tra
 3. **Horários semanais:** um ou mais horários por turma, com dia da semana, hora local e período de vigência.
 4. **Geração explícita de sessões:** ação autenticada gera as próximas sessões dentro de uma janela limitada (proposta inicial: 30 dias). Não haverá cron, worker ou geração em background. A operação será idempotente: executar novamente não cria sessões duplicadas.
 5. **Agenda:** visão diária/semanal, filtros por modalidade, turma e instrutor, com estados de sessão programada/cancelada.
-6. **Reservas internas:** funcionário reserva uma vaga para aluno elegível; cancelamento da reserva preserva o registro histórico e libera capacidade.
+6. **Reservas internas:** somente funcionário reserva uma vaga para aluno elegível no MVP; cancelamento da reserva preserva o registro histórico e libera capacidade.
 7. **Capacidade:** nunca permitir que reservas ativas excedam a capacidade da sessão, mesmo sob requisições concorrentes.
 8. **Conflitos:** impedir que o mesmo instrutor seja escalado para duas sessões sobrepostas e que o mesmo aluno mantenha reservas sobrepostas.
 9. **Presença na aula:** lista de participantes e marcação individual como presente/ausente depois do início da sessão. Essa presença é diferente do check-in geral da academia.
@@ -29,12 +29,12 @@ O módulo deve reutilizar alunos, matrículas, funcionários, fuso horário, tra
 
 ### Fora do escopo inicial
 
-- Aplicativo ou portal de autoatendimento para o aluno.
+- Portal completo de autoatendimento, escolha de aulas, criação e cancelamento de reservas pelo aluno (fora do MVP).
 - QR Code, catraca, biometria ou check-in automático.
 - Lista de espera automática e promoção automática de vagas.
 - Cobrança por aula, pacotes de aulas, créditos ou integração com o financeiro.
 - Gestão de salas, quadras, equipamentos ou recursos físicos.
-- Notificações por e-mail, WhatsApp ou push.
+- Notificações automáticas por e-mail, WhatsApp ou push.
 - Aplicativo nativo, sincronização com Google/Outlook ou integrações externas.
 - Multiunidade/multitenancy.
 - Relatórios avançados (Bloco 07).
@@ -74,6 +74,14 @@ O módulo deve reutilizar alunos, matrículas, funcionários, fuso horário, tra
 - Cancelamento de reserva é permitido antes do início da sessão. Não haverá multa nem cobrança por falta nesta versão.
 - Presença (presente/ausente) só pode ser marcada a partir do início da sessão e não pode ser marcada em sessão cancelada.
 - A sessão cancelada não apaga reservas nem registros de presença anteriores; o estado da sessão prevalece para a apresentação da agenda.
+
+### Confirmação opcional de participação pelo aluno — fase futura
+
+- Não faz parte do MVP: reservas e cancelamentos são operados por funcionários.
+- Em uma fase posterior e habilitada seletivamente, o aluno poderá responder somente sobre uma reserva que já esteja vinculada a ele.
+- A resposta será armazenada separadamente da presença efetiva. Estados candidatos: pendente, confirmou que pretende comparecer e informou que não pretende comparecer; o vocabulário final será definido com o fluxo.
+- Uma resposta do aluno não altera a presença, não cancela a reserva nem libera vaga automaticamente. Qualquer liberação continuará sob regra explícita e/ou ação autorizada da equipe.
+- O evento de confirmação deve registrar instante e origem, sem permitir que o cliente envie livremente aluno_id, presença final ou ator administrativo.
 
 ## 5. Instrutores — decisão C confirmada
 
@@ -128,18 +136,20 @@ O servidor deve verificar cada permissão em toda página e endpoint. Ocultar co
 
 ## 10. Decisões confirmadas e decisões ainda abertas
 
-### Confirmada
+### Confirmadas
 
-- [x] **Instrutores:** opção C — cadastro independente com vínculo opcional a uma conta existente em `usuarios`. A tabela profissional não concede acesso ao sistema.
+- [x] **Instrutores:** opção C — cadastro profissional independente, com vínculo opcional a uma conta existente em `usuarios`. O cadastro não concede acesso ao sistema.
+- [x] **Reservas no MVP:** opção A — somente Administrador/Gestor/Operador autorizado faz reservas e cancelamentos pelo painel interno. O aluno não terá conta ou portal de autoatendimento na primeira versão.
+- [x] **Evolução limitada:** considerar futuramente a opção C apenas para alunos selecionados confirmarem intenção de participar de reservas já feitas pela equipe. Essa confirmação não será presença real, não cria reserva e não libera vaga automaticamente.
 
-### Ainda precisam de confirmação antes da implementação
+### Ainda abertas antes da implementação
 
 1. **Janela de geração:** confirmar 30 dias como horizonte padrão de criação de sessões.
-2. **Reserva:** confirmar que a equipe fará reservas no painel interno; aluno não terá login/autoatendimento.
-3. **Lista de espera:** manter fora da primeira versão.
-4. **Presença por aula:** confirmar que será um registro separado do check-in geral da academia.
+2. **Lista de espera:** manter fora da primeira versão ou reavaliar depois do fluxo básico.
+3. **Presença por aula:** confirmar que será um registro separado do check-in geral da academia (a especificação recomenda separação).
+4. **Confirmação seletiva futura:** decidir se será por portal autenticado do aluno ou link/token individual; não implementar antes de definir identidade, expiração, revogação e canal de entrega.
 
-As decisões ainda abertas não devem ser tratadas como definitivas até revisão do projeto.
+A decisão sobre reservas internas define o MVP. As evoluções futuras não devem aumentar o escopo inicial nem bloquear sua implementação.
 
 ## 11. Referências técnicas
 
