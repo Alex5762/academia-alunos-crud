@@ -110,6 +110,7 @@ $definitions = [
     ['Aluno com matrícula cancelada', 1],
     ['Aluno para teste de rollback', 1],
     ['Aluno na virada do dia local', 1],
+    ['Aluno com múltiplas matrículas vigentes', 1],
 ];
 
 foreach ($definitions as $index => [$name, $active]) {
@@ -151,6 +152,8 @@ $enrollmentFixtures = [
     [5, '2026-11-01 00:00:00', '2026-12-01 00:00:00', '2026-11-20 12:00:00'],
     [6, '2026-11-01 00:00:00', '2026-12-01 00:00:00', null],
     [7, '2026-11-01 00:00:00', '2026-12-01 00:00:00', null],
+    [8, '2026-11-01 00:00:00', '2026-12-01 00:00:00', null],
+    [8, '2026-11-10 00:00:00', '2026-12-10 00:00:00', null],
 ];
 
 foreach ($enrollmentFixtures as [$studentIndex, $startsAt, $endsAt, $cancelledAt]) {
@@ -227,6 +230,14 @@ try {
     assertAttendanceRejected(
         fn () => $service->register($studentIds[5], $actorId),
         'Matrícula cancelada não pode habilitar check-in.'
+    );
+    assertAttendanceRejected(
+        fn () => $service->register(4294967295, $actorId),
+        'Aluno inexistente não pode registrar presença.'
+    );
+    assertAttendanceRejected(
+        fn () => $service->register($studentIds[8], $actorId),
+        'Mais de uma matrícula vigente deve ser tratada como estado ambíguo.'
     );
 
     // Simula uma falha na cadeia depois do INSERT do check-in. O serviço
