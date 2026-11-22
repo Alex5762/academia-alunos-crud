@@ -378,7 +378,7 @@ final class LegacyReviewDecisionService
                 ) VALUES (
                     :review_id, :user_id, 'DECISAO',
                     :previous_result, :new_result, :enrollment_id,
-                    NULL, NULL, NULL, NULL,
+                    NULL, NULL, :inicio_novo, :fim_exclusivo_novo,
                     :source_reference, :observations
                 )"
             );
@@ -388,6 +388,8 @@ final class LegacyReviewDecisionService
                 'previous_result' => $previousResult,
                 'new_result' => $newResult,
                 'enrollment_id' => $legacyEnrollmentId,
+                'inicio_novo' => $newResult === 'VINCULO_CONFIRMADO' ? $legacyStartUtc : null,
+                'fim_exclusivo_novo' => $newResult === 'VINCULO_CONFIRMADO' ? $legacyEndUtc : null,
                 'source_reference' => $sourceReference,
                 'observations' => $observations,
             ]);
