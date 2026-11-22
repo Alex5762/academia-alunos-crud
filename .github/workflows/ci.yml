@@ -542,6 +542,14 @@ jobs:
           DB_PASSWORD: root
         run: php tests/database-audit-checkpoint.php
 
+      - name: Install attendance schema for HTTP and browser checks
+        env:
+          MYSQL_PWD: root
+        run: |
+          mysql --host=127.0.0.1 --port=3306 --user=root < database/migrations/005_plans_enrollments_schema.sql
+          mysql --host=127.0.0.1 --port=3306 --user=root < database/migrations/006_import_legacy_review.sql
+          mysql --host=127.0.0.1 --port=3306 --user=root < database/migrations/009_attendance_checkins.sql
+
       - name: Run CRUD integration tests and capture screenshots
         env:
           DB_HOST: 127.0.0.1
