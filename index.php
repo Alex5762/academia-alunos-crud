@@ -409,6 +409,7 @@ function iniciaisNome($nome) {
                                         <td class="row-actions">
                                             <a class="action-link" href="<?= escapar(urlDetalhesAluno((int) $aluno['id'], ['busca' => $busca, 'status' => $filtroStatus])) ?>" aria-label="Ver detalhes de <?= escapar($aluno['nome']) ?>">Detalhes</a>
                                             <a class="action-link" href="<?= escapar(urlCadastroAluno((int) $aluno['id'], ['busca' => $busca, 'status' => $filtroStatus])) ?>" aria-label="Editar <?= escapar($aluno['nome']) ?>">Editar</a>
+                                            <?php if (usuarioTemPermissao($usuario, 'students.status')) { ?>
                                             <form action="alterar-status-aluno.php" method="post" class="student-status-form">
                                                 <input type="hidden" name="token" value="<?= escapar($_SESSION['token']) ?>">
                                                 <input type="hidden" name="id" value="<?= escapar($aluno['id']) ?>">
@@ -422,6 +423,7 @@ function iniciaisNome($nome) {
                                                     <button type="submit" class="action-link action-reactivate" aria-label="Reativar <?= escapar($aluno['nome']) ?>">Reativar</button>
                                                 <?php } ?>
                                             </form>
+                                            <?php } ?>
                                         </td>
                                     </tr>
                                 <?php } ?>
