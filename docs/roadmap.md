@@ -164,15 +164,20 @@ Não iniciar migrations ou implementação até revisar as decisões restantes e
 
 ### Bloco 04 — Frequência e check-in
 
+**Estado: implementação inicial em andamento na branch `feat/dashboard-portfolio`.** A especificação fechada está em [Bloco 04 — Frequência e check-in](bloco-04-frequencia-checkin.md).
+
 **Objetivo:** registrar entradas e consultar a frequência dos alunos.
 
-Possíveis entregas:
-- Check-in manual.
-- Histórico de presenças por aluno e período.
-- Regras para impedir registros inválidos ou duplicados.
-- Indicadores básicos de frequência.
+Escopo aprovado:
+- Check-in manual, com instante fornecido pelo servidor.
+- Apenas aluno ativo com exatamente uma matrícula vigente pode registrar presença.
+- No máximo um check-in por aluno por dia civil em `America/Sao_Paulo`.
+- Histórico filtrável por aluno e período.
+- Indicadores básicos do dia e do mês.
+- Auditoria transacional e permissões RBAC específicas.
+- QR Code, catraca, registro retroativo, edição/exclusão e financeiro ficam fora do escopo.
 
-Leitor/QR Code fica fora do primeiro escopo, até existir necessidade real.
+A migration 009 cria a estrutura de check-ins vinculada a alunos, matrículas e funcionários. A validação automatizada será executada em MySQL 8.0 e MariaDB 10.11. A aplicação no XAMPP continua dependendo de backup, inspeção da versão/engine e execução manual controlada.
 
 ### Bloco 05 — Financeiro
 
