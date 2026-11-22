@@ -425,39 +425,62 @@ try {
     $paymentCount->execute(['charge_id' => $firstChargeId]);
     assertFinance((int) $paymentCount->fetchColumn() === 2, 'Reenvios e tentativas inválidas não devem criar pagamentos adicionais.');
 
-    // F-05: o próprio banco rejeita valores nulos ou negativos, mesmo fora do serviço.
-    assertFinanceSqlRejected(
-        $pdo,
-        'UPDATE cobrancas SET valor_total = :amount WHERE id = :charge_id',
-        ['amount' => '0.00', 'charge_id' => $firstChargeId],
-        'A constraint deve rejeitar cobrança com valor total zero.',
-        'chk_cobrancas_valor_total_positivo'
-    );
-    $pdo->exec('SET @fitcontrol_payment_write = 1');
-    try {
+    // F-05: o próprio banco rejeita zero e negativos, mesmo fora dos serviços.
+    foreach (['0.00', '-0.01'] as $invalidChargeAmount) {
         assertFinanceSqlRejected(
             $pdo,
-            'INSERT INTO pagamentos (
-                cobranca_id, valor, forma_pagamento, data_pagamento,
-                registrado_por, registrado_em_utc
-             ) VALUES (
-                :charge_id, :amount, :method, :payment_date,
-                :actor_id, :registered_at
-             )',
-            [
-                'charge_id' => $firstChargeId,
-                'amount' => '-0.01',
-                'method' => 'PIX',
-                'payment_date' => '2026-11-22',
-                'actor_id' => $actorId,
-                'registered_at' => '2026-11-22 13:00:00',
-            ],
-            'A constraint deve rejeitar pagamento negativo mesmo com a permissão de escrita do serviço.',
-            'chk_pagamentos_valor_positivo'
+            'UPDATE cobrancas SET valor_total = :amount WHERE id = :charge_id',
+            ['amount' => $invalidChargeAmount, 'charge_id' => $firstChargeId],
+            'A constraint deve rejeitar cobrança com valor zero ou negativo.',
+            'chk_cobrancas_valor_total_positivo'
         );
+    }
+
+    // O guard do F-02 é habilitado somente para que o INSERT alcance a CHECK
+    // constraint; a variável é sempre limpa, mesmo se a validação falhar.
+    $pdo->exec('SET @fitcontrol_payment_write = 1');
+    try {
+        foreach (['0.00', '-0.01'] as $invalidPaymentAmount) {
+            assertFinanceSqlRejected(
+                $pdo,
+                'INSERT INTO pagamentos (
+                    cobranca_id, valor, forma_pagamento, data_pagamento,
+                    registrado_por, registrado_em_utc
+                 ) VALUES (
+                    :charge_id, :amount, :method, :payment_date,
+                    :actor_id, :registered_at
+                 )',
+                [
+                    'charge_id' => $firstChargeId,
+                    'amount' => $invalidPaymentAmount,
+                    'method' => 'PIX',
+                    'payment_date' => '2026-11-22',
+                    'actor_id' => $actorId,
+                    'registered_at' => '2026-11-22 13:00:00',
+                ],
+                'A constraint deve rejeitar pagamento com valor zero ou negativo, após passar pelo guard.',
+                'chk_pagamentos_valor_positivo'
+            );
+        }
     } finally {
         $pdo->exec('SET @fitcontrol_payment_write = NULL');
     }
+
+    // Os casos positivos do próprio fluxo financeiro precisam continuar válidos.
+    $positiveCharge = $pdo->prepare('SELECT valor_total FROM cobrancas WHERE id = :id');
+    $positiveCharge->execute(['id' => $firstChargeId]);
+    assertFinance(
+        $positiveCharge->fetchColumn() === '300.00',
+        'A constraint não pode rejeitar o valor positivo contratado.'
+    );
+    $positivePayments = $pdo->prepare(
+        'SELECT COUNT(*) FROM pagamentos WHERE cobranca_id = :id AND valor > 0.00'
+    );
+    $positivePayments->execute(['id' => $firstChargeId]);
+    assertFinance(
+        (int) $positivePayments->fetchColumn() === 2,
+        'A constraint não pode rejeitar pagamentos positivos válidos.'
+    );
 
     // A tabela deve impedir escrita direta, edição e exclusão fora do serviço.
     assertFinanceSqlRejected(
