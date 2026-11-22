@@ -237,6 +237,38 @@ TEMP_PASSWORD="$(grep -oE '<code id="temporary-password">[^<]+' "$TMP_DIR/user-c
 [[ ${#TEMP_PASSWORD} -ge 30 ]] || fail "A senha temporária não foi exibida corretamente."
 
 NOVO_USUARIO_ID="$(db_value "SELECT id FROM usuarios WHERE email = 'funcionario-ci@example.test' LIMIT 1")"
+
+echo "1.2.1/10 - Alterando perfil e protegendo a conta administrativa..."
+ROLE_TOKEN="$(get_token "$TMP_DIR/user-created.html")"
+curl -fsS -L -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/alterar-perfil-usuario.php" \
+    --data-urlencode "token=$ROLE_TOKEN" \
+    --data-urlencode "id=$NOVO_USUARIO_ID" \
+    --data-urlencode "perfil=GESTOR" \
+    -o "$TMP_DIR/user-role-manager.html"
+assert_contains "$TMP_DIR/user-role-manager.html" "Perfil do funcionário atualizado com sucesso."
+MANAGER_ROLE="$(db_value "SELECT perfil FROM usuarios WHERE id = $NOVO_USUARIO_ID")"
+[[ "$MANAGER_ROLE" == "GESTOR" ]] || fail "O perfil de gestor não foi persistido."
+ROLE_AUDIT="$(db_value "SELECT COUNT(*) FROM auditoria WHERE usuario_id = $USUARIO_ID AND acao = 'usuario_perfil_alterado' AND entidade_id = $NOVO_USUARIO_ID")"
+[[ "$ROLE_AUDIT" == "1" ]] || fail "A alteração de perfil não foi auditada."
+
+ROLE_TOKEN="$(get_token "$TMP_DIR/user-role-manager.html")"
+curl -fsS -L -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/alterar-perfil-usuario.php" \
+    --data-urlencode "token=$ROLE_TOKEN" \
+    --data-urlencode "id=$NOVO_USUARIO_ID" \
+    --data-urlencode "perfil=OPERADOR" \
+    -o "$TMP_DIR/user-role-operator.html"
+assert_contains "$TMP_DIR/user-role-operator.html" "Perfil do funcionário atualizado com sucesso."
+
+ROLE_TOKEN="$(get_token "$TMP_DIR/user-role-operator.html")"
+curl -fsS -L -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/alterar-perfil-usuario.php" \
+    --data-urlencode "token=$ROLE_TOKEN" \
+    --data-urlencode "id=$USUARIO_ID" \
+    --data-urlencode "perfil=GESTOR" \
+    -o "$TMP_DIR/self-demotion.html"
+assert_contains "$TMP_DIR/self-demotion.html" "Você não pode alterar o próprio perfil."
+SELF_ADMIN_ROLE="$(db_value "SELECT perfil FROM usuarios WHERE id = $USUARIO_ID")"
+[[ "$SELF_ADMIN_ROLE" == "ADMINISTRADOR" ]] || fail "O administrador conseguiu remover o próprio perfil."
+
 NOVO_HASH_OK="$(db_value "SELECT COUNT(*) FROM usuarios WHERE id = $NOVO_USUARIO_ID AND ativo = 1 AND deve_trocar_senha = 1 AND senha_hash <> '$TEMP_PASSWORD'")"
 [[ "$NOVO_HASH_OK" == "1" ]] || fail "A conta não foi criada ativa, com hash e troca obrigatória."
 
