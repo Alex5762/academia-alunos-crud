@@ -48,6 +48,37 @@ final class FinanceMoneyFormatter
         return 'R$ ' . $sign . $groupedWhole . ',' . $parts[3];
     }
 
+    public static function toCents(string|int|null $value): int
+    {
+        if ($value === null) {
+            $normalized = '0.00';
+        } elseif (is_int($value)) {
+            $normalized = (string) $value . '.00';
+        } else {
+            $normalized = $value;
+        }
+
+        if (preg_match('/^(-?)(\\d+)\\.(\\d{2})$/D', $normalized, $parts) !== 1) {
+            throw new InvalidArgumentException('Valor monetário inválido para conversão em centavos.');
+        }
+
+        $wholeDigits = ltrim($parts[2], '0');
+        if ($wholeDigits === '') {
+            $wholeDigits = '0';
+        }
+
+        $whole = (int) $wholeDigits;
+        $fraction = (int) $parts[3];
+        $maximumWhole = intdiv(PHP_INT_MAX, 100);
+        $maximumFraction = PHP_INT_MAX % 100;
+        if ($whole > $maximumWhole || ($whole === $maximumWhole && $fraction > $maximumFraction)) {
+            throw new OverflowException('O valor monetário excede o intervalo inteiro suportado.');
+        }
+
+        $absolute = ($whole * 100) + $fraction;
+        return $parts[1] === '-' ? -$absolute : $absolute;
+    }
+
     public static function formatCents(int $cents): string
     {
         if ($cents === PHP_INT_MIN) {
