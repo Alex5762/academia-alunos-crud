@@ -63,7 +63,7 @@ Essas escolhas estão alinhadas com as recomendações de transações PDO, leit
 
 ### F-03 — Médio: classificação financeira após cancelamento da matrícula
 
-**Estado: implementado na branch `feat/dashboard-portfolio`; CI pendente.**
+**Estado: validado integralmente na CI #1385.**
 
 **Correção entregue:**
 - Cobrança cuja matrícula foi cancelada e que ainda não recebeu decisão financeira passa a aparecer como **Em revisão**.
@@ -119,13 +119,16 @@ Essas escolhas estão alinhadas com as recomendações de transações PDO, leit
 - A conversão decimal→centavos foi centralizada para a tela e para a classificação de saldo do dashboard.
 - Testes unitários cobrem zeros, centavos, separador de milhares, números grandes, sinal negativo, conversão exata e rejeição de `float`.
 
-### F-08 — Baixo: política de data do pagamento está implícita na interface
+### F-08 — Baixo: política explícita para datas retroativas
 
-**Evidência:** o formulário envia `data_pagamento` como campo oculto com a data de hoje. O serviço aceita datas anteriores e recusa datas futuras.
+**Decisão de domínio:** permitir registrar pagamentos com data passada quando o recebimento ocorreu antes do lançamento no sistema; exigir observação/justificativa para todo registro retroativo. Datas futuras continuam proibidas.
 
-**Risco:** a regra para registrar recebimento retroativo existe no serviço, mas não é explicada nem exposta na tela. O cliente também pode alterar o campo oculto.
-
-**Correção recomendada:** decidir explicitamente se a interface deve permitir data passada. Se sim, mostrar um campo de data e exigir observação/justificativa quando houver retroatividade; se não, validar no servidor que a data é a data local atual.
+**Implementação na branch `feat/dashboard-portfolio`; CI pendente:**
+- O formulário apresenta um campo de data visível, preenchido com a data local da academia e com limite máximo de hoje.
+- A tela apresenta um campo de observação com indicação de que a justificativa é obrigatória para datas anteriores.
+- `FinanceService::registerPayment()` aplica a regra no servidor depois de normalizar a observação; campo oculto ou manipulação do navegador não contorna a validação.
+- O teste financeiro cobre três casos: retroativo sem observação é rejeitado; retroativo com justificativa é aceito e preserva data/observação; data futura é rejeitada mesmo com justificativa.
+- A data e justificativa fazem parte do fingerprint idempotente e do histórico individual.
 
 ## Plano de correção recomendado
 
@@ -145,7 +148,8 @@ Não recomendo adicionar agora um razão contábil de partidas dobradas, concili
 - F-01 a F-04 estão implementados e validados na CI #1332, com sete jobs verdes nos fluxos MySQL 8.0 e MariaDB 10.11.
 - F-05 foi validado integralmente na CI #1361: migration 013 e rejeição de zero/negativos em cobranças e pagamentos, em MySQL 8.0 e MariaDB 10.11.
 - F-06 foi validado nos jobs de Bloco 04 da CI #1362 em MySQL 8.0 e MariaDB 10.11: duas conexões independentes disputaram uma cobrança de R$ 300,00 com pagamentos de R$ 200,00; um foi aceito, o outro foi recusado por saldo, e houve somente um lançamento e um evento de auditoria.
-- F-07: formatação sem `float` e suíte unitária estão implementadas; aguardando CI.
+- F-07 foi validado integralmente na CI #1385: formatação decimal/centavos sem `float`, rejeição de tipos aproximados e integração CRUD aprovadas.
+- F-08: política de data retroativa e testes de serviço/interface foram implementados; aguardam a CI da última revisão.
 - Nenhuma migration foi aplicada no banco local do usuário.
 - PR #1 permanece Draft e não integrada; não fazer merge antes da validação final.
 
