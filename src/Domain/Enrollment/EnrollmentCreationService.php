@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace FitControl\Domain\Enrollment;
 
+require_once __DIR__ . '/../../Security/AuditIntegrityChain.php';
+
 use Closure;
 use DateTimeImmutable;
 use DateTimeZone;
@@ -285,16 +287,7 @@ final class EnrollmentCreationService
             }
 
             // 7. A auditoria faz parte da mesma transação do contrato.
-            $audit = $this->pdo->prepare(
-                'INSERT INTO auditoria (usuario_id, acao, entidade, entidade_id)
-                 VALUES (:usuario_id, :acao, :entidade, :entidade_id)'
-            );
-            $audit->execute([
-                'usuario_id' => $actorUserId,
-                'acao' => 'matricula_criada',
-                'entidade' => 'matriculas',
-                'entidade_id' => $enrollmentId,
-            ]);
+            AuditIntegrityChain::append($this->pdo, $actorUserId, 'matricula_criada', 'matriculas', $enrollmentId);
 
             $this->pdo->commit();
 
