@@ -75,11 +75,40 @@ O módulo deve reutilizar alunos, matrículas, funcionários, fuso horário, tra
 - Presença (presente/ausente) só pode ser marcada a partir do início da sessão e não pode ser marcada em sessão cancelada.
 - A sessão cancelada não apaga reservas nem registros de presença anteriores; o estado da sessão prevalece para a apresentação da agenda.
 
-## 5. Instrutores e funcionários
+## 5. Instrutores — decisão C confirmada
 
-**Proposta inicial:** reutilizar `usuarios` como cadastro de funcionários/instrutores; não criar uma segunda tabela de pessoas nem duplicar nome/e-mail. Somente usuário ativo pode ser atribuído como instrutor. A primeira versão não terá portal de instrutor nem permissões individuais adicionais.
+**Decisão confirmada:** cadastro independente de instrutores, com vínculo opcional a uma conta existente em `usuarios`. O instrutor pode constar na agenda sem receber credenciais ou acesso ao FitControl.
 
-Isso significa que um instrutor precisa ter uma conta de funcionário no FitControl, mesmo que utilize o sistema apenas para constar na agenda. Caso a academia precise cadastrar instrutores sem conta de acesso, essa regra deverá ser revista antes da migration.
+### Modelo proposto
+
+A tabela `instrutores` será o cadastro profissional e operacional, independente do cadastro de autenticação:
+
+| Campo | Regra |
+|---|---|
+| `id` | Chave primária `BIGINT UNSIGNED` |
+| `nome` | Obrigatório, nome de exibição |
+| `email` | Opcional |
+| `telefone` | Opcional |
+| `usuario_id` | Opcional, FK para `usuarios.id`, com índice UNIQUE |
+| `ativo` | Obrigatório, inicia ativo; inativar em vez de excluir |
+| `criado_em` / `atualizado_em` | Datas de controle |
+
+- `usuario_id = NULL` significa instrutor sem conta de acesso.
+- O índice UNIQUE permite que uma conta seja vinculada a no máximo um cadastro de instrutor, preservando múltiplos registros sem vínculo.
+- O vínculo não cria conta, não concede permissões e não altera o perfil RBAC. Ele apenas relaciona o cadastro profissional a uma identidade já existente.
+- Qualquer perfil atual (ADMINISTRADOR, GESTOR ou OPERADOR) pode ser vinculado, desde que a conta esteja ativa. Não será criado um papel novo de instrutor nesta versão.
+- Um instrutor inativo não pode ser atribuído a novas turmas nem receber novas sessões. Inativar um instrutor não apaga nem cancela sessões futuras automaticamente: a agenda deve sinalizar o conflito para resolução explícita.
+- Uma conta vinculada que seja desativada não apaga o cadastro profissional, mas impede novas atribuições enquanto a conta estiver inativa. O vínculo pode ser removido ou trocado por um administrador/gestor autorizado.
+- Nome, e-mail e telefone do instrutor pertencem ao cadastro profissional e não são sincronizados automaticamente com `usuarios`. Alterações de conta não devem sobrescrever os dados profissionais.
+- A primeira versão não terá login, painel ou permissões próprias para instrutores. Toda gestão é feita por Administrador/Gestor; o vínculo opcional não transforma o instrutor em usuário do módulo.
+
+### Histórico e integridade
+
+- Instrutores com turmas, sessões ou presenças associadas não podem ser excluídos fisicamente; devem ser inativados.
+- A FK `instrutores.usuario_id` usa `ON DELETE RESTRICT`; o projeto já evita exclusão física de contas e mantém histórico de auditoria.
+- Cada sessão gerada preserva `instrutor_id` e `instrutor_nome_snapshot`, para que renomear o cadastro profissional não reescreva a informação histórica da aula já programada.
+- Criar, editar, inativar e vincular/desvincular conta gera evento na cadeia geral de auditoria, com o funcionário autenticado como responsável.
+- A migration futura deve validar que `usuario_id` tem exatamente o mesmo tipo/unsigned da PK real de `usuarios.id`; confirmar isso na inspeção do schema de autenticação antes de escrever DDL.
 
 ## 6. Permissões RBAC propostas
 
@@ -87,6 +116,8 @@ Isso significa que um instrutor precisa ter uma conta de funcionário no FitCont
 |---|---:|---:|---:|
 | `classes.view` | Sim | Sim | Sim |
 | `classes.manage` (modalidades, turmas e horários) | Sim | Sim | Não |
+| `instructors.view` | Sim | Sim | Sim |
+| `instructors.manage` (cadastro, edição, inativação e vínculo opcional) | Sim | Sim | Não |
 | `classes.generate` (gerar sessões) | Sim | Sim | Não |
 | `classes.reserve` | Sim | Sim | Sim |
 | `classes.cancel_reservation` | Sim | Sim | Sim |
@@ -141,19 +172,25 @@ Não implementar a migration antes de fechar o modelo e os critérios de aceite.
 - [ ] Testes de domínio, integração MySQL 8.0 e MariaDB 10.11, concorrência e Playwright desktop/mobile passam.
 - [ ] README, matriz RBAC, roadmap, guia de migrations e documentação do bloco refletem o estado real.
 
-## 10. Decisões que precisam de confirmação antes da implementação
+## 10. Decisões confirmadas e decisões ainda abertas
 
-1. **Instrutor:** confirmar a proposta de usar um funcionário/conta já existente em `usuarios`, sem cadastro separado.
-2. **Janela de geração:** confirmar 30 dias como horizonte padrão de criação de sessões.
-3. **Reserva:** confirmar que a equipe fará reservas no painel interno; aluno não terá login/autoatendimento.
-4. **Lista de espera:** manter fora da primeira versão.
-5. **Presença por aula:** confirmar que será um registro separado do check-in geral da academia.
+### Confirmada
 
-A especificação recomenda essas escolhas por reduzir duplicação e escopo, mas elas ainda não devem ser tratadas como decisões definitivas até revisão do projeto.
+- [x] **Instrutores:** opção C — cadastro independente com vínculo opcional a uma conta existente em `usuarios`. A tabela profissional não concede acesso ao sistema.
+
+### Ainda precisam de confirmação antes da implementação
+
+1. **Janela de geração:** confirmar 30 dias como horizonte padrão de criação de sessões.
+2. **Reserva:** confirmar que a equipe fará reservas no painel interno; aluno não terá login/autoatendimento.
+3. **Lista de espera:** manter fora da primeira versão.
+4. **Presença por aula:** confirmar que será um registro separado do check-in geral da academia.
+
+As decisões ainda abertas não devem ser tratadas como definitivas até revisão do projeto.
 
 ## 11. Referências técnicas
 
 - MySQL 8.0 — [InnoDB Locking Reads](https://dev.mysql.com/doc/refman/8.0/en/innodb-locking-reads.html): `SELECT ... FOR UPDATE`, bloqueios e transações.
 - MySQL 8.0 — [Internal Locking Methods](https://dev.mysql.com/doc/refman/8.0/en/internal-locking.html): locks por linha e práticas para evitar deadlocks.
+- MySQL 8.0 — [InnoDB Best Practices](https://dev.mysql.com/doc/refman/8.0/en/innodb-best-practices.html): PKs, FKs, índices e transações curtas.
 - Scraler (11/11/2026) — [Class Booking Software: 6 Tools Compared](https://scraler.com/blog/class-booking-software): capacidades, horários recorrentes, reservas, lista de espera e políticas de cancelamento como dimensões comuns de sistemas de aulas. Referência de mercado, não norma técnica.
 
