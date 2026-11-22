@@ -95,6 +95,7 @@ Essas escolhas estão alinhadas com as recomendações de transações PDO, leit
 - O teste de pagamento habilita apenas a variável de sessão exigida pelo guard append-only para que o INSERT alcance a CHECK; a variável é limpa em `finally`.
 - Os casos positivos do fluxo continuam sendo conferidos: cobrança de R$ 300,00 e dois pagamentos positivos.
 - CI aplica a migration 013 nos dois ambientes e executa o teste financeiro em MySQL 8.0 e MariaDB 10.11.
+- Compatibilidade mínima: MySQL 8.0.16, versão a partir da qual o servidor passa a aplicar CHECK constraints; a matriz usa MySQL 8.0 atual e MariaDB 10.11. Consulte a [documentação do MySQL](https://dev.mysql.com/doc/refman/8.0/en/create-table-check-constraints.html) e a [documentação do MariaDB](https://mariadb.com/docs/server/reference/sql-statements/data-definition/constraint).
 
 ### F-06 — Médio: a proteção de concorrência ainda não tem teste de corrida financeira
 
