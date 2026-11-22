@@ -37,9 +37,9 @@ final class EnrollmentCreationService
     /**
      * Cria uma matrícula a partir de um instante local já resolvido pela camada de entrada.
      *
-     * A camada de entrada deve converter data futura sem horário para 00:00 e data de hoje
-     * sem horário para o instante da operação. Este serviço rejeita qualquer início anterior
-     * ao relógio injetado, inclusive quando ficou passado enquanto aguardava os bloqueios.
+     * A camada de entrada deve converter data futura sem horário para 00:00. Para hoje sem
+     * horário, use $startAtExecutionTime para resolver o instante depois dos bloqueios, evitando
+     * que a própria latência da transação transforme o horário padrão em passado.
      *
      * @throws InvalidArgumentException Para IDs, instante ou dados de plano inválidos.
      * @throws DomainException Para aluno/plano inelegível, legado pendente ou sobreposição.
@@ -50,7 +50,8 @@ final class EnrollmentCreationService
         int $studentId,
         int $planId,
         int $actorUserId,
-        DateTimeImmutable $startLocal
+        DateTimeImmutable $startLocal,
+        bool $startAtExecutionTime = false
     ): int {
         if ($studentId < 1 || $planId < 1 || $actorUserId < 1) {
             throw new InvalidArgumentException('Os identificadores precisam ser inteiros positivos.');
@@ -180,7 +181,15 @@ final class EnrollmentCreationService
             }
             $this->assertAcademyDateTime($nowLocal, 'O instante atual');
 
-            if ($startLocal < $nowLocal) {
+            if ($startAtExecutionTime) {
+                if ($startLocal->format('Y-m-d') !== $nowLocal->format('Y-m-d')) {
+                    throw new DomainException(
+                        'A data selecionada deixou de ser hoje enquanto a contratação aguardava processamento.'
+                    );
+                }
+
+                $startLocal = $nowLocal;
+            } elseif ($startLocal < $nowLocal) {
                 throw new DomainException('O início da matrícula não pode estar no passado.');
             }
 
