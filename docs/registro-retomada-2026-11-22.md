@@ -133,15 +133,14 @@ A implementação do Bloco 04 gerou commits separados por arquivo devido ao flux
 ### Estado técnico
 - Branch: feat/dashboard-portfolio.
 - PR #1 permanece aberta, Draft e não integrada.
-- HEAD consultado ao gravar esta atualização: cc6565be0f6da73c611961d6b8e6ade2cdcac92c.
-- CI #1242 estava em andamento no último estado consultado; consultar o resultado antes de declarar a entrega validada.
+- HEAD atual após a publicação automatizada de screenshots: 86b8e33f19001b616c0468b216a56ebecacccca8.
+- CI #1243 concluiu com sucesso no commit de implementação cc6565be0f6da73c611961d6b8e6ade2cdcac92c. As execuções #1244 e #1245 também passaram com os sete jobs aprovados no HEAD documental 1184e73bb33ffe537763f3754ce33564f29acbee. Depois, o workflow publicou screenshots em um commit automatizado 86b8e33f19001b616c0468b216a56ebecacccca8; a branch aponta agora para esse commit de automação.
 - CI #1238/#1239 de commits anteriores falhou no teste HTTP de matrícula porque o fixture isolado de tests/integration-crud.sh ainda não criava a tabela cobrancas. A correção foi publicada em cc6565b: fixture agora cria a tabela, verifica cobrança e auditoria e remove a tabela antes de matriculas. As falhas antigas não representam o estado atual.
 - Nenhuma migration foi aplicada no XAMPP nem em banco local do usuário.
 - Não houve alteração em main, merge, force-push ou reescrita de histórico.
 
 ### Próximos passos
-1. Verificar a CI #1242 e corrigir qualquer falha do commit atual.
-2. Inspecionar o teste de navegação financeira e o fluxo HTTP de matrícula com cobrança.
-3. Atualizar a descrição da PR #1 com o Bloco 05, mantendo-a Draft.
-4. Só depois da CI verde, preparar aplicação local da migration 010 após backup e inspeção de versão/engine; não executar automaticamente.
-5. Validar manualmente a experiência financeira em navegador/dispositivo real.
+1. Confirmar que a branch ainda aponta para o commit automatizado de screenshots 86b8e33 e que a PR #1 continua Draft.
+2. A descrição da PR #1 já foi atualizada com o Bloco 05 e as execuções CI #1243–#1245 aprovadas.
+3. Preparar aplicação local da migration 010 somente após backup e inspeção de versão/engine; não executar automaticamente.
+4. Validar manualmente a experiência financeira em navegador/dispositivo real.
