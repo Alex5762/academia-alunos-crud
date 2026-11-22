@@ -109,6 +109,7 @@ $definitions = [
     ['Aluno com matrícula vencida', 1],
     ['Aluno com matrícula cancelada', 1],
     ['Aluno para teste de rollback', 1],
+    ['Aluno na virada do dia local', 1],
 ];
 
 foreach ($definitions as $index => [$name, $active]) {
@@ -149,6 +150,7 @@ $enrollmentFixtures = [
     [4, '2026-10-01 00:00:00', '2026-11-22 09:00:00', null],
     [5, '2026-11-01 00:00:00', '2026-12-01 00:00:00', '2026-11-20 12:00:00'],
     [6, '2026-11-01 00:00:00', '2026-12-01 00:00:00', null],
+    [7, '2026-11-01 00:00:00', '2026-12-01 00:00:00', null],
 ];
 
 foreach ($enrollmentFixtures as [$studentIndex, $startsAt, $endsAt, $cancelledAt]) {
@@ -261,6 +263,31 @@ try {
     $rollbackCount->execute(['student_id' => $studentIds[6]]);
     assertAttendance((int) $rollbackCount->fetchColumn() === 0, 'Falha de auditoria precisa reverter o check-in.');
 
+    // 23:30 em São Paulo já corresponde ao dia seguinte em UTC; a data civil
+    // do check-in precisa continuar sendo a data local da academia.
+    $lateNight = new DateTimeImmutable(
+        '2026-11-22 23:30:00',
+        new DateTimeZone('America/Sao_Paulo')
+    );
+    $lateNightService = new AttendanceCheckinService(
+        $pdo,
+        static fn (): DateTimeImmutable => $lateNight
+    );
+    $lateNightId = $lateNightService->register($studentIds[7], $actorId);
+    $lateNightRecord = $pdo->prepare(
+        'SELECT data_local, registrado_em_utc FROM checkins WHERE id = :id'
+    );
+    $lateNightRecord->execute(['id' => $lateNightId]);
+    $lateNightValues = $lateNightRecord->fetch(PDO::FETCH_ASSOC);
+    assertAttendance(
+        $lateNightValues['data_local'] === '2026-11-22',
+        'A virada de data UTC não pode alterar o dia civil local do check-in.'
+    );
+    assertAttendance(
+        $lateNightValues['registrado_em_utc'] === '2026-11-23 02:30:00',
+        'O instante de check-in noturno precisa ser convertido corretamente para UTC.'
+    );
+
     $auditCount = $pdo->prepare(
         'SELECT COUNT(*)
          FROM auditoria
@@ -273,7 +300,7 @@ try {
         'action' => 'checkin_registrado',
         'entity' => 'checkins',
     ]);
-    assertAttendance((int) $auditCount->fetchColumn() === 2, 'Cada check-in precisa gerar exatamente um evento de auditoria.');
+    assertAttendance((int) $auditCount->fetchColumn() === 3, 'Cada check-in precisa gerar exatamente um evento de auditoria.');
 
     $chainCount = $pdo->prepare(
         'SELECT COUNT(*)
@@ -288,7 +315,7 @@ try {
         'action' => 'checkin_registrado',
         'entity' => 'checkins',
     ]);
-    assertAttendance((int) $chainCount->fetchColumn() === 2, 'Cada evento de check-in precisa estar encadeado.');
+    assertAttendance((int) $chainCount->fetchColumn() === 3, 'Cada evento de check-in precisa estar encadeado.');
 
     $uniqueIndex = $pdo->prepare(
         'SELECT COUNT(*)
