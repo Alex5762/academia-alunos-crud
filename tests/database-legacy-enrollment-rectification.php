@@ -369,7 +369,10 @@ try {
     assertRectification(
         (int) $pdo->query(
             "SELECT COUNT(*) FROM auditoria
-             WHERE acao = 'matricula_corrigida' AND entidade_id = {$enrollmentIds[0]}"
+             WHERE usuario_id = {$actorId}
+               AND acao = 'matricula_corrigida'
+               AND entidade = 'matriculas'
+               AND entidade_id = {$enrollmentIds[0]}"
         )->fetchColumn() === 1,
         'Repetição idêntica não pode duplicar auditoria.'
     );
