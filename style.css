@@ -2529,3 +2529,166 @@ body:not(.dashboard-body) .theme-option[aria-pressed="true"] {
     .plan-form-actions .button { width: 100%; }
     .plan-actions { min-width: 210px; }
 }
+
+
+/* Histórico operacional de matrículas no perfil do aluno */
+.legacy-review-summary {
+    display: grid;
+    gap: 9px;
+    padding: 15px 17px;
+    margin-bottom: 17px;
+    background: var(--canvas);
+    border: 1px solid var(--line);
+    border-radius: 11px;
+}
+.legacy-review-summary > div {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+}
+.legacy-review-summary strong {
+    color: var(--ink);
+    font-size: .84rem;
+}
+.legacy-review-summary p,
+.legacy-review-summary small {
+    margin: 0;
+    color: var(--muted);
+    font-size: .76rem;
+    line-height: 1.55;
+    overflow-wrap: anywhere;
+}
+.enrollment-history-list {
+    display: grid;
+    gap: 12px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+.enrollment-history-item {
+    display: grid;
+    gap: 14px;
+    padding: 17px;
+    background: var(--canvas);
+    border: 1px solid var(--line);
+    border-radius: 11px;
+}
+.enrollment-history-heading {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+}
+.enrollment-history-heading > div {
+    display: grid;
+    gap: 4px;
+}
+.enrollment-history-heading strong {
+    color: var(--ink);
+    font-size: .9rem;
+}
+.enrollment-history-heading small {
+    color: var(--muted);
+    font-size: .7rem;
+}
+.enrollment-status {
+    display: inline-flex;
+    align-items: center;
+    width: fit-content;
+    padding: 5px 9px;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    font-size: .68rem;
+    font-weight: 750;
+    white-space: nowrap;
+}
+.enrollment-status.is-active {
+    color: #176b4b;
+    background: #e7f6ee;
+    border-color: #c8ead7;
+}
+.enrollment-status.is-scheduled {
+    color: #76531b;
+    background: #fff5df;
+    border-color: #f0dfb8;
+}
+.enrollment-status.is-expired {
+    color: #596579;
+    background: #edf0f5;
+    border-color: #dce2eb;
+}
+.enrollment-status.is-cancelled {
+    color: #a02d3a;
+    background: #fff0f1;
+    border-color: #f1d2d6;
+}
+.enrollment-detail-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    margin: 0;
+}
+.enrollment-detail-grid > div {
+    display: grid;
+    gap: 4px;
+    min-width: 0;
+}
+.enrollment-detail-grid dt {
+    color: var(--muted);
+    font-size: .68rem;
+    font-weight: 650;
+}
+.enrollment-detail-grid dd {
+    margin: 0;
+    color: var(--ink);
+    font-size: .78rem;
+    font-weight: 650;
+    overflow-wrap: anywhere;
+    font-variant-numeric: tabular-nums;
+}
+.enrollment-cancellation-note {
+    margin: 0;
+    padding-top: 11px;
+    color: var(--muted);
+    border-top: 1px solid var(--line);
+    font-size: .73rem;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+}
+.account-status.is-pending {
+    color: #76531b;
+    background: #fff5df;
+    border-color: #f0dfb8;
+}
+:root[data-theme="dark"] .legacy-review-summary,
+:root[data-theme="dark"] .enrollment-history-item {
+    background: #111c2d;
+    border-color: #35435a;
+}
+:root[data-theme="dark"] .enrollment-status.is-active {
+    color: #9be0bd;
+    background: #173a37;
+    border-color: #28584b;
+}
+:root[data-theme="dark"] .enrollment-status.is-scheduled,
+:root[data-theme="dark"] .account-status.is-pending {
+    color: #f2d18d;
+    background: #45391f;
+    border-color: #66532c;
+}
+:root[data-theme="dark"] .enrollment-status.is-expired {
+    color: #bdc7d8;
+    background: #293449;
+    border-color: #3c4b64;
+}
+:root[data-theme="dark"] .enrollment-status.is-cancelled {
+    color: #ffb4bd;
+    background: #492a36;
+    border-color: #70404c;
+}
+@media (max-width: 560px) {
+    .enrollment-history-heading { flex-direction: column; }
+    .enrollment-detail-grid { grid-template-columns: 1fr; }
+}
