@@ -32,7 +32,7 @@ Essas escolhas estão alinhadas com as recomendações de transações PDO, leit
 
 ### F-01 — Alto: idempotência no lançamento de pagamento
 
-<badge>Implementado na branch `feat/dashboard-portfolio`; validação em andamento</badge>
+**Estado: implementado na branch `feat/dashboard-portfolio`; validação em andamento.**
 
 **Correção entregue:**
 - Migration 011 adiciona `chave_idempotencia` e `hash_requisicao`, com índice único por cobrança. Registros antigos permanecem válidos com as colunas nulas.
