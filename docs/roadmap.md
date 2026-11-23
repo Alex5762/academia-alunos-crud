@@ -23,13 +23,13 @@
 
 Enquanto o acesso ao XAMPP/dispositivo não estiver disponível, continuar com especificação, implementação, testes automatizados, migrations testadas na CI, revisão de segurança e documentação dos blocos seguintes.
 
-### Blocos ainda por desenvolver
+### Blocos implementados e validações pendentes
 
 - **Bloco 06 — Grade fixa de aulas:** implementação e validação automatizada aprovadas na CI #1512; validação manual no XAMPP/dispositivo permanece pendente.
-- **Bloco 07 — Relatórios e experiência:** consultas OP/MT/FR/FN, cartões VG-01 a VG-06, exportação/download dos quatro CSV, primeira bateria de acessibilidade e matriz Chromium/Firefox/WebKit para relatórios aprovados nas CIs #1595, #45245709878, #45247639018, #45249934923, #45252564979 e #45256688269. Excel/LibreOffice e inspeção física/local permanecem pendentes; nenhuma migration/schema foi adicionada.
+- **Bloco 07 — Relatórios e experiência:** implementação automatizada concluída. Consultas OP/MT/FR/FN, cartões VG-01 a VG-06, exportação/download dos quatro CSV, primeira bateria de acessibilidade e matriz Chromium/Firefox/WebKit aprovados nas CIs #1595, #45245709878, #45247639018, #45249934923, #45252564979 e #45256688269. Permanecem pendentes abertura manual no Excel/LibreOffice e inspeção física/local; nenhuma migration/schema foi adicionada.
 - **Bloco 08 — Preparação para produção:** etapa futura, não iniciar como se fosse apenas deploy; depende de revisão independente e plano operacional/de segurança.
 
-**Próximo passo do Bloco 07:** revisar os limites da cobertura automatizada e manter pendentes a abertura manual em Excel/LibreOffice e a inspeção local/física. O `EXPLAIN` de FN-01 a FN-03 já é executado na CI, mas o volume de fixtures não permite decidir sobre índice: essa avaliação depende de medição com volume representativo. A validação manual do Bloco 06 permanece adiada e não deve ser declarada concluída. A validação local dos Blocos 03–05 permanece registrada como adiada, não como concluída.
+**Próximo passo:** manter o Bloco 07 fechado quanto à implementação e à CI; executar a validação manual dos CSV no Excel/LibreOffice e a inspeção local em XAMPP/dispositivo quando o ambiente estiver disponível. A avaliação de índice para FN-01 a FN-03 depende de medição com volume representativo; não criar índice preventivo com base apenas nas fixtures da CI. A validação manual do Bloco 06 permanece adiada e não deve ser declarada concluída. A validação local dos Blocos 03–05 permanece registrada como adiada, não como concluída.
 
 ---
 
@@ -58,7 +58,7 @@ Limites conhecidos:
 - Não há recuperação de senha por e-mail nem MFA.
 - O campo `alunos.plano` permanece preservado como texto legado; catálogo, matrículas e revisão dos vínculos estão implementados e validados por CI. A aplicação das migrations 005/006 no XAMPP local continua pendente.
 - Frequência/check-in (Bloco 04) e financeiro (Bloco 05) estão implementados na branch e validados por CI em MySQL 8.0 e MariaDB 10.11; a validação local/manual continua pendente.
-- O Bloco 06 (grade semanal fixa) está implementado e aprovado na CI #1512; a validação local/XAMPP permanece pendente. No Bloco 07, consultas, cartões, CSV/downloads, primeira bateria de acessibilidade e matriz cross-browser de relatórios foram aprovados nas CIs #1595, #45245709878, #45247639018, #45249934923, #45252564979 e #45256688269. Excel/LibreOffice e validação local continuam pendentes.
+- O Bloco 06 (grade semanal fixa) está implementado e aprovado na CI #1512; a validação local/XAMPP permanece pendente. O Bloco 07 está concluído em implementação e validação automatizada nas CIs #1595, #45245709878, #45247639018, #45249934923, #45252564979 e #45256688269; Excel/LibreOffice e validação local continuam pendentes.
 - A preparação para produção (Bloco 08) continua pendente e exige revisão de segurança, privilégios SQL, backups/restauração, HTTPS, monitoramento e privacidade.
 - A aplicação permanece acadêmica/local; não está preparada para uso público ou dados reais.
 
@@ -259,7 +259,7 @@ A migration 014 cria modalidades, instrutores e horários semanais recorrentes. 
 
 ### Bloco 07 — Relatórios e experiência
 
-**Estado atualizado após as CIs #1595, #45245709878 e #45247639018:** `ReportPeriod`, OP-01 a OP-06, MT-01 a MT-05, FR-01 a FR-05 e FN-01 a FN-06 estão implementados, integrados a `relatorios.php` e validados em MySQL 8.0/MariaDB 10.11. VG-01 a VG-06 e o filtro de período estão integrados à Visão geral e validados na CI #45245709878. A exportação CSV foi validada na CI #45247639018; a cobertura Playwright posterior para downloads e conteúdo dos quatro arquivos aguarda nova CI. Documentos: [proposta do Bloco 07](bloco-07-relatorios-experiencia.md), [catálogo 07.1](bloco-07-catalogo-indicadores.md), [contratos 07.2](bloco-07-contratos-consulta.md) e [revisão técnica](revisao-tecnica-bloco-07.md).
+**Estado atualizado após as CIs #1595, #45245709878, #45247639018, #45249934923, #45252564979 e #45256688269:** `ReportPeriod`, OP-01 a OP-06, MT-01 a MT-05, FR-01 a FR-05 e FN-01 a FN-06 estão implementados, integrados a `relatorios.php` e validados em MySQL 8.0/MariaDB 10.11. VG-01 a VG-06 e o filtro de período estão integrados à Visão geral; os quatro CSV agregados foram testados por integração e Playwright; a primeira bateria de acessibilidade e a matriz Chromium/Firefox/WebKit para relatórios passaram. Permanecem pendentes somente a abertura manual em Excel/LibreOffice e a inspeção local/física. Documentos: [proposta do Bloco 07](bloco-07-relatorios-experiencia.md), [catálogo 07.1](bloco-07-catalogo-indicadores.md), [contratos 07.2](bloco-07.2-contratos-consulta.md) e [revisão técnica](revisao-tecnica-bloco-07.md).
 
 A nomenclatura **“Recebido no período”** e FN-01 a FN-03 foram aprovados para a soma, contagem e distribuição por forma dos pagamentos filtrados pela `data_pagamento` inclusiva; pagamentos retroativos seguem a data declarada e o conjunto agrupado deve reconciliar com os totais. A legenda esclarece que são pagamentos registrados pela data informada, não liquidação bancária, faturamento, lucro ou recebimento líquido. A revisão também padronizou a janela inclusiva de sete dias e a omissão integral de seções sem permissão.
 
