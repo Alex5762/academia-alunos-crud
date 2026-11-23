@@ -476,12 +476,17 @@ jobs:
           test -f checkins.php
           test -f registrar-checkin.php
           test -f src/Domain/Attendance/AttendanceCheckinService.php
+          test -f src/Domain/Classes/ClassCatalogService.php
+          test -f src/Domain/Classes/ClassScheduleService.php
+          test -f tests/database-class-schedule-services.php
+          test -f docs/bloco-06-aulas-agenda.md
           test -f database/migrations/010_financeiro.sql
           test -f database/migrations/011_pagamento_idempotencia.sql
           test -f database/migrations/012_pagamentos_append_only.sql
           test -f database/migrations/013_financeiro_valores_positivos.sql
           test -f database/migrations/014_grade_fixa_aulas.sql
           test -f tests/database-class-schedule-migration.php
+          test -f tests/database-class-schedule-services.php
           test -f src/Domain/Finance/FinanceService.php
           test -f tests/database-finance.php
           test -f tests/finance-dashboard-status.php
