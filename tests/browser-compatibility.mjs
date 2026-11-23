@@ -188,10 +188,6 @@ for (const engine of engines) {
     await page.setViewportSize({ width: 320, height: 780 });
     await assertNoDocumentOverflow(page, engine.name, "relatórios mobile estreito de 320px");
     await page.setViewportSize({ width: 1280, height: 900 });
-
-    await page.setViewportSize({ width: 1280, height: 900 });
-    const classesResponse = await page.goto(baseUrl + "/aulas.php", {
-    await page.setViewportSize({ width: 1280, height: 900 });
     const classesResponse = await page.goto(baseUrl + "/aulas.php", {
       waitUntil: "domcontentloaded",
     });
