@@ -1,6 +1,6 @@
 # Bloco 07 — Relatórios e experiência
 
-> **Estado:** OP-01 a OP-06, MT-01 a MT-05, FR-01 a FR-05 e FN-01 a FN-06 estão implementados e validados na CI #1595 em MySQL 8.0/MariaDB 10.11. A página `relatorios.php` integra as consultas autorizadas. Permanecem pendentes os cartões VG-01 a VG-06 na Visão geral, o CSV agregado e a regressão final específica do bloco. Nenhuma migration ou alteração de schema foi feita.
+> **Estado:** OP-01 a OP-06, MT-01 a MT-05, FR-01 a FR-05 e FN-01 a FN-06 estão implementados e validados na CI #1595 em MySQL 8.0/MariaDB 10.11. A página `relatorios.php` integra as consultas autorizadas. VG-01 a VG-06 e o filtro de período foram integrados à Visão geral na branch; os testes de captura visual/HTTP foram atualizados e aguardam nova CI. CSV agregado e regressão final específica do bloco permanecem pendentes. Nenhuma migration ou alteração de schema foi feita.
 > **Branch de referência:** `feat/dashboard-portfolio`.
 > **Dependência anterior:** Bloco 06 com validação automatizada aprovada na CI #1512. A validação manual dos blocos no XAMPP/dispositivo permanece adiada e registrada separadamente.
 > **Regra:** a especificação global foi aprovada; seguir a sequência técnica registrada e validar cada incremento antes de avançar.
@@ -188,11 +188,11 @@ Cada seção e cada endpoint CSV devem revalidar a permissão correspondente no 
 
 - [ ] Definições de cada indicador e eixo temporal aprovadas e documentadas.
 - [ ] Visão geral separa fotografia atual, movimentação do período e alertas próximos.
-- [ ] A linha atual de três cards é substituída pelos seis cartões VG-01 a VG-06, nos dois grupos aprovados e em ordem responsiva.
+- [x] A linha atual de três cards foi substituída pelos seis cartões VG-01 a VG-06, nos dois grupos aprovados; a validação visual/HTTP aguarda CI.
 - [ ] O Operador não recebe nem reserva espaço para VG-05; a seção financeira é omitida integralmente.
-- [ ] A pesquisa, os filtros e a tabela de alunos, bem como o atalho de cadastro, são preservados.
-- [ ] A distribuição por plano continua secundária, usa `$alunosAtivos` como denominador, identifica `alunos.plano` como dado cadastral, agrupa valores vazios/somente espaços em “Não informado” e apresenta estado vazio se não houver alunos ativos.
-- [ ] Cartões da Visão geral apresentam os mesmos resultados dos relatórios de origem, reutilizando seus agregadores/serviços.
+- [x] A pesquisa, os filtros e a tabela de alunos, bem como o atalho de cadastro, são preservados; a pesquisa mantém os limites do período selecionado.
+- [x] A distribuição por plano continua secundária, usa `$alunosAtivos` como denominador, identifica `alunos.plano` como dado cadastral, agrupa valores vazios/somente espaços em “Não informado” e apresenta estado vazio se não houver alunos ativos.
+- [x] Cartões da Visão geral apresentam os mesmos resultados dos relatórios de origem, reutilizando seus agregadores/serviços.
 - [ ] Perfis sem `finance.view` não recebem valores financeiros nem conseguem consultá-los por endpoints; a Visão geral do Operador não executa consultas financeiras e omite completamente a seção.
 - [ ] Sem `de` e `ate`, o padrão é primeiro dia do mês até hoje em `America/Sao_Paulo`; se somente um parâmetro faltar, a requisição é rejeitada.
 - [ ] Filtros rejeitam datas inválidas, formatos inesperados, períodos invertidos e intervalos acima de 365 dias civis inclusivos; datas futuras só entram quando selecionadas explicitamente.
@@ -254,8 +254,8 @@ Entregáveis desta etapa:
 
 **Sequência aprovada para execução, após autorização global:** implementar primeiro o contrato de período e seus testes; depois consultas agregadas por domínio; integrar cartões ao dashboard usando os mesmos agregadores; implementar CSV por último; finalizar com regressão, acessibilidade, responsividade e compatibilidade.
 
-### Etapa 07.2 — contratos de consulta e validação (base implementada; ampliar cartões, CSV e regressão)
+### Etapa 07.2 — contratos de consulta e validação (base implementada; cartões integrados; CSV e regressão pendentes)
 
 Documento: [Bloco 07.2 — Contratos de consulta e validação](bloco-07.2-contratos-consulta.md).
 
-O contrato 07.2 define entrada/saída, datas, relógio de referência, fronteira de autorização, consultas agregadas e matriz de testes. `relatorios.php` integra `ReportPeriod`, valida o período antes de consultar e mantém `de`/`ate`. `OperationalReportQuery` implementa OP-01 a OP-06 em agregados com detecção de intervalos inválidos; `EnrollmentReportQuery` implementa MT-01 a MT-05 em uma instrução, preservando valores DECIMAL e snapshots de plano. `tests/database-reports.php` valida contagens, janelas 7/30, coorte efetiva, eventos de cancelamento e falha controlada para intervalos inválidos em MySQL 8.0/MariaDB 10.11. Nenhuma migration, alteração de schema ou exportação foi criada.
+O contrato 07.2 define entrada/saída, datas, relógio de referência, fronteira de autorização, consultas agregadas e matriz de testes. `relatorios.php` integra `ReportPeriod`, valida o período antes de consultar e mantém `de`/`ate`. `OperationalReportQuery` implementa OP-01 a OP-06; `EnrollmentReportQuery` implementa MT-01 a MT-05; `FrequencyReportQuery` implementa FR-01 a FR-05; `FinanceReportQuery` implementa FN-01 a FN-06. As consultas e testes de domínio/banco foram validados na CI #1595 em MySQL 8.0/MariaDB 10.11. A Visão geral reutiliza esses agregadores para VG-01 a VG-06 e preserva os filtros ao pesquisar alunos. Nenhuma migration ou alteração de schema foi criada pelo Bloco 07; CSV agregado ainda não foi implementado.
