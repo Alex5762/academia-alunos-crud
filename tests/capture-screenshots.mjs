@@ -117,7 +117,7 @@ try {
     if (csvBytes.length < 3 || csvBytes[0] !== 0xef || csvBytes[1] !== 0xbb || csvBytes[2] !== 0xbf) {
       throw new Error(`O CSV ${reportType} não contém BOM UTF-8 esperado para planilhas.`);
     }
-    if (/@example\\.test|\\b(?:telefone|email|e-mail)\\b/i.test(csvText)) {
+    if (/@example\.test|\b(?:telefone|email|e-mail)\b/i.test(csvText)) {
       throw new Error(`O CSV ${reportType} aparenta conter dados pessoais.`);
     }
     if (!download.suggestedFilename().includes(reportType)) {
