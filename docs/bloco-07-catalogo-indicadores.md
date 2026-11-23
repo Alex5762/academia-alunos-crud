@@ -1,6 +1,6 @@
 # Bloco 07.1 — Catálogo e contrato dos indicadores
 
-> **Estado:** definições revisadas; decisões aprovadas até 23/11/2026: direção da Visão geral gerencial, OP-01 a OP-03, nomenclatura “Recebido no período”, regra FR-04 e indicadores FN-04, FN-05 e FN-06. Os demais indicadores/decisões de experiência e permissão continuam em revisão. Nenhuma consulta, tela ou exportação do Bloco 07 foi implementada.
+> **Estado:** definições revisadas; decisões aprovadas até 23/11/2026: direção da Visão geral gerencial, OP-01 a OP-06, nomenclatura “Recebido no período”, regra FR-04 e indicadores FN-04, FN-05 e FN-06. Os demais indicadores/decisões de experiência e permissão continuam em revisão. Nenhuma consulta, tela ou exportação do Bloco 07 foi implementada.
 > **Branch:** `feat/dashboard-portfolio`.
 > **Documento principal:** [Bloco 07 — Relatórios e experiência](bloco-07-relatorios-experiencia.md).
 
@@ -88,11 +88,13 @@ O fim é exclusivo: no instante exato de `fim_exclusivo_em`, a matrícula já es
 | OP-01 | Total de alunos | Contagem de todos os registros em `alunos` | Fotografia cadastral atual; não é histórico nem depende do período |
 | OP-02 | Alunos ativos | Contagem com `ativo = 1` | Fotografia cadastral atual; não depende do período |
 | OP-03 | Alunos inativos | Contagem com `ativo = 0` | Fotografia cadastral atual; não depende do período |
-| OP-04 | Matrículas por situação | Contagem por cada situação derivada no instante único da consulta | Não somar com status cadastral de aluno |
-| OP-05 | Matrículas com início próximo | Matrículas AGENDADAS com início depois de agora e até agora + 7 ou 30 dias de calendário, incluindo o limite final | Janela móvel, não depende do período selecionado |
-| OP-06 | Matrículas com término próximo | Matrículas ATIVAS com fim exclusivo depois de agora e até agora + 7 ou 30 dias de calendário, incluindo o limite final | Janela móvel; 7 dias alimenta VG-06 |
+| OP-04 | Matrículas por situação | Contagem de matrículas AGENDADA, ATIVA, VENCIDA e CANCELADA, derivada em um único instante de referência | CANCELADA tem prioridade; não depende do status cadastral do aluno |
+| OP-05 | Matrículas com início próximo | Contagem de matrículas AGENDADAS com `inicio_em` estritamente depois de agora e até o limite de 7 ou 30 dias de calendário, inclusive | As janelas são cumulativas: 30 dias inclui os primeiros 7; não depende do período selecionado |
+| OP-06 | Matrículas com término próximo | Contagem de matrículas ATIVAS com `fim_exclusivo_em` estritamente depois de agora e até o limite de 7 ou 30 dias de calendário, inclusive | As janelas são cumulativas; a janela de 7 dias deve ser idêntica a VG-06 |
 
-**Decisão aprovada em 23/11/2026 — OP-01, OP-02 e OP-03.** Os três indicadores usam uma única fotografia cadastral no momento da consulta, ignoram o filtro de datas e exigem `students.view`. OP-01 conta todos os registros de `alunos`; OP-02 conta `ativo = 1`; OP-03 conta `ativo = 0`. A consulta deve retornar os três valores em um único agregado sobre `alunos`, evitando leituras separadas com referências diferentes. A migration 015 adiciona a restrição `CHECK (ativo IN (0, 1))`; com esse domínio garantido, vale a invariável **OP-01 = OP-02 + OP-03**. Status cadastral não substitui nem altera a situação contratual das matrículas.
+**Decisão aprovada em 23/11/2026 — OP-01, OP-02 e OP-03.** Os três indicadores usam uma única fotografia cadastral no momento da consulta, ignoram o filtro de datas e exigem `students.view`. OP-01 conta todos os registros de `alunos`; OP-02 conta `ativo = 1`; OP-03 conta `ativo = 0`. A consulta deve retornar os três valores em um único agregado sobre `alunos`. A migration 015 adiciona `CHECK (ativo IN (0, 1))`, garantindo **OP-01 = OP-02 + OP-03**. Status cadastral não substitui nem altera a situação contratual das matrículas.
+
+**Decisão aprovada em 23/11/2026 — OP-04, OP-05 e OP-06.** Os três indicadores usam `enrollments.view`, são fotografias calculadas no instante da consulta e ignoram o filtro de período. OP-04 conta cada matrícula uma única vez entre AGENDADA, ATIVA, VENCIDA e CANCELADA, conforme `EnrollmentStatus::derive()`. OP-05 conta matrículas AGENDADAS cujo início futuro esteja em até 7 ou 30 dias de calendário local. OP-06 conta somente matrículas ATIVAS cujo fim exclusivo esteja em até 7 ou 30 dias de calendário local. Os limites finais são inclusivos; a janela de 30 dias é cumulativa e inclui a de 7 dias. `asOf` deve ser capturado uma única vez; os limites locais de 7 e 30 dias são calculados a partir dele e então convertidos para UTC. A métrica OP-06/7 dias deve reutilizar o mesmo agregado/resultado de VG-06. Antes de retornar métricas, a consulta deve detectar qualquer registro com `fim_exclusivo_em <= inicio_em`; se houver, deve falhar de forma controlada e não publicar contagens potencialmente inconsistentes. A proteção é de leitura, sem nova migration ou correção automática de dados.
 
 ### 4.2 Matrículas
 
@@ -199,7 +201,7 @@ A interface deve preservar os filtros validados ao navegar entre relatórios e a
 2. Relógio único: obter `agora` uma vez por requisição para não classificar matrículas em instantes diferentes na mesma resposta.
 3. SQL: prepared statements; allowlist para agrupamentos/tipos de relatório; limites de período; sem N+1.
 4. Datas: testes de limites inclusivos/exclusivos, virada do mês/ano, períodos de 365 dias e conversão local/UTC.
-5. Matrículas: testes para cancelamento anterior ao início, início exatamente agora, fim exatamente agora, agendada, vigente e vencida.
+5. Matrículas: testar as quatro situações incluindo CANCELADA antes do início; início e fim exatamente em `asOf`; janelas de 7/30 dias e limites finais inclusivos; janela de 30 cumulativa; OP-06/7 dias idêntico a VG-06; intervalo inválido (`fim_exclusivo_em <= inicio_em`) bloqueia a resposta inteira sem retornar métricas.
 6. Frequência: teste de dias sem registros, aluno com check-ins em dias distintos, duplicidade diária e agrupamento segunda–domingo.
 7. Financeiro: pagamentos em datas retroativas justificadas, pagamentos parciais, cobrança quitada, cobrança cancelada, matrícula cancelada com saldo em revisão e precisão decimal.
 8. RBAC: provar que Operador recebe HTTP 403 nas rotas financeiras e que nenhuma consulta financeira é executada para sua Visão geral.
@@ -228,4 +230,4 @@ A interface deve preservar os filtros validados ao navegar entre relatórios e a
 6. 07.7 — CSV agregado seguro.
 7. 07.8 — acessibilidade, responsividade, temas e regressão completa.
 
-**Decisões registradas:** “Recebido no período”, FR-04, FN-04, FN-05 e FN-06 foram aprovados em 23/11/2026. FN-06 usa o saldo restante de cobranças não canceladas financeiramente ligadas a matrículas canceladas; não representa valor de reembolso. Os demais indicadores, filtros e permissões continuam em revisão. A aprovação individual não equivale à aprovação global nem autoriza iniciar a implementação do Bloco 07.
+**Decisões registradas em 23/11/2026:** OP-01 a OP-06 foram aprovados; “Recebido no período”, FR-04, FN-04, FN-05 e FN-06 também. OP-04 a OP-06 usam `enrollments.view`, as regras temporais de `EnrollmentStatus::derive()`, uma referência única e janelas cumulativas de 7/30 dias. OP-06/7 dias deve permanecer em paridade com VG-06. Intervalos inválidos devem interromper a consulta sem expor métricas parciais. FN-06 usa o saldo restante de cobranças não canceladas financeiramente ligadas a matrículas canceladas; não representa reembolso. Os demais indicadores, filtros e permissões continuam em revisão. A aprovação individual não equivale à aprovação global nem autoriza iniciar a implementação do Bloco 07.

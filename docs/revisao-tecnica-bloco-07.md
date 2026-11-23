@@ -1,6 +1,6 @@
 # Revisão técnica do Bloco 07 — aderência, métricas e arquitetura
 
-> **Estado:** revisão técnica em andamento; decisões aprovadas até 23/11/2026 incluem Visão geral, “Recebido no período”, FR-04, FN-04, FN-05 e FN-06. As demais recomendações continuam sujeitas à revisão e aprovação do responsável pelo projeto.
+> **Estado:** revisão técnica em andamento; decisões aprovadas até 23/11/2026 incluem Visão geral, OP-01 a OP-06, “Recebido no período”, FR-04, FN-04, FN-05 e FN-06. As demais recomendações continuam sujeitas à revisão e aprovação do responsável pelo projeto.
 > **Data:** 23/11/2026.
 > **Escopo analisado:** catálogo 07.1, contratos 07.2, código atual de alunos, matrículas, frequência, financeiro, RBAC e dashboard.
 > **Importante:** esta revisão não implementa funcionalidades, não altera schema e não substitui a aprovação do escopo.
@@ -11,7 +11,7 @@ O escopo é compatível com os recursos já implementados, desde que o Bloco 07 
 
 A principal recomendação é manter a arquitetura simples e coerente com os padrões existentes: classes de consulta com PDO, classes puras para regras temporais/monetárias, autorização por `usuarioTemPermissao()`/ `AccessControl`, arrays associativos para resultados e renderização server-side em PHP.
 
-A CI #1530 aprovou sete jobs funcionais no HEAD correspondente. O job de publicação de screenshots foi ignorado pela condição do workflow. Essa evidência valida os cenários já existentes, não a implementação futura dos relatórios.
+A CI #1555 aprovou sete jobs funcionais, incluindo a migration 015 em MySQL 8.0 e MariaDB 10.11. Essa CI valida as alterações até o HEAD `58579e31a4fd3841131ceab118df1b7fe1a8d55a`, não a implementação futura dos relatórios. O job de publicação de screenshots foi ignorado pela condição do workflow. Essa evidência valida os cenários já existentes, não a implementação futura dos relatórios.
 
 ## 2. Revisão dos indicadores da Visão geral
 
@@ -29,8 +29,9 @@ A CI #1530 aprovou sete jobs funcionais no HEAD correspondente. O job de publica
 ## 3. Revisão dos relatórios operacionais
 
 - OP-01 total de alunos, OP-02 ativos e OP-03 inativos: manter como fotografia atual. Não permitir que o filtro de período altere esses números.
-- OP-04 matrículas por situação: manter as quatro situações AGENDADA, ATIVA, VENCIDA e CANCELADA. CANCELADA tem prioridade, conforme a regra existente.
-- OP-05 início próximo e OP-06 término próximo: manter no relatório detalhado, não como cartões adicionais do dashboard. Usar janelas de 7 e 30 dias, calculadas a partir do mesmo `asOf`, com limite final inclusivo.
+- **OP-04 — Aprovado em 23/11/2026:** manter as quatro situações AGENDADA, ATIVA, VENCIDA e CANCELADA, com prioridade de CANCELADA exatamente como `EnrollmentStatus::derive()`.
+- **OP-05 e OP-06 — Aprovados em 23/11/2026:** manter no relatório operacional detalhado, não como cartões extras do dashboard. Usar janelas cumulativas de 7 e 30 dias de calendário local, com limites finais inclusivos e um único `asOf`. OP-05 conta inícios futuros de matrículas AGENDADAS; OP-06 conta fins futuros de matrículas ATIVAS. O resultado OP-06/7 dias é a própria fonte de VG-06.
+- A consulta agregada deve contar intervalos inválidos (`fim_exclusivo_em <= inicio_em`) e, se encontrar algum, falhar sem publicar quaisquer métricas operacionais de matrícula. Isso é validação de leitura; não pede migration, correção automática ou índice preventivo.
 - Não tentar derivar histórico de alunos ativos ou de situação contratual para dias passados; as tabelas não guardam snapshots diários.
 
 ## 4. Revisão do relatório de matrículas

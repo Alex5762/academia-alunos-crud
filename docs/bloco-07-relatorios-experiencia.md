@@ -1,6 +1,6 @@
 # Bloco 07 — Relatórios e experiência
 
-> **Estado:** direção da Visão geral aceita; decisões aprovadas por etapas: OP-01 a OP-03, “Recebido no período”, FR-04, FN-04, FN-05 e FN-06 (23/11/2026). Os demais indicadores/critério continuam em revisão. Nenhuma funcionalidade do Bloco 07 foi implementada.
+> **Estado:** direção da Visão geral aceita; decisões aprovadas por etapas: OP-01 a OP-06, “Recebido no período”, FR-04, FN-04, FN-05 e FN-06 (23/11/2026). Os demais indicadores/critério continuam em revisão. Nenhuma funcionalidade do Bloco 07 foi implementada.
 > **Branch de referência:** `feat/dashboard-portfolio`.
 > **Dependência anterior:** Bloco 06 com validação automatizada aprovada na CI #1512. A validação manual dos blocos no XAMPP/dispositivo permanece adiada e registrada separadamente.
 > **Regra:** revisar e aprovar o catálogo `bloco-07-catalogo-indicadores.md` antes de iniciar a etapa 07.2. A aprovação da direção da Visão geral não antecipa a aprovação automática de cada fórmula ou endpoint.
@@ -70,7 +70,7 @@ Indicadores de situação atual, claramente identificados como fotografia do mom
 - matrículas com início previsto nos próximos 7 e 30 dias;
 - matrículas com término previsto nos próximos 7 e 30 dias.
 
-A contagem de situação deve usar uma única referência temporal por requisição, no fuso `America/Sao_Paulo`, respeitando o intervalo semiaberto das matrículas `[início, fim exclusivo)`.
+A contagem de situação deve usar uma única referência temporal por requisição, no fuso `America/Sao_Paulo`, respeitando o intervalo semiaberto das matrículas `[início, fim exclusivo)`. **Decisão aprovada em 23/11/2026 — OP-04 a OP-06:** OP-04 classifica todas as matrículas em AGENDADA, ATIVA, VENCIDA ou CANCELADA. OP-05 conta inícios futuros de matrículas AGENDADAS; OP-06 conta términos futuros de matrículas ATIVAS. Ambos exibem janelas cumulativas de 7 e 30 dias, com limites inclusivos, sem depender do período selecionado. Os três exigem `enrollments.view`. A janela OP-06/7 dias deve ser a mesma fonte de VG-06. A consulta deve recusar a resposta inteira quando encontrar `fim_exclusivo_em <= inicio_em`, sem tentar corrigir o registro.
 
 ### 3.2 Relatório de matrículas
 
@@ -179,7 +179,7 @@ Cada seção e cada endpoint CSV devem revalidar a permissão correspondente no 
 
 ## 8. Decisões que precisam de aprovação antes da implementação
 
-1. Confirmar os demais indicadores operacionais e de matrícula das seções 3.1 e 3.2; OP-01 a OP-03 já foram aprovados em 23/11/2026.
+1. Confirmar os indicadores restantes do catálogo nas seções 3.1 e 3.2; OP-01 a OP-06 já foram aprovados em 23/11/2026.
 2. Confirmar o relatório de frequência com total de entradas, alunos distintos e evolução diária.
 3. FN-01 a FN-06: definições aprovadas por etapas até 23/11/2026. FN-04 separa valores nominais por vencimento e situação atual da matrícula; FN-05 soma o saldo positivo das cobranças ainda cobráveis; FN-06 soma o saldo positivo das cobranças em revisão vinculadas a matrículas canceladas, sem representar reembolso.
 4. Confirmar CSV agregado somente, sem dados pessoais, deixando PDF/XLSX fora do MVP.
@@ -201,7 +201,7 @@ Entregáveis desta etapa:
 
 **Decisão registrada em 23/11/2026:** nomenclatura **“Recebido no período”** aprovada para a soma de pagamentos por `data_pagamento`; não chamar de faturamento ou lucro. O catálogo continua aguardando aprovação global das demais fórmulas e permissões.
 
-**Decisão registrada em 23/11/2026:** OP-01, OP-02 e OP-03 foram aprovados como fotografias cadastrais independentes do período, sob `students.view`, com contagem agregada única e domínio de `ativo` protegido pela migration 015. **A migration 015 é uma proteção de integridade cadastral separada; não implementa consultas ou telas do Bloco 07.**
+**Decisão registrada em 23/11/2026:** OP-01 a OP-03 foram aprovados como fotografias cadastrais independentes do período, sob `students.view`, com contagem agregada única e domínio de `ativo` protegido pela migration 015. OP-04 a OP-06 também foram aprovados: usam `enrollments.view`, uma única referência temporal, as quatro situações canônicas e janelas cumulativas de 7/30 dias; OP-06/7 dias corresponde a VG-06. Intervalos inválidos (`fim_exclusivo_em <= inicio_em`) interrompem a consulta sem resultados parciais. **A migration 015 é uma proteção cadastral separada; não implementa consultas ou telas do Bloco 07.**
 
 **Decisão registrada em 23/11/2026:** o rótulo **“Recebido no período”** foi aprovado para a soma dos pagamentos por `data_pagamento`, com legenda esclarecendo que se trata de pagamentos registrados e não de liquidação bancária. A decisão foi complementada pela aprovação de FR-04, FN-04, FN-05 e FN-06. FN-06 é fotografia atual do saldo restante de cobranças não canceladas financeiramente ligadas a matrículas canceladas; não representa reembolso. Os demais indicadores, filtros e permissões continuam em revisão.
 

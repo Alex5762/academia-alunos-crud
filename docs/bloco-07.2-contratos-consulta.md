@@ -1,6 +1,6 @@
 # Bloco 07.2 — Contratos de consulta e validação
 
-> **Estado:** desenho técnico revisado; as decisões do catálogo estão sendo aprovadas por etapas. OP-01 a OP-03 e FN-04, FN-05 e FN-06 foram aprovados em 23/11/2026; os demais itens permanecem em revisão. Não representa implementação.
+> **Estado:** desenho técnico revisado; as decisões do catálogo estão sendo aprovadas por etapas. OP-01 a OP-06 e FN-04, FN-05 e FN-06 foram aprovados em 23/11/2026; os demais itens permanecem em revisão. Não representa implementação.
 > **Pré-requisito:** catálogo 07.1 e definições de indicadores aprovados.
 > **Escopo desta etapa:** contratos de entrada/saída, datas, relógio, autorização, agregação e testes. Sem migrations, alteração de schema, telas ou exportação.
 
@@ -59,8 +59,10 @@ Criar uma representação explícita dos limites para dois tipos de coluna:
 
 - O serviço de dashboard captura `asOf` uma única vez e compartilha com todos os serviços.
 - Situação de matrícula deve reutilizar `EnrollmentStatus::derive()`, ou uma tradução SQL rigorosamente equivalente, com testes de paridade.
-- Janela de alertas é calculada em calendário local; VG-06 considera matrícula ATIVA com `fim_exclusivo_em` estritamente maior que `asOf` e menor ou igual a `asOf + 7 dias`. O limite final é inclusivo.
-- A conversão de `asOf` e do limite para UTC ocorre antes da consulta.
+- Janela de alertas é calculada em calendário local; VG-06 e OP-06/7 dias consideram matrícula ATIVA com `fim_exclusivo_em` estritamente maior que `asOf` e menor ou igual a `asOf + 7 dias`. O limite final é inclusivo.
+- Para OP-05 e OP-06, calcular `limit7 = asOfLocal + P7D` e `limit30 = asOfLocal + P30D` por calendário local; converter `asOf`, `limit7` e `limit30` para UTC antes da consulta.
+- As janelas de 30 dias são cumulativas: incluem as matrículas dos primeiros 7 dias. Não somar OP-05/7 com OP-05/30 ou OP-06/7 com OP-06/30 como grupos exclusivos.
+- Comparar `inicio_em`/`fim_exclusivo_em` armazenados como UTC com os limites UTC. O SQL deve reproduzir as fronteiras de `EnrollmentStatus::derive()`; datas locais convertidas para UTC representam os mesmos instantes.
 - Não usar relógio do banco em algumas consultas e relógio PHP em outras.
 
 ## 5. Contrato de saída
@@ -82,7 +84,18 @@ Regras:
 
 ### 5.1 Invariantes cadastrais usados por OP-01 a OP-03
 
-OP-01 (total), OP-02 (ativos) e OP-03 (inativos) são fotografias atuais de `alunos`, sem filtro de período, e exigem `students.view`. Retornar os três em um único agregado; usar `COUNT(*)` e somas condicionais para `ativo = 1` e `ativo = 0`. A migration 015, fora da implementação de relatórios, adiciona `CHECK (ativo IN (0, 1))` e impede que registros com estado não binário quebrem a reconciliação total = ativos + inativos.
+OP-01 (total), OP-02 (ativos) e OP-03 (inativos) são fotografias atuais de `alunos`, sem filtro de período, e exigem `students.view`. Retornar os três em um único agregado; usar `COUNT(*)` e somas condicionais para `ativo = 1` e `ativo = 0`. A migration 015, fora da implementação de relatórios, adiciona `CHECK (ativo IN (0, 1))` e garante total = ativos + inativos.
+
+### 5.2 Contrato de agregação operacional de matrículas — OP-04 a OP-06
+
+OP-04, OP-05 e OP-06 são fotografias calculadas com um único `asOf` por requisição, sem filtro de período e sob `enrollments.view`. A consulta agregada retorna as quatro contagens de OP-04 e os totais de OP-05/OP-06 para 7 e 30 dias; valores zero devem ser apresentados como zero, sem omitir categorias.
+
+- **OP-04:** reproduzir `EnrollmentStatus::derive()` com prioridade de CANCELADA (`cancelada_em IS NOT NULL`); em seguida AGENDADA (`inicio_em > :as_of_utc`); depois VENCIDA (`fim_exclusivo_em <= :as_of_utc`); caso contrário ATIVA. As condições são aplicadas somente após validar os intervalos.
+- **OP-05:** contar matrículas não canceladas com `inicio_em > :as_of_utc` e `inicio_em <= :limit_7_utc` ou `:limit_30_utc`. Com intervalo válido, a condição identifica exatamente matrículas AGENDADAS.
+- **OP-06:** contar matrículas não canceladas, com `inicio_em <= :as_of_utc`, `fim_exclusivo_em > :as_of_utc` e `fim_exclusivo_em <= :limit_7_utc` ou `:limit_30_utc`. Isso inclui somente matrículas ATIVAS que ainda não chegaram ao fim exclusivo.
+- **Paridade VG-06:** OP-06/7 dias e VG-06 devem consumir o mesmo valor/resultado agregado, não implementações independentes que possam divergir.
+- **Integridade defensiva:** no mesmo snapshot de leitura, retornar `invalid_interval_count = COUNT(*)` condicional para `fim_exclusivo_em <= inicio_em`. Se o resultado for maior que zero, descartar todas as contagens e devolver erro controlado; não mostrar métricas parciais, não classificar essas linhas como CANCELADA/AGENDADA/VENCIDA/ATIVA e não alterar os dados. Não adicionar migration ou índice para isso nesta etapa.
+- **Tempo:** `asOf`, `limit7` e `limit30` são calculados em `America/Sao_Paulo` com `DateTimeImmutable`/`DateInterval` e convertidos para UTC antes de vincular parâmetros PDO. O filtro de datas selecionado pelo usuário não participa dessas métricas.
 
 ## 6. Fronteira de autorização
 
@@ -123,12 +136,15 @@ OP-01 (total), OP-02 (ativos) e OP-03 (inativos) são fotografias atuais de `alu
 - Janela móvel de 7 dias com teste no limite exato.
 
 ### Matrículas
-- CANCELADA antes do início.
-- AGENDADA antes do início.
-- ATIVA no instante anterior ao fim.
-- VENCIDA exatamente no fim exclusivo.
+- CANCELADA antes do início (prioridade sobre demais estados).
+- AGENDADA antes do início e início exatamente em `asOf` (já não é agendada).
+- ATIVA em `asOf`, no instante imediatamente anterior ao fim; VENCIDA exatamente no fim exclusivo.
+- OP-05: início exatamente em `asOf` excluído; instantes `asOf < inicio <= limit7/limit30` incluídos; 30 dias inclui 7.
+- OP-06: fim exatamente em `asOf` excluído; fim exatamente em `limit7/limit30` incluído; somente matrículas ATIVAS.
+- OP-06/7 dias idêntico a VG-06.
+- Intervalo inválido (`fim_exclusivo_em <= inicio_em`) faz a consulta falhar de modo controlado e sem métricas parciais.
 - Status cadastral do aluno independente da situação contratual.
-- Paridade entre classificação de domínio e consulta agregada.
+- Paridade entre classificação de domínio e consulta agregada em MySQL 8.0 e MariaDB 10.11.
 
 ### Frequência
 - Data local inclusiva inicial/final.
