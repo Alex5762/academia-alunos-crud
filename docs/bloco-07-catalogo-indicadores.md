@@ -115,9 +115,15 @@ Regras adicionais:
 | FR-01 | Total de check-ins | Contagem de registros em `checkins` no intervalo de `data_local` | Dia civil local |
 | FR-02 | Alunos distintos | Contagem distinta de `aluno_id` no período | Pessoas com pelo menos uma entrada no período |
 | FR-03 | Evolução diária | Contagem de check-ins por `data_local`; completar dias sem registros com zero na camada de apresentação | Cada dia do período |
-| FR-04 | Distribuição por dia da semana | Contagem agrupada de segunda a domingo usando o calendário local | Dia da semana |
+| FR-04 | Média de check-ins por dia da semana | Para cada dia ISO (segunda a domingo): total bruto de check-ins daquele dia dividido pela quantidade de ocorrências daquele dia no intervalo. Exibir também ocorrências e total bruto. | Dia da semana no calendário local |
 
 A restrição única em `(aluno_id, data_local)` impede mais de um check-in por aluno no mesmo dia local. Ainda assim, FR-01 pode ser maior que FR-02 porque a mesma pessoa pode frequentar em vários dias.
+
+**Regra aprovada para FR-04:** para cada dia da semana, calcular `média = total bruto de check-ins daquele dia / quantidade de ocorrências daquele dia no intervalo selecionado`. A quantidade de ocorrências é obtida contando as datas civis reais do período que caem naquele dia da semana; não é sempre igual para todos os dias.
+
+A apresentação deve trazer **média por ocorrência**, **total bruto** e **quantidade de ocorrências**. Exemplo ilustrativo: 6 check-ins em 2 segundas-feiras resultam em média 3,0; 2 check-ins em 1 domingo resultam em média 2,0. A média é arredondada para uma casa decimal somente na apresentação; numerador e denominador permanecem disponíveis para conferir o cálculo.
+
+Quando o período não contém nenhuma ocorrência de determinado dia (por exemplo, filtro de uma única terça-feira), mostrar total bruto 0 e ocorrências 0, mas média como não aplicável (—), nunca como 0. Isso distingue ausência de denominador de uma média real igual a zero. A contagem de ocorrências pode ser calculada em PHP a partir das datas inicial/final normalizadas, evitando depender de recursos de calendário SQL.
 
 Esses indicadores medem entradas registradas na academia. Não representam presença em aula, participação em modalidade, ocupação de turma nem faltas.
 
@@ -219,4 +225,4 @@ A interface deve preservar os filtros validados ao navegar entre relatórios e a
 6. 07.7 — CSV agregado seguro.
 7. 07.8 — acessibilidade, responsividade, temas e regressão completa.
 
-**Critério de saída da 07.1:** aprovação do catálogo de indicadores, do contrato de filtros, das permissões e dos limites semânticos. A nomenclatura do indicador financeiro principal já foi aprovada; os demais itens aguardam revisão. Até a aprovação global, não iniciar migrations, consultas novas nem telas do Bloco 07.
+**Decisões registradas:** “Recebido no período” foi aprovado; em 23/11/2026, FR-04 foi aprovado para exibir média de check-ins por ocorrência do dia da semana, acompanhada de total bruto e quantidade de ocorrências. Os demais itens ainda aguardam revisão. Até a aprovação global, não iniciar migrations, consultas novas nem telas do Bloco 07.
