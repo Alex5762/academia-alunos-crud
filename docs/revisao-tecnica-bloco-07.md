@@ -1,6 +1,6 @@
 # Revisão técnica do Bloco 07 — aderência, métricas e arquitetura
 
-> **Estado:** revisão técnica em andamento; decisões aprovadas até 23/11/2026 incluem Visão geral, OP-01 a OP-06, MT-01 a MT-05, “Recebido no período”, FR-01 a FR-05, FN-04, FN-05 e FN-06. O escopo de filtros, permissões, CSV agregado e critérios finais de apresentação foi aprovado em 23/11/2026; a implementação ainda depende do fechamento global dos contratos.
+> **Estado:** revisão técnica e decisões individuais de indicadores, filtros, permissões, CSV e apresentação concluídas em 23/11/2026. Esta revisão registra a reconciliação global entre documentos e a sequência técnica; nenhuma implementação de relatórios foi iniciada.
 > **Data:** 23/11/2026.
 > **Escopo analisado:** catálogo 07.1, contratos 07.2, código atual de alunos, matrículas, frequência, financeiro, RBAC e dashboard.
 > **Importante:** esta revisão não implementa funcionalidades, não altera schema e não substitui a aprovação do escopo.
@@ -11,7 +11,7 @@ O escopo é compatível com os recursos já implementados, desde que o Bloco 07 
 
 A principal recomendação é manter a arquitetura simples e coerente com os padrões existentes: classes de consulta com PDO, classes puras para regras temporais/monetárias, autorização por `usuarioTemPermissao()`/ `AccessControl`, arrays associativos para resultados e renderização server-side em PHP.
 
-A CI #1555 aprovou sete jobs funcionais, incluindo a migration 015 em MySQL 8.0 e MariaDB 10.11. A CI #1556 aprovou os contratos documentais OP-04 a OP-06 no HEAD correspondente; não valida implementação futura de relatórios. Essa CI valida as alterações até o HEAD `58579e31a4fd3841131ceab118df1b7fe1a8d55a`, não a implementação futura dos relatórios. O job de publicação de screenshots foi ignorado pela condição do workflow. Essa evidência valida os cenários já existentes, não a implementação futura dos relatórios.
+As CIs #1555 e #1556 validaram os respectivos estados da branch e os contratos já existentes à época; elas não validam implementação futura de relatórios. A CI #1563 (commit `78b872a0`) também passou após as atualizações documentais desta revisão. Como o Bloco 07 ainda não possui consultas ou telas implementadas, essas execuções comprovam a integridade dos testes já presentes no repositório, não a funcionalidade futura dos relatórios. O job de publicação de screenshots segue sujeito à condição do workflow.
 
 ## 2. Revisão dos indicadores da Visão geral
 
@@ -152,17 +152,16 @@ Não alterar `index.php` inteiro de uma vez. Extrair somente as consultas novas 
 - A tabulação adicionada passa a fazer parte do conteúdo. Documentar esse trade-off; para futura integração máquina-a-máquina, definir outro formato/contrato em vez de reutilizar o CSV de leitura humana.
 - Testar casos maliciosos, UTF-8, aspas e separadores; validar abertura no Excel/LibreOffice quando houver ambiente. Não alegar proteção universal para todos os consumidores.
 
-## 10. Sequência recomendada após aprovação
+## 10. Sequência técnica aprovada, condicionada ao fechamento global
 
-1. Fechar catálogo 07.1 com os ajustes desta revisão.
-2. Enxugar o contrato 07.2 para a arquitetura mínima descrita acima.
-3. Implementar e testar `ReportPeriod` sem banco/schema.
-4. Implementar consultas operacional/matrículas e testar limites com dados fictícios na CI.
-5. Implementar frequência, incluindo média por ocorrência do dia da semana.
-6. Implementar financeiro, separação do grupo em revisão e RBAC.
-7. Reutilizar os mesmos agregadores para cartões do dashboard.
-8. Implementar CSV spreadsheet-safe somente depois de testar a saída.
-9. Regressão desktop/mobile, tema claro/escuro, acessibilidade e comparação com o dashboard anterior.
+1. Concluir a reconciliação entre catálogo 07.1, proposta de experiência, contratos 07.2, revisão técnica e roadmap; obter autorização explícita para começar.
+2. Implementar `ReportPeriod` e testes puros de parsing, limites inclusivos, período padrão, futuro e UTC, sem migration/schema.
+3. Implementar consultas operacional e de matrículas (07.3), incluindo paridade com `EnrollmentStatus::derive()` e testes com dados fictícios em MySQL 8.0/MariaDB 10.11.
+4. Implementar frequência (07.4), incluindo FR-03, FR-04 por ocorrência do calendário e FR-05.
+5. Implementar financeiro (07.5), RBAC e paridade de FN-05/FN-06 com `FinanceDashboardStatus`; executar `EXPLAIN` em MySQL 8.0 e MariaDB 10.11 antes de decidir sobre índices.
+6. Integrar os cartões no dashboard existente (07.6), reutilizando agregadores sem duplicar SQL e corrigindo a distribuição cadastral por plano.
+7. Implementar CSV agregado seguro (07.7) por último, com escaping, neutralização documentada e testes em leitores de planilha.
+8. Finalizar regressão (07.8): desktop/mobile, reflow a 320 CSS px, temas claro/escuro, teclado/foco, contraste, redução de movimento, acessibilidade e comparação com a experiência anterior.
 
 ## 11. Referências de boas práticas
 
@@ -176,4 +175,4 @@ Não alterar `index.php` inteiro de uma vez. Extrair somente as consultas novas 
 - [W3C — WCAG 2.2, SC 2.5.8 Target Size (Minimum)](https://www.w3.org/WAI/WCAG22/Understanding/target-size-minimum): alvos de pelo menos 24 × 24 CSS px, com exceções definidas.
 - [W3C — WCAG 2.2, SC 1.4.10 Reflow](https://www.w3.org/WAI/WCAG22/Understanding/reflow): apresentação sem perda de informação/funcionalidade a 320 CSS px, exceto conteúdos que exijam layout bidimensional.
 
-**Resultado desta revisão:** o desenho geral combina com o FitControl. O contrato de período, a matriz de autorização e o escopo de CSV agregado foram aprovados em 23/11/2026. A implementação deve respeitar o padrão mês-até-hoje, validação estrita, persistência dos filtros, autorização antes da consulta e neutralização documentada de fórmulas para planilhas. Os critérios finais de apresentação foram aprovados em 23/11/2026; permanece pendente apenas o fechamento global de consistência entre catálogo, contratos e roadmap. Nenhuma consulta, tela, relatório ou exportação foi implementada.
+**Resultado desta revisão:** o desenho geral combina com o FitControl. As definições funcionais e de apresentação estão aprovadas por etapas, e a reconciliação dos documentos foi consolidada nesta revisão. A implementação continua bloqueada até a aprovação global explícita do escopo. Nenhuma consulta, tela, relatório ou exportação do Bloco 07 foi implementada.

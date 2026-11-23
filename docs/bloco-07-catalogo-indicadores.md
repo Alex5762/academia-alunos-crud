@@ -198,7 +198,7 @@ Para o perfil Operador, a resposta da Visão geral não deve conter valores, tot
 
 A interface deve preservar `de` e `ate` validados ao navegar entre relatórios e ao exportar CSV. O servidor deve validar novamente todos os parâmetros; parâmetros recebidos não podem controlar nomes de coluna, expressões SQL ou permissões. A ausência simultânea dos dois parâmetros aplica o padrão; a ausência de apenas um, datas impossíveis, formato inválido ou intervalo invertido gera erro de validação, sem completar valores silenciosamente nem substituir a entrada pelo padrão. O parsing deve ser estrito, com round-trip `YYYY-MM-DD`, no fuso `America/Sao_Paulo`.
 
-## 7. Exportação CSV — contrato inicial
+## 7. Exportação CSV — escopo aprovado
 
 - Um CSV por relatório, contendo somente os indicadores agregados exibidos e usando exatamente o período validado aplicado na tela.
 - Não incluir identificadores de aluno/funcionário, nomes, e-mails, telefones, observações, tokens, dados de autenticação ou qualquer outra PII.

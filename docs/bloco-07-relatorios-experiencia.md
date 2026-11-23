@@ -3,11 +3,11 @@
 > **Estado:** direção da Visão geral aceita; decisões aprovadas por etapas: OP-01 a OP-06, MT-01 a MT-05, FR-01 a FR-05, FN-01 a FN-06, filtros comuns, matriz de permissões por seção e escopo do CSV agregado (23/11/2026). Os critérios finais de apresentação foram aprovados em 23/11/2026. O fechamento global dos contratos ainda é necessário antes da implementação; nenhuma funcionalidade do Bloco 07 foi implementada.
 > **Branch de referência:** `feat/dashboard-portfolio`.
 > **Dependência anterior:** Bloco 06 com validação automatizada aprovada na CI #1512. A validação manual dos blocos no XAMPP/dispositivo permanece adiada e registrada separadamente.
-> **Regra:** revisar e aprovar o catálogo `bloco-07-catalogo-indicadores.md` antes de iniciar a etapa 07.2. A aprovação da direção da Visão geral não antecipa a aprovação automática de cada fórmula ou endpoint.
+> **Regra:** as definições do catálogo 07.1 e os contratos 07.2 foram aprovados por etapas; antes de implementar, concluir a reconciliação global entre os documentos e obter aprovação explícita para iniciar a execução técnica.
 
 ## Documentos do bloco
 
-- [Revisão técnica de indicadores e arquitetura](revisao-tecnica-bloco-07.md) — parecer de aderência ao código atual e boas práticas; recomendações aguardam aprovação.
+- [Revisão técnica de indicadores e arquitetura](revisao-tecnica-bloco-07.md) — parecer de aderência ao código atual, decisões de arquitetura e critérios de implementação já incorporados à especificação.
 - [Catálogo e contrato dos indicadores — etapa 07.1](bloco-07-catalogo-indicadores.md)
 
 ## 1. Objetivo
@@ -111,8 +111,9 @@ Visível somente a quem possui `finance.view`:
 - **FN-02 — quantidade de pagamentos:** contagem de lançamentos individuais que compõem FN-01; pagamentos parciais da mesma cobrança contam separadamente;
 - **FN-03 — recebido por forma:** soma por `forma_pagamento`, usando somente `DINHEIRO`, `PIX`, `TRANSFERENCIA`, `CARTAO` e `OUTRO`;
 - os totais por forma reconciliam com FN-01 e as contagens auxiliares por forma com FN-02; os três usam exatamente o mesmo período e conjunto de pagamentos;
-- valores de cobranças com vencimento no período, apresentados separadamente dos pagamentos registrados;
-- fotografia atual de saldo cobrável e saldo em revisão, caso reutilize os indicadores existentes do painel financeiro.
+- **FN-04 — cobranças com vencimento no período:** quantidade e soma do valor nominal original das cobranças não canceladas financeiramente, com separação entre matrículas não canceladas e matrículas canceladas/em revisão; não representa recebimento nem saldo em aberto.
+- **FN-05 — saldo cobrável atual:** fotografia do saldo positivo restante de cobranças não canceladas financeiramente vinculadas a matrículas não canceladas, independente do filtro de período.
+- **FN-06 — saldo em revisão atual:** fotografia do saldo positivo restante de cobranças não canceladas financeiramente vinculadas a matrículas canceladas, independente do filtro de período e sem representar reembolso.
 
 Pagamentos retroativos com justificativa são atribuídos à `data_pagamento`, ainda que o lançamento tenha sido registrado depois. Não excluir pagamentos do conjunto por cancelamento posterior da matrícula e não juntar matrículas/cobranças para calcular FN-01 a FN-03. Se o período não tiver lançamentos, FN-01 e FN-02 são zero e FN-03 apresenta estado vazio. Não apresentar saldo histórico de uma data passada como fato garantido sem definir uma consulta temporal que considere pagamentos, cancelamentos e lançamentos retroativos. Não tratar matrícula cancelada como pagamento estornado.
 
@@ -212,17 +213,18 @@ Cada seção e cada endpoint CSV devem revalidar a permissão correspondente no 
 - [ ] Testes de regressão comprovam que os relatórios não alteram dados operacionais nem a cadeia de auditoria.
 - [ ] MySQL 8.0 e MariaDB 10.11 passam pela CI; o smoke test local permanece separado e documentado.
 
-## 8. Decisões que precisam de aprovação antes da implementação
+## 8. Fechamento global da especificação
 
-1. Confirmar os indicadores restantes do catálogo nas seções 3.1 e 3.2; OP-01 a OP-06 e MT-01 a MT-05 já foram definidos/aprovados em 23/11/2026.
-2. Relatório de frequência FR-01 a FR-05 aprovado em 23/11/2026: total de entradas, alunos distintos, evolução diária, média por ocorrência de weekday e média de dias com entrada por aluno frequentador. FR-04 usa ocorrências do calendário, não dias de funcionamento; FR-05 usa FR-01/FR-02 e é não aplicável quando não há frequentadores.
-3. FN-01 a FN-06: definições aprovadas por etapas até 23/11/2026. FN-04 separa valores nominais por vencimento e situação atual da matrícula; FN-05 soma o saldo positivo das cobranças ainda cobráveis; FN-06 soma o saldo positivo das cobranças em revisão vinculadas a matrículas canceladas, sem representar reembolso.
-4. Confirmar CSV agregado somente, sem dados pessoais, deixando PDF/XLSX fora do MVP.
-5. Confirmar mês atual como período padrão e limite de 365 dias por consulta.
-6. Confirmar o uso das permissões existentes, com financeiro visível somente para Administrador/Gestor.
-7. Confirmar a Visão geral como camada de resumo do dashboard existente, com fotografia atual, indicadores do período, alerta de términos próximos e atalhos para relatórios.
+**Decisões funcionais aprovadas por etapas em 23/11/2026:**
+1. **Indicadores:** VG-01 a VG-06, OP-01 a OP-06, MT-01 a MT-05, FR-01 a FR-05 e FN-01 a FN-06, com fórmulas, fontes, coortes, eixos temporais, reconciliações e ressalvas documentadas no catálogo.
+2. **Período:** mês até hoje como padrão em `America/Sao_Paulo`; `de`/`ate` ausentes em conjunto aplicam o padrão; ausência parcial, data inválida, período invertido ou acima de 365 dias inclusivos é erro; filtros preservados entre relatórios/CSV.
+3. **Permissões:** RBAC existente, validação no servidor antes de cada consulta; Operador nunca executa nem recebe informação financeira.
+4. **CSV:** somente agregados, mesmos filtros/permissões, sem PII, escaping e neutralização para planilhas; PDF, XLSX e exportação individual fora do MVP.
+5. **Apresentação:** seis cartões em dois grupos, preservação da listagem de alunos, ajuste do denominador de planos para alunos ativos, tabelas/gráfico conforme definido, estados de interface distintos e critérios de acessibilidade/responsividade aprovados.
 
-### Etapa 07.1 — definição dos indicadores (catálogo documentado; aprovação parcial)
+**O que resta nesta etapa não é uma nova decisão de produto:** é a reconciliação final da documentação e a autorização explícita para iniciar a implementação. A aprovação individual de todos os pacotes não deve ser confundida com a execução de código.
+
+### Etapa 07.1 — definição dos indicadores (catálogo revisado e aprovado por etapas; especificação sem implementação)
 
 Catálogo detalhado: [Bloco 07.1 — Catálogo e contrato dos indicadores](bloco-07-catalogo-indicadores.md).
 
@@ -236,7 +238,7 @@ Entregáveis desta etapa:
 
 **Decisão registrada em 23/11/2026:** FR-01 a FR-03 e FR-05 foram aprovados; FR-04 mantém sua regra anteriormente aprovada com a ressalva de que o denominador representa ocorrências do calendário, não dias comprovadamente abertos. FR-05 calcula FR-01/FR-02 entre alunos frequentadores e exibe — quando FR-02 = 0. A seção mede entradas, não aulas ou presença por modalidade.
 
-**Decisão registrada em 23/11/2026:** FN-01 a FN-03 foram aprovados: soma, contagem e distribuição por forma dos mesmos pagamentos filtrados por `data_pagamento` inclusiva; lançamentos retroativos seguem a data declarada; cancelamento posterior da matrícula não elimina o pagamento; o grupo por forma deve reconciliar com os totais. O rótulo **“Recebido no período”** não significa faturamento, lucro, liquidação bancária ou recebimento líquido. O catálogo continua aguardando aprovação global das demais fórmulas e permissões.
+**Decisão registrada em 23/11/2026:** FN-01 a FN-03 foram aprovados: soma, contagem e distribuição por forma dos mesmos pagamentos filtrados por `data_pagamento` inclusiva; lançamentos retroativos seguem a data declarada; cancelamento posterior da matrícula não elimina o pagamento; o grupo por forma deve reconciliar com os totais. O rótulo **“Recebido no período”** não significa faturamento, lucro, liquidação bancária ou recebimento líquido. As definições de FN-01 a FN-03 foram aprovadas; a confirmação do conjunto e das permissões foi incorporada ao fechamento global de consistência, sem fórmulas em aberto.
 
 **Decisão registrada em 23/11/2026:** OP-01 a OP-03 foram aprovados como fotografias cadastrais independentes do período, sob `students.view`, com contagem agregada única e domínio de `ativo` protegido pela migration 015. OP-04 a OP-06 também foram aprovados: usam `enrollments.view`, uma única referência temporal, as quatro situações canônicas e janelas cumulativas de 7/30 dias; OP-06/7 dias corresponde a VG-06. Intervalos inválidos (`fim_exclusivo_em <= inicio_em`) interrompem a consulta sem resultados parciais. **A migration 015 é uma proteção cadastral separada; não implementa consultas ou telas do Bloco 07.**
 
@@ -246,12 +248,12 @@ Entregáveis desta etapa:
 
 **Critérios de apresentação aprovados em 23/11/2026:** seis cards VG-01 a VG-06 em dois grupos; preservar pesquisa/lista de alunos e atalho de cadastro; manter distribuição de planos como painel secundário e calcular percentuais com a base de alunos ativos (`$alunosAtivos`), não total de cadastrados. O painel deve informar que usa o plano cadastral e exibir estado vazio quando não houver alunos ativos/grupos. Relatórios operacional e de matrículas priorizam tabelas; frequência usa barras diárias e tabela/resumo equivalente; financeiro usa resumo e tabela por forma. Zero, vazio, não aplicável, erro e falta de permissão são estados distintos. Acessibilidade: foco de teclado visível, contraste WCAG aplicável, alvos mínimos, reflow a 320 CSS px, dois temas, redução de movimento e informação não dependente só de cor/hover. Skeletons ficam fora da renderização server-side síncrona. FN-06 é fotografia atual do saldo restante de cobranças não canceladas financeiramente ligadas a matrículas canceladas; não representa reembolso. As definições dos indicadores, filtros, permissões e critérios de apresentação já foram aprovadas por etapas; falta somente a revisão global de consistência antes de autorizar a implementação.
 
-**Saída esperada da 07.1:** especificação revisável e testável, sem alteração de banco nem implementação de telas. A etapa seguinte só começa depois da revisão das fórmulas e do contrato de acesso.
+**Saída da 07.1:** catálogo de indicadores documentado, revisado e aprovado por etapas, sem alteração de banco ou implementação de telas. As definições individuais estão fechadas; a implementação permanece bloqueada apenas até o fechamento global da especificação e sua autorização explícita.
 
-**Recomendação:** implementar primeiro consultas agregadas e testes de domínio/SQL; depois a página de relatórios; por último os endpoints CSV e a cobertura Playwright. Só iniciar após aprovação deste escopo.
+**Sequência aprovada para execução, após autorização global:** implementar primeiro o contrato de período e seus testes; depois consultas agregadas por domínio; integrar cartões ao dashboard usando os mesmos agregadores; implementar CSV por último; finalizar com regressão, acessibilidade, responsividade e compatibilidade.
 
-### Etapa 07.2 — contratos de consulta e validação (desenho revisado; aprovação pendente)
+### Etapa 07.2 — contratos de consulta e validação (desenho revisado e aprovado; implementação pendente)
 
 Documento: [Bloco 07.2 — Contratos de consulta e validação](bloco-07.2-contratos-consulta.md).
 
-O desenho define responsabilidades para período imutável, relógio único, política de autorização, consultas agregadas, payload de saída e matriz de testes. FR-01 a FR-05 foram aprovados: FR-01 conta entradas, FR-02 alunos distintos, FR-03 completa datas sem registro com zero, FR-04 calcula a média por ocorrência de calendário (não por dia de funcionamento) e FR-05 calcula FR-01/FR-02 entre alunos frequentadores, com — quando não há denominador. A revisão alinhou a omissão integral de seções não autorizadas, a janela inclusiva dos próximos sete dias e a legenda do indicador financeiro. Não introduz migrations, telas ou código de relatório. A implementação da 07.2 depende da aprovação global do catálogo 07.1 e deste contrato.
+O contrato 07.2 define entrada/saída, datas, relógio de referência, fronteira de autorização, consultas agregadas e matriz de testes. As regras de FR-01 a FR-05, o padrão de período, o tratamento de períodos inválidos, a omissão integral de seções não autorizadas e a precisão financeira estão documentados. A arquitetura foi simplificada para reutilizar `AccessControl`, relógio capturado uma vez por requisição, consultas específicas por domínio e arrays com chaves estáveis; não criar abstrações genéricas sem necessidade demonstrada. O documento não introduz migrations, telas ou código de relatório. A implementação da 07.2 começa somente após o fechamento global da especificação e autorização explícita.

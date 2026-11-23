@@ -26,10 +26,10 @@ Enquanto o acesso ao XAMPP/dispositivo não estiver disponível, continuar com e
 ### Blocos ainda por desenvolver
 
 - **Bloco 06 — Grade fixa de aulas:** implementação e validação automatizada aprovadas na CI #1512; validação manual no XAMPP/dispositivo permanece pendente.
-- **Bloco 07 — Relatórios e experiência:** especificação em revisão por etapas. Direção da Visão geral, “Recebido no período”, FR-04, FN-04, FN-05 e FN-06 aprovados; os demais indicadores, filtros e permissões continuam em revisão. Implementação ainda não iniciada.
+- **Bloco 07 — Relatórios e experiência:** definições funcionais, filtros, permissões, CSV e critérios de apresentação aprovados por etapas; revisão cruzada da documentação concluída. Nenhuma consulta, tela ou exportação foi implementada. Falta a aprovação global explícita antes de iniciar a implementação técnica.
 - **Bloco 08 — Preparação para produção:** etapa futura, não iniciar como se fosse apenas deploy; depende de revisão independente e plano operacional/de segurança.
 
-**Próximo passo: continuar a revisão individual dos indicadores, filtros, permissões e critérios de experiência ainda pendentes no catálogo 07.1 e validar os contratos 07.2 correspondentes**. FN-01 a FN-06 já possuem decisões individuais aprovadas; isso não equivale à aprovação global nem autoriza iniciar a implementação. A validação manual do Bloco 06 permanece adiada e não deve ser declarada concluída. A validação local dos Blocos 03–05 permanece registrada como adiada, não como concluída.
+**Próximo passo do Bloco 07:** obter a aprovação global explícita da especificação reconciliada; somente então iniciar a etapa 07.2 de implementação/testes do contrato de período e avançar na sequência registrada no próprio bloco. A validação manual do Bloco 06 permanece adiada e não deve ser declarada concluída. A validação local dos Blocos 03–05 permanece registrada como adiada, não como concluída.
 
 ---
 
@@ -58,7 +58,7 @@ Limites conhecidos:
 - Não há recuperação de senha por e-mail nem MFA.
 - O campo `alunos.plano` permanece preservado como texto legado; catálogo, matrículas e revisão dos vínculos estão implementados e validados por CI. A aplicação das migrations 005/006 no XAMPP local continua pendente.
 - Frequência/check-in (Bloco 04) e financeiro (Bloco 05) estão implementados na branch e validados por CI em MySQL 8.0 e MariaDB 10.11; a validação local/manual continua pendente.
-- O Bloco 06 (grade semanal fixa) está implementado e aprovado na CI #1512; a validação local/XAMPP permanece pendente. O Bloco 07 possui especificação em revisão por etapas: direção da Visão geral, “Recebido no período”, FR-04 e FN-01 a FN-06 têm decisões individuais aprovadas; a aprovação global e a implementação continuam pendentes.
+- O Bloco 06 (grade semanal fixa) está implementado e aprovado na CI #1512; a validação local/XAMPP permanece pendente. O Bloco 07 tem catálogo, experiência, filtros, RBAC, CSV e critérios de apresentação especificados e aprovados por etapas; falta somente a aprovação global explícita para iniciar a implementação.
 - A preparação para produção (Bloco 08) continua pendente e exige revisão de segurança, privilégios SQL, backups/restauração, HTTPS, monitoramento e privacidade.
 - A aplicação permanece acadêmica/local; não está preparada para uso público ou dados reais.
 

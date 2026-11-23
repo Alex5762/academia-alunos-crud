@@ -1,6 +1,6 @@
 # Bloco 07.2 — Contratos de consulta e validação
 
-> **Estado:** desenho técnico revisado; as decisões do catálogo estão sendo aprovadas por etapas. OP-01 a OP-06, MT-01 a MT-05, FR-01 a FR-05, FN-01 a FN-06 e o contrato comum de filtros/permissões foram aprovados/definidos em 23/11/2026; os critérios finais de apresentação foram aprovados em 23/11/2026; o fechamento global dos contratos ainda é necessário. Não representa implementação.
+> **Estado:** contratos técnicos revisados e decisões funcionais/apresentação aprovadas por etapas em 23/11/2026; a reconciliação global da especificação e a autorização explícita ainda antecedem a implementação. Este documento não representa implementação.
 > **Pré-requisito:** catálogo 07.1 e definições de indicadores aprovados.
 > **Escopo desta etapa:** contratos de entrada/saída, datas, relógio, autorização, agregação e testes. Sem migrations, alteração de schema, telas ou exportação.
 
@@ -8,20 +8,22 @@
 
 Definir uma fronteira estável entre páginas/controllers e consultas de relatório. As páginas não devem montar SQL, recalcular indicadores ou decidir permissões. O domínio de relatórios recebe filtros validados, instante de referência e permissões resolvidas no servidor; retorna apenas agregados autorizados.
 
-## 2. Componentes propostos
+## 2. Arquitetura mínima decidida
 
-A nomenclatura final deve seguir os padrões reais do repositório, mas as responsabilidades são:
+A revisão técnica do código existente recomenda não criar uma infraestrutura genérica de relatórios. As responsabilidades e decisões são:
 
-| Componente | Responsabilidade | Não deve fazer |
-|---|---|---|
-| `ReportPeriod` | Validar datas ISO reais, ordem e máximo de 365 dias inclusivos; expor limites civis e datas normalizadas | Consultar banco ou ler relógio global |
-| `AcademyClock` (ou adaptador equivalente) | Fornecer um único `DateTimeImmutable` no fuso `America/Sao_Paulo` por requisição | Ser instanciado separadamente por cada indicador |
-| `ReportAccessPolicy` | Determinar se cada seção pode ser consultada usando `AccessControl` | Confiar em parâmetros do cliente ou só ocultar elementos na interface |
-| `ReportQuery` / serviços por domínio | Executar consultas agregadas e parametrizadas para operacional, matrículas, frequência e financeiro | Renderizar HTML/CSV ou alterar registros |
-| `ReportDashboardService` | Orquestrar indicadores permitidos, compartilhando período e instante de referência | Duplicar fórmulas dos relatórios detalhados |
-| `ReportResult` (DTO/array tipado conforme padrão existente) | Transportar valores agregados e metadados de referência | Incluir PII, entidades completas ou dados de seções não autorizadas |
+| Responsabilidade | Decisão para o FitControl |
+|---|---|
+| Período | Manter `ReportPeriod` como objeto de valor imutável e pequeno, responsável por parsing estrito, intervalo inclusivo e limites civis/UTC. |
+| Relógio | Não criar `AcademyClock` por enquanto. Capturar um único `DateTimeImmutable` no controller/requisição, em `America/Sao_Paulo`, e passá-lo às consultas que dependem de referência temporal. |
+| Autorização | Não criar `ReportAccessPolicy`. Reutilizar `usuarioTemPermissao()` e `AccessControl`; autorizar a seção antes de instanciar/executar a consulta. |
+| Consultas | Criar consultas específicas por domínio somente quando necessárias (operacional, matrículas, frequência, financeiro), com PDO e parâmetros; não criar interface/classe universal `ReportQuery`. |
+| Orquestração | Não criar `ReportDashboardService` inicialmente. A página/controller coordena as consultas; só extrair serviço se repetição ou complexidade real justificar. |
+| Resultado | Usar arrays associativos com chaves estáveis; não criar `ReportResult`/DTO no início sem necessidade observada. |
+| Renderização | Manter renderização server-side em PHP; não criar API/payload JSON como requisito do MVP. |
+| Exportação | O endpoint CSV deve reutilizar filtros e autorização, mas a camada de formatação/exportação só será abstraída se houver repetição concreta. |
 
-Antes da implementação, verificar se o projeto já possui abstrações de relógio, filtros, DTOs e consultas reutilizáveis. Não criar uma segunda infraestrutura para resolver o mesmo problema.
+Antes de implementar cada parte, verificar nomes/tipos reais de tabelas e colunas, classes e convenções presentes no branch. Não introduzir abstrações só para corresponder à nomenclatura deste documento.
 
 ## 3. Contrato de entrada
 
