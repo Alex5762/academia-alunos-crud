@@ -3808,3 +3808,100 @@ body:not(.dashboard-body) .theme-option[aria-pressed="true"] {
         justify-content: center;
     }
 }
+
+
+/* Bloco 06 — manutenção responsiva dos horários recorrentes */
+.class-schedule-manage-link {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 10px;
+    margin: 18px 0 0;
+}
+.class-schedule-management-page { max-width: 1180px; }
+.class-schedule-create-form,
+.class-schedule-edit-form { display: grid; gap: 14px; }
+.class-schedule-fields {
+    display: grid;
+    grid-template-columns: minmax(180px, 1.35fr) repeat(4, minmax(125px, 1fr));
+    align-items: end;
+    gap: 12px;
+}
+.class-schedule-fields > div { min-width: 0; }
+.class-schedule-fields label {
+    display: block;
+    margin-bottom: 7px;
+    color: var(--ink);
+    font-size: .82rem;
+    font-weight: 700;
+}
+.class-schedule-fields input,
+.class-schedule-fields select {
+    width: 100%;
+    min-height: 44px;
+    padding: 9px 10px;
+    color: var(--ink);
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    font: inherit;
+}
+.class-schedule-form-actions {
+    display: flex;
+    justify-content: flex-end;
+}
+.class-schedule-management-list { display: grid; gap: 14px; }
+.class-schedule-management-item {
+    min-width: 0;
+    padding: 18px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--surface);
+}
+.class-schedule-management-heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 14px;
+    margin-bottom: 15px;
+}
+.class-schedule-management-heading h3 {
+    margin: 0;
+    color: var(--ink);
+    font-size: .98rem;
+    font-weight: 750;
+}
+.class-schedule-management-heading p {
+    margin: 4px 0 0;
+    color: var(--muted);
+    font-size: .82rem;
+    overflow-wrap: anywhere;
+}
+.class-schedule-deactivate-form {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 10px;
+}
+.class-schedule-inactive-note {
+    margin: 0;
+    color: var(--muted);
+    font-size: .82rem;
+}
+@media (max-width: 1050px) {
+    .class-schedule-fields { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 720px) {
+    .class-schedule-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .class-schedule-management-item { padding: 15px; }
+}
+@media (max-width: 520px) {
+    .class-schedule-fields { grid-template-columns: 1fr; }
+    .class-schedule-management-heading { align-items: flex-start; }
+    .class-schedule-form-actions,
+    .class-schedule-deactivate-form { justify-content: stretch; }
+    .class-schedule-form-actions .button,
+    .class-schedule-deactivate-form .button {
+        width: 100%;
+        justify-content: center;
+    }
+}
