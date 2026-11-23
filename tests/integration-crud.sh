@@ -329,6 +329,27 @@ assert_contains "$TMP_DIR/user-role-operator-final.html" "Perfil do funcionário
 FINAL_OPERATOR_ROLE="$(db_value "SELECT perfil FROM usuarios WHERE id = $NOVO_USUARIO_ID")"
 [[ "$FINAL_OPERATOR_ROLE" == "OPERADOR" ]] || fail "O fixture deveria retornar ao perfil Operador antes do teste de RBAC."
 
+echo "1.2.4/10 - Validando exportações agregadas e bloqueio financeiro do Operador..."
+REPORT_END="$(date +%F)"
+REPORT_START="$(date +%Y-%m-01)"
+OPERATOR_REPORT_HTTP="$(curl -sS -o "$TMP_DIR/operator-reports.html" -w '%{http_code}' -c "$NEW_COOKIE_JAR" -b "$NEW_COOKIE_JAR" "$BASE_URL/relatorios.php?de=$REPORT_START&ate=$REPORT_END")"
+[[ "$OPERATOR_REPORT_HTTP" == "200" ]] || fail "Operador deveria consultar as seções permitidas dos relatórios; recebeu $OPERATOR_REPORT_HTTP."
+assert_contains "$TMP_DIR/operator-reports.html" "Exportar dados agregados"
+assert_contains "$TMP_DIR/operator-reports.html" "Operacional (CSV)"
+if grep -Fq 'tipo=financeiro' "$TMP_DIR/operator-reports.html"; then
+    fail "O relatório do Operador expôs link de exportação financeira."
+fi
+
+OPERATOR_CSV_HTTP="$(curl -sS -o "$TMP_DIR/operator-operational.csv" -w '%{http_code}' -c "$NEW_COOKIE_JAR" -b "$NEW_COOKIE_JAR" "$BASE_URL/exportar-relatorio.php?tipo=operacional&de=$REPORT_START&ate=$REPORT_END")"
+[[ "$OPERATOR_CSV_HTTP" == "200" ]] || fail "Operador deveria exportar o relatório operacional; recebeu $OPERATOR_CSV_HTTP."
+grep -Fq 'Alunos ativos' "$TMP_DIR/operator-operational.csv" || fail "CSV operacional não contém os indicadores agregados esperados."
+if grep -Eiq 'example\.test|telefone|e-mail|email' "$TMP_DIR/operator-operational.csv"; then
+    fail "O CSV operacional parece conter dado pessoal ou coluna não agregada."
+fi
+
+OPERATOR_FINANCE_CSV_HTTP="$(curl -sS -o "$TMP_DIR/operator-finance.csv" -w '%{http_code}' -c "$NEW_COOKIE_JAR" -b "$NEW_COOKIE_JAR" "$BASE_URL/exportar-relatorio.php?tipo=financeiro&de=$REPORT_START&ate=$REPORT_END")"
+[[ "$OPERATOR_FINANCE_CSV_HTTP" == "403" ]] || fail "Operador deveria receber HTTP 403 no CSV financeiro; recebeu $OPERATOR_FINANCE_CSV_HTTP."
+
 curl -fsS -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/cadastro.php" -o "$TMP_DIR/form.html"
 TOKEN="$(get_token "$TMP_DIR/form.html")"
 assert_contains "$TMP_DIR/form.html" 'autocomplete="tel"'
