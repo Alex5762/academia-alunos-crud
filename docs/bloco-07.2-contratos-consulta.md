@@ -1,6 +1,6 @@
 # Bloco 07.2 — Contratos de consulta e validação
 
-> **Estado:** período, OP-01 a OP-06, MT-01 a MT-05 e FR-01 a FR-05 integrados à tela e validados na CI #1579 em MySQL 8.0/MariaDB 10.11. FN-01 a FN-06 foram implementados em `FinanceReportQuery` e integrados com autorização `finance.view`; teste de integração ampliado aguarda nova CI. Cartões do dashboard e CSV permanecem pendentes. Nenhuma migration ou alteração de schema foi feita.
+> **Estado:** `ReportPeriod`, OP-01 a OP-06, MT-01 a MT-05, FR-01 a FR-05 e FN-01 a FN-06 estão integrados à página `relatorios.php` e validados na CI #1595 em MySQL 8.0/MariaDB 10.11. As consultas financeiras passam pelos testes de integração e autorização `finance.view`. Cartões VG-01 a VG-06 no dashboard, CSV agregado e regressão visual final permanecem pendentes. Nenhuma migration ou alteração de schema foi feita.
 > **Pré-requisito:** catálogo 07.1 e definições de indicadores aprovados.
 > **Escopo desta etapa:** contratos de entrada/saída, datas, relógio, autorização, agregação e testes. Sem migrations, alteração de schema, telas ou exportação.
 
@@ -244,13 +244,13 @@ MT-01 a MT-05 usam `enrollments.view` e o período local normalizado em limites 
 
 Para evitar uma consulta dependente de recursos específicos de calendário do MySQL/MariaDB, o período normalizado fornece as datas civis inicial/final. A camada PHP pode percorrer esse intervalo com `DateTimeImmutable` e contar as ocorrências de cada weekday ISO (1–7). A consulta de check-ins agrega `COUNT(*)` por weekday de `data_local`; o serviço combina os sete buckets com os denominadores calculados. A apresentação calcula/mostra a média com uma casa decimal, mantendo total e ocorrências. Não consultar o banco sete vezes nem buscar linhas individuais para contar.
 
-## 10. Pontos de atenção que exigem verificação no código antes da implementação
+## 10. Pontos de atenção após a implementação
 
-- Confirmar se a implementação atual de `EnrollmentStatus::derive()` recebe `DateTimeImmutable` no fuso local ou converte internamente; o adapter SQL precisa reproduzir exatamente a mesma fronteira.
-- Confirmar o comportamento do serviço financeiro para pagamentos retroativos e a semântica de `data_pagamento`; a legenda do indicador não deve sugerir liquidação bancária.
-- Confirmar os nomes e tipos reais das colunas no schema/migrations antes de escrever qualquer SQL; este documento define responsabilidades, não autoriza presumir nomes.
-- Antes de fechar a consulta FN-01 a FN-03, executar `EXPLAIN` com um intervalo representativo em MySQL 8.0 e MariaDB 10.11. A migration 010 declara `idx_pagamentos_cobranca_data_id (cobranca_id, data_pagamento, id)`, cujo primeiro campo não é o filtro do relatório; não presumir que esse índice resolve uma busca apenas por data. Registrar plano/custo observado. Não criar índice nem migration preventiva; se a medição mostrar varredura/custo incompatível, propor índice específico em decisão separada e testar impacto nas escritas.
-- As definições FN-05 e FN-06 devem ser validadas separadamente contra `collectibleBalanceCents()` e `reviewBalanceCents()`, respectivamente; pré-agregar pagamentos por cobrança para evitar soma duplicada por joins de 1:N.
+- A implementação de `OperationalReportQuery` e `EnrollmentReportQuery` foi coberta pelos testes de matrícula e pelos cenários de intervalo inválido, situação contratual e janelas de 7/30 dias.
+- `FinanceReportQuery` consulta FN-01 a FN-03 diretamente de `pagamentos`, sem JOIN que possa apagar lançamentos históricos por cancelamentos posteriores. FN-04 conta cobranças pelo valor nominal, sem juntar pagamentos; FN-05/FN-06 pré-agregam pagamentos por cobrança antes da classificação.
+- A CI #1595 aprovou os testes de integração financeiros, incluindo retroativos, pagamentos parciais, cancelamento posterior, reconciliação por forma e paridade dos saldos com `FinanceDashboardStatus`.
+- O teste executa `EXPLAIN` para o filtro por `data_pagamento`, mas o volume de fixtures não é representativo para decidir a necessidade de índice. Não criar migration ou índice preventivo: medir com volume representativo antes de propor mudança, considerando também o custo nas escritas.
+- Nenhuma migration ou alteração de schema foi introduzida pelo Bloco 07.
 
 ## 11. Critério de saída da 07.2
 
@@ -261,6 +261,6 @@ A etapa só é considerada pronta quando:
 4. testes de datas, matrícula, moeda e RBAC passarem em MySQL 8.0 e MariaDB 10.11;
 5. nenhuma migration ou alteração de schema tiver sido introduzida sem necessidade comprovada e aprovação separada.
 
-**Concluído nesta fatia:** `ReportPeriod`, integração HTTP, captura única de `asOf`, preservação de `de`/`ate`, HTTP 400 para período inválido, OP-01 a OP-06 e MT-01 a MT-05 em consultas específicas e teste integrado com fixtures transacionais. Frequência, financeiro, CSV e regressão visual permanecem pendentes.
+**Concluído e validado na CI #1595:** `ReportPeriod`, integração HTTP, captura única de `asOf`, preservação de `de`/`ate`, HTTP 400 para período inválido, OP-01 a OP-06, MT-01 a MT-05, FR-01 a FR-05 e FN-01 a FN-06. O teste financeiro também valida as cinco formas de pagamento, retroativos, conciliação dos agrupamentos, cobranças por vencimento e paridade dos saldos. A CI passou em MySQL 8.0 e MariaDB 10.11.
 
-Próximo incremento: implementar frequência FR-01 a FR-05, incluindo série diária com datas sem registros preenchidas com zero.
+Próximo incremento: integrar VG-01 a VG-06 à Visão geral, reutilizando consultas/agregadores existentes e corrigindo a distribuição por plano; depois implementar o CSV agregado seguro e executar a regressão final.
