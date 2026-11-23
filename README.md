@@ -134,6 +134,7 @@ academia-alunos-crud/
 │   ├── database-attendance-checkin.php
 │   ├── database-class-schedule-migration.php
 │   ├── database-class-schedule-services.php
+│   ├── database-class-schedule-concurrency.php
 │   ├── integration-crud.sh
 │   └── testes de domínio, banco e migrations
 ├── checkins.php
