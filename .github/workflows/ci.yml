@@ -300,6 +300,15 @@ jobs:
           mysql --host=127.0.0.1 --port=3306 --user=root < database/migrations/014_grade_fixa_aulas.sql
           php scripts/inicializar-integridade-auditoria.php
 
+      - name: Validate operational and enrollment reports
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_NAME: academia_alunos
+          DB_USER: root
+          DB_PASSWORD: root
+        run: php tests/database-reports.php
+
       - name: Validate manual check-in, eligibility and daily uniqueness
         env:
           DB_HOST: 127.0.0.1
@@ -454,7 +463,11 @@ jobs:
           test -f tests/enrollment-status.php
           test -f tests/utc-academy-time-format.php
           test -f src/Domain/Reports/ReportPeriod.php
+          test -f src/Domain/Reports/OperationalReportQuery.php
+          test -f src/Domain/Reports/EnrollmentReportQuery.php
+          test -f relatorios.php
           test -f tests/report-period.php
+          test -f tests/database-reports.php
           test -f src/Security/AccessControl.php
           test -f tests/access-control.php
           test -f database/migrations/007_administrative_roles.sql
