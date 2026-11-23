@@ -133,7 +133,6 @@ academia-alunos-crud/
 ├── tests/
 │   ├── browser-compatibility.mjs
 │   ├── database-attendance-checkin.php
-│   ├── database-class-schedule-query.php
 │   ├── database-class-schedule-migration.php
 │   ├── database-class-schedule-services.php
 │   ├── database-class-schedule-concurrency.php
@@ -141,6 +140,7 @@ academia-alunos-crud/
 │   ├── integration-crud.sh
 │   └── testes de domínio, banco e migrations
 ├── aulas.php
+├── gestao-aulas.php
 ├── checkins.php
 ├── registrar-checkin.php
 ├── login.php
