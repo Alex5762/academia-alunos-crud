@@ -127,16 +127,20 @@ academia-alunos-crud/
 │   ├── Domain/Attendance/AttendanceCheckinService.php
 │   ├── Domain/Classes/ClassCatalogService.php
 │   ├── Domain/Classes/ClassScheduleService.php
+│   ├── Domain/Classes/ClassScheduleQuery.php
 │   ├── Domain/Enrollment/
 │   └── Security/
 ├── tests/
 │   ├── browser-compatibility.mjs
 │   ├── database-attendance-checkin.php
+│   ├── database-class-schedule-query.php
 │   ├── database-class-schedule-migration.php
 │   ├── database-class-schedule-services.php
 │   ├── database-class-schedule-concurrency.php
+│   ├── database-class-schedule-query.php
 │   ├── integration-crud.sh
 │   └── testes de domínio, banco e migrations
+├── aulas.php
 ├── checkins.php
 ├── registrar-checkin.php
 ├── login.php
