@@ -1,6 +1,6 @@
 # Bloco 07 — Relatórios e experiência
 
-> **Estado:** consultas OP/MT/FR/FN validadas na CI #1595 em MySQL 8.0/MariaDB 10.11; VG-01 a VG-06 validados na CI #45245709878. A página `relatorios.php` integra consultas e links CSV por permissão. `exportar-relatorio.php` e `ReportCsvExporter` foram implementados, com testes unitários de escaping/UTF-8/fórmulas e integração RBAC/PII adicionados à CI; a nova execução ainda precisa validar essa entrega. A regressão visual/acessível final e a abertura manual no Excel/LibreOffice permanecem pendentes. Nenhuma migration ou alteração de schema foi feita.
+> **Estado:** consultas OP/MT/FR/FN validadas na CI #1595; VG-01 a VG-06 validados na CI #45245709878. Exportador CSV, neutralização de fórmulas, UTF-8, escaping e integração RBAC/PII passaram na CI #45247639018 (sete jobs funcionais). Depois dessa execução, ampliamos o Playwright para baixar os quatro CSV e verificar BOM, indicador principal, nome, período e ausência de PII; essa nova cobertura aguarda CI. Regressão visual/acessível final e abertura manual no Excel/LibreOffice permanecem pendentes. Nenhuma migration ou alteração de schema foi feita.
 > **Branch de referência:** `feat/dashboard-portfolio`.
 > **Dependência anterior:** Bloco 06 com validação automatizada aprovada na CI #1512. A validação manual dos blocos no XAMPP/dispositivo permanece adiada e registrada separadamente.
 > **Regra:** a especificação global foi aprovada; seguir a sequência técnica registrada e validar cada incremento antes de avançar.
