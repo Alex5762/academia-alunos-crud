@@ -86,6 +86,12 @@ try {
   await desktop.getByRole("heading", { name: "Relatórios" }).waitFor();
   const exportLinks = desktop.locator('.reports-export-links a[href*="exportar-relatorio.php"]');
   const expectedExports = ["operacional", "matriculas", "frequencia", "financeiro"];
+  const expectedCsvMarkers = {
+    operacional: "Alunos ativos",
+    matriculas: "Inícios efetivos",
+    frequencia: "Total de check-ins (FR-01)",
+    financeiro: "Total recebido (FN-01)",
+  };
   if (await exportLinks.count() !== expectedExports.length) {
     throw new Error("O perfil Administrador não recebeu os quatro links de exportação esperados.");
   }
@@ -119,6 +125,9 @@ try {
     }
     if (/@example\.test|\b(?:telefone|email|e-mail)\b/i.test(csvText)) {
       throw new Error(`O CSV ${reportType} aparenta conter dados pessoais.`);
+    }
+    if (!csvText.includes(expectedCsvMarkers[reportType])) {
+      throw new Error(\`O CSV \${reportType} não contém o indicador principal esperado.\`);
     }
     if (!download.suggestedFilename().includes(reportType)) {
       throw new Error(`O nome do arquivo CSV não identifica o relatório ${reportType}.`);
