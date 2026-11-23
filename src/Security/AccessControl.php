@@ -40,6 +40,10 @@ final class AccessControl
             'finance.view',
             'finance.register_payment',
             'finance.cancel_charge',
+            'classes.view',
+            'classes.manage',
+            'instructors.view',
+            'instructors.manage',
             'settings.view',
         ],
         self::OPERATOR => [
@@ -53,6 +57,8 @@ final class AccessControl
             'enrollments.cancel',
             'attendance.view',
             'attendance.register',
+            'classes.view',
+            'instructors.view',
             'settings.view',
         ],
     ];
