@@ -114,6 +114,7 @@ academia-alunos-crud/
 │   ├── bloco-02-gestao-alunos.md
 │   ├── bloco-03-planos-matriculas.md
 │   ├── bloco-04-frequencia-checkin.md
+│   ├── bloco-06-aulas-agenda.md
 │   ├── guia-migrations-xampp.md
 │   ├── matriz-permissoes.md
 │   ├── roadmap.md
@@ -124,12 +125,15 @@ academia-alunos-crud/
 │   └── ferramentas de checkpoint e diagnóstico
 ├── src/
 │   ├── Domain/Attendance/AttendanceCheckinService.php
+│   ├── Domain/Classes/ClassCatalogService.php
+│   ├── Domain/Classes/ClassScheduleService.php
 │   ├── Domain/Enrollment/
 │   └── Security/
 ├── tests/
 │   ├── browser-compatibility.mjs
 │   ├── database-attendance-checkin.php
 │   ├── database-class-schedule-migration.php
+│   ├── database-class-schedule-services.php
 │   ├── integration-crud.sh
 │   └── testes de domínio, banco e migrations
 ├── checkins.php
