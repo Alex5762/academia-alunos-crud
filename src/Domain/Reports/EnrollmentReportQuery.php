@@ -44,7 +44,10 @@ final class EnrollmentReportQuery
             ),
             effective_starts AS (
                 SELECT
-                    m.plano_nome_contratado,
+                    (COALESCE(
+                        NULLIF(TRIM(m.plano_nome_contratado), ''),
+                        'Plano não informado no snapshot'
+                    ) COLLATE utf8mb4_unicode_ci) AS plan_label,
                     m.valor_contratado,
                     m.origem
                 FROM matriculas m
@@ -68,18 +71,12 @@ final class EnrollmentReportQuery
 
                 SELECT
                     'PLAN' AS metric,
-                    (COALESCE(
-                        NULLIF(TRIM(plano_nome_contratado), ''),
-                        'Plano não informado no snapshot'
-                    ) COLLATE utf8mb4_unicode_ci) AS label,
+                    plan_label AS label,
                     COUNT(*) AS quantity,
                     COUNT(valor_contratado) AS known_values_count,
                     SUM(valor_contratado) AS known_value_sum
                 FROM effective_starts
-                GROUP BY COALESCE(
-                    NULLIF(TRIM(plano_nome_contratado), ''),
-                    'Plano não informado no snapshot'
-                )
+                GROUP BY plan_label
 
                 UNION ALL
 
