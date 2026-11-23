@@ -3684,3 +3684,114 @@ body:not(.dashboard-body) .theme-option[aria-pressed="true"] {
         padding: 16px;
     }
 }
+
+
+/* Bloco 06 — manutenção dos catálogos */
+.class-catalog-page {
+    max-width: 1180px;
+}
+
+.class-catalog-create-form,
+.class-instructor-create-form {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: end;
+    gap: 14px;
+}
+
+.class-catalog-create-form label,
+.class-instructor-create-form label,
+.class-catalog-fields label,
+.class-instructor-fields label {
+    display: block;
+    margin-bottom: 7px;
+    color: var(--ink);
+    font-size: 0.82rem;
+    font-weight: 700;
+}
+
+.class-catalog-create-form input,
+.class-instructor-create-form input,
+.class-instructor-create-form select,
+.class-catalog-fields input,
+.class-instructor-fields input,
+.class-instructor-fields select {
+    width: 100%;
+    min-height: 44px;
+    padding: 9px 12px;
+    color: var(--ink);
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    font: inherit;
+}
+
+.class-catalog-list {
+    display: grid;
+    gap: 0;
+}
+
+.class-catalog-row,
+.class-instructor-row {
+    display: grid;
+    gap: 12px;
+    padding: 18px 0;
+    border-bottom: 1px solid var(--line);
+}
+
+.class-catalog-row:first-child,
+.class-instructor-row:first-child {
+    padding-top: 0;
+}
+
+.class-catalog-fields {
+    display: grid;
+    grid-template-columns: minmax(180px, 0.8fr) minmax(220px, 1.2fr);
+    gap: 12px;
+}
+
+.class-instructor-fields {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.class-catalog-row-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.class-catalog-status {
+    margin-right: auto;
+    font-size: 0.78rem;
+    font-weight: 750;
+}
+
+.class-catalog-status.is-active {
+    color: #147a55;
+}
+
+.class-catalog-status.is-inactive {
+    color: var(--muted);
+}
+
+.class-catalog-deactivate-form {
+    display: flex;
+    justify-content: flex-end;
+    margin: -4px 0 12px;
+}
+
+@media (max-width: 720px) {
+    .class-catalog-create-form,
+    .class-instructor-create-form,
+    .class-catalog-fields,
+    .class-instructor-fields {
+        grid-template-columns: 1fr;
+    }
+
+    .class-catalog-row-actions {
+        justify-content: space-between;
+    }
+}
