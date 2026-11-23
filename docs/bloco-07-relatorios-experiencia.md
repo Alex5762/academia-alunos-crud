@@ -254,7 +254,7 @@ Entregáveis desta etapa:
 
 **Sequência aprovada para execução, após autorização global:** implementar primeiro o contrato de período e seus testes; depois consultas agregadas por domínio; integrar cartões ao dashboard usando os mesmos agregadores; implementar CSV por último; finalizar com regressão, acessibilidade, responsividade e compatibilidade.
 
-### Etapas 07.2–07.7 — consultas, dashboard e exportação CSV (implementadas na branch; CI CSV pendente)
+### Etapas 07.2–07.7 — consultas, dashboard e exportação CSV (implementadas e validadas nas CIs #1595, #45245709878, #45247639018, #45249934923 e #45252564979)
 
 Documento: [Bloco 07.2 — Contratos de consulta e validação](bloco-07.2-contratos-consulta.md).
 
