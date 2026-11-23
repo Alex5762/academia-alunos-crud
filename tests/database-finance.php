@@ -8,6 +8,8 @@ use FitControl\Domain\Finance\FinanceService;
 use FitControl\Domain\Finance\FinanceDashboardStatus;
 use FitControl\Domain\Finance\FinanceMoneyFormatter;
 use FitControl\Domain\Finance\FinancePaymentHistoryQuery;
+use FitControl\Domain\Reports\FinanceReportQuery;
+use FitControl\Domain\Reports\ReportPeriod;
 
 require_once dirname(__DIR__) . '/src/Domain/Enrollment/EnrollmentPeriodCalculator.php';
 require_once dirname(__DIR__) . '/src/Domain/Enrollment/EnrollmentInterval.php';
@@ -18,6 +20,8 @@ require_once dirname(__DIR__) . '/src/Domain/Finance/FinanceService.php';
 require_once dirname(__DIR__) . '/src/Domain/Finance/FinanceDashboardStatus.php';
 require_once dirname(__DIR__) . '/src/Domain/Finance/FinanceMoneyFormatter.php';
 require_once dirname(__DIR__) . '/src/Domain/Finance/FinancePaymentHistoryQuery.php';
+require_once dirname(__DIR__) . '/src/Domain/Reports/ReportPeriod.php';
+require_once dirname(__DIR__) . '/src/Domain/Reports/FinanceReportQuery.php';
 
 function financeConnection(): PDO
 {
@@ -564,6 +568,19 @@ try {
     );
     assertFinance($retroPaymentId > 0, 'Pagamento retroativo com justificativa deve ser aceito.');
 
+    // Exercita as cinco formas permitidas no agrupamento FN-03. O valor
+    // restante da cobrança continua positivo para validar FN-05.
+    foreach ([
+        ['TRANSFERENCIA', '66666666666666666666666666666666'],
+        ['CARTAO', '77777777777777777777777777777777'],
+        ['OUTRO', '88888888888888888888888888888888'],
+    ] as [$method, $key]) {
+        $finance->registerPayment(
+            $balanceChargeId, $actorId, '1.00', $method, '2026-11-22', $key,
+            'Validação de agrupamento por forma de pagamento.'
+        );
+    }
+
     $retroPaymentQuery = $pdo->prepare(
         'SELECT data_pagamento, observacao FROM pagamentos WHERE id = :id'
     );
@@ -779,6 +796,42 @@ try {
         'Cobrança com pagamentos não pode ser cancelada como se nada tivesse sido recebido.'
     );
 
+    // Relatório financeiro FN-01 a FN-06: período de pagamentos e vencimentos
+    // não altera as fotografias atuais dos saldos.
+    $financeReport = (new FinanceReportQuery($pdo))->forPeriod(
+        ReportPeriod::fromInput('2026-11-22', '2026-11-22', financeDate('2026-11-23 10:00:00'))
+    );
+    assertFinance(
+        $financeReport['fn01_received_decimal'] === '553.00',
+        'FN-01 deve somar pagamentos pela data declarada, excluindo o retroativo de 20/11.'
+    );
+    assertFinance($financeReport['fn02_payment_count'] === 7, 'FN-02 deve contar cada lançamento do período uma vez.');
+    assertFinance(
+        count($financeReport['fn03_by_method']) === 5
+            && array_column($financeReport['fn03_by_method'], 'method') === ['DINHEIRO', 'PIX', 'TRANSFERENCIA', 'CARTAO', 'OUTRO'],
+        'FN-03 deve agrupar somente as cinco formas do ENUM, na ordem estável aprovada.'
+    );
+    assertFinance(
+        array_sum(array_column($financeReport['fn03_by_method'], 'payment_count')) === 7
+            && array_sum(array_map(
+                static fn (array $group): int => FinanceMoneyFormatter::toCents($group['received_decimal']),
+                $financeReport['fn03_by_method']
+            )) === 55300,
+        'FN-03 deve reconciliar contagens e valores com FN-01/FN-02.'
+    );
+    assertFinance(
+        $financeReport['fn04_due_charges']['collectible']['charge_count'] === 1
+            && $financeReport['fn04_due_charges']['collectible']['nominal_total_decimal'] === '300.00'
+            && $financeReport['fn04_due_charges']['review']['charge_count'] === 2
+            && $financeReport['fn04_due_charges']['review']['nominal_total_decimal'] === '600.00',
+        'FN-04 deve separar cobranças não canceladas por situação atual da matrícula, sem multiplicar por pagamentos.'
+    );
+    assertFinance(
+        $financeReport['fn05_collectible_balance_cents'] === 8700
+            && $financeReport['fn06_review_balance_cents'] === 25000,
+        'FN-05/FN-06 devem apresentar saldos atuais sem filtro de vencimento e respeitar matrículas canceladas.'
+    );
+
     // FN-05/FN-06: o agregado SQL deve reproduzir as regras canônicas por cobrança.
     // Pagamentos são pré-agregados para impedir multiplicação de linhas no JOIN.
     $chargePlaceholders = implode(',', array_fill(0, count($chargeIds), '?'));
@@ -845,7 +898,7 @@ try {
         'Agregado SQL do FN-06 deve corresponder à soma de FinanceDashboardStatus::reviewBalanceCents().'
     );
     assertFinance(
-        $expectedCollectibleCents === 9000 && $expectedReviewCents === 25000,
+        $expectedCollectibleCents === 8700 && $expectedReviewCents === 25000,
         'Fixtures devem preservar R$ 90,00 cobráveis e R$ 250,00 em revisão, sem misturar cobranças quitadas ou canceladas.'
     );
 
