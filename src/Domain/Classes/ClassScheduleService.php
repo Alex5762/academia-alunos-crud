@@ -96,7 +96,8 @@ final class ClassScheduleService
             // Snapshot inicial sem lock: permite descobrir as referências antigas.
             // Os locks efetivos seguem uma ordem estável: modalidades -> instrutores -> horário.
             $snapshotQuery = $this->pdo->prepare(
-                'SELECT id, modalidade_id, instrutor_id, ativo
+                'SELECT id, modalidade_id, instrutor_id, dia_semana,
+                    hora_inicio, hora_fim, ativo
                  FROM horarios_aula WHERE id = :id'
             );
             $snapshotQuery->execute(['id' => $scheduleId]);
@@ -130,7 +131,10 @@ final class ClassScheduleService
             if (
                 (int) $current['modalidade_id'] !== (int) $snapshot['modalidade_id']
                 || self::nullableInt($current['instrutor_id']) !== self::nullableInt($snapshot['instrutor_id'])
-                || (int) $current['ativo'] !== 1
+                || (int) $current['dia_semana'] !== (int) $snapshot['dia_semana']
+                || (string) $current['hora_inicio'] !== (string) $snapshot['hora_inicio']
+                || (string) $current['hora_fim'] !== (string) $snapshot['hora_fim']
+                || (int) $current['ativo'] !== (int) $snapshot['ativo']
             ) {
                 throw new DomainException(
                     'O horário foi alterado por outra operação. Recarregue a grade e tente novamente.'
