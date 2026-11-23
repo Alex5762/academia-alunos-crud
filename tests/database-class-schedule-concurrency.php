@@ -39,9 +39,14 @@ function assertScheduleConcurrency(bool $condition, string $message): void
     }
 }
 
-function runScheduleConcurrencyWorker(string $mode, int $actorId, int $modalityId, int $instructorId): void
-{
-    if ($actorId < 1 || $modalityId < 1 || $instructorId < 1) {
+function runScheduleConcurrencyWorker(
+    string $mode,
+    int $actorId,
+    int $writerModalityId,
+    int $contenderModalityId,
+    int $instructorId
+): void {
+    if ($actorId < 1 || $writerModalityId < 1 || $contenderModalityId < 1 || $instructorId < 1) {
         throw new InvalidArgumentException('Identificadores inválidos para o processo concorrente.');
     }
 
@@ -50,11 +55,20 @@ function runScheduleConcurrencyWorker(string $mode, int $actorId, int $modalityI
     if ($mode === 'writer') {
         $pdo->beginTransaction();
         try {
-            $lock = $pdo->prepare(
+            // Mesma ordem de lock do serviço: modalidade -> instrutor.
+            $lockModality = $pdo->prepare(
+                'SELECT id FROM modalidades WHERE id = :id FOR UPDATE'
+            );
+            $lockModality->execute(['id' => $writerModalityId]);
+            if ($lockModality->fetchColumn() === false) {
+                throw new RuntimeException('Modalidade de teste não encontrada para bloqueio.');
+            }
+
+            $lockInstructor = $pdo->prepare(
                 'SELECT id FROM instrutores WHERE id = :id FOR UPDATE'
             );
-            $lock->execute(['id' => $instructorId]);
-            if ($lock->fetchColumn() === false) {
+            $lockInstructor->execute(['id' => $instructorId]);
+            if ($lockInstructor->fetchColumn() === false) {
                 throw new RuntimeException('Instrutor de teste não encontrado para bloqueio.');
             }
 
@@ -70,7 +84,7 @@ function runScheduleConcurrencyWorker(string $mode, int $actorId, int $modalityI
                  )'
             );
             $insert->execute([
-                'modality_id' => $modalityId,
+                'modality_id' => $writerModalityId,
                 'instructor_id' => $instructorId,
             ]);
             $scheduleId = (int) $pdo->lastInsertId();
@@ -104,7 +118,7 @@ function runScheduleConcurrencyWorker(string $mode, int $actorId, int $modalityI
             $service = new ClassScheduleService($pdo);
             $service->create(
                 $actorId,
-                $modalityId,
+                $contenderModalityId,
                 $instructorId,
                 1,
                 '09:30',
@@ -133,7 +147,8 @@ if (isset($argv[1]) && in_array($argv[1], ['writer', 'contender'], true)) {
             $argv[1],
             (int) ($argv[2] ?? 0),
             (int) ($argv[3] ?? 0),
-            (int) ($argv[4] ?? 0)
+            (int) ($argv[4] ?? 0),
+            (int) ($argv[5] ?? 0)
         );
         exit(0);
     } catch (Throwable $exception) {
@@ -157,7 +172,8 @@ $actorId = (int) $pdo->lastInsertId();
 
 $suffix = bin2hex(random_bytes(5));
 $catalog = new ClassCatalogService($pdo);
-$modalityId = $catalog->createModality($actorId, 'Concorrência ' . $suffix);
+$writerModalityId = $catalog->createModality($actorId, 'Concorrência A ' . $suffix);
+$contenderModalityId = $catalog->createModality($actorId, 'Concorrência B ' . $suffix);
 $instructorId = $catalog->createInstructor(
     $actorId,
     'Instrutor concorrência ' . $suffix
@@ -169,7 +185,12 @@ $writerPipes = [];
 $contenderPipes = [];
 
 try {
-    $arguments = [(string) $actorId, (string) $modalityId, (string) $instructorId];
+    $arguments = [
+        (string) $actorId,
+        (string) $writerModalityId,
+        (string) $contenderModalityId,
+        (string) $instructorId,
+    ];
     $writerProcess = proc_open(
         [PHP_BINARY, __FILE__, 'writer', ...$arguments],
         [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']],
@@ -241,7 +262,8 @@ try {
 
     (new ClassScheduleService($pdo))->deactivate($writerScheduleId, $actorId);
     $catalog->deactivateInstructor($instructorId, $actorId);
-    $catalog->deactivateModality($modalityId, $actorId);
+    $catalog->deactivateModality($writerModalityId, $actorId);
+    $catalog->deactivateModality($contenderModalityId, $actorId);
 
     echo sprintf(
         "Concorrência da grade: segunda conexão aguardou %.2f ms e rejeitou a sobreposição.\n",
