@@ -213,7 +213,7 @@ Cada seção e cada endpoint CSV devem revalidar a permissão correspondente no 
 - [ ] Tema claro/escuro, `prefers-reduced-motion`, navegação por teclado e gráficos que não dependem só de cor são cobertos.
 - [ ] Skeletons ficam fora enquanto a página for renderizada de forma síncrona no servidor.
 - [ ] Testes de regressão comprovam que os relatórios não alteram dados operacionais nem a cadeia de auditoria.
-- [ ] MySQL 8.0 e MariaDB 10.11 passam pela CI; o smoke test local permanece separado e documentado.
+- [x] MySQL 8.0 e MariaDB 10.11 passaram pela CI #45252564979; o smoke test local permanece separado e documentado.
 
 ## 8. Fechamento global da especificação
 
