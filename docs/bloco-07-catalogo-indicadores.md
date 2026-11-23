@@ -1,6 +1,6 @@
 # Bloco 07.1 — Catálogo e contrato dos indicadores
 
-> **Estado:** consultas OP/MT/FR/FN validadas na CI #1595 e cartões VG-01 a VG-06 validados na CI #45245709878. A exportação CSV por seção foi implementada em `exportar-relatorio.php`, com escritor dedicado e testes unitários/HTTP adicionados à CI; a nova execução ainda precisa validar essa entrega. Permanecem pendentes a regressão final, acessibilidade e abertura manual no Excel/LibreOffice. Nenhuma migration ou alteração de schema foi criada para os relatórios.
+> **Estado:** consultas OP/MT/FR/FN validadas na CI #1595; VG-01 a VG-06 na CI #45245709878; exportação CSV, escritor seguro e testes unitários/HTTP aprovados na CI #45247639018 (sete jobs funcionais). A cobertura Playwright posterior baixa os quatro arquivos e verifica BOM, indicador principal, nome, período e ausência de PII; aguarda nova CI. Permanecem pendentes regressão visual/acessível final e abertura manual no Excel/LibreOffice.
 > **Branch:** `feat/dashboard-portfolio`.
 > **Documento principal:** [Bloco 07 — Relatórios e experiência](bloco-07-relatorios-experiencia.md).
 
