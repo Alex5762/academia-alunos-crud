@@ -35,7 +35,6 @@ constraint_count() {
 cleanup() {
     db_value "DELETE FROM alunos WHERE email IN ('$INVALID_EMAIL', '$ACTIVE_EMAIL', '$INACTIVE_EMAIL', '$REJECTED_INSERT_EMAIL')" >/dev/null 2>&1 || true
 }
-trap cleanup EXIT
 
 for email in "$INVALID_EMAIL" "$ACTIVE_EMAIL" "$INACTIVE_EMAIL" "$REJECTED_INSERT_EMAIL"; do
     existing="$(db_value "SELECT COUNT(*) FROM alunos WHERE email = '$email'")"
@@ -44,6 +43,10 @@ for email in "$INVALID_EMAIL" "$ACTIVE_EMAIL" "$INACTIVE_EMAIL" "$REJECTED_INSER
         exit 1
     }
 done
+
+# Só instala o cleanup depois de comprovar que os identificadores de fixture
+# estão livres; assim uma colisão nunca apaga registros preexistentes.
+trap cleanup EXIT
 
 before="$(constraint_count)"
 if [[ "$before" == "0" ]]; then
