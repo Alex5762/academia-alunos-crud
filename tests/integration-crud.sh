@@ -318,6 +318,17 @@ MANAGER_DETAIL_HTTP="$(curl -sS -o "$TMP_DIR/manager-audit-detail.html" -w '%{ht
 assert_contains "$TMP_DIR/manager-audit-detail.html" "Alteração de perfil"
 assert_contains "$TMP_DIR/manager-audit-detail.html" "OPERADOR → GESTOR"
 
+echo "1.2.3/10 - Restaurando o perfil Operador para a verificação de RBAC..."
+MANAGER_ROLE_TOKEN="$(get_token "$TMP_DIR/user-role-manager-second.html")"
+curl -fsS -L -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/alterar-perfil-usuario.php" \
+    --data-urlencode "token=$MANAGER_ROLE_TOKEN" \
+    --data-urlencode "id=$NOVO_USUARIO_ID" \
+    --data-urlencode "perfil=OPERADOR" \
+    -o "$TMP_DIR/user-role-operator-final.html"
+assert_contains "$TMP_DIR/user-role-operator-final.html" "Perfil do funcionário atualizado com sucesso."
+FINAL_OPERATOR_ROLE="$(db_value "SELECT perfil FROM usuarios WHERE id = $NOVO_USUARIO_ID")"
+[[ "$FINAL_OPERATOR_ROLE" == "OPERADOR" ]] || fail "O fixture deveria retornar ao perfil Operador antes do teste de RBAC."
+
 curl -fsS -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/cadastro.php" -o "$TMP_DIR/form.html"
 TOKEN="$(get_token "$TMP_DIR/form.html")"
 assert_contains "$TMP_DIR/form.html" 'autocomplete="tel"'
