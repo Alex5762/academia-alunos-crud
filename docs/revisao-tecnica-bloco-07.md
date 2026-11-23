@@ -85,7 +85,9 @@ Referência conceitual externa: o National Student Clearinghouse distingue statu
 
 ## 7. Revisão dos filtros e datas
 
-**Recomendação: manter o contrato atual com os seguintes ajustes e testes.**
+**Decisão aprovada em 23/11/2026:** período padrão do primeiro dia do mês civil atual até hoje, em `America/Sao_Paulo`; se `de` e `ate` forem ambos omitidos, aplicar o padrão; se só um faltar, rejeitar. Ambos os limites são inclusivos para o usuário, máximo de 365 dias civis inclusivos, validação estrita sem substituição silenciosa e preservação dos filtros na navegação/CSV. Datas futuras são permitidas quando selecionadas explicitamente, sem gerar projeções ou recebimentos futuros.
+
+**Recomendação técnica: manter o contrato com os seguintes ajustes e testes.**
 
 - Datas de usuário em `YYYY-MM-DD`, interpretadas como calendário `America/Sao_Paulo`.
 - Período selecionado inclusivo para o usuário; limite de 365 dias civis inclusivos é aceitável para o MVP, com possibilidade de rever após medição real.
@@ -93,6 +95,8 @@ Referência conceitual externa: o National Student Clearinghouse distingue statu
 - Para DATE local, comparar `>= data_inicial AND <= data_final`.
 - Validar datas por parsing estrito e round-trip; `DateTimeImmutable::createFromFormat()` pode normalizar componentes fora da faixa, então não basta aceitar qualquer retorno não falso.
 - Obter `asOf` uma vez por requisição no fuso da academia. Passar a referência às consultas; não usar relógio SQL ou chamadas independentes por cartão.
+- A entrada HTTP `de`/`ate` só usa valores padrão quando ambos estão ausentes. Ausência parcial, formato inválido, data impossível, período invertido ou acima de 365 dias inclusivos deve gerar erro de validação, sem auto-correção silenciosa.
+- Preservar período validado na navegação e nos links/requests de CSV; cada requisição valida novamente.
 - Janela de 7/30 dias é calendário local, não 7 × 24 horas de duração fixa. O PHP `DateTimeImmutable` e `DateInterval` já são adequados para aritmética temporal sem mutar o objeto original.
 - Definir comportamento para o limite máximo do DATETIME do MySQL: se calcular o dia seguinte a 9999-12-31 ultrapassar o domínio suportado, rejeitar o período com erro de validação em vez de produzir limite inválido.
 - Permitir período futuro para relatórios contratuais/vencimentos se desejado; pagamentos futuros retornam zero conforme o serviço atual, sem projeções.
@@ -123,6 +127,8 @@ Não alterar `index.php` inteiro de uma vez. Extrair somente as consultas novas 
 
 ## 9. Segurança e exportação CSV
 
+**Decisão aprovada em 23/11/2026:** reutilizar RBAC existente sem permissão genérica de relatórios. A página exige `dashboard.view`; cada seção é autorizada individualmente antes de instanciar/executar sua consulta (`students.view`, `enrollments.view`, `attendance.view` ou `finance.view`). Administrador e Gestor têm acesso financeiro; Operador não. No dashboard do Operador, omitir toda a seção financeira e não executar a consulta; nenhum valor ou metadado financeiro pode chegar ao cliente. Aplicar a mesma verificação a todos os endpoints e CSV.
+
 - PDO preparado para todos os valores; placeholders não substituem nomes de tabelas, colunas, operadores ou agrupamentos. Partes dinâmicas de SQL precisam de allowlist fixa.
 - CSV agregado, sem PII, continua possível, mas neutralização de fórmula precisa seguir um contrato específico para planilhas.
 - Aspas CSV, por si só, não neutralizam fórmulas. A orientação OWASP registra riscos com `=`, `+`, `-`, `@`, tab, CR/LF e variantes Unicode de largura completa. Também alerta que algumas mitigações podem perder efeito após salvar e reabrir no Excel.
@@ -150,4 +156,4 @@ Não alterar `index.php` inteiro de uma vez. Extrair somente as consultas novas 
 - [PHP — DateTimeImmutable::createFromFormat](https://www.php.net/manual/pt_BR/datetimeimmutable.createfromformat.php): parsing estrito exige verificação de erros e do valor normalizado.
 - [OWASP — CSV Injection](https://owasp.org/www-community/attacks/CSV_Injection): fórmulas maliciosas, neutralização por célula e trade-offs em planilhas.
 
-**Resultado desta revisão:** o desenho geral combina com o FitControl. Aprovar os indicadores e implementar somente depois de incorporar as correções semânticas, remover abstrações redundantes e definir de forma explícita o comportamento do CSV.
+**Resultado desta revisão:** o desenho geral combina com o FitControl. O contrato de período e a matriz de autorização foram aprovados em 23/11/2026; a implementação deve respeitar o padrão mês-até-hoje, validação estrita, persistência dos filtros e autorização antes da consulta. Aprovar os indicadores e implementar somente depois de incorporar as correções semânticas, remover abstrações redundantes e definir de forma explícita o comportamento do CSV.

@@ -1,6 +1,6 @@
 # Bloco 07 — Relatórios e experiência
 
-> **Estado:** direção da Visão geral aceita; decisões aprovadas por etapas: OP-01 a OP-06, MT-01 a MT-05, FR-01 a FR-05, FN-01 a FN-06 e “Recebido no período” (23/11/2026). Os demais indicadores/critério continuam em revisão. Nenhuma funcionalidade do Bloco 07 foi implementada.
+> **Estado:** direção da Visão geral aceita; decisões aprovadas por etapas: OP-01 a OP-06, MT-01 a MT-05, FR-01 a FR-05, FN-01 a FN-06, filtros comuns e matriz de permissões por seção (23/11/2026). Os critérios finais de apresentação continuam em revisão. Nenhuma funcionalidade do Bloco 07 foi implementada.
 > **Branch de referência:** `feat/dashboard-portfolio`.
 > **Dependência anterior:** Bloco 06 com validação automatizada aprovada na CI #1512. A validação manual dos blocos no XAMPP/dispositivo permanece adiada e registrada separadamente.
 > **Regra:** revisar e aprovar o catálogo `bloco-07-catalogo-indicadores.md` antes de iniciar a etapa 07.2. A aprovação da direção da Visão geral não antecipa a aprovação automática de cada fórmula ou endpoint.
@@ -47,7 +47,7 @@ A tela deve distinguir explicitamente três grupos de informação:
 **Atenção próxima (referência: data atual)**
 - matrículas cujo término contratual está previsto nos próximos 7 dias, respeitando `fim_exclusivo_em` e sem tratar cobranças como pagamentos.
 
-O período padrão dos indicadores de movimentação será o mês civil atual, no fuso `America/Sao_Paulo`. Alterar o período não deve alterar os cartões de fotografia atual nem deslocar a janela do alerta de próximos 7 dias. A interface deve exibir o período aplicado e identificar os cartões que representam situação atual.
+O período padrão dos indicadores de movimentação será do primeiro dia do mês civil atual até hoje, no fuso `America/Sao_Paulo`. Alterar o período não deve alterar os cartões de fotografia atual nem deslocar a janela do alerta de próximos 7 dias. A interface deve exibir o período aplicado e identificar os cartões que representam situação atual.
 
 A visualização da frequência pode apresentar uma evolução diária de check-ins, acompanhada por resumo textual ou tabela. Não deve sugerir ocupação de aulas, presença em modalidades ou frequência individual por aula.
 
@@ -110,9 +110,12 @@ Pagamentos retroativos com justificativa são atribuídos à `data_pagamento`, a
 
 ### 3.5 Filtros e experiência
 
-- período inicial padrão: mês civil atual;
-- filtros de data inicial/final validados no servidor, com início menor ou igual ao fim;
-- limite proposto de 365 dias por consulta/exportação;
+- período inicial padrão: do primeiro dia do mês civil atual até hoje, em `America/Sao_Paulo`;
+- os parâmetros HTTP `de` e `ate` são ambos opcionais somente em conjunto; quando os dois forem omitidos, usar o padrão. Se apenas um faltar, rejeitar;
+- datas `YYYY-MM-DD` devem passar por parsing estrito e round-trip; datas impossíveis, formato inválido, início posterior ao fim e períodos acima de 365 dias civis inclusivos são rejeitados no servidor, sem substituição silenciosa pelo padrão;
+- datas futuras são permitidas quando selecionadas explicitamente; a permissão do filtro não cria projeções nem pagamentos futuros;
+- início e fim são inclusivos para o usuário; conversões de `DATETIME` UTC usam limites semiabertos internos;
+- preservar os filtros validados ao navegar entre relatórios e ao exportar CSV; revalidar no servidor em cada requisição;
 - rótulo visível do período aplicado e indicação do eixo temporal de cada métrica;
 - estados vazios, erro de filtro, carregamento e ausência de dados;
 - gráficos simples e responsivos, sempre acompanhados por tabela ou resumo textual equivalente;
@@ -140,7 +143,7 @@ Proposta: reaproveitar permissões existentes, sem criar um `reports.view` gené
 | Frequência | `attendance.view` | Sim | Sim | Sim |
 | Financeiro | `finance.view` | Sim | Sim | Não |
 
-Cada seção e cada endpoint CSV devem revalidar a permissão correspondente no servidor. Não basta ocultar cartões ou botões. O Operador nunca deve receber totais financeiros, cobranças, pagamentos ou arquivos financeiros.
+Cada seção e cada endpoint CSV devem revalidar a permissão correspondente no servidor **antes de instanciar/executar consultas**. Não basta ocultar cartões ou botões. Administrador tem acesso integral; Gestor tem as permissões de leitura de operacional, matrículas, frequência e financeiro; Operador tem acesso às três primeiras, mas não a `finance.view`. Para o Operador, a Visão geral não deve executar consultas financeiras nem incluir valores, totais, contagens, formas, saldos ou metadados financeiros no HTML/JSON/gráficos/CSV. A seção financeira deve ser omitida integralmente, sem placeholders que permitam inferir dados.
 
 ## 5. Segurança, desempenho e integridade
 
@@ -168,8 +171,10 @@ Cada seção e cada endpoint CSV devem revalidar a permissão correspondente no 
 - [ ] Definições de cada indicador e eixo temporal aprovadas e documentadas.
 - [ ] Visão geral separa fotografia atual, movimentação do período e alertas próximos.
 - [ ] Cartões da Visão geral apresentam os mesmos resultados dos relatórios de origem, reutilizando seus agregadores/serviços.
-- [ ] Perfis sem `finance.view` não recebem valores financeiros nem conseguem consultá-los por endpoints.
-- [ ] Filtros de data rejeitam datas inválidas, períodos invertidos e intervalos acima do limite.
+- [ ] Perfis sem `finance.view` não recebem valores financeiros nem conseguem consultá-los por endpoints; a Visão geral do Operador não executa consultas financeiras e omite completamente a seção.
+- [ ] Sem `de` e `ate`, o padrão é primeiro dia do mês até hoje em `America/Sao_Paulo`; se somente um parâmetro faltar, a requisição é rejeitada.
+- [ ] Filtros rejeitam datas inválidas, formatos inesperados, períodos invertidos e intervalos acima de 365 dias civis inclusivos; datas futuras só entram quando selecionadas explicitamente.
+- [ ] Os filtros validados persistem na navegação entre relatórios e nas exportações CSV.
 - [ ] Agregados de matrículas respeitam `inicio_em`, `fim_exclusivo_em`, cancelamento e origem.
 - [ ] Agregados de frequência usam `data_local` e contam alunos distintos sem duplicar entradas.
 - [ ] Agregados financeiros distinguem cobranças, pagamentos registrados, saldo cobrável e saldo em revisão.
@@ -210,7 +215,7 @@ Entregáveis desta etapa:
 
 **Decisão técnica registrada em 23/11/2026:** MT-01 a MT-04 contam inícios efetivos; cancelamentos anteriores ou simultâneos ao início não criam vigência e ficam fora da coorte de início. MT-05 conta eventos de cancelamento inclusive quando a matrícula nunca chegou a vigorar. MT-02 a MT-04 reutilizam exatamente a coorte de MT-01.
 
-**Decisão registrada em 23/11/2026:** o rótulo **“Recebido no período”** foi aprovado para a soma dos pagamentos por `data_pagamento`, com legenda esclarecendo que se trata de pagamentos registrados e não de liquidação bancária. A decisão foi complementada pela aprovação de FR-04 e FN-01 a FN-06. FN-06 é fotografia atual do saldo restante de cobranças não canceladas financeiramente ligadas a matrículas canceladas; não representa reembolso. Os demais indicadores, filtros e permissões continuam em revisão.
+**Decisão registrada em 23/11/2026:** o rótulo **“Recebido no período”** foi aprovado para a soma dos pagamentos por `data_pagamento`, com legenda esclarecendo que se trata de pagamentos registrados e não de liquidação bancária. A decisão foi complementada pela aprovação de FR-04, FN-01 a FN-06 e do contrato de filtros/permissões: mês até hoje como padrão; ambos os parâmetros ausentes aplicam o padrão, somente um ausente é erro; datas futuras podem ser selecionadas explicitamente; limite de 365 dias inclusivos; filtros persistem na navegação/CSV; cada seção é autorizada antes da consulta, e o Operador não executa nem recebe dados financeiros. FN-06 é fotografia atual do saldo restante de cobranças não canceladas financeiramente ligadas a matrículas canceladas; não representa reembolso. Os demais indicadores, filtros e permissões continuam em revisão.
 
 **Saída esperada da 07.1:** especificação revisável e testável, sem alteração de banco nem implementação de telas. A etapa seguinte só começa depois da revisão das fórmulas e do contrato de acesso.
 

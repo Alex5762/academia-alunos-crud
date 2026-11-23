@@ -1,6 +1,6 @@
 # Bloco 07.1 — Catálogo e contrato dos indicadores
 
-> **Estado:** definições revisadas; decisões aprovadas até 23/11/2026: direção da Visão geral gerencial, OP-01 a OP-06, MT-01 a MT-05, FR-01 a FR-05, FN-01 a FN-06 e nomenclatura “Recebido no período”. Os demais indicadores/decisões de experiência e permissão continuam em revisão. Nenhuma consulta, tela ou exportação do Bloco 07 foi implementada.
+> **Estado:** definições revisadas; decisões aprovadas até 23/11/2026: direção da Visão geral gerencial, OP-01 a OP-06, MT-01 a MT-05, FR-01 a FR-05, FN-01 a FN-06, contrato de filtros e matriz de permissões por seção. Os critérios finais de apresentação continuam em revisão. Nenhuma consulta, tela ou exportação do Bloco 07 foi implementada.
 > **Branch:** `feat/dashboard-portfolio`.
 > **Documento principal:** [Bloco 07 — Relatórios e experiência](bloco-07-relatorios-experiencia.md).
 
@@ -165,7 +165,7 @@ Regras adicionais:
 
 ## 5. Permissões e composição por perfil
 
-A página continua protegida por `dashboard.view`, mas cada seção deve exigir a permissão de domínio antes de consultar seus dados. Não criar uma permissão genérica `reports.view`.
+A página continua protegida por `dashboard.view`, mas cada seção deve exigir a permissão de domínio **antes de instanciar ou executar** sua consulta. Não criar uma permissão genérica `reports.view`. A autorização é independente por seção: uma seção negada é omitida integralmente, sem impedir a exibição das demais seções autorizadas.
 
 | Seção/indicadores | Permissão | Administrador | Gestor | Operador |
 |---|---|:---:|:---:|:---:|
@@ -174,9 +174,9 @@ A página continua protegida por `dashboard.view`, mas cada seção deve exigir 
 | Frequência (FR e VG-03/VG-04) | `attendance.view` | Sim | Sim | Sim |
 | Financeiro (FN e VG-05) | `finance.view` | Sim | Sim | Não |
 
-As permissões refletem a matriz existente em `src/Security/AccessControl.php`. A autorização precisa ser validada no servidor em cada requisição. Ocultar um cartão no navegador sem impedir a consulta não é suficiente.
+As permissões refletem a matriz existente em `src/Security/AccessControl.php`: Administrador possui acesso integral; Gestor e Operador têm `students.view`, `enrollments.view` e `attendance.view`; Gestor possui `finance.view`, Operador não. A autorização precisa ser validada no servidor em cada requisição, antes da consulta. Ocultar um cartão no navegador sem impedir a consulta não é suficiente. Os endpoints de relatório e CSV devem repetir a verificação, mesmo quando o link não é exibido.
 
-Para o perfil Operador, a resposta da Visão geral não deve conter valores, totais, quantidade de cobranças, formas de pagamento ou saldos financeiros em nenhum formato. O HTML, payloads JSON futuros, gráficos, logs acessíveis na interface e CSV devem respeitar o mesmo limite.
+Para o perfil Operador, a resposta da Visão geral não deve conter valores, totais, quantidades de pagamentos/cobranças, formas de pagamento, saldos ou metadados financeiros em nenhum formato. Nenhuma consulta financeira deve ser executada para esse perfil. HTML, payloads JSON, gráficos, exportações CSV e qualquer metadado entregue ao cliente devem respeitar o mesmo limite.
 
 ## 6. Contrato de filtros
 
@@ -184,15 +184,16 @@ Para o perfil Operador, a resposta da Visão geral não deve conter valores, tot
 |---|---|
 | Data inicial | Data civil válida no formato ISO `YYYY-MM-DD` |
 | Data final | Data civil válida no formato ISO `YYYY-MM-DD` |
-| Padrão | Primeiro e último dia do mês civil atual |
+| Padrão | Do primeiro dia do mês civil atual até hoje, no fuso `America/Sao_Paulo` |
 | Inclusividade | Ambas as datas são inclusivas para o usuário |
 | Limite | Até 365 dias civis inclusivos |
 | Início maior que fim | Rejeitar com erro de validação |
-| Data futura | Pode ser aceita como filtro de período para relatórios de contratos/vencimentos, mas pagamentos futuros não podem existir pela regra atual do serviço; não inferir recebimento futuro |
+| Data futura | Permitida quando informada explicitamente; pagamentos futuros não podem existir pela regra atual do serviço, portanto não inferir recebimento futuro |
 | Estado atual | Independente do filtro de período |
 | Alertas de próximos 7/30 dias | Janela móvel independente do filtro de período |
+| Parâmetros ausentes | Se `de` e `ate` forem ambos omitidos, aplicar o padrão; se somente um estiver ausente, rejeitar a requisição |
 
-A interface deve preservar os filtros validados ao navegar entre relatórios e ao exportar CSV. O servidor deve validar novamente todos os parâmetros; parâmetros recebidos não podem controlar nomes de coluna, expressões SQL ou permissões.
+A interface deve preservar `de` e `ate` validados ao navegar entre relatórios e ao exportar CSV. O servidor deve validar novamente todos os parâmetros; parâmetros recebidos não podem controlar nomes de coluna, expressões SQL ou permissões. A ausência simultânea dos dois parâmetros aplica o padrão; a ausência de apenas um, datas impossíveis, formato inválido ou intervalo invertido gera erro de validação, sem completar valores silenciosamente nem substituir a entrada pelo padrão. O parsing deve ser estrito, com round-trip `YYYY-MM-DD`, no fuso `America/Sao_Paulo`.
 
 ## 7. Exportação CSV — contrato inicial
 

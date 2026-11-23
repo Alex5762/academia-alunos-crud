@@ -1,6 +1,6 @@
 # Bloco 07.2 — Contratos de consulta e validação
 
-> **Estado:** desenho técnico revisado; as decisões do catálogo estão sendo aprovadas por etapas. OP-01 a OP-06, MT-01 a MT-05, FR-01 a FR-05 e FN-04, FN-05 e FN-06 foram aprovados/definidos em 23/11/2026; os demais itens permanecem em revisão. Não representa implementação.
+> **Estado:** desenho técnico revisado; as decisões do catálogo estão sendo aprovadas por etapas. OP-01 a OP-06, MT-01 a MT-05, FR-01 a FR-05, FN-01 a FN-06 e o contrato comum de filtros/permissões foram aprovados/definidos em 23/11/2026; os critérios finais de experiência permanecem em revisão. Não representa implementação.
 > **Pré-requisito:** catálogo 07.1 e definições de indicadores aprovados.
 > **Escopo desta etapa:** contratos de entrada/saída, datas, relógio, autorização, agregação e testes. Sem migrations, alteração de schema, telas ou exportação.
 
@@ -32,12 +32,14 @@ Uma consulta recebe:
 - identidade/perfil autenticado: resolvido exclusivamente no servidor a partir da sessão; não aceitar objeto `permissions` fornecido pelo cliente. A política de acesso consulta `AccessControl` no servidor.
 
 Regras:
-1. Fazer parsing estrito de datas (incluindo round-trip de formatação); rejeitar datas inexistentes como 2026-02-30.
-2. Rejeitar campos ausentes, formato inesperado, início posterior ao fim e período maior que 365 dias inclusivos.
-3. O padrão de mês atual é aplicado no controller/factory de filtros usando o mesmo relógio da requisição; não usar `date()` espalhado em consultas.
-4. O filtro normalizado é imutável e reutilizado em todos os relatórios e exportações.
-5. Não aceitar nome de coluna, agrupamento SQL, tabela, ordem ou permissão como parâmetro livre.
-6. Filtros futuros podem ser válidos para relatórios de início contratual e vencimento; não inferir pagamentos futuros.
+1. A entrada HTTP usa `de` e `ate`. Se ambos estiverem ausentes, aplicar o período padrão do primeiro dia do mês civil atual até hoje, em `America/Sao_Paulo`.
+2. Se somente um de `de`/`ate` estiver ausente, rejeitar a requisição; não completar silenciosamente o campo faltante.
+3. Fazer parsing estrito de datas, com round-trip de formatação ISO `YYYY-MM-DD`; rejeitar datas inexistentes como 2026-02-30 e qualquer formato inesperado.
+4. Rejeitar início posterior ao fim e período maior que 365 dias civis inclusivos. Não substituir uma entrada inválida pelo período padrão.
+5. Datas futuras são permitidas quando selecionadas explicitamente; isso não autoriza projeções nem pagamentos futuros. O serviço atual não aceita pagamentos futuros.
+6. O filtro normalizado é imutável e reutilizado em todos os relatórios e exportações, preservando `de`/`ate` ao navegar entre seções.
+7. O mesmo relógio confiável da requisição fornece `asOf` e as datas do período padrão; não usar `date()` espalhado em consultas.
+8. Não aceitar nome de coluna, agrupamento SQL, tabela, ordem ou permissão como parâmetro livre.
 
 ## 4. Contrato de tempo
 
@@ -69,7 +71,7 @@ Criar uma representação explícita dos limites para dois tipos de coluna:
 
 Cada seção autorizada retorna:
 - `reference`: `current`, `selected_period` ou `rolling_window`.
-- `period`: datas normalizadas quando aplicável.
+- `period`: datas normalizadas quando aplicável; o período padrão é do primeiro dia do mês civil atual até hoje, salvo datas explícitas válidas.
 - `generatedAt`: instante `asOf` usado.
 - `metrics`: mapa de chaves estáveis e valores numéricos/decimais serializáveis sem float para moeda.
 
@@ -81,6 +83,7 @@ Regras:
 - Para o indicador VG-05/FN-01, usar o rótulo aprovado “Recebido no período” e legenda que esclareça ser a soma dos pagamentos registrados pela `data_pagamento` informada, não comprovação de liquidação bancária.
 - Não incluir nomes, e-mails, telefones, observações, IDs individuais ou outros dados pessoais.
 - O dashboard não calcula métricas: apenas apresenta o resultado retornado.
+- Preservar o período normalizado ao navegar entre seções/relatórios e ao solicitar CSV; cada destino revalida os parâmetros e permissões.
 
 ### 5.1 Invariantes cadastrais usados por OP-01 a OP-03
 
@@ -126,10 +129,12 @@ MT-01 a MT-05 usam `enrollments.view` e o período local normalizado em limites 
 - Frequência exige `attendance.view`.
 - Financeiro exige `finance.view`.
 - A política usa `FitControl\Security\AccessControl::allows()` e o papel da sessão autenticada.
-- Autorizar antes de instanciar/executar o query object da seção.
+- Autorizar cada seção independentemente antes de instanciar/executar seu query object; a página global continua exigindo `dashboard.view`.
+- Matriz: Administrador tem acesso integral; Gestor e Operador têm `students.view`, `enrollments.view` e `attendance.view`; apenas Administrador e Gestor têm `finance.view`.
 - Revalidar em cada endpoint futuro, inclusive CSV.
-- O payload da Visão geral do Operador não pode conter qualquer chave/valor financeiro.
-- Teste deve provar não só HTTP 403 no relatório financeiro, mas também que a consulta financeira não foi executada.
+- O payload da Visão geral do Operador não pode conter qualquer chave/valor ou metadado financeiro; a seção financeira é omitida integralmente e nenhum query object/consulta financeira é executado.
+- Revalidar permissões no servidor em cada endpoint, incluindo CSV, sem confiar em visibilidade de link/interface.
+- Teste deve provar não só HTTP 403 no relatório financeiro, mas também que a consulta financeira não foi executada na Visão geral do Operador.
 
 ## 7. Consultas e desempenho
 
@@ -150,7 +155,11 @@ MT-01 a MT-05 usam `enrollments.view` e o período local normalizado em limites 
 
 ### Datas e relógio
 - Data válida, bissexto, data impossível, formato inválido.
-- Início = fim, intervalo de 365 dias, intervalo de 366 dias, início > fim.
+- Ambos parâmetros `de`/`ate` ausentes aplicam mês atual até hoje; somente um ausente é rejeitado.
+- Padrão usa `America/Sao_Paulo` e o mesmo relógio da requisição.
+- Início = fim, intervalo de 365 dias inclusivos, intervalo de 366 dias, início > fim.
+- Datas futuras explicitamente selecionadas são aceitas; não gerar projeções nem pagamentos futuros.
+- Navegação entre relatórios e CSV preserva exatamente `de`/`ate` validados.
 - Virada de mês/ano e conversão local/UTC.
 - Limites exatos do início e fim semiaberto para DATETIME.
 - Data final inclusiva para DATE.
@@ -201,6 +210,9 @@ MT-01 a MT-05 usam `enrollments.view` e o período local normalizado em limites 
 - Perfil Operador não aciona consulta financeira e não recebe campos financeiros.
 
 ### Segurança e regressão
+- Página global exige `dashboard.view`; cada seção valida a permissão de domínio antes de instanciar/executar sua consulta.
+- Operador recebe HTTP 403 ao acessar endpoint financeiro diretamente; seu dashboard não instancia nem executa consulta financeira e não contém metadados/valores financeiros.
+- CSV revalida a permissão da seção no servidor; Operador não acessa exportação financeira.
 - Período inválido não chega ao SQL.
 - Parâmetros não controlam identificadores SQL.
 - Exceção de banco não vira resultado zero.
