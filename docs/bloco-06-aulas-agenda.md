@@ -1,6 +1,6 @@
 # Bloco 06 — Grade fixa de aulas
 
-> **Estado:** schema, serviços de domínio e RBAC inicial implementados; interface ainda não iniciada.
+> **Estado:** schema, serviços de domínio, consulta filtrada e primeira tela web implementados; CRUD administrativo ainda pendente.
 > **Branch de trabalho:** `feat/dashboard-portfolio`.
 > **Dependências:** autenticação/RBAC, cadastro de funcionários e auditoria existentes. A validação manual pelo XAMPP continua adiada e não bloqueia a especificação nem os testes automatizados.
 >
@@ -152,20 +152,24 @@ Essas evoluções não devem criar dependências no primeiro MVP. Em particular,
 - [x] Migration `014_grade_fixa_aulas.sql` cria `modalidades`, `instrutores` e `horarios_aula`.
 - [x] `ClassCatalogService` implementa criação, edição e inativação de modalidades e instrutores.
 - [x] `ClassScheduleService` implementa criação, edição e inativação de horários recorrentes.
+- [x] `ClassScheduleQuery` centraliza a leitura da grade com filtros por dia, modalidade e instrutor.
+- [x] `aulas.php` apresenta a grade semanal, indicadores e filtros, com acesso controlado por `classes.view`.
+- [x] A página foi adicionada à navegação do painel e possui layout responsivo.
 - [x] Alterações e eventos da cadeia de auditoria são confirmados na mesma transação.
 - [x] Inativação é lógica; modalidade/instrutor com horários ativos precisa ter a grade revisada antes.
 - [x] Horários ativos exigem modalidade ativa e, quando atribuído, instrutor ativo.
 - [x] Teste com duas conexões independentes comprova a serialização e rejeição de sobreposição concorrente; executado na CI em MySQL e MariaDB.
+- [x] Testes da consulta verificam filtros, horários sem instrutor e exclusão de itens inativos.
 - [x] O serviço serializa gravações por instrutor e rejeita sobreposições no mesmo dia; horários adjacentes são permitidos.
 - [x] RBAC inicial permite consulta aos três perfis e gestão somente a Administrador/Gestor.
 - [x] CI #1450 aprovou a migration nos dois motores; nova suíte de serviços está sendo integrada à CI.
 
 ### Próximas etapas
 
-1. Concluir a validação dos serviços e da matriz RBAC na CI.
-2. Implementar consultas de leitura e telas de modalidades/instrutores.
-3. Implementar a visualização e manutenção da grade semanal.
-4. Cobrir os fluxos com integração HTTP/Playwright e revisar acessibilidade/responsividade.
+1. Concluir a CI da consulta filtrada e corrigir eventuais falhas.
+2. Implementar CRUD administrativo de modalidades e instrutores.
+3. Implementar formulários de criação, edição e inativação de horários.
+4. Cobrir os fluxos HTTP com Playwright e revisar acessibilidade/responsividade.
 
 ## 10. Referências e fronteiras com os outros blocos
 
@@ -174,4 +178,4 @@ Essas evoluções não devem criar dependências no primeiro MVP. Em particular,
 - **Bloco 07 — Relatórios:** relatórios de participação ou ocupação podem ser avaliados quando houver dados de sessões e presenças.
 - **Bloco 08 — Preparação para produção:** continua dependendo de validações e revisão próprias.
 
-**Estado técnico:** migration e serviços de domínio estão implementados na branch. Ainda não existem telas do Bloco 06, e a aplicação local/XAMPP continua pendente.
+**Estado técnico:** migration, serviços de domínio, consulta filtrada e tela de leitura da grade estão implementados na branch. O CRUD administrativo e a validação local/XAMPP continuam pendentes.
