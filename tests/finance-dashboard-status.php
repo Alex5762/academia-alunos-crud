@@ -48,6 +48,37 @@ assertFinanceDashboard(
     'Saldo pendente de matrícula cancelada deve ficar separado para revisão.'
 );
 
+$cancelledUnpaidEnrollment = $cancelledEnrollment;
+$cancelledUnpaidEnrollment['valor_pago'] = '0.00';
+assertFinanceDashboard(
+    FinanceDashboardStatus::status($cancelledUnpaidEnrollment, '2026-11-22')[0] === 'Em revisão',
+    'Matrícula cancelada sem pagamentos deve continuar classificada como Em revisão.'
+);
+assertFinanceDashboard(
+    FinanceDashboardStatus::collectibleBalanceCents($cancelledUnpaidEnrollment) === 0,
+    'Matrícula cancelada sem pagamentos não pode gerar saldo cobrável.'
+);
+assertFinanceDashboard(
+    FinanceDashboardStatus::reviewBalanceCents($cancelledUnpaidEnrollment) === 30000,
+    'Cobrança integralmente pendente de matrícula cancelada deve ter R$ 300,00 em revisão.'
+);
+
+// Saldo zero não encerra, por si só, a análise de um possível reembolso.
+$cancelledPaidEnrollment = $cancelledEnrollment;
+$cancelledPaidEnrollment['valor_pago'] = '300.00';
+assertFinanceDashboard(
+    FinanceDashboardStatus::status($cancelledPaidEnrollment, '2026-11-22')[0] === 'Em revisão',
+    'Matrícula cancelada com cobrança quitada deve continuar identificada como Em revisão.'
+);
+assertFinanceDashboard(
+    FinanceDashboardStatus::reviewBalanceCents($cancelledPaidEnrollment) === 0,
+    'Cobrança quitada de matrícula cancelada deve ter saldo restante em revisão igual a zero.'
+);
+assertFinanceDashboard(
+    FinanceDashboardStatus::collectibleBalanceCents($cancelledPaidEnrollment) === 0,
+    'Cobrança quitada de matrícula cancelada não pode integrar o saldo cobrável.'
+);
+
 $cancelledCharge = $cancelledEnrollment;
 $cancelledCharge['cancelada_em_utc'] = '2026-11-22 13:00:00';
 assertFinanceDashboard(
@@ -57,6 +88,10 @@ assertFinanceDashboard(
 assertFinanceDashboard(
     FinanceDashboardStatus::balanceCents($cancelledCharge) === 0,
     'Cobrança cancelada não deve manter saldo em aberto.'
+);
+assertFinanceDashboard(
+    FinanceDashboardStatus::reviewBalanceCents($cancelledCharge) === 0,
+    'Cobrança cancelada financeiramente não deve contribuir para o saldo em revisão.'
 );
 
 $paid = $base;
