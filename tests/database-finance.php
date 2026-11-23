@@ -945,8 +945,8 @@ try {
         'Agregado SQL do FN-06 deve corresponder à soma de FinanceDashboardStatus::reviewBalanceCents().'
     );
     assertFinance(
-        $expectedCollectibleCents === 8700 && $expectedReviewCents === 25000,
-        'Fixtures devem preservar R$ 90,00 cobráveis e R$ 250,00 em revisão, sem misturar cobranças quitadas ou canceladas.'
+        $expectedCollectibleCents === 6000 && $expectedReviewCents === 25000,
+        'Fixtures devem preservar R$ 60,00 cobráveis e R$ 250,00 em revisão, após os pagamentos parciais adicionais.'
     );
 
     $audit = $pdo->prepare(
