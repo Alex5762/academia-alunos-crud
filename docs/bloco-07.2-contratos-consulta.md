@@ -128,7 +128,10 @@ Regras:
 - Data local inclusiva inicial/final.
 - Aluno com check-ins em dias diferentes.
 - Dias sem registros preenchidos com zero na série.
-- Agrupamento de semana segunda–domingo.
+- FR-04: média por ocorrência de cada dia ISO (segunda–domingo), total bruto e denominador; média com uma casa decimal apenas na apresentação.
+- Período de uma única data: apenas o weekday correspondente tem denominador 1; os demais exibem média não aplicável, total 0 e ocorrências 0.
+- Período com denominadores diferentes por weekday: verificar que a média divide pelo número real de ocorrências de cada weekday, não por uma constante semanal.
+- Weekday com ocorrências e zero check-ins: média real 0,0; weekday sem ocorrências: média não aplicável.
 
 ### Financeiro
 - Pagamento por `data_pagamento`, mesmo quando `registrado_em_utc` pertence a outro dia.
@@ -146,14 +149,18 @@ Regras:
 - Nenhuma PII na saída agregada.
 - MySQL 8.0 e MariaDB 10.11.
 
-## 9. Pontos de atenção que exigem verificação no código antes da implementação
+## 9. Frequência semanal — regra específica FR-04
+
+Para evitar uma consulta dependente de recursos específicos de calendário do MySQL/MariaDB, o período normalizado fornece as datas civis inicial/final. A camada PHP pode percorrer esse intervalo com `DateTimeImmutable` e contar as ocorrências de cada weekday ISO (1–7). A consulta de check-ins agrega `COUNT(*)` por weekday de `data_local`; o serviço combina os sete buckets com os denominadores calculados. A apresentação calcula/mostra a média com uma casa decimal, mantendo total e ocorrências. Não consultar o banco sete vezes nem buscar linhas individuais para contar.
+
+## 10. Pontos de atenção que exigem verificação no código antes da implementação
 
 - Confirmar se a implementação atual de `EnrollmentStatus::derive()` recebe `DateTimeImmutable` no fuso local ou converte internamente; o adapter SQL precisa reproduzir exatamente a mesma fronteira.
 - Confirmar o comportamento do serviço financeiro para pagamentos retroativos e a semântica de `data_pagamento`; a legenda do indicador não deve sugerir liquidação bancária.
 - Confirmar os nomes e tipos reais das colunas no schema/migrations antes de escrever qualquer SQL; este documento define responsabilidades, não autoriza presumir nomes.
 - A definição de saldo em revisão/cobrável deve ser validada contra a regra de cancelamento e pagamentos acumulados existente, sem introduzir soma duplicada por joins de 1:N.
 
-## 10. Critério de saída da 07.2
+## 11. Critério de saída da 07.2
 
 A etapa só é considerada pronta quando:
 1. contratos de período e relógio estão implementados e cobertos;
