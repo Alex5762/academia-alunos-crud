@@ -58,7 +58,7 @@ Limites conhecidos:
 - Não há recuperação de senha por e-mail nem MFA.
 - O campo `alunos.plano` permanece preservado como texto legado; catálogo, matrículas e revisão dos vínculos estão implementados e validados por CI. A aplicação das migrations 005/006 no XAMPP local continua pendente.
 - Frequência/check-in (Bloco 04) e financeiro (Bloco 05) estão implementados na branch e validados por CI em MySQL 8.0 e MariaDB 10.11; a validação local/manual continua pendente.
-- O Bloco 06 (grade semanal fixa) está implementado e aprovado na CI #1512; a validação local/XAMPP permanece pendente. O Bloco 07 tem catálogo, experiência, filtros, RBAC, CSV e critérios de apresentação especificados e aprovados por etapas; falta somente a aprovação global explícita para iniciar a implementação.
+- O Bloco 06 (grade semanal fixa) está implementado e aprovado na CI #1512; a validação local/XAMPP permanece pendente. O Bloco 07 tem catálogo, experiência, filtros, RBAC, CSV e critérios de apresentação reconciliados e aprovados por etapas; falta somente a aprovação global explícita para iniciar a implementação. A distribuição por plano agrupa valores vazios/somente espaços como “Não informado”, sem excluí-los da base de alunos ativos.
 - A preparação para produção (Bloco 08) continua pendente e exige revisão de segurança, privilégios SQL, backups/restauração, HTTPS, monitoramento e privacidade.
 - A aplicação permanece acadêmica/local; não está preparada para uso público ou dados reais.
 

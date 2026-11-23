@@ -60,7 +60,7 @@ A Visão geral é a camada resumida do dashboard atual. Deve exibir poucos indic
 - Cada indicador tem rótulo acessível, valor, referência temporal e link para o relatório de origem.
 - Zero é resultado válido e não representa falha, ausência de dados ou falta de permissão; ausência, não aplicável e erro são estados separados.
 - A pesquisa, os filtros e a listagem de alunos existentes, bem como o atalho de cadastro, permanecem no dashboard.
-- A distribuição por plano é painel secundário de dados cadastrais de alunos ativos. Sua porcentagem usa o total de alunos ativos como denominador, nunca o total cadastral geral; se não houver aluno ativo/grupo, apresentar estado vazio sem divisão por zero. Não apresentar `alunos.plano` como snapshot do contrato.
+- A distribuição por plano é painel secundário de dados cadastrais de alunos ativos. Sua porcentagem usa o total de alunos ativos como denominador, nunca o total cadastral geral. Valores `alunos.plano` vazios ou compostos somente por espaços devem ser agrupados e rotulados como “Não informado”, permanecendo no grupo e no denominador total. Se não houver alunos ativos, apresentar estado vazio sem divisão por zero. Não apresentar `alunos.plano` como snapshot do contrato.
 - Cartões e relatórios reutilizam os agregadores/serviços de origem; não duplicar fórmulas SQL.
 
 ## 3. Definição canônica de situação de matrícula
