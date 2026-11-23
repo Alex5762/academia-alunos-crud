@@ -263,7 +263,7 @@ A migration 014 cria modalidades, instrutores e horários semanais recorrentes. 
 
 A nomenclatura **“Recebido no período”** foi aprovada para a soma dos pagamentos pela `data_pagamento`, com legenda indicando que são pagamentos registrados pela data declarada, não liquidação bancária, faturamento ou lucro. A revisão também padronizou a janela inclusiva de sete dias e a omissão integral de seções sem permissão.
 
-A revisão recomenda preservar os seis cartões da Visão geral, ajustar a distribuição semanal de frequência para considerar a quantidade de ocorrências de cada dia, separar cobranças de matrículas canceladas em revisão e simplificar a arquitetura reutilizando permissões e padrões já existentes. Não há consultas, telas, endpoints ou migrations do Bloco 07. A implementação depende da decisão sobre as recomendações e aprovação global do catálogo e dos contratos.
+A revisão recomenda preservar os seis cartões da Visão geral, separar cobranças de matrículas canceladas em revisão e simplificar a arquitetura reutilizando permissões e padrões já existentes. **Decisão aprovada:** FR-04 usará média de check-ins por ocorrência de cada dia da semana, exibindo também total bruto e número de ocorrências; sem ocorrência, a média será não aplicável. Não há consultas, telas, endpoints ou migrations do Bloco 07. A implementação depende da decisão sobre as recomendações e aprovação global do catálogo e dos contratos.
 
 **Fora do escopo:** presença por modalidade/aula, histórico não reconstruível, dados pessoais em exportações, PDF/XLSX, BI, previsões, metas, churn e comparações percentuais sem base temporal confiável.
 
