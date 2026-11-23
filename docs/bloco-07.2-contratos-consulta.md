@@ -1,6 +1,6 @@
 # Bloco 07.2 — Contratos de consulta e validação
 
-> **Estado:** `ReportPeriod`, OP-01 a OP-06, MT-01 a MT-05, FR-01 a FR-05 e FN-01 a FN-06 estão integrados à página `relatorios.php` e validados na CI #1595 em MySQL 8.0/MariaDB 10.11. As consultas financeiras passam pelos testes de integração e autorização `finance.view`. VG-01 a VG-06 e o filtro de período foram integrados à Visão geral na branch; a nova cobertura visual/HTTP aguarda CI. CSV agregado e regressão visual final permanecem pendentes. Nenhuma migration ou alteração de schema foi feita.
+> **Estado:** consultas OP/MT/FR/FN validadas na CI #1595 e cartões VG-01 a VG-06 validados na CI #45245709878. Endpoint CSV por seção e escritor seguro implementados na branch; testes unitários de fórmula/UTF-8/escaping e testes HTTP de RBAC/PII foram adicionados à CI, aguardando nova execução. Nenhuma migration ou alteração de schema foi feita.
 > **Pré-requisito:** catálogo 07.1 e definições de indicadores aprovados.
 > **Escopo desta etapa:** contratos de entrada/saída, datas, relógio, autorização, agregação e testes. Sem migrations, alteração de schema, telas ou exportação.
 
@@ -229,10 +229,10 @@ MT-01 a MT-05 usam `enrollments.view` e o período local normalizado em limites 
 ### Segurança e regressão
 - Página global exige `dashboard.view`; cada seção valida a permissão de domínio antes de instanciar/executar sua consulta.
 - Operador recebe HTTP 403 ao acessar endpoint financeiro diretamente; seu dashboard não instancia nem executa consulta financeira e não contém metadados/valores financeiros.
-- CSV revalida a permissão da seção no servidor; Operador não acessa exportação financeira.
-- CSV contém apenas agregados, não contém PII, preserva o período validado e usa cabeçalhos UTF-8 estáveis com escaping correto.
-- Campos textuais não confiáveis usam a neutralização tab-prefix da variante para planilhas; testar iniciadores de fórmula, variantes cobertas, aspas e separadores.
-- Validar abertura no Excel/LibreOffice quando disponíveis; documentar que tabulação integra o campo e que a mitigação não é universal.
+- [x] CSV revalida a permissão da seção no servidor; teste de integração exige HTTP 403 para exportação financeira do Operador.
+- [x] CSV contém apenas agregados, não contém PII, preserva o período validado e usa cabeçalhos fixos por relatório, UTF-8/BOM e escaping correto.
+- [x] Campos textuais não confiáveis usam neutralização tab-prefix para iniciadores ASCII, controles e variantes Unicode de largura completa cobertas; testes incluem aspas, separadores e UTF-8 inválido.
+- [ ] Validar abertura no Excel/LibreOffice quando disponíveis; documentar que tabulação integra o campo e que a mitigação não é universal. Teste manual ainda pendente.
 - Período inválido não chega ao SQL.
 - Parâmetros não controlam identificadores SQL.
 - Exceção de banco não vira resultado zero.
@@ -263,4 +263,4 @@ A etapa só é considerada pronta quando:
 
 **Concluído e validado na CI #1595:** `ReportPeriod`, integração HTTP, captura única de `asOf`, preservação de `de`/`ate`, HTTP 400 para período inválido, OP-01 a OP-06, MT-01 a MT-05, FR-01 a FR-05 e FN-01 a FN-06. O teste financeiro também valida as cinco formas de pagamento, retroativos, conciliação dos agrupamentos, cobranças por vencimento e paridade dos saldos. A CI passou em MySQL 8.0 e MariaDB 10.11.
 
-Próximo incremento: integrar VG-01 a VG-06 à Visão geral, reutilizando consultas/agregadores existentes e corrigindo a distribuição por plano; depois implementar o CSV agregado seguro e executar a regressão final.
+VG-01 a VG-06 foram integrados à Visão geral e aprovados na CI #45245709878. O CSV agregado por seção foi implementado, com testes unitários e HTTP adicionados à CI; a nova execução precisa validar o endpoint, escaping e RBAC. Próximo incremento após a CI: regressão visual/acessível final e verificação manual de abertura em Excel/LibreOffice.
