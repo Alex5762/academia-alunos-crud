@@ -297,7 +297,6 @@ jobs:
           mysql --host=127.0.0.1 --port=3306 --user=root < database/migrations/013_financeiro_valores_positivos.sql
           mysql --host=127.0.0.1 --port=3306 --user=root < database/migrations/014_grade_fixa_aulas.sql
           php scripts/inicializar-integridade-auditoria.php
-          mysql --host=127.0.0.1 --port=3306 --user=root < database/migrations/014_grade_fixa_aulas.sql
 
       - name: Validate manual check-in, eligibility and daily uniqueness
         env:
@@ -664,6 +663,7 @@ jobs:
           mysql --host=127.0.0.1 --port=3306 --user=root < database/migrations/011_pagamento_idempotencia.sql
           mysql --host=127.0.0.1 --port=3306 --user=root < database/migrations/012_pagamentos_append_only.sql
           mysql --host=127.0.0.1 --port=3306 --user=root < database/migrations/013_financeiro_valores_positivos.sql
+          mysql --host=127.0.0.1 --port=3306 --user=root < database/migrations/014_grade_fixa_aulas.sql
 
           echo "Preparing fictional records for visual capture..."
           mysql --host=127.0.0.1 --port=3306 --user=root academia_alunos <<'SQL'
