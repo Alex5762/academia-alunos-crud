@@ -39,6 +39,26 @@ try {
   }
 
   await desktop.getByRole("heading", { name: "Visão geral" }).waitFor();
+  const expectedDashboardMetrics = [
+    "Alunos ativos",
+    "Matrículas vigentes",
+    "Matrículas terminando em até 7 dias",
+    "Check-ins no período",
+    "Alunos com check-in",
+    "Recebido no período",
+  ];
+  for (const label of expectedDashboardMetrics) {
+    await desktop.locator(".stat-label", { hasText: label }).first().waitFor();
+  }
+  const periodStart = await desktop.locator("#dashboard-de").inputValue();
+  const periodEnd = await desktop.locator("#dashboard-ate").inputValue();
+  if (!periodStart || !periodEnd || periodStart > periodEnd) {
+    throw new Error("O filtro de período do dashboard não apresentou um intervalo válido.");
+  }
+  const reportLinks = await desktop.locator('.dashboard-metrics a[href*="relatorios.php"]').count();
+  if (reportLinks < 6) {
+    throw new Error(`Esperava links para os relatórios de origem dos cartões; encontrei ${reportLinks}.`);
+  }
   const desktopRows = await desktop.locator(".students-table tbody tr").count();
 
   if (desktopRows < 8) {
