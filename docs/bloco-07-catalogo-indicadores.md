@@ -1,6 +1,6 @@
 # Bloco 07.1 — Catálogo e contrato dos indicadores
 
-> **Estado:** consultas OP/MT/FR/FN, VG-01 a VG-06 e exportação/download dos quatro CSV foram aprovados nas CIs #1595, #45245709878, #45247639018, #45249934923 e #45252564979. A CI #45252564979 validou a cobertura de acessibilidade automatizada delimitada no documento principal. A nova matriz de relatórios em Chromium/Firefox/WebKit e o teste HTTP explícito de exportação financeira para Gestor aguardam CI. Abertura manual no Excel/LibreOffice continua pendente.
+> **Estado:** consultas OP/MT/FR/FN, VG-01 a VG-06 e exportação/download dos quatro CSV foram aprovados nas CIs #1595, #45245709878, #45247639018, #45249934923 e #45252564979. A CI #45252564979 validou a cobertura de acessibilidade automatizada delimitada no documento principal. A nova matriz de relatórios em Chromium/Firefox/WebKit aguarda CI. Abertura manual no Excel/LibreOffice continua pendente.
 > **Branch:** `feat/dashboard-portfolio`.
 > **Documento principal:** [Bloco 07 — Relatórios e experiência](bloco-07-relatorios-experiencia.md).
 
