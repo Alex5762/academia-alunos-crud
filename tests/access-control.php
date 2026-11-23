@@ -17,18 +17,18 @@ $matrix = [
         'dashboard.view', 'students.view', 'students.create', 'students.update',
         'students.status', 'plans.view', 'plans.manage', 'enrollments.view',
         'enrollments.create', 'enrollments.cancel', 'legacy.view', 'legacy.review',
-        'legacy.rectify', 'users.manage', 'audit.view', 'attendance.view', 'attendance.register', 'finance.view', 'finance.register_payment', 'finance.cancel_charge', 'settings.view',
+        'legacy.rectify', 'users.manage', 'audit.view', 'attendance.view', 'attendance.register', 'finance.view', 'finance.register_payment', 'finance.cancel_charge', 'classes.view', 'classes.manage', 'instructors.view', 'instructors.manage', 'settings.view',
     ],
     'GESTOR' => [
         'dashboard.view', 'students.view', 'students.create', 'students.update',
         'students.status', 'plans.view', 'plans.manage', 'enrollments.view',
         'enrollments.create', 'enrollments.cancel', 'legacy.view', 'legacy.review',
-        'legacy.rectify', 'audit.view', 'attendance.view', 'attendance.register', 'finance.view', 'finance.register_payment', 'finance.cancel_charge', 'settings.view',
+        'legacy.rectify', 'audit.view', 'attendance.view', 'attendance.register', 'finance.view', 'finance.register_payment', 'finance.cancel_charge', 'classes.view', 'classes.manage', 'instructors.view', 'instructors.manage', 'settings.view',
     ],
     'OPERADOR' => [
         'dashboard.view', 'students.view', 'students.create', 'students.update',
         'plans.view', 'enrollments.view', 'enrollments.create',
-        'enrollments.cancel', 'attendance.view', 'attendance.register', 'settings.view',
+        'enrollments.cancel', 'attendance.view', 'attendance.register', 'classes.view', 'instructors.view', 'settings.view',
     ],
 ];
 
@@ -45,7 +45,7 @@ $allPermissions = [
     'dashboard.view', 'students.view', 'students.create', 'students.update',
     'students.status', 'plans.view', 'plans.manage', 'enrollments.view',
     'enrollments.create', 'enrollments.cancel', 'legacy.view', 'legacy.review',
-    'legacy.rectify', 'users.manage', 'audit.view', 'attendance.view', 'attendance.register', 'finance.view', 'finance.register_payment', 'finance.cancel_charge', 'settings.view',
+    'legacy.rectify', 'users.manage', 'audit.view', 'attendance.view', 'attendance.register', 'finance.view', 'finance.register_payment', 'finance.cancel_charge', 'classes.view', 'classes.manage', 'instructors.view', 'instructors.manage', 'settings.view',
 ];
 
 foreach (['GESTOR', 'OPERADOR'] as $role) {
