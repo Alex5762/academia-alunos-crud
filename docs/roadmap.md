@@ -242,7 +242,7 @@ Entregas implementadas e validadas pela CI:
 
 ### Bloco 06 — Aulas e agenda
 
-**Estado: schema, serviços de domínio, consulta filtrada e tela de leitura implementados; CRUD administrativo pendente.** Documento: [Bloco 06 — Grade fixa de aulas](bloco-06-aulas-agenda.md).
+**Estado: schema, serviços de domínio, grade semanal e CRUD de modalidades/instrutores implementados; manutenção de horários pendente.** Documento: [Bloco 06 — Grade fixa de aulas](bloco-06-aulas-agenda.md).
 
 O MVP cobre cadastro de modalidades, instrutores independentes com vínculo opcional a funcionário, horários recorrentes por dia da semana e consulta da grade. Não haverá reservas, controle de vagas, lista de espera, presença por aula, QR Code, catraca ou portal do aluno nesta etapa.
 
@@ -250,7 +250,7 @@ O MVP cobre cadastro de modalidades, instrutores independentes com vínculo opci
 
 **Escopo deliberadamente reduzido:** não há fila de espera, reservas, controle de vagas, sessões datadas ou presença por aula no MVP. O check-in geral do Bloco 04 permanece separado e não será interpretado como participação em uma aula.
 
-A migration 014 cria somente modalidades, instrutores e horários semanais recorrentes. `ClassCatalogService` e `ClassScheduleService` implementam as operações de domínio com transações e auditoria atômica; a validação de sobreposição serializa alterações por instrutor. `ClassScheduleQuery` centraliza as consultas filtradas e `aulas.php` apresenta a grade semanal em layout responsivo. A CI #1468 aprovou os serviços e a concorrência em MySQL 8.0 e MariaDB 10.11. A nova suíte da consulta está conectada à CI atual. Permanecem pendentes os CRUDs administrativos, os testes HTTP/Playwright específicos e a aplicação local; não executar no XAMPP antes de backup e conferência dos pré-requisitos.
+A migration 014 cria somente modalidades, instrutores e horários semanais recorrentes. `ClassCatalogService` e `ClassScheduleService` implementam as operações de domínio com transações e auditoria atômica; a validação de sobreposição serializa alterações por instrutor. `ClassScheduleQuery` centraliza as consultas filtradas; `aulas.php` apresenta a grade semanal e `gestao-aulas.php` gerencia modalidades e instrutores com CSRF e RBAC. A CI #1468 aprovou serviços e concorrência em MySQL 8.0 e MariaDB 10.11. A nova suíte de consultas e as páginas estão conectadas à CI atual. Permanecem pendentes a manutenção da grade, os testes HTTP/Playwright específicos e a aplicação local; não executar no XAMPP antes de backup e conferência dos pré-requisitos.
 
 ### Bloco 07 — Relatórios e experiência
 
