@@ -1,6 +1,6 @@
 # Bloco 07.1 — Catálogo e contrato dos indicadores
 
-> **Estado:** definições revisadas; decisões aprovadas até 23/11/2026: direção da Visão geral gerencial, OP-01 a OP-06, nomenclatura “Recebido no período”, regra FR-04 e indicadores FN-04, FN-05 e FN-06. Os demais indicadores/decisões de experiência e permissão continuam em revisão. Nenhuma consulta, tela ou exportação do Bloco 07 foi implementada.
+> **Estado:** definições revisadas; decisões aprovadas até 23/11/2026: direção da Visão geral gerencial, OP-01 a OP-06, MT-01 a MT-05, nomenclatura “Recebido no período”, regra FR-04 e indicadores FN-04, FN-05 e FN-06. Os demais indicadores/decisões de experiência e permissão continuam em revisão. Nenhuma consulta, tela ou exportação do Bloco 07 foi implementada.
 > **Branch:** `feat/dashboard-portfolio`.
 > **Documento principal:** [Bloco 07 — Relatórios e experiência](bloco-07-relatorios-experiencia.md).
 
@@ -100,17 +100,20 @@ O fim é exclusivo: no instante exato de `fim_exclusivo_em`, a matrícula já es
 
 | ID | Métrica | Definição | Eixo temporal |
 |---|---|---|---|
-| MT-01 | Inícios de contrato | Contagem de matrículas cujo instante de `inicio_em` pertence ao período local convertido para limites UTC | Data de início contratual |
-| MT-02 | Inícios por plano contratado | MT-01 agrupado pelo snapshot `plano_nome_contratado` | Data de início contratual e nome contratado |
-| MT-03 | Valor contratado por plano | Soma de `valor_contratado` do snapshot, apenas quando preenchido | Data de início contratual; valor contratado não é recebimento |
-| MT-04 | Inícios por origem | MT-01 agrupado por `origem` (SISTEMA/LEGADO) | Data de início contratual |
+| MT-01 | Inícios de contrato | Contagem de matrículas com início efetivo no período; exclui cancelamento anterior ou igual ao início | Data de início contratual (`inicio_em`) |
+| MT-02 | Inícios por plano contratado | O mesmo conjunto de MT-01 agrupado pelo snapshot `plano_nome_contratado` | Data de início contratual e nome contratado |
+| MT-03 | Valor contratado por plano | Soma de `valor_contratado` informado no mesmo conjunto de MT-01, agrupado pelo snapshot; exibir quantidade de valores conhecidos | Data de início contratual; valor contratado não é recebimento |
+| MT-04 | Inícios por origem | O mesmo conjunto de MT-01 agrupado por `origem` (SISTEMA/LEGADO) | Data de início contratual |
 | MT-05 | Cancelamentos no período | Contagem de matrículas cujo `cancelada_em` pertence ao período local convertido para UTC | Instante do cancelamento |
 
 Regras adicionais:
-- `inicio_em` mede início do contrato; `criado_em` mede inserção do vínculo. Não chamar MT-01 de “matrículas cadastradas”.
-- Se `plano_nome_contratado` estiver nulo, agrupar em “Plano não informado no snapshot”; não buscar o nome/preço atual do catálogo para reescrever a história.
-- `valor_contratado` nulo não deve ser convertido em zero nem inventado. Apresentar quantidade de valores informados ou omitir soma quando não houver valores.
-- MT-05 usa a data do evento `cancelada_em`, não o fim contratual, e não mede cancelamentos de cobrança.
+- `inicio_em` é o início efetivo da vigência contratual; `criado_em` mede a inserção do vínculo. Não chamar MT-01 de “matrículas cadastradas”.
+- **Coorte comum de MT-01 a MT-04:** exigir `fim_exclusivo_em > inicio_em` e `cancelada_em IS NULL OR cancelada_em > inicio_em`. Cancelamento antes ou exatamente no início produz intervalo efetivo vazio e não representa início realizado. Cancelamento depois do início preserva o início efetivo e não apaga o evento histórico.
+- MT-02, MT-03 e MT-04 são desdobramentos da mesma coorte de MT-01; não aplicar filtros divergentes. Os grupos devem reconciliar com MT-01, ressalvadas apenas dimensões explicitamente desconhecidas.
+- Se `plano_nome_contratado` estiver nulo, agrupar em “Plano não informado no snapshot”; não buscar o nome/preço atual do catálogo para reescrever a história. Tratar também texto vazio como não informado.
+- `valor_contratado` nulo não deve ser convertido em zero nem inventado. Apresentar quantidade de valores informados; a soma considera somente valores conhecidos.
+- MT-05 usa a data do evento `cancelada_em`, não o fim contratual, e não mede cancelamentos de cobrança. Incluir cancelamentos anteriores ou iguais ao início, pois mede o evento de cancelamento, não um início efetivado.
+- Se existir qualquer intervalo contratual inconsistente (`fim_exclusivo_em <= inicio_em`), interromper a consulta com erro controlado e sem métricas parciais; não corrigir dados no relatório.
 
 ### 4.3 Frequência
 
@@ -201,7 +204,7 @@ A interface deve preservar os filtros validados ao navegar entre relatórios e a
 2. Relógio único: obter `agora` uma vez por requisição para não classificar matrículas em instantes diferentes na mesma resposta.
 3. SQL: prepared statements; allowlist para agrupamentos/tipos de relatório; limites de período; sem N+1.
 4. Datas: testes de limites inclusivos/exclusivos, virada do mês/ano, períodos de 365 dias e conversão local/UTC.
-5. Matrículas: testar as quatro situações incluindo CANCELADA antes do início; início e fim exatamente em `asOf`; janelas de 7/30 dias e limites finais inclusivos; janela de 30 cumulativa; OP-06/7 dias idêntico a VG-06; intervalo inválido (`fim_exclusivo_em <= inicio_em`) bloqueia a resposta inteira sem retornar métricas.
+5. Matrículas: testar as quatro situações incluindo CANCELADA antes do início; início e fim exatamente em `asOf`; janelas de 7/30 dias e limites finais inclusivos; janela de 30 cumulativa; OP-06/7 dias idêntico a VG-06; intervalo inválido bloqueia a resposta sem métricas. Para MT-01 a MT-04, excluir cancelamento antes/exatamente no início e incluir cancelamento posterior; MT-05 deve contar o evento mesmo quando ocorre antes do início; verificar reconciliação entre MT-01 e seus agrupamentos.
 6. Frequência: teste de dias sem registros, aluno com check-ins em dias distintos, duplicidade diária e agrupamento segunda–domingo.
 7. Financeiro: pagamentos em datas retroativas justificadas, pagamentos parciais, cobrança quitada, cobrança cancelada, matrícula cancelada com saldo em revisão e precisão decimal.
 8. RBAC: provar que Operador recebe HTTP 403 nas rotas financeiras e que nenhuma consulta financeira é executada para sua Visão geral.
@@ -230,4 +233,4 @@ A interface deve preservar os filtros validados ao navegar entre relatórios e a
 6. 07.7 — CSV agregado seguro.
 7. 07.8 — acessibilidade, responsividade, temas e regressão completa.
 
-**Decisões registradas em 23/11/2026:** OP-01 a OP-06 foram aprovados; “Recebido no período”, FR-04, FN-04, FN-05 e FN-06 também. OP-04 a OP-06 usam `enrollments.view`, as regras temporais de `EnrollmentStatus::derive()`, uma referência única e janelas cumulativas de 7/30 dias. OP-06/7 dias deve permanecer em paridade com VG-06. Intervalos inválidos devem interromper a consulta sem expor métricas parciais. FN-06 usa o saldo restante de cobranças não canceladas financeiramente ligadas a matrículas canceladas; não representa reembolso. Os demais indicadores, filtros e permissões continuam em revisão. A aprovação individual não equivale à aprovação global nem autoriza iniciar a implementação do Bloco 07.
+**Decisões registradas em 23/11/2026:** OP-01 a OP-06 e MT-01 a MT-05 foram aprovados; “Recebido no período”, FR-04, FN-04, FN-05 e FN-06 também. OP-04 a OP-06 usam `enrollments.view`, as regras temporais de `EnrollmentStatus::derive()`, uma referência única e janelas cumulativas de 7/30 dias; OP-06/7 dias permanece em paridade com VG-06. MT-01 a MT-04 usam a coorte de inícios efetivos: cancelamentos antes ou exatamente no início são excluídos, cancelamentos posteriores são incluídos. MT-05 conta o evento `cancelada_em` independentemente de ter havido vigência. Essa distinção corresponde ao comportamento de `EnrollmentInterval::fromContract()` e evita confundir início realizado com cancelamento de contrato agendado. Intervalos inválidos interrompem a consulta sem expor métricas parciais. FN-06 não representa reembolso. Os demais indicadores, filtros e permissões continuam em revisão. A aprovação individual não equivale à aprovação global nem autoriza iniciar a implementação do Bloco 07.

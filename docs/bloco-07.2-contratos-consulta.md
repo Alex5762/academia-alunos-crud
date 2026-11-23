@@ -1,6 +1,6 @@
 # Bloco 07.2 — Contratos de consulta e validação
 
-> **Estado:** desenho técnico revisado; as decisões do catálogo estão sendo aprovadas por etapas. OP-01 a OP-06 e FN-04, FN-05 e FN-06 foram aprovados em 23/11/2026; os demais itens permanecem em revisão. Não representa implementação.
+> **Estado:** desenho técnico revisado; as decisões do catálogo estão sendo aprovadas por etapas. OP-01 a OP-06, MT-01 a MT-05 e FN-04, FN-05 e FN-06 foram aprovados/definidos em 23/11/2026; os demais itens permanecem em revisão. Não representa implementação.
 > **Pré-requisito:** catálogo 07.1 e definições de indicadores aprovados.
 > **Escopo desta etapa:** contratos de entrada/saída, datas, relógio, autorização, agregação e testes. Sem migrations, alteração de schema, telas ou exportação.
 
@@ -97,6 +97,18 @@ OP-04, OP-05 e OP-06 são fotografias calculadas com um único `asOf` por requis
 - **Integridade defensiva:** no mesmo snapshot de leitura, retornar `invalid_interval_count = COUNT(*)` condicional para `fim_exclusivo_em <= inicio_em`. Se o resultado for maior que zero, descartar todas as contagens e devolver erro controlado; não mostrar métricas parciais, não classificar essas linhas como CANCELADA/AGENDADA/VENCIDA/ATIVA e não alterar os dados. Não adicionar migration ou índice para isso nesta etapa.
 - **Tempo:** `asOf`, `limit7` e `limit30` são calculados em `America/Sao_Paulo` com `DateTimeImmutable`/`DateInterval` e convertidos para UTC antes de vincular parâmetros PDO. O filtro de datas selecionado pelo usuário não participa dessas métricas.
 
+### 5.3 Contrato de consulta do relatório de matrículas — MT-01 a MT-05
+
+MT-01 a MT-05 usam `enrollments.view` e o período local normalizado em limites UTC semiabertos (`:start_utc <= coluna AND coluna < :end_exclusive_utc`). Não usar `criado_em` como substituto das datas efetivas/eventos. A consulta deve verificar intervalos inválidos (`fim_exclusivo_em <= inicio_em`) no mesmo snapshot; se houver qualquer registro inválido, descartar todas as métricas do relatório e devolver erro controlado, sem correção automática.
+
+- **Coorte de inícios efetivos (MT-01 a MT-04):** `inicio_em >= :start_utc AND inicio_em < :end_exclusive_utc`, com `fim_exclusivo_em > inicio_em` e (`cancelada_em IS NULL OR cancelada_em > inicio_em`). Assim, cancelamento anterior ou exatamente no início não conta como início realizado; cancelamento posterior ao início mantém o contrato na coorte.
+- **MT-01:** contar essa coorte uma única vez por matrícula.
+- **MT-02:** agrupar a mesma coorte por `plano_nome_contratado` (snapshot); nulo ou texto vazio é apresentado como “Plano não informado no snapshot”. Não consultar o catálogo atual para preencher histórico.
+- **MT-03:** somar `valor_contratado` como DECIMAL apenas quando informado, agrupado pelo snapshot. Retornar também a quantidade de valores conhecidos; não converter NULL para zero e não usar float.
+- **MT-04:** agrupar exatamente a mesma coorte por `origem` (ENUM `SISTEMA`/`LEGADO`); apresentar como dimensão secundária.
+- **MT-05:** contar eventos com `cancelada_em >= :start_utc AND cancelada_em < :end_exclusive_utc`, sem condicionar a `cancelada_em > inicio_em`. Cancelamentos antes ou exatamente no início pertencem a MT-05 porque houve um evento de cancelamento, embora não exista início efetivo.
+- **Reconciliação:** a soma dos grupos de MT-02 e MT-04 deve reconciliar com MT-01. MT-03 reconcilia o subconjunto com `valor_contratado IS NOT NULL`; snapshots nulos/vazios permanecem em grupo explícito, sem descartar linhas.
+
 ## 6. Fronteira de autorização
 
 - Página do dashboard continua exigindo `dashboard.view`.
@@ -161,6 +173,7 @@ OP-04, OP-05 e OP-06 são fotografias calculadas com um único `asOf` por requis
 - Cobrança cancelada financeiramente.
 - FN-04: datas de vencimento nos dois limites inclusivos; exclusão de cobrança cancelada financeiramente; separação entre matrícula não cancelada e cancelada/em revisão; matrícula agendada, ativa e vencida no grupo não cancelado; cobrança com pagamento parcial ou integral continua somando o valor original; ausência de duplicação por múltiplos pagamentos.
 - Matrícula cancelada com saldo em revisão.
+- Relatório de matrículas: início efetivo sem cancelamento, cancelamento após início, cancelamento antes do início e cancelamento exatamente no início; o primeiro grupo conta em MT-01 a MT-04 somente quando houve intervalo positivo, enquanto MT-05 conta todos os eventos no período. Reconciliar MT-02/MT-04 com MT-01 e validar valores NULL de MT-03.
 - FN-05: agregar pagamentos por cobrança antes do relacionamento; incluir somente cobrança não cancelada financeiramente ligada a matrícula não cancelada; calcular `max(valor_total - pagamentos_acumulados, 0)`; comprovar paridade com `FinanceDashboardStatus::collectibleBalanceCents()`; não aplicar filtro histórico de datas; saldo parcial, quitado, cancelamento financeiro e matrícula cancelada tratados corretamente.
 - FN-06: incluir matrícula cancelada com cobrança sem pagamentos (saldo total), pagamento parcial (saldo restante) e pagamento integral (saldo zero); excluir cobrança cancelada financeiramente; comprovar paridade entre o agregado SQL pré-agregado e `FinanceDashboardStatus::reviewBalanceCents()`. Deixar explícito que saldo zero não calcula nem exclui eventual reembolso.
 - Valores DECIMAL/centavos sem float.

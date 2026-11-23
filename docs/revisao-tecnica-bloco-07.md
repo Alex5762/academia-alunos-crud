@@ -1,6 +1,6 @@
 # Revisão técnica do Bloco 07 — aderência, métricas e arquitetura
 
-> **Estado:** revisão técnica em andamento; decisões aprovadas até 23/11/2026 incluem Visão geral, OP-01 a OP-06, “Recebido no período”, FR-04, FN-04, FN-05 e FN-06. As demais recomendações continuam sujeitas à revisão e aprovação do responsável pelo projeto.
+> **Estado:** revisão técnica em andamento; decisões aprovadas até 23/11/2026 incluem Visão geral, OP-01 a OP-06, MT-01 a MT-05, “Recebido no período”, FR-04, FN-04, FN-05 e FN-06. As demais recomendações continuam sujeitas à revisão e aprovação do responsável pelo projeto.
 > **Data:** 23/11/2026.
 > **Escopo analisado:** catálogo 07.1, contratos 07.2, código atual de alunos, matrículas, frequência, financeiro, RBAC e dashboard.
 > **Importante:** esta revisão não implementa funcionalidades, não altera schema e não substitui a aprovação do escopo.
@@ -11,7 +11,7 @@ O escopo é compatível com os recursos já implementados, desde que o Bloco 07 
 
 A principal recomendação é manter a arquitetura simples e coerente com os padrões existentes: classes de consulta com PDO, classes puras para regras temporais/monetárias, autorização por `usuarioTemPermissao()`/ `AccessControl`, arrays associativos para resultados e renderização server-side em PHP.
 
-A CI #1555 aprovou sete jobs funcionais, incluindo a migration 015 em MySQL 8.0 e MariaDB 10.11. Essa CI valida as alterações até o HEAD `58579e31a4fd3841131ceab118df1b7fe1a8d55a`, não a implementação futura dos relatórios. O job de publicação de screenshots foi ignorado pela condição do workflow. Essa evidência valida os cenários já existentes, não a implementação futura dos relatórios.
+A CI #1555 aprovou sete jobs funcionais, incluindo a migration 015 em MySQL 8.0 e MariaDB 10.11. A CI #1556 aprovou os contratos documentais OP-04 a OP-06 no HEAD correspondente; não valida implementação futura de relatórios. Essa CI valida as alterações até o HEAD `58579e31a4fd3841131ceab118df1b7fe1a8d55a`, não a implementação futura dos relatórios. O job de publicação de screenshots foi ignorado pela condição do workflow. Essa evidência valida os cenários já existentes, não a implementação futura dos relatórios.
 
 ## 2. Revisão dos indicadores da Visão geral
 
@@ -38,11 +38,17 @@ A CI #1555 aprovou sete jobs funcionais, incluindo a migration 015 em MySQL 8.0 
 
 | ID | Parecer | Recomendação |
 |---|---|---|
-| MT-01 — Inícios de contrato | **Manter** | Filtrar por `inicio_em`, não por `criado_em`. O rótulo precisa ser “Inícios de contrato”. Como a coluna é DATETIME UTC, converter os limites civis locais para UTC. |
-| MT-02 — Inícios por plano | **Manter** | Agrupar pelo snapshot `plano_nome_contratado`; não usar o nome atual do catálogo para reescrever contratos antigos. Tratar NULL e texto vazio como “Plano não informado no snapshot”. |
-| MT-03 — Valor contratado por plano | **Manter como métrica secundária** | Somar `valor_contratado` (DECIMAL) dos contratos iniciados no período, agrupado pelo snapshot. Mostrar também quantos registros têm valor informado; NULL não é zero. Nomear como valor contratado/nominal, nunca como recebido. |
-| MT-04 — Origem SISTEMA/LEGADO | **Rebaixar para informação técnica/secundária** | É útil para auditoria de migração e qualidade da base, mas tem pouco valor para a rotina gerencial. Não ocupar espaço principal da tela. |
-| MT-05 — Cancelamentos | **Manter** | Contar pelo evento `cancelada_em` no período local convertido para UTC. Não usar fim contratual nem cancelamento de cobrança como substituto. |
+| MT-01 — Inícios de contrato | **Aprovado em 23/11/2026** | Contar somente início efetivo: `fim_exclusivo_em > inicio_em` e (`cancelada_em IS NULL OR cancelada_em > inicio_em`). Cancelamento antes ou exatamente no início não produziu vigência e não conta como início. Filtrar por `inicio_em`, não por `criado_em`, com limites civis locais convertidos para UTC. |
+| MT-02 — Inícios por plano | **Aprovado em 23/11/2026** | Agrupar a mesma coorte de MT-01 pelo snapshot `plano_nome_contratado`; não usar o catálogo atual. Nulo/vazio = “Plano não informado no snapshot”. |
+| MT-03 — Valor contratado por plano | **Aprovado em 23/11/2026; secundário** | Somar `valor_contratado` (DECIMAL) da mesma coorte de MT-01, agrupado pelo snapshot. Mostrar quantidade de valores conhecidos; NULL não é zero. É valor nominal contratado, nunca recebido. |
+| MT-04 — Inícios por origem | **Aprovado em 23/11/2026; secundário** | Agrupar a mesma coorte de MT-01 pelo ENUM `origem` (`SISTEMA`/`LEGADO`). Útil para interpretar composição e migração; não ocupar espaço principal. |
+| MT-05 — Cancelamentos | **Aprovado em 23/11/2026** | Contar o evento `cancelada_em` no período local convertido para UTC, inclusive se ocorreu antes ou exatamente no início previsto. Não usar fim contratual nem cancelamento de cobrança como substituto. |
+
+### Decisão semântica complementar — início efetivo versus cancelamento
+
+A distinção é coerente com o domínio implementado: `EnrollmentInterval::fromContract()` retorna `null` quando `cancelada_em <= inicio_em`; os testes `tests/enrollment-interval.php` cobrem cancelamento anterior e exatamente no início, enquanto `tests/database-enrollment-cancellation.php` confirma que uma matrícula AGENDADA pode ser cancelada e que o evento é persistido/auditado. A especificação do Bloco 03 define `inicio_em` como início efetivo da vigência. Por isso, MT-01 a MT-04 medem contratos que efetivamente começaram; MT-05 mede o evento de cancelamento, mesmo quando o contrato não iniciou. Essa é uma decisão semântica do FitControl, não uma regra legal geral para academias.
+
+Referência conceitual externa: o National Student Clearinghouse distingue status “Withdrawn” de “Never Attended” em seu modelo de reporte. É uma analogia de separação entre início efetivo e não início, não uma norma aplicável ao FitControl ([definições de status de matrícula](https://help.studentclearinghouse.org/compliancecentral/knowledge-base/student-enrollment-statuses/)).
 
 ## 5. Revisão do relatório de frequência
 

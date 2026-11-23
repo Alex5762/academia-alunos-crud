@@ -1,6 +1,6 @@
 # Bloco 07 — Relatórios e experiência
 
-> **Estado:** direção da Visão geral aceita; decisões aprovadas por etapas: OP-01 a OP-06, “Recebido no período”, FR-04, FN-04, FN-05 e FN-06 (23/11/2026). Os demais indicadores/critério continuam em revisão. Nenhuma funcionalidade do Bloco 07 foi implementada.
+> **Estado:** direção da Visão geral aceita; decisões aprovadas por etapas: OP-01 a OP-06, MT-01 a MT-05, “Recebido no período”, FR-04, FN-04, FN-05 e FN-06 (23/11/2026). Os demais indicadores/critério continuam em revisão. Nenhuma funcionalidade do Bloco 07 foi implementada.
 > **Branch de referência:** `feat/dashboard-portfolio`.
 > **Dependência anterior:** Bloco 06 com validação automatizada aprovada na CI #1512. A validação manual dos blocos no XAMPP/dispositivo permanece adiada e registrada separadamente.
 > **Regra:** revisar e aprovar o catálogo `bloco-07-catalogo-indicadores.md` antes de iniciar a etapa 07.2. A aprovação da direção da Visão geral não antecipa a aprovação automática de cada fórmula ou endpoint.
@@ -81,7 +81,7 @@ Para o período selecionado:
 - quantidade de matrículas canceladas no período, usando `cancelada_em` e sua convenção temporal documentada;
 - separação entre matrículas de origem `SISTEMA` e `LEGADO`, quando isso for útil para interpretação.
 
-A tela deve nomear o indicador como **inícios de contrato no período**, não como quantidade de matrículas criadas, quando o filtro usar `inicio_em`.
+A tela deve nomear o indicador como **inícios de contrato no período**, não como quantidade de matrículas criadas, quando o filtro usar `inicio_em`. **Decisão técnica registrada em 23/11/2026 — MT-01 a MT-04:** considerar início realizado somente quando o intervalo efetivo não é vazio: `fim_exclusivo_em > inicio_em` e `cancelada_em IS NULL OR cancelada_em > inicio_em`. Cancelamento antes ou exatamente no início não conta como início de contrato; cancelamento depois do início preserva o início realizado. MT-02, MT-03 e MT-04 usam exatamente a coorte de MT-01. MT-05 conta todos os eventos `cancelada_em` dentro do período, inclusive cancelamentos antes do início. Se houver intervalo inválido (`fim_exclusivo_em <= inicio_em`), a consulta falha de forma controlada sem publicar resultados parciais. MT-04 permanece informação secundária.
 
 ### 3.3 Relatório de frequência
 
@@ -179,7 +179,7 @@ Cada seção e cada endpoint CSV devem revalidar a permissão correspondente no 
 
 ## 8. Decisões que precisam de aprovação antes da implementação
 
-1. Confirmar os indicadores restantes do catálogo nas seções 3.1 e 3.2; OP-01 a OP-06 já foram aprovados em 23/11/2026.
+1. Confirmar os indicadores restantes do catálogo nas seções 3.1 e 3.2; OP-01 a OP-06 e MT-01 a MT-05 já foram definidos/aprovados em 23/11/2026.
 2. Confirmar o relatório de frequência com total de entradas, alunos distintos e evolução diária.
 3. FN-01 a FN-06: definições aprovadas por etapas até 23/11/2026. FN-04 separa valores nominais por vencimento e situação atual da matrícula; FN-05 soma o saldo positivo das cobranças ainda cobráveis; FN-06 soma o saldo positivo das cobranças em revisão vinculadas a matrículas canceladas, sem representar reembolso.
 4. Confirmar CSV agregado somente, sem dados pessoais, deixando PDF/XLSX fora do MVP.
@@ -202,6 +202,8 @@ Entregáveis desta etapa:
 **Decisão registrada em 23/11/2026:** nomenclatura **“Recebido no período”** aprovada para a soma de pagamentos por `data_pagamento`; não chamar de faturamento ou lucro. O catálogo continua aguardando aprovação global das demais fórmulas e permissões.
 
 **Decisão registrada em 23/11/2026:** OP-01 a OP-03 foram aprovados como fotografias cadastrais independentes do período, sob `students.view`, com contagem agregada única e domínio de `ativo` protegido pela migration 015. OP-04 a OP-06 também foram aprovados: usam `enrollments.view`, uma única referência temporal, as quatro situações canônicas e janelas cumulativas de 7/30 dias; OP-06/7 dias corresponde a VG-06. Intervalos inválidos (`fim_exclusivo_em <= inicio_em`) interrompem a consulta sem resultados parciais. **A migration 015 é uma proteção cadastral separada; não implementa consultas ou telas do Bloco 07.**
+
+**Decisão técnica registrada em 23/11/2026:** MT-01 a MT-04 contam inícios efetivos; cancelamentos anteriores ou simultâneos ao início não criam vigência e ficam fora da coorte de início. MT-05 conta eventos de cancelamento inclusive quando a matrícula nunca chegou a vigorar. MT-02 a MT-04 reutilizam exatamente a coorte de MT-01.
 
 **Decisão registrada em 23/11/2026:** o rótulo **“Recebido no período”** foi aprovado para a soma dos pagamentos por `data_pagamento`, com legenda esclarecendo que se trata de pagamentos registrados e não de liquidação bancária. A decisão foi complementada pela aprovação de FR-04, FN-04, FN-05 e FN-06. FN-06 é fotografia atual do saldo restante de cobranças não canceladas financeiramente ligadas a matrículas canceladas; não representa reembolso. Os demais indicadores, filtros e permissões continuam em revisão.
 
