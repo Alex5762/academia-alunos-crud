@@ -208,11 +208,11 @@ Cada seção e cada endpoint CSV devem revalidar a permissão correspondente no 
 - [x] PDF, XLSX e exportação nominal permanecem fora do MVP, conforme escopo aprovado.
 - [x] Zero legítimo, ausência de registros, não aplicável, erro de consulta e falta de permissão são estados distintos; testes FR-04/FR-05 diferenciam zero e não aplicável, e erros de consulta não são convertidos em zero.
 - [x] Relatório operacional e de matrículas privilegia tabelas; frequência usa barras diárias com equivalente textual/tabular; financeiro usa resumo e tabela por forma, sem depender de gráfico decorativo.
-- [ ] Foco visível por teclado é verificável em todos os controles; estados não textuais relevantes atendem contraste 3:1 com cores adjacentes; texto normal atende 4,5:1.
-- [ ] Alvos interativos atendem 24 × 24 CSS px ou uma exceção da WCAG 2.2 é documentada; reflow é testado a 320 CSS px sem perda de informação ou funcionalidade.
-- [ ] Tema claro/escuro, `prefers-reduced-motion`, navegação por teclado e gráficos que não dependem só de cor são cobertos.
+- [ ] Auditoria integral de foco em todos os controles e de contraste não textual 3:1 ainda depende de inspeção mais ampla. A automação cobre foco por teclado no filtro de período e amostras de texto normal com contraste mínimo de 4,5:1 nos temas claro/escuro, mas não representa uma auditoria WCAG completa.
+- [ ] A verificação de todos os alvos e de reflow sem perda funcional permanece pendente de inspeção manual. A automação mede os links CSV (mínimo 24 × 24 CSS px) e ausência de overflow horizontal em 320 CSS px; não afirma que todos os controles e conteúdos foram auditados.
+- [x] A automação verifica `prefers-reduced-motion`, foco de teclado no filtro, amostras de contraste nos temas claro/escuro e equivalência tabular do gráfico de frequência. A inspeção completa por teclado/leitor de tela continua no checklist manual.
 - [x] Skeletons ficam fora enquanto a página for renderizada de forma síncrona no servidor.
-- [ ] Testes de regressão comprovam que os relatórios não alteram dados operacionais nem a cadeia de auditoria.
+- [ ] A revisão de código confirmou que as quatro classes de consulta (`OperationalReportQuery`, `EnrollmentReportQuery`, `FrequencyReportQuery` e `FinanceReportQuery`) contêm apenas SELECT. Ainda falta um teste de regressão por snapshot que prove, em execução, a ausência de alterações em dados operacionais e na cadeia de auditoria.
 - [x] MySQL 8.0 e MariaDB 10.11 passaram pela CI #45256688269, incluindo a matriz cross-browser; o smoke test local permanece separado e documentado.
 
 ## 8. Fechamento global da especificação
