@@ -147,6 +147,30 @@ for (const engine of engines) {
     await assertNoDocumentOverflow(page, engine.name, "financeiro mobile estreito de 320px");
 
     await page.setViewportSize({ width: 1280, height: 900 });
+    const classesResponse = await page.goto(baseUrl + "/aulas.php", {
+      waitUntil: "domcontentloaded",
+    });
+    ensure(classesResponse?.ok(), engine.name + ": a grade de aulas não abriu.");
+    await page.getByRole("heading", { name: "Grade de aulas" }).waitFor();
+    const scheduleManagementLink = page.getByRole("link", {
+      name: "Gerenciar horários",
+      exact: true,
+    });
+    ensure(
+      await scheduleManagementLink.count() === 1,
+      engine.name + ": o atalho de gestão de horários não foi exibido ao gestor.",
+    );
+    await scheduleManagementLink.click();
+    await page.getByRole("heading", { name: "Gerenciar horários" }).waitFor();
+    await page.getByRole("heading", { name: "Novo horário" }).waitFor();
+    await page.getByText("Cadastre uma modalidade antes de criar horários.").waitFor();
+    await assertNoDocumentOverflow(page, engine.name, "gestão de horários desktop");
+    await page.setViewportSize({ width: 390, height: 844 });
+    await assertNoDocumentOverflow(page, engine.name, "gestão de horários mobile de 390px");
+    await page.setViewportSize({ width: 320, height: 780 });
+    await assertNoDocumentOverflow(page, engine.name, "gestão de horários mobile estreito de 320px");
+
+    await page.setViewportSize({ width: 1280, height: 900 });
     const formResponse = await page.goto(baseUrl + "/cadastro.php", {
       waitUntil: "domcontentloaded",
     });
