@@ -1,11 +1,11 @@
 <?php
 declare(strict_types=1);
 
+use FitControl\Domain\Classes\ClassScheduleQuery;
+
 require_once __DIR__ . '/funcoes.php';
 require_once __DIR__ . '/conexao.php';
 require_once __DIR__ . '/src/Domain/Classes/ClassScheduleQuery.php';
-
-use FitControl\Domain\Classes\ClassScheduleQuery;
 
 $usuario = exigirAutenticacao($pdo);
 exigirPermissao($usuario, 'classes.view');
