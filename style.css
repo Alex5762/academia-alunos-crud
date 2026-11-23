@@ -3455,3 +3455,232 @@ body:not(.dashboard-body) .theme-option[aria-pressed="true"] {
         min-width: 13rem;
     }
 }
+
+
+/* Bloco 06 — consulta da grade semanal */
+.class-schedule-page {
+    max-width: 1180px;
+}
+
+.class-schedule-summary {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+    margin: 26px 0;
+}
+
+.class-schedule-stat {
+    display: flex;
+    min-height: 104px;
+    flex-direction: column;
+    justify-content: center;
+    gap: 7px;
+    padding: 20px 22px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+}
+
+.class-schedule-stat span {
+    color: var(--muted);
+    font-size: 0.82rem;
+    font-weight: 650;
+}
+
+.class-schedule-stat strong {
+    color: var(--ink);
+    font-size: 1.8rem;
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+}
+
+.class-schedule-filter {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+    align-items: end;
+    gap: 14px;
+}
+
+.class-schedule-filter > div:not(.class-schedule-filter-actions) {
+    min-width: 0;
+}
+
+.class-schedule-filter label {
+    display: block;
+    margin-bottom: 7px;
+    color: var(--ink);
+    font-size: 0.82rem;
+    font-weight: 700;
+}
+
+.class-schedule-filter select {
+    width: 100%;
+    min-height: 44px;
+    padding: 0 12px;
+    color: var(--ink);
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    font: inherit;
+}
+
+.class-schedule-filter-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.class-schedule-board {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+    gap: 16px;
+    margin-top: 24px;
+}
+
+.class-day-card {
+    min-width: 0;
+    padding: 20px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+}
+
+.class-day-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--line);
+}
+
+.class-day-heading h2 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 750;
+}
+
+.class-day-heading span {
+    color: var(--muted);
+    font-size: 0.76rem;
+    font-weight: 650;
+    white-space: nowrap;
+}
+
+.class-day-empty {
+    margin: 16px 0 2px;
+    color: var(--muted);
+    font-size: 0.85rem;
+}
+
+.class-day-list {
+    display: grid;
+    gap: 10px;
+    padding-top: 14px;
+}
+
+.class-slot {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 13px;
+    background: #f8f9fc;
+    border: 1px solid #edf0f5;
+    border-radius: 11px;
+}
+
+.class-slot-time {
+    display: flex;
+    min-width: 62px;
+    flex-direction: column;
+    gap: 3px;
+    padding-right: 13px;
+    border-right: 1px solid #e1e6ef;
+    font-variant-numeric: tabular-nums;
+}
+
+.class-slot-time strong {
+    color: var(--blue-dark);
+    font-size: 0.95rem;
+}
+
+.class-slot-time span {
+    color: var(--muted);
+    font-size: 0.76rem;
+}
+
+.class-slot-details {
+    min-width: 0;
+}
+
+.class-slot-details h3 {
+    overflow-wrap: anywhere;
+    margin: 0;
+    color: var(--ink);
+    font-size: 0.9rem;
+    font-weight: 750;
+}
+
+.class-slot-details p {
+    margin: 4px 0 0;
+    color: var(--muted);
+    font-size: 0.8rem;
+}
+
+.class-schedule-footnote {
+    margin: 18px 2px 0;
+    color: var(--muted);
+    font-size: 0.8rem;
+}
+
+@media (max-width: 820px) {
+    .class-schedule-filter {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .class-schedule-filter-actions {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (max-width: 620px) {
+    .class-schedule-summary {
+        grid-template-columns: 1fr;
+        gap: 9px;
+        margin: 20px 0;
+    }
+
+    .class-schedule-stat {
+        min-height: 82px;
+        padding: 15px 17px;
+    }
+
+    .class-schedule-stat strong {
+        font-size: 1.5rem;
+    }
+
+    .class-schedule-filter {
+        grid-template-columns: 1fr;
+    }
+
+    .class-schedule-filter-actions {
+        grid-column: auto;
+    }
+
+    .class-schedule-filter-actions .button {
+        flex: 1;
+        justify-content: center;
+    }
+
+    .class-schedule-board {
+        grid-template-columns: 1fr;
+        gap: 12px;
+        margin-top: 16px;
+    }
+
+    .class-day-card {
+        padding: 16px;
+    }
+}
