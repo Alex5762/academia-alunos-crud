@@ -156,8 +156,8 @@ Não alterar `index.php` inteiro de uma vez. Extrair somente as consultas novas 
 
 1. **Concluído:** `ReportPeriod` e integração HTTP em `relatorios.php`, com captura única de `asOf`, preservação de `de`/`ate` e HTTP 400 sem fallback.
 2. **Concluído e validado na CI #1571:** OP-01 a OP-06 e MT-01 a MT-05 em consultas específicas, com validação defensiva de intervalos e execução MySQL 8.0/MariaDB 10.11.
-3. **Implementado nesta etapa; aguardando nova CI:** FR-01 a FR-05, com FR-03 preenchida por data civil, FR-04 calculado por ocorrência real do calendário e FR-05 limitado aos frequentadores. O job de integração testa MySQL 8.0 e MariaDB 10.11.
-4. Implementar financeiro (07.5), RBAC e paridade de FN-05/FN-06 com `FinanceDashboardStatus`; executar `EXPLAIN` em MySQL 8.0 e MariaDB 10.11 antes de decidir sobre índices.
+3. **Concluído e validado na CI #1579:** FR-01 a FR-05, com FR-03 preenchida por data civil, FR-04 calculado por ocorrência real do calendário e FR-05 limitado aos frequentadores.
+4. **Implementado nesta etapa; aguardando nova CI:** FN-01 a FN-06 em `FinanceReportQuery`, com RBAC `finance.view`, pagamentos históricos sem JOIN de estado atual, agregação de cobranças por vencimento e saldos FN-05/FN-06 pelas regras canônicas `FinanceDashboardStatus`. O teste de integração cobre as cinco formas, retroativos, cancelamentos posteriores, período vazio e paridade de saldos. O `EXPLAIN` foi incluído como diagnóstico de CI, mas o volume de fixtures não é representativo para decisão de índice.
 5. Integrar os cartões no dashboard existente (07.6), reutilizando agregadores sem duplicar SQL e corrigindo a distribuição cadastral por plano.
 6. Implementar CSV agregado seguro (07.7) por último, com escaping, neutralização documentada e testes em leitores de planilha.
 7. Finalizar regressão (07.8): desktop/mobile, reflow a 320 CSS px, temas claro/escuro, teclado/foco, contraste, redução de movimento, acessibilidade e comparação com a experiência anterior.
