@@ -1,6 +1,6 @@
 # Bloco 07.2 — Contratos de consulta e validação
 
-> **Estado:** desenho técnico revisado; as decisões do catálogo estão sendo aprovadas por etapas. FN-04 e FN-05 foram aprovados em 23/11/2026; FN-06 e demais itens permanecem em revisão. Não representa implementação.
+> **Estado:** desenho técnico revisado; as decisões do catálogo estão sendo aprovadas por etapas. FN-04, FN-05 e FN-06 foram aprovados em 23/11/2026; os demais itens permanecem em revisão. Não representa implementação.
 > **Pré-requisito:** catálogo 07.1 e definições de indicadores aprovados.
 > **Escopo desta etapa:** contratos de entrada/saída, datas, relógio, autorização, agregação e testes. Sem migrations, alteração de schema, telas ou exportação.
 
@@ -105,6 +105,7 @@ Regras:
 - Não usar `SQL_CALC_FOUND_ROWS`, nem buscar colunas não necessárias.
 - As consultas de matrícula devem respeitar cancelamentos e snapshots; consultas financeiras devem manter cobrança cancelada, saldo cobrável e saldo em revisão separados. FN-05 é fotografia atual: somar `max(valor_total - pagamentos_acumulados, 0)` para cobranças não canceladas financeiramente vinculadas a matrículas não canceladas, independentemente do período selecionado; reutilizar `FinanceDashboardStatus::collectibleBalanceCents()` ou provar paridade do agregado SQL.
 - **FN-04 aprovado:** filtrar `cobrancas.data_vencimento` com limites `>= :start_date` e `<= :end_date`; excluir `cobrancas.cancelada_em_utc IS NOT NULL`; agrupar por `matriculas.cancelada_em IS NULL` (grupo regular) versus `IS NOT NULL` (grupo “Em revisão”). Para cada grupo, retornar `COUNT(c.id)` e `SUM(c.valor_total)` como valor nominal original. O grupo regular inclui matrículas agendadas, ativas e vencidas, desde que não canceladas. A classificação reflete a situação atual, não a situação histórica na data do vencimento. Não juntar `pagamentos` nesta consulta, pois o indicador não calcula saldo e o join poderia multiplicar cobranças.
+- **FN-06 aprovado em 23/11/2026:** calcular a fotografia atual pela soma de `max(valor_total - pagamentos_acumulados, 0)` somente quando `cobrancas.cancelada_em_utc IS NULL` e `matriculas.cancelada_em IS NOT NULL`. Pré-agregar pagamentos por cobrança antes do JOIN. Reutilizar `FinanceDashboardStatus::reviewBalanceCents()` ou comprovar paridade do agregado SQL com a regra canônica. Não aplicar filtro histórico de datas. A legenda deve informar que os valores exigem análise e não representam automaticamente reembolso; saldo zero não determina se há devolução de pagamentos anteriores.
 
 ## 8. Matriz mínima de testes
 
@@ -141,6 +142,7 @@ Regras:
 - FN-04: datas de vencimento nos dois limites inclusivos; exclusão de cobrança cancelada financeiramente; separação entre matrícula não cancelada e cancelada/em revisão; matrícula agendada, ativa e vencida no grupo não cancelado; cobrança com pagamento parcial ou integral continua somando o valor original; ausência de duplicação por múltiplos pagamentos.
 - Matrícula cancelada com saldo em revisão.
 - FN-05: agregar pagamentos por cobrança antes do relacionamento; incluir somente cobrança não cancelada financeiramente ligada a matrícula não cancelada; calcular `max(valor_total - pagamentos_acumulados, 0)`; comprovar paridade com `FinanceDashboardStatus::collectibleBalanceCents()`; não aplicar filtro histórico de datas; saldo parcial, quitado, cancelamento financeiro e matrícula cancelada tratados corretamente.
+- FN-06: incluir matrícula cancelada com cobrança sem pagamentos (saldo total), pagamento parcial (saldo restante) e pagamento integral (saldo zero); excluir cobrança cancelada financeiramente; comprovar paridade entre o agregado SQL pré-agregado e `FinanceDashboardStatus::reviewBalanceCents()`. Deixar explícito que saldo zero não calcula nem exclui eventual reembolso.
 - Valores DECIMAL/centavos sem float.
 - Perfil Operador não aciona consulta financeira e não recebe campos financeiros.
 
@@ -161,7 +163,7 @@ Para evitar uma consulta dependente de recursos específicos de calendário do M
 - Confirmar se a implementação atual de `EnrollmentStatus::derive()` recebe `DateTimeImmutable` no fuso local ou converte internamente; o adapter SQL precisa reproduzir exatamente a mesma fronteira.
 - Confirmar o comportamento do serviço financeiro para pagamentos retroativos e a semântica de `data_pagamento`; a legenda do indicador não deve sugerir liquidação bancária.
 - Confirmar os nomes e tipos reais das colunas no schema/migrations antes de escrever qualquer SQL; este documento define responsabilidades, não autoriza presumir nomes.
-- A definição de saldo em revisão/cobrável deve ser validada contra a regra de cancelamento e pagamentos acumulados existente, sem introduzir soma duplicada por joins de 1:N.
+- As definições FN-05 e FN-06 devem ser validadas separadamente contra `collectibleBalanceCents()` e `reviewBalanceCents()`, respectivamente; pré-agregar pagamentos por cobrança para evitar soma duplicada por joins de 1:N.
 
 ## 11. Critério de saída da 07.2
 
