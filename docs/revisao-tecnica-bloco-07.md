@@ -155,8 +155,8 @@ Não alterar `index.php` inteiro de uma vez. Extrair somente as consultas novas 
 ## 10. Sequência técnica aprovada e estado de execução
 
 1. **Concluído:** `ReportPeriod` e integração HTTP em `relatorios.php`, com captura única de `asOf`, preservação de `de`/`ate` e HTTP 400 sem fallback.
-2. **Implementado, aguardando CI:** OP-01 a OP-06 e MT-01 a MT-05 em consultas específicas, com validação defensiva de intervalos e teste integrado MySQL 8.0/MariaDB 10.11.
-3. Implementar frequência (07.4), incluindo FR-03, FR-04 por ocorrência do calendário e FR-05.
+2. **Concluído e validado na CI #1571:** OP-01 a OP-06 e MT-01 a MT-05 em consultas específicas, com validação defensiva de intervalos e execução MySQL 8.0/MariaDB 10.11.
+3. **Implementado nesta etapa; aguardando nova CI:** FR-01 a FR-05, com FR-03 preenchida por data civil, FR-04 calculado por ocorrência real do calendário e FR-05 limitado aos frequentadores. O job de integração testa MySQL 8.0 e MariaDB 10.11.
 4. Implementar financeiro (07.5), RBAC e paridade de FN-05/FN-06 com `FinanceDashboardStatus`; executar `EXPLAIN` em MySQL 8.0 e MariaDB 10.11 antes de decidir sobre índices.
 5. Integrar os cartões no dashboard existente (07.6), reutilizando agregadores sem duplicar SQL e corrigindo a distribuição cadastral por plano.
 6. Implementar CSV agregado seguro (07.7) por último, com escaping, neutralização documentada e testes em leitores de planilha.
@@ -174,4 +174,4 @@ Não alterar `index.php` inteiro de uma vez. Extrair somente as consultas novas 
 - [W3C — WCAG 2.2, SC 2.5.8 Target Size (Minimum)](https://www.w3.org/WAI/WCAG22/Understanding/target-size-minimum): alvos de pelo menos 24 × 24 CSS px, com exceções definidas.
 - [W3C — WCAG 2.2, SC 1.4.10 Reflow](https://www.w3.org/WAI/WCAG22/Understanding/reflow): apresentação sem perda de informação/funcionalidade a 320 CSS px, exceto conteúdos que exijam layout bidimensional.
 
-**Resultado desta revisão:** `ReportPeriod`, integração HTTP e primeira fatia operacional/matrículas estão implementados, sem alteração de schema; aguardam validação na CI. Frequência, financeiro, cartões do dashboard e CSV permanecem pendentes.
+**Resultado desta revisão:** `ReportPeriod` e a primeira fatia operacional/matrículas foram validados na CI #1571. FR-01 a FR-05 e sua integração visual foram implementados nesta etapa, com teste adicionado à CI e resultado ainda pendente. Nenhuma alteração de schema foi feita. Financeiro, cartões do dashboard e CSV permanecem pendentes.
