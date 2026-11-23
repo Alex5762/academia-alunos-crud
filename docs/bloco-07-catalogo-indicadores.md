@@ -1,6 +1,6 @@
 # Bloco 07.1 — Catálogo e contrato dos indicadores
 
-> **Estado:** especificação técnica inicial concluída para revisão; nenhuma consulta, tela ou exportação do Bloco 07 foi implementada.
+> **Estado:** catálogo revisado tecnicamente; nomenclatura “Recebido no período” aprovada. Aprovação global dos demais indicadores e permissões ainda pendente. Nenhuma consulta, tela ou exportação do Bloco 07 foi implementada.
 > **Branch:** `feat/dashboard-portfolio`.
 > **Documento principal:** [Bloco 07 — Relatórios e experiência](bloco-07-relatorios-experiencia.md).
 
@@ -219,4 +219,4 @@ A interface deve preservar os filtros validados ao navegar entre relatórios e a
 6. 07.7 — CSV agregado seguro.
 7. 07.8 — acessibilidade, responsividade, temas e regressão completa.
 
-**Critério de saída da 07.1:** revisão e aprovação do catálogo de indicadores, do contrato de filtros, das permissões e dos limites semânticos. Até essa aprovação, não iniciar migrations, consultas novas nem telas do Bloco 07.
+**Critério de saída da 07.1:** aprovação do catálogo de indicadores, do contrato de filtros, das permissões e dos limites semânticos. A nomenclatura do indicador financeiro principal já foi aprovada; os demais itens aguardam revisão. Até a aprovação global, não iniciar migrations, consultas novas nem telas do Bloco 07.
