@@ -1,6 +1,6 @@
 # Bloco 07.2 — Contratos de consulta e validação
 
-> **Estado:** desenho técnico inicial para revisão. Não representa implementação.
+> **Estado:** desenho técnico inicial revisado; aguarda aprovação junto ao catálogo 07.1. Não representa implementação.
 > **Pré-requisito:** catálogo 07.1 e definições de indicadores aprovados.
 > **Escopo desta etapa:** contratos de entrada/saída, datas, relógio, autorização, agregação e testes. Sem migrations, alteração de schema, telas ou exportação.
 
@@ -29,7 +29,7 @@ Uma consulta recebe:
 - `startDate`: data ISO `YYYY-MM-DD`, inclusiva, no calendário local.
 - `endDate`: data ISO `YYYY-MM-DD`, inclusiva, no calendário local.
 - `asOf`: instante confiável único, obtido no fuso da academia.
-- `permissions`: identidade/perfil autenticado resolvido no servidor; nunca fornecido como verdade pelo cliente.
+- identidade/perfil autenticado: resolvido exclusivamente no servidor a partir da sessão; não aceitar objeto `permissions` fornecido pelo cliente. A política de acesso consulta `AccessControl` no servidor.
 
 Regras:
 1. Fazer parsing estrito de datas (incluindo round-trip de formatação); rejeitar datas inexistentes como 2026-02-30.
@@ -59,24 +59,24 @@ Criar uma representação explícita dos limites para dois tipos de coluna:
 
 - O serviço de dashboard captura `asOf` uma única vez e compartilha com todos os serviços.
 - Situação de matrícula deve reutilizar `EnrollmentStatus::derive()`, ou uma tradução SQL rigorosamente equivalente, com testes de paridade.
-- Janela de alertas é calculada em calendário local; VG-06 considera matrícula ATIVA com `fim_exclusivo_em` estritamente maior que `asOf` e menor ou igual a `asOf + 7 dias`.
+- Janela de alertas é calculada em calendário local; VG-06 considera matrícula ATIVA com `fim_exclusivo_em` estritamente maior que `asOf` e menor ou igual a `asOf + 7 dias`. O limite final é inclusivo.
 - A conversão de `asOf` e do limite para UTC ocorre antes da consulta.
 - Não usar relógio do banco em algumas consultas e relógio PHP em outras.
 
 ## 5. Contrato de saída
 
-Cada seção retorna:
-- `available`: se o usuário possui permissão; seção não autorizada não inclui dados nem totais.
+Cada seção autorizada retorna:
 - `reference`: `current`, `selected_period` ou `rolling_window`.
 - `period`: datas normalizadas quando aplicável.
 - `generatedAt`: instante `asOf` usado.
 - `metrics`: mapa de chaves estáveis e valores numéricos/decimais serializáveis sem float para moeda.
 
 Regras:
-- Preferir omitir seção não autorizada em vez de enviar `available=false` com dados auxiliares.
+- Omitir completamente seção não autorizada do payload; não enviar `available=false`, valores, totais, chaves de métricas ou metadados que permitam inferir dados protegidos.
 - Zero é um resultado real e distinto de falha.
 - Erro de consulta deve resultar em erro controlado; nunca converter exceção em zero.
 - Moeda deve permanecer DECIMAL/string ou centavos inteiros; formatar na camada de apresentação.
+- Para o indicador VG-05/FN-01, usar o rótulo aprovado “Recebido no período” e legenda que esclareça ser a soma dos pagamentos registrados pela `data_pagamento` informada, não comprovação de liquidação bancária.
 - Não incluir nomes, e-mails, telefones, observações, IDs individuais ou outros dados pessoais.
 - O dashboard não calcula métricas: apenas apresenta o resultado retornado.
 
@@ -146,7 +146,14 @@ Regras:
 - Nenhuma PII na saída agregada.
 - MySQL 8.0 e MariaDB 10.11.
 
-## 9. Critério de saída da 07.2
+## 9. Pontos de atenção que exigem verificação no código antes da implementação
+
+- Confirmar se a implementação atual de `EnrollmentStatus::derive()` recebe `DateTimeImmutable` no fuso local ou converte internamente; o adapter SQL precisa reproduzir exatamente a mesma fronteira.
+- Confirmar o comportamento do serviço financeiro para pagamentos retroativos e a semântica de `data_pagamento`; a legenda do indicador não deve sugerir liquidação bancária.
+- Confirmar os nomes e tipos reais das colunas no schema/migrations antes de escrever qualquer SQL; este documento define responsabilidades, não autoriza presumir nomes.
+- A definição de saldo em revisão/cobrável deve ser validada contra a regra de cancelamento e pagamentos acumulados existente, sem introduzir soma duplicada por joins de 1:N.
+
+## 10. Critério de saída da 07.2
 
 A etapa só é considerada pronta quando:
 1. contratos de período e relógio estão implementados e cobertos;
