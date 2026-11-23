@@ -1,6 +1,6 @@
 # Bloco 07.2 — Contratos de consulta e validação
 
-> **Estado:** período, consultas OP-01 a OP-06/MT-01 a MT-05 e a primeira implementação de FR-01 a FR-05 integrados a `relatorios.php`. A validação de frequência foi adicionada ao job MySQL 8.0/MariaDB 10.11 e aguarda a nova CI. Financeiro, cartões do dashboard e CSV permanecem pendentes. Não houve migration ou alteração de schema.
+> **Estado:** período, OP-01 a OP-06, MT-01 a MT-05 e FR-01 a FR-05 integrados à tela e validados na CI #1579 em MySQL 8.0/MariaDB 10.11. FN-01 a FN-06 foram implementados em `FinanceReportQuery` e integrados com autorização `finance.view`; teste de integração ampliado aguarda nova CI. Cartões do dashboard e CSV permanecem pendentes. Nenhuma migration ou alteração de schema foi feita.
 > **Pré-requisito:** catálogo 07.1 e definições de indicadores aprovados.
 > **Escopo desta etapa:** contratos de entrada/saída, datas, relógio, autorização, agregação e testes. Sem migrations, alteração de schema, telas ou exportação.
 
@@ -213,6 +213,8 @@ MT-01 a MT-05 usam `enrollments.view` e o período local normalizado em limites 
 - FN-06: incluir matrícula cancelada com cobrança sem pagamentos (saldo total), pagamento parcial (saldo restante) e pagamento integral (saldo zero); excluir cobrança cancelada financeiramente; comprovar paridade entre o agregado SQL pré-agregado e `FinanceDashboardStatus::reviewBalanceCents()`. Deixar explícito que saldo zero não calcula nem exclui eventual reembolso.
 - Valores DECIMAL/centavos sem float.
 - Perfil Operador não aciona consulta financeira e não recebe campos financeiros.
+
+**Implementação FN-01 a FN-06:** `FinanceReportQuery::forPeriod()` consulta pagamentos sem JOIN com matrículas/cobranças, agrega FN-01/FN-02 e agrupa FN-03 pela allowlist do ENUM, validando reconciliação em centavos. FN-04 consulta cobranças sem JOIN com pagamentos e separa matrículas não canceladas/em revisão. FN-05/FN-06 pré-agregam pagamentos por cobrança e reutilizam `FinanceDashboardStatus` para os saldos atuais. `relatorios.php` executa a consulta somente após verificar `finance.view`; a seção é omitida para Operador. O teste `database-finance.php` foi ampliado para cobrir datas retroativas, cancelamentos posteriores, as cinco formas, períodos vazios, vencimentos e paridade dos saldos. A nova CI ainda precisa confirmar esse incremento.
 
 ### Apresentação e acessibilidade
 - Os cartões VG-01 a VG-06 aparecem nos dois grupos aprovados; Operador não recebe VG-05 nem espaço/placeholder financeiro.
