@@ -327,7 +327,7 @@ jobs:
           DB_PASSWORD: root
         run: php tests/database-attendance-checkin.php
 
-      - name: Validate automatic charges and financial ledger
+      - name: Validate automatic charges, financial ledger and report indicators FN-01 to FN-06
         env:
           DB_HOST: 127.0.0.1
           DB_PORT: 3306
@@ -475,6 +475,7 @@ jobs:
           test -f src/Domain/Reports/OperationalReportQuery.php
           test -f src/Domain/Reports/EnrollmentReportQuery.php
           test -f src/Domain/Reports/FrequencyReportQuery.php
+          test -f src/Domain/Reports/FinanceReportQuery.php
           test -f relatorios.php
           test -f tests/report-period.php
           test -f tests/database-reports.php
