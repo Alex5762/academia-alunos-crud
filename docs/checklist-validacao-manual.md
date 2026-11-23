@@ -1,8 +1,8 @@
 # Checklist de validação manual — FitControl
 
-**Status geral:** pendente de execução em dispositivo físico.  
-**Objetivo:** registrar os testes manuais que ainda precisam ser feitos depois, quando houver acesso a um celular e tempo para uma conferência completa.  
-**Importante:** os itens abaixo não foram executados nesta etapa. Os testes automatizados da CI em Chromium, Firefox e WebKit com viewports simulados não substituem esta validação física.
+**Status geral:** pendente de execução local/física e de validação manual dos arquivos CSV em Excel/LibreOffice.  
+**Objetivo:** registrar os testes manuais que ainda precisam ser feitos quando houver acesso ao XAMPP, a um celular e aos aplicativos de planilha.  
+**Importante:** as CIs #45252564979 e #45256688269 cobrem verificações automatizadas delimitadas de acessibilidade e a matriz Chromium/Firefox/WebKit da página de relatórios; elas não substituem inspeção humana completa, leitor de tela em dispositivo real ou abertura dos CSV em planilhas instaladas.
 
 ## 1. Preparação do ambiente
 
@@ -176,6 +176,33 @@ Execute esta seção somente depois da aplicação local das migrations 005/006 
 | Fluxos funcionais | Pendente |
 | Dispositivo/navegador | — |
 | Resultado | Pendente |
+
+## 10. Bloco 07 — relatórios e exportação CSV
+
+A implementação automatizada do Bloco 07 foi concluída. As CIs #1595, #45245709878, #45247639018, #45249934923, #45252564979 e #45256688269 aprovaram consultas, cartões, CSV/downloads, primeira bateria de acessibilidade e matriz Chromium/Firefox/WebKit dos relatórios. Esta seção mantém apenas verificações manuais ou complementares pendentes.
+
+### CSV — Excel e LibreOffice
+- [ ] Baixar os quatro CSV (operacional, matrículas, frequência e financeiro) usando dados exclusivamente fictícios.
+- [ ] Abrir cada arquivo no Excel e conferir acentuação, BOM/UTF-8, separadores, aspas, cabeçalhos e valores.
+- [ ] Repetir no LibreOffice Calc e registrar diferenças de interpretação.
+- [ ] Conferir como a tabulação de neutralização aparece no conteúdo textual; documentar que ela passa a fazer parte do campo.
+- [ ] Registrar versão dos aplicativos e qualquer comportamento inesperado; não declarar proteção universal contra CSV Injection.
+
+### Inspeção humana de acessibilidade e experiência
+- [ ] Percorrer filtros, tabelas e links CSV dos relatórios com teclado, verificando foco visível e ordem lógica.
+- [ ] Conferir contraste de texto, controles, bordas, foco e gráficos nos temas claro e escuro; a CI cobre apenas as amostras documentadas.
+- [ ] Verificar zoom/reflow e operação de todos os controles em 320 CSS px; a CI mede overflow e alvos CSV, não substitui avaliação funcional integral.
+- [ ] Testar leitor de tela quando disponível e conferir nomes/estados anunciados.
+- [ ] Inspecionar em navegador instalado e dispositivo físico; Playwright/WebKit não equivale a Safari real ou a um celular.
+
+### Ambiente local e regressão operacional
+- [ ] Atualizar a cópia local para o HEAD que será avaliado e confirmar que corresponde à branch `feat/dashboard-portfolio`.
+- [ ] Fazer backup e inspecionar versão, engine e schema do banco antes de qualquer migration; seguir `docs/guia-migrations-xampp.md`.
+- [ ] Executar a aplicação no XAMPP com contas e registros fictícios.
+- [ ] Percorrer dashboard, relatórios, filtros e quatro downloads; comparar resultados com os dados de teste.
+- [ ] Registrar evidências sem PII, versão do PHP/MySQL/MariaDB, navegador e data.
+
+**Nota de cobertura:** as quatro classes de consulta de relatórios foram inspecionadas e contêm apenas SELECT. Ainda não há teste por snapshot que prove dinamicamente ausência de mutação em dados operacionais e cadeia de auditoria; isso é uma melhoria de regressão automatizada separada da validação manual acima.
 
 ## 11. Encerramento e registro de defeitos
 
