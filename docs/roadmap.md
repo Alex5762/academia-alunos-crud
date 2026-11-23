@@ -26,10 +26,10 @@ Enquanto o acesso ao XAMPP/dispositivo não estiver disponível, continuar com e
 ### Blocos ainda por desenvolver
 
 - **Bloco 06 — Grade fixa de aulas:** implementação e validação automatizada aprovadas na CI #1512; validação manual no XAMPP/dispositivo permanece pendente.
-- **Bloco 07 — Relatórios e experiência:** `ReportPeriod`, OP-01 a OP-06 e MT-01 a MT-05 validados na CI #1571. Frequência FR-01 a FR-05 implementada na camada de consulta e em `relatorios.php`, com teste de banco adicionado para MySQL 8.0/MariaDB 10.11; aguarda nova CI. Financeiro, overview cards, CSV e regressão final permanecem pendentes; nenhuma migration/schema foi adicionada.
+- **Bloco 07 — Relatórios e experiência:** `ReportPeriod`, OP-01 a OP-06, MT-01 a MT-05 e FR-01 a FR-05 validados na CI #1579 em MySQL 8.0/MariaDB 10.11. FN-01 a FN-06 integrados em `FinanceReportQuery` e `relatorios.php`, com teste financeiro ampliado e nova CI pendente. Overview cards, CSV e regressão final permanecem pendentes; nenhuma migration/schema foi adicionada.
 - **Bloco 08 — Preparação para produção:** etapa futura, não iniciar como se fosse apenas deploy; depende de revisão independente e plano operacional/de segurança.
 
-**Próximo passo do Bloco 07:** executar e revisar a CI da implementação de frequência; depois avançar para o relatório financeiro FN-01 a FN-06, incluindo RBAC e paridade com os serviços financeiros existentes. A validação manual do Bloco 06 permanece adiada e não deve ser declarada concluída. A validação local dos Blocos 03–05 permanece registrada como adiada, não como concluída.
+**Próximo passo do Bloco 07:** validar a CI do relatório financeiro, revisar o diagnóstico `EXPLAIN` e decidir separadamente se há evidência suficiente para propor índice por `data_pagamento`; depois integrar os cartões da Visão geral (VG-01 a VG-06) reutilizando os agregadores existentes. A validação manual do Bloco 06 permanece adiada e não deve ser declarada concluída. A validação local dos Blocos 03–05 permanece registrada como adiada, não como concluída.
 
 ---
 
