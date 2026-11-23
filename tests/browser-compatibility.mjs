@@ -182,7 +182,10 @@ for (const engine of engines) {
 
     // Exercita o CRUD real em dias distintos por navegador, usando fixtures descartáveis.
     await page.setViewportSize({ width: 1280, height: 900 });
-    const weekdayValue = String(engines.indexOf(engine) + 1);
+    const weekdayIndex = engines.indexOf(engine);
+    const weekdayValue = String(weekdayIndex + 1);
+    const weekdayLabels = ["Segunda-feira", "Terça-feira", "Quarta-feira"];
+    const weekdayLabel = weekdayLabels[weekdayIndex];
     await modalitySelect.selectOption({ label: "Modalidade Playwright" });
     await page.locator("#schedule-create-day").selectOption(weekdayValue);
     await page.locator("#schedule-create-start").fill("08:00");
@@ -193,19 +196,24 @@ for (const engine of engines) {
 
     const scheduleCard = page.locator(".class-schedule-management-item").filter({
       hasText: "Modalidade Playwright",
-    }).filter({ hasText: "08:00–09:00" });
+    }).filter({ hasText: weekdayLabel }).filter({ hasText: "08:00–09:00" });
+    ensure(
+      await scheduleCard.count() === 1,
+      engine.name + ": não foi encontrado exatamente um cartão do horário recém-cadastrado.",
+    );
     await scheduleCard.waitFor();
     const editForm = scheduleCard.locator(".class-schedule-edit-form");
     await editForm.locator('input[name="hora_fim"]').fill("08:45");
     await editForm.getByRole("button", { name: "Salvar alterações" }).click();
     await page.getByRole("status").filter({ hasText: "Horário atualizado com sucesso." }).waitFor();
-    await page.locator(".class-schedule-management-item").filter({
-      hasText: "Modalidade Playwright",
-    }).filter({ hasText: "08:00–08:45" }).waitFor();
-
     const updatedCard = page.locator(".class-schedule-management-item").filter({
       hasText: "Modalidade Playwright",
-    }).filter({ hasText: "08:00–08:45" });
+    }).filter({ hasText: weekdayLabel }).filter({ hasText: "08:00–08:45" });
+    ensure(
+      await updatedCard.count() === 1,
+      engine.name + ": o horário editado não foi encontrado de forma única no dia esperado.",
+    );
+    await updatedCard.waitFor();
     await updatedCard.getByRole("button", { name: "Inativar horário" }).click();
     await page.getByRole("status").filter({
       hasText: "Horário inativado. O registro e a auditoria foram preservados.",
