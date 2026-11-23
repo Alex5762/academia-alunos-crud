@@ -1,6 +1,6 @@
 # Revisão técnica do Bloco 07 — aderência, métricas e arquitetura
 
-> **Estado:** revisão técnica em andamento; decisões aprovadas até 23/11/2026 incluem Visão geral, OP-01 a OP-06, MT-01 a MT-05, “Recebido no período”, FR-04, FN-04, FN-05 e FN-06. As demais recomendações continuam sujeitas à revisão e aprovação do responsável pelo projeto.
+> **Estado:** revisão técnica em andamento; decisões aprovadas até 23/11/2026 incluem Visão geral, OP-01 a OP-06, MT-01 a MT-05, “Recebido no período”, FR-01 a FR-05, FN-04, FN-05 e FN-06. As demais recomendações continuam sujeitas à revisão e aprovação do responsável pelo projeto.
 > **Data:** 23/11/2026.
 > **Escopo analisado:** catálogo 07.1, contratos 07.2, código atual de alunos, matrículas, frequência, financeiro, RBAC e dashboard.
 > **Importante:** esta revisão não implementa funcionalidades, não altera schema e não substitui a aprovação do escopo.
@@ -52,10 +52,11 @@ Referência conceitual externa: o National Student Clearinghouse distingue statu
 
 ## 5. Revisão do relatório de frequência
 
-- FR-01 total de check-ins: manter usando `COUNT(*)` por `data_local`.
-- FR-02 alunos distintos: manter com `COUNT(DISTINCT aluno_id)`.
-- FR-03 evolução diária: manter; completar dias sem registros com zero na apresentação, não inventar registros no banco.
-- FR-04 distribuição por dia da semana: **decisão aprovada em 23/11/2026**. Apresentar média de check-ins por ocorrência de cada dia (total bruto daquele weekday dividido pela quantidade de datas daquele weekday no intervalo), quantidade de ocorrências e total bruto. Arredondar a média para uma casa decimal somente na apresentação. Se não houver nenhuma ocorrência daquele dia no período, exibir média como não aplicável (—), total bruto 0 e ocorrências 0; não apresentar média zero.
+- **FR-01 — Aprovado em 23/11/2026:** total de check-ins como `COUNT(*)` por `data_local` no período inclusivo.
+- **FR-02 — Aprovado em 23/11/2026:** alunos distintos com `COUNT(DISTINCT aluno_id)` no mesmo período; não equivale ao total de alunos ativos.
+- **FR-03 — Aprovado em 23/11/2026:** série diária por `data_local`, completando todas as datas civis sem registros com zero somente na apresentação. Zero não confirma que a academia estava aberta.
+- **FR-04 — Aprovado anteriormente; ressalva confirmada em 23/11/2026:** média por ocorrência de cada weekday do calendário, com total bruto e denominador. O denominador conta datas civis do intervalo, não dias de funcionamento; a aplicação não possui calendário de feriados/fechamentos. Se não houver ocorrência daquele weekday, média não aplicável (—); se houver ocorrência sem check-ins, média real 0,0. Arredondar para uma casa decimal só na apresentação.
+- **FR-05 — Aprovado em 23/11/2026; secundário:** `FR-01 / FR-02` no mesmo período, como média de dias com entrada por aluno frequentador. Um check-in diário por aluno sustenta essa interpretação. Não usar a base total de alunos ativos como denominador; se FR-02 = 0, média não aplicável (—).
 - Reforçar em todas as telas que check-in significa entrada na academia, não presença em aula, modalidade ou turma.
 
 ## 6. Revisão do relatório financeiro

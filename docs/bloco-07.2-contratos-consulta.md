@@ -1,6 +1,6 @@
 # Bloco 07.2 — Contratos de consulta e validação
 
-> **Estado:** desenho técnico revisado; as decisões do catálogo estão sendo aprovadas por etapas. OP-01 a OP-06, MT-01 a MT-05 e FN-04, FN-05 e FN-06 foram aprovados/definidos em 23/11/2026; os demais itens permanecem em revisão. Não representa implementação.
+> **Estado:** desenho técnico revisado; as decisões do catálogo estão sendo aprovadas por etapas. OP-01 a OP-06, MT-01 a MT-05, FR-01 a FR-05 e FN-04, FN-05 e FN-06 foram aprovados/definidos em 23/11/2026; os demais itens permanecem em revisão. Não representa implementação.
 > **Pré-requisito:** catálogo 07.1 e definições de indicadores aprovados.
 > **Escopo desta etapa:** contratos de entrada/saída, datas, relógio, autorização, agregação e testes. Sem migrations, alteração de schema, telas ou exportação.
 
@@ -109,6 +109,15 @@ MT-01 a MT-05 usam `enrollments.view` e o período local normalizado em limites 
 - **MT-05:** contar eventos com `cancelada_em >= :start_utc AND cancelada_em < :end_exclusive_utc`, sem condicionar a `cancelada_em > inicio_em`. Cancelamentos antes ou exatamente no início pertencem a MT-05 porque houve um evento de cancelamento, embora não exista início efetivo.
 - **Reconciliação:** a soma dos grupos de MT-02 e MT-04 deve reconciliar com MT-01. MT-03 reconcilia o subconjunto com `valor_contratado IS NOT NULL`; snapshots nulos/vazios permanecem em grupo explícito, sem descartar linhas.
 
+### 5.4 Testes de contrato para FR-01 a FR-05
+
+- Período com zero check-ins: FR-01 = 0, FR-02 = 0, FR-03 contém zeros em todas as datas e FR-05 é não aplicável.
+- Um aluno com entradas em vários dias incrementa FR-01 por dia, mas conta uma vez em FR-02; FR-05 reflete a média de dias por aluno frequentador.
+- A unicidade `(aluno_id, data_local)` deve impedir duplicidade diária e sustentar FR-01 >= FR-02.
+- Dias sem registros continuam presentes na série FR-03, sem inferir funcionamento da academia.
+- Para FR-04, usar o número real de ocorrências do weekday no calendário; feriados e fechamentos não são conhecidos pelo modelo atual.
+- O resultado de FR-05 não pode exceder o número de datas do período quando a regra de unicidade está íntegra.
+
 ## 6. Fronteira de autorização
 
 - Página do dashboard continua exigindo `dashboard.view`.
@@ -159,13 +168,14 @@ MT-01 a MT-05 usam `enrollments.view` e o período local normalizado em limites 
 - Paridade entre classificação de domínio e consulta agregada em MySQL 8.0 e MariaDB 10.11.
 
 ### Frequência
-- Data local inclusiva inicial/final.
-- Aluno com check-ins em dias diferentes.
-- Dias sem registros preenchidos com zero na série.
-- FR-04: média por ocorrência de cada dia ISO (segunda–domingo), total bruto e denominador; média com uma casa decimal apenas na apresentação.
+- Usar `checkins.data_local` com início/fim inclusivos; não converter para UTC.
+- FR-01 = `COUNT(*)`; FR-02 = `COUNT(DISTINCT aluno_id)` no mesmo período; para o mesmo filtro, FR-01 >= FR-02 por causa da unicidade diária por aluno.
+- FR-03 retorna uma linha por data civil do intervalo; completar dias sem registros com zero na apresentação. Zero significa ausência de registro, não dia confirmado como aberto.
+- FR-04: média por ocorrência de cada dia ISO (segunda–domingo), total bruto e denominador; média com uma casa decimal apenas na apresentação. O denominador conta todas as datas daquele weekday no calendário do intervalo, independentemente de feriados/fechamentos; não chamar de dia aberto.
 - Período de uma única data: apenas o weekday correspondente tem denominador 1; os demais exibem média não aplicável, total 0 e ocorrências 0.
-- Período com denominadores diferentes por weekday: verificar que a média divide pelo número real de ocorrências de cada weekday, não por uma constante semanal.
+- Período com denominadores diferentes por weekday: dividir pelo número real de ocorrências do calendário, não por uma constante semanal.
 - Weekday com ocorrências e zero check-ins: média real 0,0; weekday sem ocorrências: média não aplicável.
+- **FR-05:** calcular `FR-01 / FR-02` sobre exatamente o mesmo conjunto e período. Como a unicidade limita um check-in por aluno/dia, o resultado é média de dias com entrada por frequentador; arredondar para uma casa decimal somente na apresentação. Não incluir alunos ativos sem entrada. Se FR-02 = 0, retornar não aplicável (—), nunca dividir por zero nem retornar 0,0.
 
 ### Financeiro
 - Pagamento por `data_pagamento`, mesmo quando `registrado_em_utc` pertence a outro dia.

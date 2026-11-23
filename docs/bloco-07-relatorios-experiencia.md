@@ -1,6 +1,6 @@
 # Bloco 07 — Relatórios e experiência
 
-> **Estado:** direção da Visão geral aceita; decisões aprovadas por etapas: OP-01 a OP-06, MT-01 a MT-05, “Recebido no período”, FR-04, FN-04, FN-05 e FN-06 (23/11/2026). Os demais indicadores/critério continuam em revisão. Nenhuma funcionalidade do Bloco 07 foi implementada.
+> **Estado:** direção da Visão geral aceita; decisões aprovadas por etapas: OP-01 a OP-06, MT-01 a MT-05, FR-01 a FR-05, “Recebido no período”, FN-04, FN-05 e FN-06 (23/11/2026). Os demais indicadores/critério continuam em revisão. Nenhuma funcionalidade do Bloco 07 foi implementada.
 > **Branch de referência:** `feat/dashboard-portfolio`.
 > **Dependência anterior:** Bloco 06 com validação automatizada aprovada na CI #1512. A validação manual dos blocos no XAMPP/dispositivo permanece adiada e registrada separadamente.
 > **Regra:** revisar e aprovar o catálogo `bloco-07-catalogo-indicadores.md` antes de iniciar a etapa 07.2. A aprovação da direção da Visão geral não antecipa a aprovação automática de cada fórmula ou endpoint.
@@ -90,9 +90,10 @@ Para o período selecionado:
 - total de check-ins registrados;
 - quantidade de alunos distintos com ao menos um check-in;
 - evolução diária de entradas;
-- distribuição agregada por dia da semana, quando o intervalo tiver dados suficientes.
+- distribuição agregada por dia da semana, com média por ocorrência do calendário, total bruto e quantidade de ocorrências;
+- média de dias com check-in por aluno frequentador (FR-05), como indicador secundário.
 
-O período usa `checkins.data_local`, que já representa a data civil no fuso da academia. Não converter essa coluna para UTC nem derivar presenças de horários da grade.
+O período usa `checkins.data_local`, que já representa a data civil no fuso da academia. Não converter essa coluna para UTC nem derivar presenças de horários da grade. FR-03 completa todas as datas civis do intervalo com zero quando não há registro; isso não afirma que a academia estava aberta. FR-04 divide pelo número de ocorrências de cada weekday no calendário do período, independentemente de feriados ou fechamentos, pois o sistema não mantém calendário operacional. FR-05 é `FR-01 / FR-02`, usando o mesmo filtro; mede dias com entrada por aluno que compareceu pelo menos uma vez. Quando FR-02 for zero, exibir não aplicável (—). Não incluir alunos ativos sem check-in no denominador.
 
 ### 3.4 Relatório financeiro
 
@@ -180,7 +181,7 @@ Cada seção e cada endpoint CSV devem revalidar a permissão correspondente no 
 ## 8. Decisões que precisam de aprovação antes da implementação
 
 1. Confirmar os indicadores restantes do catálogo nas seções 3.1 e 3.2; OP-01 a OP-06 e MT-01 a MT-05 já foram definidos/aprovados em 23/11/2026.
-2. Confirmar o relatório de frequência com total de entradas, alunos distintos e evolução diária.
+2. Relatório de frequência FR-01 a FR-05 aprovado em 23/11/2026: total de entradas, alunos distintos, evolução diária, média por ocorrência de weekday e média de dias com entrada por aluno frequentador. FR-04 usa ocorrências do calendário, não dias de funcionamento; FR-05 usa FR-01/FR-02 e é não aplicável quando não há frequentadores.
 3. FN-01 a FN-06: definições aprovadas por etapas até 23/11/2026. FN-04 separa valores nominais por vencimento e situação atual da matrícula; FN-05 soma o saldo positivo das cobranças ainda cobráveis; FN-06 soma o saldo positivo das cobranças em revisão vinculadas a matrículas canceladas, sem representar reembolso.
 4. Confirmar CSV agregado somente, sem dados pessoais, deixando PDF/XLSX fora do MVP.
 5. Confirmar mês atual como período padrão e limite de 365 dias por consulta.
@@ -199,6 +200,8 @@ Entregáveis desta etapa:
 - mapeamento de cada cartão para o relatório detalhado que serve de fonte de verdade;
 - decisões registradas sobre métricas que não podem ser calculadas com os dados atuais.
 
+**Decisão registrada em 23/11/2026:** FR-01 a FR-03 e FR-05 foram aprovados; FR-04 mantém sua regra anteriormente aprovada com a ressalva de que o denominador representa ocorrências do calendário, não dias comprovadamente abertos. FR-05 calcula FR-01/FR-02 entre alunos frequentadores e exibe — quando FR-02 = 0. A seção mede entradas, não aulas ou presença por modalidade.
+
 **Decisão registrada em 23/11/2026:** nomenclatura **“Recebido no período”** aprovada para a soma de pagamentos por `data_pagamento`; não chamar de faturamento ou lucro. O catálogo continua aguardando aprovação global das demais fórmulas e permissões.
 
 **Decisão registrada em 23/11/2026:** OP-01 a OP-03 foram aprovados como fotografias cadastrais independentes do período, sob `students.view`, com contagem agregada única e domínio de `ativo` protegido pela migration 015. OP-04 a OP-06 também foram aprovados: usam `enrollments.view`, uma única referência temporal, as quatro situações canônicas e janelas cumulativas de 7/30 dias; OP-06/7 dias corresponde a VG-06. Intervalos inválidos (`fim_exclusivo_em <= inicio_em`) interrompem a consulta sem resultados parciais. **A migration 015 é uma proteção cadastral separada; não implementa consultas ou telas do Bloco 07.**
@@ -215,4 +218,4 @@ Entregáveis desta etapa:
 
 Documento: [Bloco 07.2 — Contratos de consulta e validação](bloco-07.2-contratos-consulta.md).
 
-O desenho define responsabilidades para período imutável, relógio único, política de autorização, consultas agregadas, payload de saída e matriz de testes. A média semanal FR-04 foi aprovada: total de check-ins por weekday dividido pelo número real de ocorrências daquele weekday no intervalo, exibindo também total bruto e denominador. A revisão alinhou a omissão integral de seções não autorizadas, a janela inclusiva dos próximos sete dias e a legenda do indicador financeiro. Não introduz migrations, telas ou código de relatório. A implementação da 07.2 depende da aprovação global do catálogo 07.1 e deste contrato.
+O desenho define responsabilidades para período imutável, relógio único, política de autorização, consultas agregadas, payload de saída e matriz de testes. FR-01 a FR-05 foram aprovados: FR-01 conta entradas, FR-02 alunos distintos, FR-03 completa datas sem registro com zero, FR-04 calcula a média por ocorrência de calendário (não por dia de funcionamento) e FR-05 calcula FR-01/FR-02 entre alunos frequentadores, com — quando não há denominador. A revisão alinhou a omissão integral de seções não autorizadas, a janela inclusiva dos próximos sete dias e a legenda do indicador financeiro. Não introduz migrations, telas ou código de relatório. A implementação da 07.2 depende da aprovação global do catálogo 07.1 e deste contrato.
