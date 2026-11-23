@@ -1,6 +1,6 @@
 # Bloco 07 — Relatórios e experiência
 
-> **Estado:** OP-01 a OP-06, MT-01 a MT-05, FR-01 a FR-05 e FN-01 a FN-06 estão implementados e validados na CI #1595 em MySQL 8.0/MariaDB 10.11. A página `relatorios.php` integra as consultas autorizadas. VG-01 a VG-06 e o filtro de período foram integrados à Visão geral na branch; os testes de captura visual/HTTP foram atualizados e aguardam nova CI. CSV agregado e regressão final específica do bloco permanecem pendentes. Nenhuma migration ou alteração de schema foi feita.
+> **Estado:** consultas OP/MT/FR/FN validadas na CI #1595 em MySQL 8.0/MariaDB 10.11; VG-01 a VG-06 validados na CI #45245709878. A página `relatorios.php` integra consultas e links CSV por permissão. `exportar-relatorio.php` e `ReportCsvExporter` foram implementados, com testes unitários de escaping/UTF-8/fórmulas e integração RBAC/PII adicionados à CI; a nova execução ainda precisa validar essa entrega. A regressão visual/acessível final e a abertura manual no Excel/LibreOffice permanecem pendentes. Nenhuma migration ou alteração de schema foi feita.
 > **Branch de referência:** `feat/dashboard-portfolio`.
 > **Dependência anterior:** Bloco 06 com validação automatizada aprovada na CI #1512. A validação manual dos blocos no XAMPP/dispositivo permanece adiada e registrada separadamente.
 > **Regra:** a especificação global foi aprovada; seguir a sequência técnica registrada e validar cada incremento antes de avançar.
@@ -202,8 +202,8 @@ Cada seção e cada endpoint CSV devem revalidar a permissão correspondente no 
 - [ ] Agregados financeiros distinguem cobranças, pagamentos registrados, saldo cobrável e saldo em revisão.
 - [ ] Operador não consegue consultar nem exportar dados financeiros; Admin/Gestor conseguem.
 - [ ] Todos os endpoints validam autorização no servidor e usam consultas preparadas.
-- [ ] CSV exporta somente agregados exibidos, aplica o mesmo período e revalida RBAC no servidor; não contém PII.
-- [ ] Campos textuais não confiáveis recebem a neutralização tab-prefix definida para a variante de planilha, além do escaping CSV correto; casos de fórmula maliciosa, UTF-8, aspas e separadores são testados.
+- [x] Endpoint CSV por relatório exporta somente agregados exibidos, aplica o mesmo período e revalida RBAC no servidor; teste de integração verifica exportação operacional pelo Operador e bloqueio HTTP 403 para o CSV financeiro; a execução de CI desta entrega ainda está pendente.
+- [x] Campos textuais não confiáveis recebem neutralização tab-prefix para iniciadores ASCII, controles e variantes Unicode de largura completa implementadas, além do escaping CSV; teste unitário cobre fórmulas, UTF-8 inválido, aspas e separadores. A tabulação passa a fazer parte do conteúdo exportado.
 - [ ] Abertura no Excel e LibreOffice é verificada quando os ambientes estiverem disponíveis, com documentação do trade-off e sem alegação de proteção universal.
 - [ ] PDF, XLSX e exportação nominal permanecem fora do MVP.
 - [ ] Zero legítimo, ausência de registros, não aplicável, erro de consulta e falta de permissão são estados distintos; falha nunca vira zero.
@@ -254,8 +254,8 @@ Entregáveis desta etapa:
 
 **Sequência aprovada para execução, após autorização global:** implementar primeiro o contrato de período e seus testes; depois consultas agregadas por domínio; integrar cartões ao dashboard usando os mesmos agregadores; implementar CSV por último; finalizar com regressão, acessibilidade, responsividade e compatibilidade.
 
-### Etapa 07.2 — contratos de consulta e validação (base implementada; cartões integrados; CSV e regressão pendentes)
+### Etapa 07.7 — exportação CSV agregada (implementação na branch; CI pendente)
 
 Documento: [Bloco 07.2 — Contratos de consulta e validação](bloco-07.2-contratos-consulta.md).
 
-O contrato 07.2 define entrada/saída, datas, relógio de referência, fronteira de autorização, consultas agregadas e matriz de testes. `relatorios.php` integra `ReportPeriod`, valida o período antes de consultar e mantém `de`/`ate`. `OperationalReportQuery` implementa OP-01 a OP-06; `EnrollmentReportQuery` implementa MT-01 a MT-05; `FrequencyReportQuery` implementa FR-01 a FR-05; `FinanceReportQuery` implementa FN-01 a FN-06. As consultas e testes de domínio/banco foram validados na CI #1595 em MySQL 8.0/MariaDB 10.11. A Visão geral reutiliza esses agregadores para VG-01 a VG-06 e preserva os filtros ao pesquisar alunos. Nenhuma migration ou alteração de schema foi criada pelo Bloco 07; CSV agregado ainda não foi implementado.
+O contrato 07.2 define entrada/saída, datas, relógio, fronteira de autorização e consultas agregadas. `relatorios.php` integra os filtros e apresenta links CSV apenas para seções autorizadas. `exportar-relatorio.php` oferece `operacional`, `matriculas`, `frequencia` e `financeiro`, revalida RBAC e `ReportPeriod` no servidor, reutiliza os mesmos query objects e exporta somente agregados, sem PII. `ReportCsvExporter` valida UTF-8, aplica escaping CSV sem escape proprietário de barra invertida e neutraliza iniciadores de fórmula nos campos textuais com prefixo tab. Foram adicionados `tests/report-csv-exporter.php` e testes HTTP de RBAC/ausência de PII em `tests/integration-crud.sh`; a nova CI deve validar o incremento. A abertura manual no Excel/LibreOffice e a regressão visual/acessível final permanecem pendentes. Nenhuma migration ou alteração de schema foi criada pelo Bloco 07.
