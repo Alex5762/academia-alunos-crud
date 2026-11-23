@@ -163,12 +163,59 @@ for (const engine of engines) {
     await scheduleManagementLink.click();
     await page.getByRole("heading", { name: "Gerenciar horários" }).waitFor();
     await page.getByRole("heading", { name: "Novo horário" }).waitFor();
-    await page.getByText("Cadastre uma modalidade antes de criar horários.").waitFor();
+    await page.getByLabel("Modalidade", { exact: true }).waitFor();
+    const modalitySelect = page.locator("#schedule-create-modality");
+    const instructorSelect = page.locator("#schedule-create-instructor");
+    ensure(
+      await modalitySelect.locator('option').filter({ hasText: "Modalidade Playwright" }).count() === 1,
+      engine.name + ": a modalidade de teste não foi carregada.",
+    );
+    ensure(
+      await instructorSelect.locator('option').filter({ hasText: "Instrutor Playwright" }).count() === 1,
+      engine.name + ": o instrutor de teste não foi carregado.",
+    );
     await assertNoDocumentOverflow(page, engine.name, "gestão de horários desktop");
     await page.setViewportSize({ width: 390, height: 844 });
     await assertNoDocumentOverflow(page, engine.name, "gestão de horários mobile de 390px");
     await page.setViewportSize({ width: 320, height: 780 });
     await assertNoDocumentOverflow(page, engine.name, "gestão de horários mobile estreito de 320px");
+
+    // Exercita o CRUD real em dias distintos por navegador, usando fixtures descartáveis.
+    await page.setViewportSize({ width: 1280, height: 900 });
+    const weekdayValue = String(engines.indexOf(engine) + 1);
+    await modalitySelect.selectOption({ label: "Modalidade Playwright" });
+    await page.locator("#schedule-create-day").selectOption(weekdayValue);
+    await page.locator("#schedule-create-start").fill("08:00");
+    await page.locator("#schedule-create-end").fill("09:00");
+    await instructorSelect.selectOption({ label: "Instrutor Playwright" });
+    await page.getByRole("button", { name: "Cadastrar horário" }).click();
+    await page.getByRole("status").filter({ hasText: "Horário cadastrado com sucesso." }).waitFor();
+
+    const scheduleCard = page.locator(".class-schedule-management-item").filter({
+      hasText: "Modalidade Playwright",
+    }).filter({ hasText: "08:00–09:00" });
+    await scheduleCard.waitFor();
+    const editForm = scheduleCard.locator(".class-schedule-edit-form");
+    await editForm.locator('input[name="hora_fim"]').fill("08:45");
+    await editForm.getByRole("button", { name: "Salvar alterações" }).click();
+    await page.getByRole("status").filter({ hasText: "Horário atualizado com sucesso." }).waitFor();
+    await page.locator(".class-schedule-management-item").filter({
+      hasText: "Modalidade Playwright",
+    }).filter({ hasText: "08:00–08:45" }).waitFor();
+
+    const updatedCard = page.locator(".class-schedule-management-item").filter({
+      hasText: "Modalidade Playwright",
+    }).filter({ hasText: "08:00–08:45" });
+    await updatedCard.getByRole("button", { name: "Inativar horário" }).click();
+    await page.getByRole("status").filter({
+      hasText: "Horário inativado. O registro e a auditoria foram preservados.",
+    }).waitFor();
+    await page.getByText("Registro preservado para histórico").waitFor();
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await assertNoDocumentOverflow(page, engine.name, "gestão de horários após CRUD mobile de 390px");
+    await page.setViewportSize({ width: 320, height: 780 });
+    await assertNoDocumentOverflow(page, engine.name, "gestão de horários após CRUD mobile de 320px");
 
     await page.setViewportSize({ width: 1280, height: 900 });
     const formResponse = await page.goto(baseUrl + "/cadastro.php", {
