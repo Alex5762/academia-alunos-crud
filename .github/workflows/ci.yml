@@ -476,6 +476,7 @@ jobs:
           test -f src/Domain/Reports/EnrollmentReportQuery.php
           test -f src/Domain/Reports/FrequencyReportQuery.php
           test -f src/Domain/Reports/FinanceReportQuery.php
+          test -f src/Domain/Reports/FinanceReportQuery.php
           test -f relatorios.php
           test -f tests/report-period.php
           test -f tests/database-reports.php
