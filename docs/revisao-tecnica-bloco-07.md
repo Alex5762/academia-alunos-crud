@@ -1,6 +1,6 @@
 # Revisão técnica do Bloco 07 — aderência, métricas e arquitetura
 
-> **Estado atualizado após CI #1595 e incremento VG:** consultas operacionais, matrículas, frequência e financeiro implementadas e validadas em MySQL 8.0/MariaDB 10.11. VG-01 a VG-06 e o filtro de período foram integrados à Visão geral na branch, com cobertura Playwright atualizada e CI pendente. Permanecem CSV agregado e regressão final.
+> **Estado atualizado após CI #1595, CI #45245709878 e incremento CSV:** consultas OP/MT/FR/FN e cartões VG-01 a VG-06 validados. Endpoint CSV por seção, escritor UTF-8/escaping/neutralização e testes unitários/HTTP implementados na branch; nova CI pendente. Regressão visual/acessível final e teste manual Excel/LibreOffice ainda pendentes.
 > **Data:** 23/11/2026.
 > **Escopo analisado:** catálogo 07.1, contratos 07.2, código atual de alunos, matrículas, frequência, financeiro, RBAC e dashboard.
 > **Importante:** esta revisão não implementa funcionalidades, não altera schema e não substitui a aprovação do escopo.
@@ -159,7 +159,7 @@ Não alterar `index.php` inteiro de uma vez. Extrair somente as consultas novas 
 3. **Concluído e validado na CI #1579:** FR-01 a FR-05, com FR-03 preenchida por data civil, FR-04 calculado por ocorrência real do calendário e FR-05 limitado aos frequentadores.
 4. **Concluído e validado na CI #1595:** FN-01 a FN-06 em `FinanceReportQuery`, com RBAC `finance.view`, pagamentos históricos sem JOIN de estado atual, agregação de cobranças por vencimento e saldos FN-05/FN-06 pelas regras canônicas `FinanceDashboardStatus`. O teste de integração cobre as cinco formas, retroativos, cancelamentos posteriores, período vazio e paridade de saldos. O `EXPLAIN` é executado como diagnóstico, mas o volume de fixtures não é representativo para decisão de índice.
 5. Integrar os cartões no dashboard existente (07.6), reutilizando agregadores sem duplicar SQL e corrigindo a distribuição cadastral por plano.
-6. Implementar CSV agregado seguro (07.7) por último, com escaping, neutralização documentada e testes em leitores de planilha.
+6. **Implementado na branch; aguardando CI:** CSV agregado seguro (07.7), com escaping, neutralização tab-prefix, UTF-8, filtros e RBAC. Teste manual de abertura em Excel/LibreOffice ainda pendente.
 7. Finalizar regressão (07.8): desktop/mobile, reflow a 320 CSS px, temas claro/escuro, teclado/foco, contraste, redução de movimento, acessibilidade e comparação com a experiência anterior.
 
 ## 11. Referências de boas práticas
@@ -174,4 +174,4 @@ Não alterar `index.php` inteiro de uma vez. Extrair somente as consultas novas 
 - [W3C — WCAG 2.2, SC 2.5.8 Target Size (Minimum)](https://www.w3.org/WAI/WCAG22/Understanding/target-size-minimum): alvos de pelo menos 24 × 24 CSS px, com exceções definidas.
 - [W3C — WCAG 2.2, SC 1.4.10 Reflow](https://www.w3.org/WAI/WCAG22/Understanding/reflow): apresentação sem perda de informação/funcionalidade a 320 CSS px, exceto conteúdos que exijam layout bidimensional.
 
-**Resultado atualizado:** `ReportPeriod`, OP-01 a OP-06, MT-01 a MT-05, FR-01 a FR-05 e FN-01 a FN-06 estão implementados e validados na CI #1595 em MySQL 8.0/MariaDB 10.11. Os cartões VG-01 a VG-06 e o filtro de período foram integrados à Visão geral na branch, com teste de captura visual atualizado; essa alteração aguarda CI. Nenhuma alteração de schema foi feita para o Bloco 07. Permanecem o CSV agregado seguro e a regressão visual/acessível final.
+**Resultado atualizado:** `ReportPeriod`, OP/MT/FR/FN foram validados na CI #1595 e VG-01 a VG-06 na CI #45245709878. O endpoint `exportar-relatorio.php` fornece CSV agregado para as quatro seções; `ReportCsvExporter` valida UTF-8, usa escaping CSV com escape proprietário desativado e neutraliza prefixos de fórmula nos textos não confiáveis. Testes unitários cobrem fórmulas ASCII/controles/Unicode, aspas, separadores e UTF-8 inválido; integração verifica CSV operacional do Operador, ausência de PII e HTTP 403 para CSV financeiro. Nova CI ainda pendente. Nenhuma alteração de schema foi feita para o Bloco 07. Permanecem regressão visual/acessível final e validação manual Excel/LibreOffice.
