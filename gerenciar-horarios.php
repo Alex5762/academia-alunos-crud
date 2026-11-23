@@ -81,6 +81,31 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
                 if ($scheduleId === false) {
                     throw new InvalidArgumentException('Identificador de horário inválido.');
                 }
+                $originalModalityReceived = $_POST['original_modalidade_id'] ?? null;
+                $originalInstructorReceived = $_POST['original_instrutor_id'] ?? '';
+                $originalWeekdayReceived = $_POST['original_dia_semana'] ?? null;
+                $originalStartTime = $_POST['original_hora_inicio'] ?? null;
+                $originalEndTime = $_POST['original_hora_fim'] ?? null;
+
+                if (!is_string($originalModalityReceived) || ($originalModalityId = validarId($originalModalityReceived)) === false) {
+                    throw new InvalidArgumentException('O snapshot original da modalidade é inválido.');
+                }
+                if (!is_string($originalInstructorReceived)) {
+                    throw new InvalidArgumentException('O snapshot original do instrutor é inválido.');
+                }
+                $originalInstructorId = $originalInstructorReceived === ''
+                    ? null
+                    : validarId($originalInstructorReceived);
+                if ($originalInstructorReceived !== '' && $originalInstructorId === false) {
+                    throw new InvalidArgumentException('O snapshot original do instrutor é inválido.');
+                }
+                if (!is_string($originalWeekdayReceived) || !in_array($originalWeekdayReceived, ['1', '2', '3', '4', '5', '6', '7'], true)) {
+                    throw new InvalidArgumentException('O snapshot original do dia é inválido.');
+                }
+                if (!is_string($originalStartTime) || !is_string($originalEndTime)) {
+                    throw new InvalidArgumentException('O snapshot original do horário está incompleto.');
+                }
+
                 $service->update(
                     (int) $scheduleId,
                     (int) $usuario['id'],
@@ -88,7 +113,14 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
                     $instructorId === null ? null : (int) $instructorId,
                     $weekday,
                     $startTime,
-                    $endTime
+                    $endTime,
+                    [
+                        'modalidade_id' => (int) $originalModalityId,
+                        'instrutor_id' => $originalInstructorId === null ? null : (int) $originalInstructorId,
+                        'dia_semana' => (int) $originalWeekdayReceived,
+                        'hora_inicio' => $originalStartTime,
+                        'hora_fim' => $originalEndTime,
+                    ]
                 );
                 $_SESSION['mensagem'] = 'Horário atualizado com sucesso.';
             }
@@ -257,6 +289,11 @@ $horarios = $query->allSchedulesForManagement();
                                 <input type="hidden" name="token" value="<?= escapar($_SESSION['token']) ?>">
                                 <input type="hidden" name="acao" value="editar_horario">
                                 <input type="hidden" name="id" value="<?= $scheduleId ?>">
+                                <input type="hidden" name="original_modalidade_id" value="<?= (int) $horario['modalidade_id'] ?>">
+                                <input type="hidden" name="original_instrutor_id" value="<?= $horario['instrutor_id'] === null ? '' : (int) $horario['instrutor_id'] ?>">
+                                <input type="hidden" name="original_dia_semana" value="<?= $weekday ?>">
+                                <input type="hidden" name="original_hora_inicio" value="<?= escapar((string) $horario['hora_inicio']) ?>">
+                                <input type="hidden" name="original_hora_fim" value="<?= escapar((string) $horario['hora_fim']) ?>">
 
                                 <div class="class-schedule-fields">
                                     <div>
