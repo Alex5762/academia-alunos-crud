@@ -1,6 +1,6 @@
 # Bloco 06 — Grade fixa de aulas
 
-> **Estado:** schema, serviços de domínio, consulta filtrada, grade semanal e CRUD de modalidades/instrutores implementados; manutenção de horários pendente.
+> **Estado:** schema, serviços de domínio, consulta filtrada, grade semanal, CRUD de modalidades/instrutores e gestão visual dos horários implementados; validação automatizada e XAMPP em andamento.
 > **Branch de trabalho:** `feat/dashboard-portfolio`.
 > **Dependências:** autenticação/RBAC, cadastro de funcionários e auditoria existentes. A validação manual pelo XAMPP continua adiada e não bloqueia a especificação nem os testes automatizados.
 >
@@ -20,7 +20,7 @@ O projeto é um sistema web acadêmico/de portfólio. O objetivo deste bloco é 
 2. **Instrutores:** manter cadastro profissional independente, com vínculo opcional a uma conta de funcionário já existente.
 3. **Horários fixos:** cadastrar cada ocorrência semanal da grade com modalidade, dia da semana, hora de início, hora de término e instrutor responsável, quando definido.
 4. **Visualização da grade:** apresentar a programação organizada por dia e horário, com filtros simples por modalidade e instrutor.
-5. **Manutenção da programação:** permitir editar e inativar horários, preservando a trilha de auditoria.
+5. **Manutenção da programação:** permitir cadastrar, editar e inativar horários, preservando a trilha de auditoria.
 6. **Consistência:** validar horários, impedir término anterior ou igual ao início e impedir conflito de horários do mesmo instrutor no mesmo dia.
 7. **Permissões:** restringir alterações a Administrador/Gestor; permitir consulta aos perfis autorizados.
 8. **Acessibilidade e responsividade:** a grade e os formulários devem funcionar em desktop, mobile e navegação por teclado.
