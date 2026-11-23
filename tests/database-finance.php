@@ -6,6 +6,7 @@ use FitControl\Domain\Enrollment\EnrollmentCreationService;
 use FitControl\Domain\Enrollment\EnrollmentPeriodCalculator;
 use FitControl\Domain\Finance\FinanceService;
 use FitControl\Domain\Finance\FinanceDashboardStatus;
+use FitControl\Domain\Finance\FinanceMoneyFormatter;
 use FitControl\Domain\Finance\FinancePaymentHistoryQuery;
 
 require_once dirname(__DIR__) . '/src/Domain/Enrollment/EnrollmentPeriodCalculator.php';
@@ -15,6 +16,7 @@ require_once dirname(__DIR__) . '/src/Domain/Enrollment/EnrollmentCreationServic
 require_once dirname(__DIR__) . '/src/Domain/Enrollment/EnrollmentCancellationService.php';
 require_once dirname(__DIR__) . '/src/Domain/Finance/FinanceService.php';
 require_once dirname(__DIR__) . '/src/Domain/Finance/FinanceDashboardStatus.php';
+require_once dirname(__DIR__) . '/src/Domain/Finance/FinanceMoneyFormatter.php';
 require_once dirname(__DIR__) . '/src/Domain/Finance/FinancePaymentHistoryQuery.php';
 
 function financeConnection(): PDO
@@ -775,6 +777,76 @@ try {
     assertFinanceRejected(
         fn () => $finance->cancelUnpaidCharge($firstChargeId, $actorId, 'Não deve apagar valores pagos'),
         'Cobrança com pagamentos não pode ser cancelada como se nada tivesse sido recebido.'
+    );
+
+    // FN-05/FN-06: o agregado SQL deve reproduzir as regras canônicas por cobrança.
+    // Pagamentos são pré-agregados para impedir multiplicação de linhas no JOIN.
+    $chargePlaceholders = implode(',', array_fill(0, count($chargeIds), '?'));
+    $chargeRowsQuery = $pdo->prepare(
+        'SELECT
+            c.id,
+            c.valor_total,
+            c.cancelada_em_utc,
+            m.cancelada_em AS matricula_cancelada_em,
+            COALESCE(p.valor_pago, 0.00) AS valor_pago
+         FROM cobrancas c
+         INNER JOIN matriculas m ON m.id = c.matricula_id
+         LEFT JOIN (
+            SELECT cobranca_id, SUM(valor) AS valor_pago
+            FROM pagamentos
+            GROUP BY cobranca_id
+         ) p ON p.cobranca_id = c.id
+         WHERE c.id IN (' . $chargePlaceholders . ')'
+    );
+    $chargeRowsQuery->execute($chargeIds);
+    $chargeRows = $chargeRowsQuery->fetchAll();
+
+    $expectedCollectibleCents = 0;
+    $expectedReviewCents = 0;
+    foreach ($chargeRows as $chargeRow) {
+        $expectedCollectibleCents += FinanceDashboardStatus::collectibleBalanceCents($chargeRow);
+        $expectedReviewCents += FinanceDashboardStatus::reviewBalanceCents($chargeRow);
+    }
+
+    $financialSummaryQuery = $pdo->prepare(
+        'SELECT
+            COALESCE(SUM(
+                CASE
+                    WHEN c.cancelada_em_utc IS NULL AND m.cancelada_em IS NULL
+                    THEN GREATEST(c.valor_total - COALESCE(p.valor_pago, 0.00), 0.00)
+                    ELSE 0.00
+                END
+            ), 0.00) AS saldo_cobravel,
+            COALESCE(SUM(
+                CASE
+                    WHEN c.cancelada_em_utc IS NULL AND m.cancelada_em IS NOT NULL
+                    THEN GREATEST(c.valor_total - COALESCE(p.valor_pago, 0.00), 0.00)
+                    ELSE 0.00
+                END
+            ), 0.00) AS saldo_em_revisao
+         FROM cobrancas c
+         INNER JOIN matriculas m ON m.id = c.matricula_id
+         LEFT JOIN (
+            SELECT cobranca_id, SUM(valor) AS valor_pago
+            FROM pagamentos
+            GROUP BY cobranca_id
+         ) p ON p.cobranca_id = c.id
+         WHERE c.id IN (' . $chargePlaceholders . ')'
+    );
+    $financialSummaryQuery->execute($chargeIds);
+    $financialSummary = $financialSummaryQuery->fetch();
+
+    assertFinance(
+        FinanceMoneyFormatter::toCents((string) $financialSummary['saldo_cobravel']) === $expectedCollectibleCents,
+        'Agregado SQL do FN-05 deve corresponder à soma de FinanceDashboardStatus::collectibleBalanceCents().'
+    );
+    assertFinance(
+        FinanceMoneyFormatter::toCents((string) $financialSummary['saldo_em_revisao']) === $expectedReviewCents,
+        'Agregado SQL do FN-06 deve corresponder à soma de FinanceDashboardStatus::reviewBalanceCents().'
+    );
+    assertFinance(
+        $expectedCollectibleCents === 9000 && $expectedReviewCents === 25000,
+        'Fixtures devem preservar R$ 90,00 cobráveis e R$ 250,00 em revisão, sem misturar cobranças quitadas ou canceladas.'
     );
 
     $audit = $pdo->prepare(
