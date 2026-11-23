@@ -217,7 +217,7 @@ MT-01 a MT-05 usam `enrollments.view` e o período local normalizado em limites 
 **Implementação FN-01 a FN-06:** `FinanceReportQuery::forPeriod()` consulta pagamentos sem JOIN com matrículas/cobranças, agrega FN-01/FN-02 e agrupa FN-03 pela allowlist do ENUM, validando reconciliação em centavos. FN-04 consulta cobranças sem JOIN com pagamentos e separa matrículas não canceladas/em revisão. FN-05/FN-06 pré-agregam pagamentos por cobrança e reutilizam `FinanceDashboardStatus` para os saldos atuais. `relatorios.php` executa a consulta somente após verificar `finance.view`; a seção é omitida para Operador. O teste `database-finance.php` cobre datas retroativas, cancelamentos posteriores, as cinco formas, períodos vazios, vencimentos e paridade dos saldos, aprovado na CI #1595.
 
 ### Apresentação e acessibilidade
-- [x] Os cartões VG-01 a VG-06 aparecem nos dois grupos aprovados; Operador não recebe VG-05 nem espaço/placeholder financeiro. A cobertura Playwright da renderização aguarda CI.
+- [x] Os cartões VG-01 a VG-06 aparecem nos dois grupos aprovados; a CI #45245709878 aprovou os testes de integração/visão geral. A bateria Playwright cross-browser específica de relatórios foi acrescentada depois e aguarda CI.
 - O painel de distribuição cadastral usa somente alunos ativos como denominador; zero alunos ativos ou ausência de grupos produz estado vazio e nunca divisão por zero.
 - Pesquisa, filtros, listagem de alunos e atalho de cadastro permanecem disponíveis após a composição dos cards.
 - Relatórios operacional/matrículas usam apresentação tabular; frequência oferece gráfico de barras diário com tabela/resumo equivalente; financeiro oferece resumo e tabela por forma.
