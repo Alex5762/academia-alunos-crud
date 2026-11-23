@@ -309,6 +309,15 @@ jobs:
           DB_PASSWORD: root
         run: php tests/database-reports.php
 
+      - name: Validate frequency reports FR-01 to FR-05
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_NAME: academia_alunos
+          DB_USER: root
+          DB_PASSWORD: root
+        run: php tests/database-frequency-reports.php
+
       - name: Validate manual check-in, eligibility and daily uniqueness
         env:
           DB_HOST: 127.0.0.1
@@ -465,9 +474,11 @@ jobs:
           test -f src/Domain/Reports/ReportPeriod.php
           test -f src/Domain/Reports/OperationalReportQuery.php
           test -f src/Domain/Reports/EnrollmentReportQuery.php
+          test -f src/Domain/Reports/FrequencyReportQuery.php
           test -f relatorios.php
           test -f tests/report-period.php
           test -f tests/database-reports.php
+          test -f tests/database-frequency-reports.php
           test -f src/Security/AccessControl.php
           test -f tests/access-control.php
           test -f database/migrations/007_administrative_roles.sql
