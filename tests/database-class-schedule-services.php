@@ -101,6 +101,13 @@ $modalityB = $catalog->createModality(
     null
 );
 
+$catalog->updateModality(
+    $modalityA,
+    $actorId,
+    'Funcional atualizado ' . $suffix,
+    'Descrição atualizada'
+);
+
 $instructorWithoutAccount = $catalog->createInstructor(
     $actorId,
     'Instrutor independente ' . $suffix,
@@ -114,6 +121,15 @@ $instructorWithAccount = $catalog->createInstructor(
     'instrutor-' . $suffix . '@example.invalid',
     null,
     $actorId
+);
+
+$catalog->updateInstructor(
+    $instructorWithoutAccount,
+    $actorId,
+    'Instrutor independente atualizado ' . $suffix,
+    'instrutor-sem-conta-' . $suffix . '@example.invalid',
+    '(21) 98888-0000',
+    null
 );
 
 expectClassDatabaseFailure(
@@ -142,6 +158,16 @@ $scheduleB = $schedules->create(
     $modalityB,
     $instructorWithAccount,
     1,
+    '10:00',
+    '11:00'
+);
+
+$schedules->update(
+    $scheduleB,
+    $actorId,
+    $modalityB,
+    $instructorWithAccount,
+    2,
     '10:00',
     '11:00'
 );
@@ -261,8 +287,8 @@ $auditQuery->execute([
     'schedule_b' => $scheduleB,
 ]);
 assertClassService(
-    (int) $auditQuery->fetchColumn() === 10,
-    'As dez mutações confirmadas precisam estar encadeadas na auditoria.'
+    (int) $auditQuery->fetchColumn() === 13,
+    'As treze mutações confirmadas precisam estar encadeadas na auditoria.'
 );
 
 echo "Serviços do Bloco 06: catálogos, vínculo opcional, conflitos, inativação, preservação e auditoria aprovados.\n";
