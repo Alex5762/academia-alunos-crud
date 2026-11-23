@@ -75,7 +75,10 @@ $totalModalidades = count(array_unique(array_column($horarios, 'modalidade_nome'
     <h1>Grade de aulas</h1>
     <p class="settings-intro">Consulte os horários semanais, as modalidades e os instrutores da academia.</p>
     <?php if (usuarioTemPermissao($usuario, 'classes.manage')) { ?>
-        <p class="class-schedule-manage-link"><a class="button button-primary" href="gestao-aulas.php">Gerenciar modalidades e instrutores</a></p>
+        <div class="class-schedule-manage-link">
+            <a class="button button-primary" href="gerenciar-horarios.php">Gerenciar horários</a>
+            <a class="button button-search" href="gestao-aulas.php">Gerenciar modalidades e instrutores</a>
+        </div>
     <?php } ?>
 
     <section class="class-schedule-summary" aria-label="Resumo da grade semanal">
