@@ -202,7 +202,7 @@ Cada seção e cada endpoint CSV devem revalidar a permissão correspondente no 
 - [ ] Agregados financeiros distinguem cobranças, pagamentos registrados, saldo cobrável e saldo em revisão.
 - [ ] Operador não consegue consultar nem exportar dados financeiros; Admin/Gestor conseguem.
 - [ ] Todos os endpoints validam autorização no servidor e usam consultas preparadas.
-- [x] Endpoint CSV por relatório exporta somente agregados exibidos, aplica o mesmo período e revalida RBAC no servidor; teste de integração verifica exportação operacional pelo Operador e bloqueio HTTP 403 para o CSV financeiro; a execução de CI desta entrega ainda está pendente.
+- [x] Endpoint CSV por relatório exporta somente agregados exibidos, aplica o mesmo período e revalida RBAC no servidor; testes unitários/HTTP passaram nas CIs #45247639018 e #45249934923, incluindo exportação operacional pelo Operador, bloqueio HTTP 403 para CSV financeiro e downloads dos quatro arquivos no Playwright. O teste explícito de exportação financeira para Gestor foi acrescentado depois e aguarda CI.
 - [x] Campos textuais não confiáveis recebem neutralização tab-prefix para iniciadores ASCII, controles e variantes Unicode de largura completa implementadas, além do escaping CSV; teste unitário cobre fórmulas, UTF-8 inválido, aspas e separadores. A tabulação passa a fazer parte do conteúdo exportado.
 - [ ] Abertura no Excel e LibreOffice é verificada quando os ambientes estiverem disponíveis, com documentação do trade-off e sem alegação de proteção universal.
 - [ ] PDF, XLSX e exportação nominal permanecem fora do MVP.
