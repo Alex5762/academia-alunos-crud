@@ -1,6 +1,6 @@
 # Bloco 07 — Relatórios e experiência
 
-> **Estado:** direção da Visão geral aceita; decisões aprovadas por etapas: OP-01 a OP-06, MT-01 a MT-05, FR-01 a FR-05, FN-01 a FN-06, filtros comuns e matriz de permissões por seção (23/11/2026). Os critérios finais de apresentação continuam em revisão. Nenhuma funcionalidade do Bloco 07 foi implementada.
+> **Estado:** direção da Visão geral aceita; decisões aprovadas por etapas: OP-01 a OP-06, MT-01 a MT-05, FR-01 a FR-05, FN-01 a FN-06, filtros comuns, matriz de permissões por seção e escopo do CSV agregado (23/11/2026). Os critérios finais de apresentação continuam em revisão. Nenhuma funcionalidade do Bloco 07 foi implementada.
 > **Branch de referência:** `feat/dashboard-portfolio`.
 > **Dependência anterior:** Bloco 06 com validação automatizada aprovada na CI #1512. A validação manual dos blocos no XAMPP/dispositivo permanece adiada e registrada separadamente.
 > **Regra:** revisar e aprovar o catálogo `bloco-07-catalogo-indicadores.md` antes de iniciar a etapa 07.2. A aprovação da direção da Visão geral não antecipa a aprovação automática de cada fórmula ou endpoint.
@@ -121,16 +121,18 @@ Pagamentos retroativos com justificativa são atribuídos à `data_pagamento`, a
 - gráficos simples e responsivos, sempre acompanhados por tabela ou resumo textual equivalente;
 - navegação por teclado, foco visível, rótulos acessíveis e compatibilidade com tema claro/escuro.
 
-### 3.6 Exportação proposta
+### 3.6 Exportação CSV — escopo aprovado para o MVP
 
-- CSV agregado por relatório e pelo mesmo período exibido na tela;
-- exportação somente dos campos necessários à métrica escolhida;
-- sem nome, e-mail, telefone, observações, tokens ou dados de autenticação;
-- exportação financeira restrita a `finance.view`;
-- validação do tipo de relatório, das datas e da autorização no servidor; não confiar em campos ocultos ou em permissões da interface;
-- respostas CSV devem neutralizar valores que possam ser interpretados como fórmulas por planilhas e usar cabeçalhos estáveis/documentados.
+- Um arquivo CSV por relatório, limitado aos indicadores agregados exibidos e ao mesmo período validado aplicado na tela.
+- Não exportar registros individuais nem incluir identificadores de aluno/funcionário, nomes, e-mails, telefones, observações, tokens, dados de autenticação ou qualquer outra PII.
+- Aplicar no servidor a mesma autorização do relatório; o CSV financeiro exige `finance.view` mesmo quando a URL é chamada diretamente.
+- Usar cabeçalhos fixos/estáveis e documentados, UTF-8 e escaping CSV correto, incluindo tratamento de aspas e separadores.
+- Tratar nomes de planos contratados e outros textos originados de registros como não confiáveis. Na variante destinada à leitura humana em planilhas, prefixar com tab campos textuais cujo primeiro caractere efetivo seja iniciador de fórmula (`=`, `+`, `-`, `@`, tab, CR/LF e variantes Unicode de largura completa reconhecidas pela rotina), além do escaping CSV.
+- A tabulação adicionada passa a fazer parte do conteúdo; por isso, este CSV é voltado à leitura humana em planilhas e não deve ser reutilizado como formato bruto de integração entre sistemas.
+- Testar os casos maliciosos e a estrutura resultante; validar abertura no Excel e LibreOffice quando os ambientes estiverem disponíveis. Não afirmar que a mitigação é universal para todo leitor de CSV.
+- Não incluir SQL, erros internos, stack traces ou dados de auditoria.
 
-PDF, XLSX e exportação linha a linha de alunos ficam fora desta proposta inicial.
+**Fora do MVP:** PDF, XLSX e exportação nominal/linha a linha de alunos.
 
 ## 4. Permissões
 
@@ -180,7 +182,10 @@ Cada seção e cada endpoint CSV devem revalidar a permissão correspondente no 
 - [ ] Agregados financeiros distinguem cobranças, pagamentos registrados, saldo cobrável e saldo em revisão.
 - [ ] Operador não consegue consultar nem exportar dados financeiros; Admin/Gestor conseguem.
 - [ ] Todos os endpoints validam autorização no servidor e usam consultas preparadas.
-- [ ] CSV contém somente agregados permitidos, respeita filtros/RBAC e neutraliza conteúdo de fórmula.
+- [ ] CSV exporta somente agregados exibidos, aplica o mesmo período e revalida RBAC no servidor; não contém PII.
+- [ ] Campos textuais não confiáveis recebem a neutralização tab-prefix definida para a variante de planilha, além do escaping CSV correto; casos de fórmula maliciosa, UTF-8, aspas e separadores são testados.
+- [ ] Abertura no Excel e LibreOffice é verificada quando os ambientes estiverem disponíveis, com documentação do trade-off e sem alegação de proteção universal.
+- [ ] PDF, XLSX e exportação nominal permanecem fora do MVP.
 - [ ] Estados vazios, erros, acessibilidade, teclado, tema claro/escuro e viewports mobile/desktop são cobertos.
 - [ ] Testes de regressão comprovam que os relatórios não alteram dados operacionais nem a cadeia de auditoria.
 - [ ] MySQL 8.0 e MariaDB 10.11 passam pela CI; o smoke test local permanece separado e documentado.
@@ -215,7 +220,7 @@ Entregáveis desta etapa:
 
 **Decisão técnica registrada em 23/11/2026:** MT-01 a MT-04 contam inícios efetivos; cancelamentos anteriores ou simultâneos ao início não criam vigência e ficam fora da coorte de início. MT-05 conta eventos de cancelamento inclusive quando a matrícula nunca chegou a vigorar. MT-02 a MT-04 reutilizam exatamente a coorte de MT-01.
 
-**Decisão registrada em 23/11/2026:** o rótulo **“Recebido no período”** foi aprovado para a soma dos pagamentos por `data_pagamento`, com legenda esclarecendo que se trata de pagamentos registrados e não de liquidação bancária. A decisão foi complementada pela aprovação de FR-04, FN-01 a FN-06 e do contrato de filtros/permissões: mês até hoje como padrão; ambos os parâmetros ausentes aplicam o padrão, somente um ausente é erro; datas futuras podem ser selecionadas explicitamente; limite de 365 dias inclusivos; filtros persistem na navegação/CSV; cada seção é autorizada antes da consulta, e o Operador não executa nem recebe dados financeiros. FN-06 é fotografia atual do saldo restante de cobranças não canceladas financeiramente ligadas a matrículas canceladas; não representa reembolso. Os demais indicadores, filtros e permissões continuam em revisão.
+**Decisão registrada em 23/11/2026:** o rótulo **“Recebido no período”** foi aprovado para a soma dos pagamentos por `data_pagamento`, com legenda esclarecendo que se trata de pagamentos registrados e não de liquidação bancária. A decisão foi complementada pela aprovação de FR-04, FN-01 a FN-06 e do contrato de filtros/permissões: mês até hoje como padrão; ambos os parâmetros ausentes aplicam o padrão, somente um ausente é erro; datas futuras podem ser selecionadas explicitamente; limite de 365 dias inclusivos; filtros persistem na navegação/CSV; cada seção é autorizada antes da consulta, e o Operador não executa nem recebe dados financeiros. **Escopo de exportação CSV aprovado em 23/11/2026:** um arquivo agregado por relatório, mesmos filtros e permissões da tela, sem PII; escaping CSV correto e neutralização tab-prefix dos campos textuais não confiáveis para leitura em planilhas; teste em Excel/LibreOffice quando disponíveis, sem alegar proteção universal. PDF, XLSX e exportação nominal ficam fora do MVP. FN-06 é fotografia atual do saldo restante de cobranças não canceladas financeiramente ligadas a matrículas canceladas; não representa reembolso. Os demais indicadores, filtros e permissões continuam em revisão.
 
 **Saída esperada da 07.1:** especificação revisável e testável, sem alteração de banco nem implementação de telas. A etapa seguinte só começa depois da revisão das fórmulas e do contrato de acesso.
 

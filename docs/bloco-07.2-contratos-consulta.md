@@ -213,6 +213,9 @@ MT-01 a MT-05 usam `enrollments.view` e o período local normalizado em limites 
 - Página global exige `dashboard.view`; cada seção valida a permissão de domínio antes de instanciar/executar sua consulta.
 - Operador recebe HTTP 403 ao acessar endpoint financeiro diretamente; seu dashboard não instancia nem executa consulta financeira e não contém metadados/valores financeiros.
 - CSV revalida a permissão da seção no servidor; Operador não acessa exportação financeira.
+- CSV contém apenas agregados, não contém PII, preserva o período validado e usa cabeçalhos UTF-8 estáveis com escaping correto.
+- Campos textuais não confiáveis usam a neutralização tab-prefix da variante para planilhas; testar iniciadores de fórmula, variantes cobertas, aspas e separadores.
+- Validar abertura no Excel/LibreOffice quando disponíveis; documentar que tabulação integra o campo e que a mitigação não é universal.
 - Período inválido não chega ao SQL.
 - Parâmetros não controlam identificadores SQL.
 - Exceção de banco não vira resultado zero.
