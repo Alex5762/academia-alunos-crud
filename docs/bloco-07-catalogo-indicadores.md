@@ -45,7 +45,7 @@ A Visão geral é a camada resumida do dashboard atual. Deve exibir poucos indic
 | VG-02 | Matrículas vigentes | Contagem de matrículas cuja situação derivada é `ATIVA` no instante da consulta, conforme a seção 3. Não depende do status cadastral do aluno. | `matriculas` | `enrollments.view` | Relatório de matrículas |
 | VG-03 | Check-ins no período | Quantidade de linhas de check-in cuja `data_local` esteja entre as datas selecionadas, inclusive. | `checkins.data_local` | `attendance.view` | Relatório de frequência |
 | VG-04 | Alunos com check-in no período | Quantidade distinta de `aluno_id` com ao menos um check-in no período. Um aluno é contado uma vez no período, mesmo que tenha vários dias de presença. | `checkins.aluno_id`, `checkins.data_local` | `attendance.view` | Relatório de frequência |
-| VG-05 | Pagamentos registrados no período | Soma de `pagamentos.valor` para lançamentos cuja `data_pagamento` esteja no período, inclusive. É a soma dos pagamentos registrados para essas datas, não lucro nem fluxo líquido com estornos. | `pagamentos.valor`, `pagamentos.data_pagamento` | `finance.view` | Relatório financeiro |
+| VG-05 | Recebido no período | Soma de `pagamentos.valor` para lançamentos cuja `data_pagamento` esteja no período, inclusive. É a soma dos pagamentos registrados para essas datas, não lucro nem fluxo líquido com estornos. | `pagamentos.valor`, `pagamentos.data_pagamento` | `finance.view` | Relatório financeiro |
 | VG-06 | Matrículas terminando em até 7 dias | Contagem de matrículas atualmente `ATIVAS` cujo `fim_exclusivo_em` esteja estritamente depois de agora e até agora + 7 dias de calendário local, incluindo o limite final. | `matriculas.inicio_em`, `matriculas.fim_exclusivo_em`, `matriculas.cancelada_em` | `enrollments.view` | Relatório de matrículas |
 
 ### 2.1 Regras de apresentação
@@ -75,7 +75,7 @@ O status cadastral do aluno (`alunos.ativo`) não altera essa classificação. I
 
 ### 3.1 Matrículas terminando nos próximos 7 dias
 
-VG-06 considera somente matrículas que ainda estão ATIVAS no instante da consulta. O limite é calculado como sete dias de calendário no fuso local. A matrícula deve satisfazer `agora < fim_exclusivo_em < limite`, após conversão coerente dos instantes para UTC. Matrículas canceladas, agendadas ou já vencidas não entram nesse alerta.
+VG-06 considera somente matrículas que ainda estão ATIVAS no instante da consulta. O limite é calculado como sete dias de calendário no fuso local. A matrícula deve satisfazer `agora < fim_exclusivo_em <= limite`, após conversão coerente dos instantes para UTC. O instante correspondente a agora + 7 dias de calendário local pertence à janela. Matrículas canceladas, agendadas ou já vencidas não entram nesse alerta.
 
 O fim é exclusivo: no instante exato de `fim_exclusivo_em`, a matrícula já está vencida e não deve aparecer como “terminando”.
 
@@ -90,7 +90,7 @@ O fim é exclusivo: no instante exato de `fim_exclusivo_em`, a matrícula já es
 | OP-03 | Alunos inativos | Contagem com `ativo = 0` | Fotografia atual |
 | OP-04 | Matrículas por situação | Contagem por cada situação derivada no instante único da consulta | Não somar com status cadastral de aluno |
 | OP-05 | Matrículas com início próximo | Matrículas AGENDADAS com início depois de agora e até agora + 7 ou 30 dias de calendário, incluindo o limite final | Janela móvel, não depende do período selecionado |
-| OP-06 | Matrículas com término próximo | Matrículas ATIVAS com fim exclusivo depois de agora e antes de agora + 7 ou 30 dias de calendário | Janela móvel; 7 dias alimenta VG-06 |
+| OP-06 | Matrículas com término próximo | Matrículas ATIVAS com fim exclusivo depois de agora e até agora + 7 ou 30 dias de calendário, incluindo o limite final | Janela móvel; 7 dias alimenta VG-06 |
 
 ### 4.2 Matrículas
 
@@ -127,16 +127,16 @@ A seção inteira requer `finance.view` tanto para HTML quanto para endpoints e 
 
 | ID | Métrica | Definição | Eixo temporal |
 |---|---|---|---|
-| FN-01 | Total de pagamentos registrados no período | Soma de `pagamentos.valor` pela `data_pagamento` dentro do período local | Data declarada de pagamento |
+| FN-01 | Recebido no período | Soma de `pagamentos.valor` pela `data_pagamento` dentro do período local | Data declarada de pagamento |
 | FN-02 | Quantidade de pagamentos | Contagem de lançamentos incluídos em FN-01 | Data declarada de pagamento |
-| FN-03 | Pagamentos registrados por forma | FN-01 agrupado por `forma_pagamento` | Data declarada de pagamento e forma |
+| FN-03 | Recebido por forma de pagamento | FN-01 agrupado por `forma_pagamento` | Data declarada de pagamento e forma |
 | FN-04 | Cobranças com vencimento no período | Quantidade e soma do valor original de cobranças não canceladas financeiramente cuja `data_vencimento` está no período; apresentar separadamente de FN-01 | Data de vencimento, não data de recebimento |
 | FN-05 | Saldo cobrável atual | Soma, por cobrança não cancelada financeiramente e vinculada a matrícula não cancelada, de `max(valor_total - pagamentos_acumulados, 0)` | Fotografia atual |
 | FN-06 | Saldo em revisão atual | Mesma diferença positiva para cobrança não cancelada financeiramente cuja matrícula está cancelada | Fotografia atual; valor exige decisão/revisão |
 
 Regras adicionais:
 - `data_pagamento` é uma data inserida no lançamento e pode ser retroativa mediante justificativa. FN-01 usa essa data; `registrado_em_utc` é o instante em que o lançamento entrou no sistema.
-- FN-01 é a soma dos lançamentos de pagamento registrados manualmente no sistema para as datas selecionadas. O sistema não comprova liquidação bancária; portanto, o indicador deve ser rotulado como pagamentos registrados, não como receita contábil, lucro, conciliação bancária ou fluxo líquido após estornos.
+- FN-01 é a soma dos lançamentos de pagamento registrados manualmente no sistema cuja `data_pagamento` pertence ao período selecionado. O cartão usa o rótulo aprovado **“Recebido no período”**, acompanhado da legenda “Soma dos pagamentos registrados pela data informada no lançamento”. Como o serviço permite lançamentos retroativos com justificativa, a data do indicador é a data declarada do pagamento, não necessariamente o instante em que o sistema recebeu o lançamento. O sistema não comprova liquidação bancária; o indicador não representa receita contábil, lucro, conciliação bancária ou fluxo líquido após estornos.
 - Os pagamentos atuais são append-only; não existe neste escopo um fluxo de estorno que permita calcular recebimento líquido. Não subtrair cobranças, cancelamentos de matrícula ou valores em revisão do total de pagamentos.
 - FN-04 informa cobranças com vencimento, não pagamentos registrados nem saldo em aberto. Cobrança com pagamento integral continua tendo valor original; portanto não chamar a soma de FN-04 de “inadimplência”.
 - FN-05 e FN-06 são saldos atuais e não devem reagir ao filtro histórico de datas. Cancelamento financeiro da cobrança zera sua contribuição; matrícula cancelada move o saldo não resolvido para revisão.
