@@ -159,7 +159,7 @@ Não alterar `index.php` inteiro de uma vez. Extrair somente as consultas novas 
 3. **Concluído e validado na CI #1579:** FR-01 a FR-05, com FR-03 preenchida por data civil, FR-04 calculado por ocorrência real do calendário e FR-05 limitado aos frequentadores.
 4. **Concluído e validado na CI #1595:** FN-01 a FN-06 em `FinanceReportQuery`, com RBAC `finance.view`, pagamentos históricos sem JOIN de estado atual, agregação de cobranças por vencimento e saldos FN-05/FN-06 pelas regras canônicas `FinanceDashboardStatus`. O teste de integração cobre as cinco formas, retroativos, cancelamentos posteriores, período vazio e paridade de saldos. O `EXPLAIN` é executado como diagnóstico, mas o volume de fixtures não é representativo para decisão de índice.
 5. Integrar os cartões no dashboard existente (07.6), reutilizando agregadores sem duplicar SQL e corrigindo a distribuição cadastral por plano.
-6. **Implementado na branch; aguardando CI:** CSV agregado seguro (07.7), com escaping, neutralização tab-prefix, UTF-8, filtros e RBAC. Teste manual de abertura em Excel/LibreOffice ainda pendente.
+6. **Concluído e validado nas CIs #45247639018 e #45249934923:** CSV agregado seguro (07.7), com escaping, neutralização tab-prefix, UTF-8, filtros e RBAC. Teste manual de abertura em Excel/LibreOffice ainda pendente.
 7. Finalizar regressão (07.8): desktop/mobile, reflow a 320 CSS px, temas claro/escuro, teclado/foco, contraste, redução de movimento, acessibilidade e comparação com a experiência anterior.
 
 ## 11. Referências de boas práticas
