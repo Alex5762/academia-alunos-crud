@@ -8,6 +8,9 @@ use FitControl\Domain\Finance\FinanceDashboardStatus;
 use FitControl\Domain\Finance\FinanceMoneyFormatter;
 use PDO;
 
+require_once __DIR__ . '/../Finance/FinanceDashboardStatus.php';
+require_once __DIR__ . '/../Finance/FinanceMoneyFormatter.php';
+
 /**
  * Consulta os seis indicadores financeiros aprovados para o Bloco 07.
  *
