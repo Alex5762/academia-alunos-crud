@@ -200,7 +200,7 @@ A interface deve preservar `de` e `ate` validados ao navegar entre relatórios e
 
 ## 7. Exportação CSV — escopo aprovado
 
-- Um CSV por relatório (`operacional`, `matriculas`, `frequencia`, `financeiro`), contendo somente os indicadores agregados exibidos e usando exatamente o período validado aplicado na tela. **Implementado na branch; CI pendente.**
+- Um CSV por relatório (`operacional`, `matriculas`, `frequencia`, `financeiro`), contendo somente os indicadores agregados exibidos e usando exatamente o período validado aplicado na tela. **Implementado e validado nas CIs #45247639018 e #45249934923.**
 - Não incluir identificadores de aluno/funcionário, nomes, e-mails, telefones, observações, tokens, dados de autenticação ou qualquer outra PII.
 - O relatório financeiro exige `finance.view` também no endpoint CSV; a autorização é revalidada no servidor em toda requisição. Teste HTTP verifica que Operador recebe 403; nova CI pendente.
 - Usar cabeçalhos fixos por seção, UTF-8 com BOM para abertura direta em planilhas e escaping CSV correto, com aspas duplicadas e escape proprietário de barra invertida desativado.
