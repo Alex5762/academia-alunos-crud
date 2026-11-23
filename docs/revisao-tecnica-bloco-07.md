@@ -1,6 +1,6 @@
 # Revisão técnica do Bloco 07 — aderência, métricas e arquitetura
 
-> **Estado:** revisão técnica e decisões individuais de indicadores, filtros, permissões, CSV e apresentação concluídas em 23/11/2026. Esta revisão registra a reconciliação global entre documentos e a sequência técnica; nenhuma implementação de relatórios foi iniciada.
+> **Estado:** revisão técnica e reconciliação global concluídas em 23/11/2026; implementação inicial da 07.2 em andamento com `ReportPeriod` e testes puros. Integração HTTP, consultas e interface permanecem pendentes.
 > **Data:** 23/11/2026.
 > **Escopo analisado:** catálogo 07.1, contratos 07.2, código atual de alunos, matrículas, frequência, financeiro, RBAC e dashboard.
 > **Importante:** esta revisão não implementa funcionalidades, não altera schema e não substitui a aprovação do escopo.
@@ -152,10 +152,10 @@ Não alterar `index.php` inteiro de uma vez. Extrair somente as consultas novas 
 - A tabulação adicionada passa a fazer parte do conteúdo. Documentar esse trade-off; para futura integração máquina-a-máquina, definir outro formato/contrato em vez de reutilizar o CSV de leitura humana.
 - Testar casos maliciosos, UTF-8, aspas e separadores; validar abertura no Excel/LibreOffice quando houver ambiente. Não alegar proteção universal para todos os consumidores.
 
-## 10. Sequência técnica aprovada, condicionada ao fechamento global
+## 10. Sequência técnica aprovada e estado de execução
 
-1. Concluir a reconciliação entre catálogo 07.1, proposta de experiência, contratos 07.2, revisão técnica e roadmap; obter autorização explícita para começar.
-2. Implementar `ReportPeriod` e testes puros de parsing, limites inclusivos, período padrão, futuro e UTC, sem migration/schema.
+1. **Concluído no primeiro incremento:** `ReportPeriod` e testes puros de parsing, limites inclusivos, período padrão, futuro, conversão UTC e transição histórica de horário de verão, sem migration/schema.
+2. Integrar `ReportPeriod` aos controllers, capturar um único `asOf` por requisição, preservar `de`/`ate` entre navegação e CSV e tratar erros de validação sem fallback silencioso.
 3. Implementar consultas operacional e de matrículas (07.3), incluindo paridade com `EnrollmentStatus::derive()` e testes com dados fictícios em MySQL 8.0/MariaDB 10.11.
 4. Implementar frequência (07.4), incluindo FR-03, FR-04 por ocorrência do calendário e FR-05.
 5. Implementar financeiro (07.5), RBAC e paridade de FN-05/FN-06 com `FinanceDashboardStatus`; executar `EXPLAIN` em MySQL 8.0 e MariaDB 10.11 antes de decidir sobre índices.
@@ -175,4 +175,4 @@ Não alterar `index.php` inteiro de uma vez. Extrair somente as consultas novas 
 - [W3C — WCAG 2.2, SC 2.5.8 Target Size (Minimum)](https://www.w3.org/WAI/WCAG22/Understanding/target-size-minimum): alvos de pelo menos 24 × 24 CSS px, com exceções definidas.
 - [W3C — WCAG 2.2, SC 1.4.10 Reflow](https://www.w3.org/WAI/WCAG22/Understanding/reflow): apresentação sem perda de informação/funcionalidade a 320 CSS px, exceto conteúdos que exijam layout bidimensional.
 
-**Resultado desta revisão:** o desenho geral combina com o FitControl. As definições funcionais e de apresentação estão aprovadas por etapas, e a reconciliação dos documentos foi consolidada nesta revisão. A implementação continua bloqueada até a aprovação global explícita do escopo. Nenhuma consulta, tela, relatório ou exportação do Bloco 07 foi implementada.
+**Resultado desta revisão:** o desenho geral combina com o FitControl. A especificação global está aprovada. O primeiro incremento da 07.2 (`ReportPeriod` e testes puros) foi implementado sem alteração de schema; a integração HTTP, consultas, telas e exportação ainda não foram implementadas.

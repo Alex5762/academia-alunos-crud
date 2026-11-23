@@ -44,9 +44,9 @@ O módulo cria uma cobrança única pelo contrato, registra pagamentos parciais 
 
 O módulo oferece grade semanal fixa, catálogo de modalidades e instrutores, cadastro/edição/inativação de horários, filtros, proteção contra conflitos e auditoria. A CI #1512 aprovou os testes de banco, HTTP e Playwright em Chromium, Firefox e WebKit, incluindo MySQL 8.0 e MariaDB 10.11. A aplicação controlada da migration 014 no XAMPP e a inspeção manual em dispositivo físico continuam pendentes. Consulte `docs/bloco-06-aulas-agenda.md`.
 
-## Bloco 07 — Relatórios e experiência (especificação revisada; implementação não iniciada)
+## Bloco 07 — Relatórios e experiência (implementação inicial em andamento)
 
-A direção da Visão geral gerencial foi aceita. O catálogo 07.1 e os contratos 07.2 seguem em revisão por etapas, conforme `docs/bloco-07-catalogo-indicadores.md`, `docs/bloco-07.2-contratos-consulta.md` e `docs/bloco-07-relatorios-experiencia.md`. Já foram aprovados: o rótulo “Recebido no período” (pagamentos agrupados por `data_pagamento`, com legenda de que são lançamentos registrados, não liquidação bancária, faturamento ou lucro); FR-04 (média de check-ins por ocorrência de cada dia da semana, total bruto e número de ocorrências); FN-04 (quantidade e valor nominal de cobranças com vencimento no período, separados entre matrículas não canceladas e canceladas/em revisão); e FN-05 (“Saldo cobrável atual”, saldo positivo de cobranças não canceladas financeiramente ligadas a matrículas não canceladas, como fotografia atual). FN-06 e demais decisões continuam pendentes. Nenhuma tela, consulta, endpoint ou migration do Bloco 07 foi criada.
+A especificação global foi aprovada e reconciliada. O primeiro incremento técnico implementa `src/Domain/Reports/ReportPeriod.php`: período padrão do primeiro dia do mês até hoje em `America/Sao_Paulo`, parsing estrito de `YYYY-MM-DD`, rejeição de parâmetros parciais/inválidos e intervalos acima de 365 dias inclusivos, aceitação de datas futuras explícitas e limites locais/UTC para colunas `DATE` e `DATETIME`. O teste puro `tests/report-period.php` cobre 40 asserções, incluindo transição histórica de horário de verão. A CI executa esse teste. A integração com controllers, consultas, telas e CSV ainda não foi implementada; não houve migration ou alteração de schema. Consulte `docs/bloco-07.2-contratos-consulta.md` e os demais documentos do Bloco 07.
 
 ## Funcionalidades
 
@@ -137,9 +137,11 @@ academia-alunos-crud/
 │   ├── Domain/Classes/ClassScheduleService.php
 │   ├── Domain/Classes/ClassScheduleQuery.php
 │   ├── Domain/Enrollment/
+│   ├── Domain/Reports/ReportPeriod.php
 │   └── Security/
 ├── tests/
 │   ├── browser-compatibility.mjs
+│   ├── report-period.php
 │   ├── database-attendance-checkin.php
 │   ├── database-class-schedule-migration.php
 │   ├── database-class-schedule-services.php

@@ -1,9 +1,9 @@
 # Bloco 07 — Relatórios e experiência
 
-> **Estado:** direção da Visão geral aceita; decisões aprovadas por etapas: OP-01 a OP-06, MT-01 a MT-05, FR-01 a FR-05, FN-01 a FN-06, filtros comuns, matriz de permissões por seção e escopo do CSV agregado (23/11/2026). Os critérios finais de apresentação foram aprovados em 23/11/2026. O fechamento global dos contratos ainda é necessário antes da implementação; nenhuma funcionalidade do Bloco 07 foi implementada.
+> **Estado:** especificação global aprovada em 23/11/2026; implementação inicial da 07.2 em andamento. `ReportPeriod` e seus testes puros foram criados; integração HTTP, consultas, telas e CSV permanecem pendentes. Nenhuma migration ou alteração de schema foi feita.
 > **Branch de referência:** `feat/dashboard-portfolio`.
 > **Dependência anterior:** Bloco 06 com validação automatizada aprovada na CI #1512. A validação manual dos blocos no XAMPP/dispositivo permanece adiada e registrada separadamente.
-> **Regra:** as definições do catálogo 07.1 e os contratos 07.2 foram aprovados por etapas; antes de implementar, concluir a reconciliação global entre os documentos e obter aprovação explícita para iniciar a execução técnica.
+> **Regra:** a especificação global foi aprovada; seguir a sequência técnica registrada e validar cada incremento antes de avançar.
 
 ## Documentos do bloco
 
@@ -222,7 +222,7 @@ Cada seção e cada endpoint CSV devem revalidar a permissão correspondente no 
 4. **CSV:** somente agregados, mesmos filtros/permissões, sem PII, escaping e neutralização para planilhas; PDF, XLSX e exportação individual fora do MVP.
 5. **Apresentação:** seis cartões em dois grupos, preservação da listagem de alunos, ajuste do denominador de planos para alunos ativos, tabelas/gráfico conforme definido, estados de interface distintos e critérios de acessibilidade/responsividade aprovados.
 
-**O que resta nesta etapa não é uma nova decisão de produto:** é a reconciliação final da documentação e a autorização explícita para iniciar a implementação. A aprovação individual de todos os pacotes não deve ser confundida com a execução de código.
+**Fechamento global concluído em 23/11/2026.** A implementação começou pelo objeto de valor `ReportPeriod`; sua integração HTTP e os demais componentes permanecem como entregas técnicas pendentes.
 
 ### Etapa 07.1 — definição dos indicadores (catálogo revisado e aprovado por etapas; especificação sem implementação)
 
@@ -252,8 +252,8 @@ Entregáveis desta etapa:
 
 **Sequência aprovada para execução, após autorização global:** implementar primeiro o contrato de período e seus testes; depois consultas agregadas por domínio; integrar cartões ao dashboard usando os mesmos agregadores; implementar CSV por último; finalizar com regressão, acessibilidade, responsividade e compatibilidade.
 
-### Etapa 07.2 — contratos de consulta e validação (desenho revisado e aprovado; implementação pendente)
+### Etapa 07.2 — contratos de consulta e validação (implementação inicial em andamento)
 
 Documento: [Bloco 07.2 — Contratos de consulta e validação](bloco-07.2-contratos-consulta.md).
 
-O contrato 07.2 define entrada/saída, datas, relógio de referência, fronteira de autorização, consultas agregadas e matriz de testes. As regras de FR-01 a FR-05, o padrão de período, o tratamento de períodos inválidos, a omissão integral de seções não autorizadas e a precisão financeira estão documentados. A arquitetura foi simplificada para reutilizar `AccessControl`, relógio capturado uma vez por requisição, consultas específicas por domínio e arrays com chaves estáveis; não criar abstrações genéricas sem necessidade demonstrada. O documento não introduz migrations, telas ou código de relatório. A implementação da 07.2 começa somente após o fechamento global da especificação e autorização explícita.
+O contrato 07.2 define entrada/saída, datas, relógio de referência, fronteira de autorização, consultas agregadas e matriz de testes. A arquitetura reutiliza `AccessControl`, captura única de relógio por requisição, consultas específicas por domínio e arrays com chaves estáveis. **Primeiro incremento concluído:** `ReportPeriod` implementado em `src/Domain/Reports/ReportPeriod.php`, com teste puro em `tests/report-period.php` e etapa dedicada no workflow CI. O teste cobre 40 asserções: padrão mês-até-hoje, parsing estrito, parâmetros ausentes/parciais e tipos inesperados, período invertido, limite 365/366, datas futuras, conversão local/UTC, ano bissexto, limites DATETIME e transição histórica de horário de verão. A integração com controllers, propagação de `asOf`, autorização e consultas permanece pendente. Nenhuma migration, alteração de schema, tela ou exportação foi criada.
