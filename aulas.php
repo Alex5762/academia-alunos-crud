@@ -3,6 +3,9 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/funcoes.php';
 require_once __DIR__ . '/conexao.php';
+require_once __DIR__ . '/src/Domain/Classes/ClassScheduleQuery.php';
+
+use FitControl\\Domain\\Classes\\ClassScheduleQuery;
 
 $usuario = exigirAutenticacao($pdo);
 exigirPermissao($usuario, 'classes.view');
@@ -28,40 +31,14 @@ if (($modalidadeRecebida !== '' && $modalidadeId === false)
     exit('Identificador de filtro inválido.');
 }
 
-$modalidades = $pdo->query(
-    'SELECT id, nome FROM modalidades WHERE ativo = 1 ORDER BY nome ASC, id ASC'
-)->fetchAll(PDO::FETCH_ASSOC);
-$instrutores = $pdo->query(
-    'SELECT id, nome FROM instrutores WHERE ativo = 1 ORDER BY nome ASC, id ASC'
-)->fetchAll(PDO::FETCH_ASSOC);
-
-$conditions = ['h.ativo = 1', 'm.ativo = 1'];
-$parameters = [];
-if ($diaRecebido !== 'todos') {
-    $conditions[] = 'h.dia_semana = :weekday';
-    $parameters['weekday'] = (int) $diaRecebido;
-}
-if ($modalidadeId !== null) {
-    $conditions[] = 'h.modalidade_id = :modality_id';
-    $parameters['modality_id'] = (int) $modalidadeId;
-}
-if ($instrutorId !== null) {
-    $conditions[] = 'h.instrutor_id = :instructor_id';
-    $parameters['instructor_id'] = (int) $instrutorId;
-}
-
-$query = $pdo->prepare(
-    'SELECT h.id, h.dia_semana, h.hora_inicio, h.hora_fim,
-            m.nome AS modalidade_nome,
-            CASE WHEN i.ativo = 1 THEN i.nome ELSE NULL END AS instrutor_nome
-     FROM horarios_aula h
-     INNER JOIN modalidades m ON m.id = h.modalidade_id
-     LEFT JOIN instrutores i ON i.id = h.instrutor_id
-     WHERE ' . implode(' AND ', $conditions) . '
-     ORDER BY h.dia_semana ASC, h.hora_inicio ASC, m.nome ASC, h.id ASC'
+$scheduleQuery = new ClassScheduleQuery($pdo);
+$modalidades = $scheduleQuery->activeModalities();
+$instrutores = $scheduleQuery->activeInstructors();
+$horarios = $scheduleQuery->activeWeeklySchedule(
+    $diaRecebido === 'todos' ? null : (int) $diaRecebido,
+    $modalidadeId === null ? null : (int) $modalidadeId,
+    $instrutorId === null ? null : (int) $instrutorId
 );
-$query->execute($parameters);
-$horarios = $query->fetchAll(PDO::FETCH_ASSOC);
 
 $dias = [
     1 => 'Segunda-feira',
