@@ -83,7 +83,8 @@ final class ClassScheduleService
         ?int $instructorId,
         int $weekday,
         string $startTime,
-        string $endTime
+        string $endTime,
+        ?array $expectedOriginal = null
     ): void {
         $this->assertIdentifiers($actorUserId, $modalityId, $instructorId);
         if ($scheduleId < 1) {
@@ -139,6 +140,44 @@ final class ClassScheduleService
                 throw new DomainException(
                     'O horário foi alterado por outra operação. Recarregue a grade e tente novamente.'
                 );
+            }
+
+            if ($expectedOriginal !== null) {
+                foreach (['modalidade_id', 'instrutor_id', 'dia_semana', 'hora_inicio', 'hora_fim'] as $field) {
+                    if (!array_key_exists($field, $expectedOriginal)) {
+                        throw new InvalidArgumentException('O snapshot original do horário está incompleto.');
+                    }
+                }
+
+                $expectedModalityId = filter_var($expectedOriginal['modalidade_id'], FILTER_VALIDATE_INT);
+                $rawExpectedInstructorId = $expectedOriginal['instrutor_id'];
+                $expectedInstructorId = $rawExpectedInstructorId === null || $rawExpectedInstructorId === ''
+                    ? null
+                    : filter_var($rawExpectedInstructorId, FILTER_VALIDATE_INT);
+                $expectedWeekday = filter_var($expectedOriginal['dia_semana'], FILTER_VALIDATE_INT);
+                $expectedStartTime = $expectedOriginal['hora_inicio'];
+                $expectedEndTime = $expectedOriginal['hora_fim'];
+
+                if (
+                    $expectedModalityId === false || $expectedModalityId < 1
+                    || ($expectedInstructorId !== null && ($expectedInstructorId === false || $expectedInstructorId < 1))
+                    || $expectedWeekday === false || $expectedWeekday < 1 || $expectedWeekday > 7
+                    || !is_string($expectedStartTime) || !is_string($expectedEndTime)
+                ) {
+                    throw new InvalidArgumentException('O snapshot original do horário é inválido.');
+                }
+
+                if (
+                    $expectedModalityId !== (int) $current['modalidade_id']
+                    || $expectedInstructorId !== self::nullableInt($current['instrutor_id'])
+                    || $expectedWeekday !== (int) $current['dia_semana']
+                    || $expectedStartTime !== (string) $current['hora_inicio']
+                    || $expectedEndTime !== (string) $current['hora_fim']
+                ) {
+                    throw new DomainException(
+                        'O horário foi alterado desde que o formulário foi aberto. Recarregue os dados e tente novamente.'
+                    );
+                }
             }
 
             if ($instructorId !== null) {
