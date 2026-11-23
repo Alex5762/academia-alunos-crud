@@ -155,6 +155,7 @@ Essas evoluções não devem criar dependências no primeiro MVP. Em particular,
 - [x] Alterações e eventos da cadeia de auditoria são confirmados na mesma transação.
 - [x] Inativação é lógica; modalidade/instrutor com horários ativos precisa ter a grade revisada antes.
 - [x] Horários ativos exigem modalidade ativa e, quando atribuído, instrutor ativo.
+- [x] Teste com duas conexões independentes comprova a serialização e rejeição de sobreposição concorrente; executado na CI em MySQL e MariaDB.
 - [x] O serviço serializa gravações por instrutor e rejeita sobreposições no mesmo dia; horários adjacentes são permitidos.
 - [x] RBAC inicial permite consulta aos três perfis e gestão somente a Administrador/Gestor.
 - [x] CI #1450 aprovou a migration nos dois motores; nova suíte de serviços está sendo integrada à CI.
