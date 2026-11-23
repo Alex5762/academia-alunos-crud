@@ -329,9 +329,28 @@ assert_contains "$TMP_DIR/user-role-operator-final.html" "Perfil do funcionário
 FINAL_OPERATOR_ROLE="$(db_value "SELECT perfil FROM usuarios WHERE id = $NOVO_USUARIO_ID")"
 [[ "$FINAL_OPERATOR_ROLE" == "OPERADOR" ]] || fail "O fixture deveria retornar ao perfil Operador antes do teste de RBAC."
 
-echo "1.2.4/10 - Validando exportações agregadas e bloqueio financeiro do Operador..."
+echo "1.2.4/10 - Validando exportações agregadas e bloqueio financeiro por perfil..."
 REPORT_END="$(date +%F)"
 REPORT_START="$(date +%Y-%m-01)"
+
+# O Gestor deve receber o CSV financeiro; em seguida, a mesma sessão perde a permissão
+# ao voltar para Operador, sem precisar autenticar novamente.
+MANAGER_PROMOTION_TOKEN="$(get_token "$TMP_DIR/user-role-operator-final.html")"
+curl -fsS -L -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/alterar-perfil-usuario.php" \
+    --data-urlencode "token=$MANAGER_PROMOTION_TOKEN" \
+    --data-urlencode "id=$NOVO_USUARIO_ID" \
+    --data-urlencode "perfil=GESTOR" \
+    -o "$TMP_DIR/user-role-manager-report.html"
+MANAGER_FINANCE_CSV_HTTP="$(curl -sS -o "$TMP_DIR/manager-finance.csv" -w '%{http_code}' -c "$NEW_COOKIE_JAR" -b "$NEW_COOKIE_JAR" "$BASE_URL/exportar-relatorio.php?tipo=financeiro&de=$REPORT_START&ate=$REPORT_END")"
+[[ "$MANAGER_FINANCE_CSV_HTTP" == "200" ]] || fail "Gestor deveria exportar o relatório financeiro; recebeu $MANAGER_FINANCE_CSV_HTTP."
+grep -Fq 'Recebido no período' "$TMP_DIR/manager-finance.csv" || fail "CSV financeiro do Gestor não contém os indicadores esperados."
+
+MANAGER_DEMOTION_TOKEN="$(get_token "$TMP_DIR/user-role-manager-report.html")"
+curl -fsS -L -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/alterar-perfil-usuario.php" \
+    --data-urlencode "token=$MANAGER_DEMOTION_TOKEN" \
+    --data-urlencode "id=$NOVO_USUARIO_ID" \
+    --data-urlencode "perfil=OPERADOR" \
+    -o "$TMP_DIR/user-role-operator-report.html"
 OPERATOR_REPORT_HTTP="$(curl -sS -o "$TMP_DIR/operator-reports.html" -w '%{http_code}' -c "$NEW_COOKIE_JAR" -b "$NEW_COOKIE_JAR" "$BASE_URL/relatorios.php?de=$REPORT_START&ate=$REPORT_END")"
 [[ "$OPERATOR_REPORT_HTTP" == "200" ]] || fail "Operador deveria consultar as seções permitidas dos relatórios; recebeu $OPERATOR_REPORT_HTTP."
 assert_contains "$TMP_DIR/operator-reports.html" "Exportar dados agregados"
