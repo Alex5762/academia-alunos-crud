@@ -202,7 +202,7 @@ A interface deve preservar `de` e `ate` validados ao navegar entre relatórios e
 
 - Um CSV por relatório (`operacional`, `matriculas`, `frequencia`, `financeiro`), contendo somente os indicadores agregados exibidos e usando exatamente o período validado aplicado na tela. **Implementado e validado nas CIs #45247639018 e #45249934923.**
 - Não incluir identificadores de aluno/funcionário, nomes, e-mails, telefones, observações, tokens, dados de autenticação ou qualquer outra PII.
-- O relatório financeiro exige `finance.view` também no endpoint CSV; a autorização é revalidada no servidor em toda requisição. Teste HTTP verifica que Operador recebe 403; nova CI pendente.
+- O relatório financeiro exige `finance.view` também no endpoint CSV; a autorização é revalidada no servidor em toda requisição. O teste HTTP de Operador recebendo 403 passou na CI #45247639018; o novo teste explícito de exportação financeira autorizada para Gestor aguarda CI.
 - Usar cabeçalhos fixos por seção, UTF-8 com BOM para abertura direta em planilhas e escaping CSV correto, com aspas duplicadas e escape proprietário de barra invertida desativado.
 - Tratar nomes de planos contratados e qualquer outro campo textual originado de registros como conteúdo não confiável. Para a variante destinada à leitura humana em planilhas, prefixar com tab os campos textuais cujo primeiro caractere efetivo seja um iniciador de fórmula (`=`, `+`, `-`, `@`, tabulação, CR/LF e variantes Unicode de largura completa reconhecidas pela rotina), além do escaping CSV correto.
 - A tabulação adicionada passa a fazer parte do conteúdo do campo. Documentar esse trade-off; não apresentar o arquivo como formato bruto de integração entre sistemas.
