@@ -63,9 +63,9 @@ Referência conceitual externa: o National Student Clearinghouse distingue statu
 
 | ID | Parecer | Recomendação |
 |---|---|---|
-| FN-01 — Recebido no período | **Manter** | Mesmo cálculo e legenda de VG-05. A fonte da verdade é `pagamentos`; não somar cobranças. |
-| FN-02 — Quantidade de pagamentos | **Manter** | Contar exatamente os lançamentos que compõem FN-01, pelo mesmo filtro `data_pagamento`. |
-| FN-03 — Por forma de pagamento | **Manter** | Agrupar os mesmos pagamentos por `forma_pagamento`; usar valores ENUM existentes. |
+| FN-01 — Recebido no período | **Aprovado em 23/11/2026** | Somar `pagamentos.valor` com filtro inclusivo por `data_pagamento`. A fonte é `pagamentos`; não somar cobranças. Lançamentos retroativos seguem a data declarada; legenda não sugere liquidação bancária, faturamento, lucro ou recebimento líquido. |
+| FN-02 — Quantidade de pagamentos | **Aprovado em 23/11/2026** | `COUNT(*)` do mesmo conjunto usado em FN-01; pagamentos parciais individuais contam separadamente. |
+| FN-03 — Por forma de pagamento | **Aprovado em 23/11/2026** | Agrupar a soma de FN-01 por `forma_pagamento`, respeitando os cinco valores ENUM existentes. Grupos e contagens auxiliares devem reconciliar com FN-01/FN-02. |
 | FN-04 — Cobranças com vencimento | **Aprovado em 23/11/2026** | Filtrar `data_vencimento` pelo intervalo inclusivo e excluir cobranças canceladas financeiramente. Exibir quantidade e soma do valor nominal original em dois grupos: matrícula não cancelada (inclui agendada, ativa ou vencida) e matrícula cancelada (“Em revisão”). A classificação usa o estado atual da matrícula, não reconstrói o estado na data de vencimento. Não chamar os valores de recebimento, inadimplência ou saldo em aberto; não juntar pagamentos à consulta nominal. |
 | FN-05 — Saldo cobrável atual | **Aprovado em 23/11/2026** | Exibir a soma de `max(valor_total - pagamentos_acumulados, 0)` somente para cobranças não canceladas financeiramente e vinculadas a matrículas não canceladas. Fotografia atual, sem filtro histórico. Reutilizar `FinanceDashboardStatus::collectibleBalanceCents()` ou demonstrar paridade do agregado SQL com a regra testada. Não chamar de inadimplência, pois pode incluir valores ainda não vencidos. |
 | FN-06 — Saldo em revisão atual | **Aprovado em 23/11/2026** | Somar `max(valor_total - pagamentos_acumulados, 0)` apenas para cobranças não canceladas financeiramente vinculadas a matrículas canceladas. Fotografia atual, independente do filtro de período. Reutilizar `FinanceDashboardStatus::reviewBalanceCents()` ou comprovar paridade SQL. Identificar como valor sujeito a análise, não como reembolso. |
@@ -79,6 +79,9 @@ Referência conceitual externa: o National Student Clearinghouse distingue statu
 5. Para calcular FN-05/FN-06, pré-agregar pagamentos por cobrança antes do JOIN com cobranças/matrículas. Evitar multiplicação de linhas e soma duplicada. FN-05 inclui somente `c.cancelada_em_utc IS NULL` e `m.cancelada_em IS NULL`; FN-06 inclui somente `c.cancelada_em_utc IS NULL` e `m.cancelada_em IS NOT NULL`. Ambos aplicam `max(valor_total - pagamentos_acumulados, 0)`, são fotografias atuais independentes do filtro de período e devem ter paridade comprovada com `FinanceDashboardStatus::collectibleBalanceCents()` e `FinanceDashboardStatus::reviewBalanceCents()`, respectivamente. FN-06 não mede nem calcula reembolso, inclusive quando o saldo restante é zero.
 6. Usar DECIMAL/string/centavos inteiros e o formatador existente; nunca converter moeda para float.
 7. Nunca executar consultas financeiras para o perfil Operador.
+8. FN-01 a FN-03 devem consultar diretamente `pagamentos`, sem JOIN a cobranças/matrículas que altere a população histórica; cancelamento posterior da matrícula não invalida um lançamento já registrado.
+9. Preferir um agregado `GROUP BY forma_pagamento` com `COUNT(*)` e `SUM(valor)` para produzir FN-01, FN-02 e FN-03 de maneira reconciliável; manter precisão DECIMAL/centavos.
+10. Antes da implementação, medir `EXPLAIN` em MySQL 8.0 e MariaDB 10.11. O índice atual `idx_pagamentos_cobranca_data_id (cobranca_id, data_pagamento, id)` começa por `cobranca_id`, e não garante acesso eficiente a um relatório filtrado somente por data. Não adicionar índice preventivo; qualquer novo índice depende de evidência medida e decisão separada.
 
 ## 7. Revisão dos filtros e datas
 

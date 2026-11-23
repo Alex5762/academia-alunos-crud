@@ -134,7 +134,7 @@ MT-01 a MT-05 usam `enrollments.view` e o período local normalizado em limites 
 ## 7. Consultas e desempenho
 
 - Usar prepared statements PDO e parâmetros nomeados.
-- Agregar no banco; evitar carregar linhas individuais para somar em PHP.
+- Agregar no banco; evitar carregar linhas individuais para somar em PHP. Para FN-01 a FN-03, preferir uma única consulta agregada por `forma_pagamento` com `COUNT(*)` e `SUM(valor)`; os totais FN-01/FN-02 podem ser reconciliados a partir desses grupos com centavos inteiros, evitando consultas separadas que observem populações diferentes.
 - Consultas de domínio devem ser somente leitura.
 - Evitar N+1; agrupar indicadores por consultas previsíveis e documentadas.
 - Agrupamentos dinâmicos devem usar allowlist fechada; nunca interpolar entrada do usuário.
@@ -142,6 +142,7 @@ MT-01 a MT-05 usam `enrollments.view` e o período local normalizado em limites 
 - Não adicionar cache até existir medição; se futuramente adicionado, chave deve incluir período, instante/referência e conjunto de permissões.
 - Não usar `SQL_CALC_FOUND_ROWS`, nem buscar colunas não necessárias.
 - As consultas de matrícula devem respeitar cancelamentos e snapshots; consultas financeiras devem manter cobrança cancelada, saldo cobrável e saldo em revisão separados. FN-05 é fotografia atual: somar `max(valor_total - pagamentos_acumulados, 0)` para cobranças não canceladas financeiramente vinculadas a matrículas não canceladas, independentemente do período selecionado; reutilizar `FinanceDashboardStatus::collectibleBalanceCents()` ou provar paridade do agregado SQL.
+- **FN-01 a FN-03 aprovados em 23/11/2026:** consultar diretamente `pagamentos`, com `data_pagamento >= :start_date AND data_pagamento <= :end_date`; não usar `registrado_em_utc` nem filtrar por estado atual de cobrança/matrícula. FN-01 é a soma, FN-02 a contagem, FN-03 a soma agrupada por `forma_pagamento`. Preferir uma consulta única `GROUP BY forma_pagamento` com `COUNT(*)` e `SUM(valor)` para todos os três valores; inicializar totais em zero e derivá-los dos grupos, mantendo valores como DECIMAL/string ou centavos inteiros. As cinco formas são a allowlist fixa do ENUM; sem pagamentos, a consulta não retorna grupos e FN-03 fica vazio. Os grupos devem reconciliar com FN-01/FN-02.
 - **FN-04 aprovado:** filtrar `cobrancas.data_vencimento` com limites `>= :start_date` e `<= :end_date`; excluir `cobrancas.cancelada_em_utc IS NOT NULL`; agrupar por `matriculas.cancelada_em IS NULL` (grupo regular) versus `IS NOT NULL` (grupo “Em revisão”). Para cada grupo, retornar `COUNT(c.id)` e `SUM(c.valor_total)` como valor nominal original. O grupo regular inclui matrículas agendadas, ativas e vencidas, desde que não canceladas. A classificação reflete a situação atual, não a situação histórica na data do vencimento. Não juntar `pagamentos` nesta consulta, pois o indicador não calcula saldo e o join poderia multiplicar cobranças.
 - **FN-06 aprovado em 23/11/2026:** calcular a fotografia atual pela soma de `max(valor_total - pagamentos_acumulados, 0)` somente quando `cobrancas.cancelada_em_utc IS NULL` e `matriculas.cancelada_em IS NOT NULL`. Pré-agregar pagamentos por cobrança antes do JOIN. Reutilizar `FinanceDashboardStatus::reviewBalanceCents()` ou comprovar paridade do agregado SQL com a regra canônica. Não aplicar filtro histórico de datas. A legenda deve informar que os valores exigem análise e não representam automaticamente reembolso; saldo zero não determina se há devolução de pagamentos anteriores.
 
@@ -178,9 +179,19 @@ MT-01 a MT-05 usam `enrollments.view` e o período local normalizado em limites 
 - **FR-05:** calcular `FR-01 / FR-02` sobre exatamente o mesmo conjunto e período. Como a unicidade limita um check-in por aluno/dia, o resultado é média de dias com entrada por frequentador; arredondar para uma casa decimal somente na apresentação. Não incluir alunos ativos sem entrada. Se FR-02 = 0, retornar não aplicável (—), nunca dividir por zero nem retornar 0,0.
 
 ### Financeiro
-- Pagamento por `data_pagamento`, mesmo quando `registrado_em_utc` pertence a outro dia.
+- **FN-01:** somar `pagamentos.valor` filtrando `data_pagamento >= :start_date AND data_pagamento <= :end_date`; ambas as datas são inclusivas. Lançamentos retroativos entram pela data declarada, mesmo quando `registrado_em_utc` pertence a outro dia.
+- **FN-02:** `COUNT(*)` sobre exatamente o mesmo conjunto de FN-01; cada lançamento é contado uma vez, inclusive cada parcela/pagamento parcial individual.
+- **FN-03:** agrupar `SUM(valor)` por `forma_pagamento` sobre exatamente o conjunto de FN-01; usar a allowlist fixa do ENUM (`DINHEIRO`, `PIX`, `TRANSFERENCIA`, `CARTAO`, `OUTRO`).
+- Reconciliação: soma dos grupos de FN-03 = FN-01; soma das contagens auxiliares por forma = FN-02. Não arredondar valores intermediários para float.
+- Se não houver linhas no período: FN-01 = `0.00`, FN-02 = `0`, FN-03 retorna coleção vazia e a apresentação exibe estado vazio.
+- Não excluir pagamentos por cancelamento posterior de matrícula ou por status atual da cobrança; FN-01 a FN-03 consultam `pagamentos` sem JOIN a `cobrancas`/`matriculas` que altere a população histórica.
 - Pagamento parcial e integral.
 - Cobrança cancelada financeiramente.
+- FN-01 a FN-03: ambos os limites de `data_pagamento` inclusivos; registrar pagamento retroativo em um dia e `registrado_em_utc` em outro para confirmar que a data declarada comanda a inclusão; excluir registros fora do intervalo.
+- FN-02: vários pagamentos parciais para uma cobrança contam como vários lançamentos; FN-01 soma seus valores.
+- FN-03: distribuir todos os cinco valores ENUM existentes, reconciliar valores com FN-01 e contagens com FN-02; método ausente não cria linha artificial.
+- FN-01 a FN-03: incluir pagamentos vinculados a matrícula que venha a ser cancelada depois; consulta não deve excluir pelo estado atual nem duplicar por JOIN.
+- Período sem pagamentos: soma decimal zero, quantidade zero e FN-03 vazio.
 - FN-04: datas de vencimento nos dois limites inclusivos; exclusão de cobrança cancelada financeiramente; separação entre matrícula não cancelada e cancelada/em revisão; matrícula agendada, ativa e vencida no grupo não cancelado; cobrança com pagamento parcial ou integral continua somando o valor original; ausência de duplicação por múltiplos pagamentos.
 - Matrícula cancelada com saldo em revisão.
 - Relatório de matrículas: início efetivo sem cancelamento, cancelamento após início, cancelamento antes do início e cancelamento exatamente no início; o primeiro grupo conta em MT-01 a MT-04 somente quando houve intervalo positivo, enquanto MT-05 conta todos os eventos no período. Reconciliar MT-02/MT-04 com MT-01 e validar valores NULL de MT-03.
@@ -206,6 +217,7 @@ Para evitar uma consulta dependente de recursos específicos de calendário do M
 - Confirmar se a implementação atual de `EnrollmentStatus::derive()` recebe `DateTimeImmutable` no fuso local ou converte internamente; o adapter SQL precisa reproduzir exatamente a mesma fronteira.
 - Confirmar o comportamento do serviço financeiro para pagamentos retroativos e a semântica de `data_pagamento`; a legenda do indicador não deve sugerir liquidação bancária.
 - Confirmar os nomes e tipos reais das colunas no schema/migrations antes de escrever qualquer SQL; este documento define responsabilidades, não autoriza presumir nomes.
+- Antes de fechar a consulta FN-01 a FN-03, executar `EXPLAIN` com um intervalo representativo em MySQL 8.0 e MariaDB 10.11. A migration 010 declara `idx_pagamentos_cobranca_data_id (cobranca_id, data_pagamento, id)`, cujo primeiro campo não é o filtro do relatório; não presumir que esse índice resolve uma busca apenas por data. Registrar plano/custo observado. Não criar índice nem migration preventiva; se a medição mostrar varredura/custo incompatível, propor índice específico em decisão separada e testar impacto nas escritas.
 - As definições FN-05 e FN-06 devem ser validadas separadamente contra `collectibleBalanceCents()` e `reviewBalanceCents()`, respectivamente; pré-agregar pagamentos por cobrança para evitar soma duplicada por joins de 1:N.
 
 ## 11. Critério de saída da 07.2

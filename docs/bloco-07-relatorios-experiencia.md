@@ -1,6 +1,6 @@
 # Bloco 07 — Relatórios e experiência
 
-> **Estado:** direção da Visão geral aceita; decisões aprovadas por etapas: OP-01 a OP-06, MT-01 a MT-05, FR-01 a FR-05, “Recebido no período”, FN-04, FN-05 e FN-06 (23/11/2026). Os demais indicadores/critério continuam em revisão. Nenhuma funcionalidade do Bloco 07 foi implementada.
+> **Estado:** direção da Visão geral aceita; decisões aprovadas por etapas: OP-01 a OP-06, MT-01 a MT-05, FR-01 a FR-05, FN-01 a FN-06 e “Recebido no período” (23/11/2026). Os demais indicadores/critério continuam em revisão. Nenhuma funcionalidade do Bloco 07 foi implementada.
 > **Branch de referência:** `feat/dashboard-portfolio`.
 > **Dependência anterior:** Bloco 06 com validação automatizada aprovada na CI #1512. A validação manual dos blocos no XAMPP/dispositivo permanece adiada e registrada separadamente.
 > **Regra:** revisar e aprovar o catálogo `bloco-07-catalogo-indicadores.md` antes de iniciar a etapa 07.2. A aprovação da direção da Visão geral não antecipa a aprovação automática de cada fórmula ou endpoint.
@@ -99,12 +99,14 @@ O período usa `checkins.data_local`, que já representa a data civil no fuso da
 
 Visível somente a quem possui `finance.view`:
 
-- total de pagamentos registrados no período, agrupado por `pagamentos.data_pagamento`;
-- quantidade de pagamentos e distribuição por forma de pagamento;
+- **FN-01 — recebido no período:** soma de `pagamentos.valor` por `data_pagamento`, com início e fim inclusivos;
+- **FN-02 — quantidade de pagamentos:** contagem de lançamentos individuais que compõem FN-01; pagamentos parciais da mesma cobrança contam separadamente;
+- **FN-03 — recebido por forma:** soma por `forma_pagamento`, usando somente `DINHEIRO`, `PIX`, `TRANSFERENCIA`, `CARTAO` e `OUTRO`;
+- os totais por forma reconciliam com FN-01 e as contagens auxiliares por forma com FN-02; os três usam exatamente o mesmo período e conjunto de pagamentos;
 - valores de cobranças com vencimento no período, apresentados separadamente dos pagamentos registrados;
 - fotografia atual de saldo cobrável e saldo em revisão, caso reutilize os indicadores existentes do painel financeiro.
 
-Não apresentar saldo histórico de uma data passada como fato garantido sem definir uma consulta temporal que considere pagamentos, cancelamentos e lançamentos retroativos. Não somar cobranças canceladas nem tratar matrícula cancelada como pagamento estornado.
+Pagamentos retroativos com justificativa são atribuídos à `data_pagamento`, ainda que o lançamento tenha sido registrado depois. Não excluir pagamentos do conjunto por cancelamento posterior da matrícula e não juntar matrículas/cobranças para calcular FN-01 a FN-03. Se o período não tiver lançamentos, FN-01 e FN-02 são zero e FN-03 apresenta estado vazio. Não apresentar saldo histórico de uma data passada como fato garantido sem definir uma consulta temporal que considere pagamentos, cancelamentos e lançamentos retroativos. Não tratar matrícula cancelada como pagamento estornado.
 
 ### 3.5 Filtros e experiência
 
@@ -202,13 +204,13 @@ Entregáveis desta etapa:
 
 **Decisão registrada em 23/11/2026:** FR-01 a FR-03 e FR-05 foram aprovados; FR-04 mantém sua regra anteriormente aprovada com a ressalva de que o denominador representa ocorrências do calendário, não dias comprovadamente abertos. FR-05 calcula FR-01/FR-02 entre alunos frequentadores e exibe — quando FR-02 = 0. A seção mede entradas, não aulas ou presença por modalidade.
 
-**Decisão registrada em 23/11/2026:** nomenclatura **“Recebido no período”** aprovada para a soma de pagamentos por `data_pagamento`; não chamar de faturamento ou lucro. O catálogo continua aguardando aprovação global das demais fórmulas e permissões.
+**Decisão registrada em 23/11/2026:** FN-01 a FN-03 foram aprovados: soma, contagem e distribuição por forma dos mesmos pagamentos filtrados por `data_pagamento` inclusiva; lançamentos retroativos seguem a data declarada; cancelamento posterior da matrícula não elimina o pagamento; o grupo por forma deve reconciliar com os totais. O rótulo **“Recebido no período”** não significa faturamento, lucro, liquidação bancária ou recebimento líquido. O catálogo continua aguardando aprovação global das demais fórmulas e permissões.
 
 **Decisão registrada em 23/11/2026:** OP-01 a OP-03 foram aprovados como fotografias cadastrais independentes do período, sob `students.view`, com contagem agregada única e domínio de `ativo` protegido pela migration 015. OP-04 a OP-06 também foram aprovados: usam `enrollments.view`, uma única referência temporal, as quatro situações canônicas e janelas cumulativas de 7/30 dias; OP-06/7 dias corresponde a VG-06. Intervalos inválidos (`fim_exclusivo_em <= inicio_em`) interrompem a consulta sem resultados parciais. **A migration 015 é uma proteção cadastral separada; não implementa consultas ou telas do Bloco 07.**
 
 **Decisão técnica registrada em 23/11/2026:** MT-01 a MT-04 contam inícios efetivos; cancelamentos anteriores ou simultâneos ao início não criam vigência e ficam fora da coorte de início. MT-05 conta eventos de cancelamento inclusive quando a matrícula nunca chegou a vigorar. MT-02 a MT-04 reutilizam exatamente a coorte de MT-01.
 
-**Decisão registrada em 23/11/2026:** o rótulo **“Recebido no período”** foi aprovado para a soma dos pagamentos por `data_pagamento`, com legenda esclarecendo que se trata de pagamentos registrados e não de liquidação bancária. A decisão foi complementada pela aprovação de FR-04, FN-04, FN-05 e FN-06. FN-06 é fotografia atual do saldo restante de cobranças não canceladas financeiramente ligadas a matrículas canceladas; não representa reembolso. Os demais indicadores, filtros e permissões continuam em revisão.
+**Decisão registrada em 23/11/2026:** o rótulo **“Recebido no período”** foi aprovado para a soma dos pagamentos por `data_pagamento`, com legenda esclarecendo que se trata de pagamentos registrados e não de liquidação bancária. A decisão foi complementada pela aprovação de FR-04 e FN-01 a FN-06. FN-06 é fotografia atual do saldo restante de cobranças não canceladas financeiramente ligadas a matrículas canceladas; não representa reembolso. Os demais indicadores, filtros e permissões continuam em revisão.
 
 **Saída esperada da 07.1:** especificação revisável e testável, sem alteração de banco nem implementação de telas. A etapa seguinte só começa depois da revisão das fórmulas e do contrato de acesso.
 
