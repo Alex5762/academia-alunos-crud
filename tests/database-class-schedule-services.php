@@ -152,6 +152,31 @@ $scheduleA = $schedules->create(
     '10:00'
 );
 
+// Simula um formulário aberto antes de outra operação alterar o horário.
+$changeOutsideForm = $pdo->prepare(
+    'UPDATE horarios_aula SET hora_fim = :end_time WHERE id = :id'
+);
+$changeOutsideForm->execute(['end_time' => '09:45:00', 'id' => $scheduleA]);
+expectClassDomainFailure(
+    fn () => $schedules->update(
+        $scheduleA,
+        $actorId,
+        $modalityA,
+        $instructorWithAccount,
+        1,
+        '09:00',
+        '10:00',
+        [
+            'modalidade_id' => $modalityA,
+            'instrutor_id' => $instructorWithAccount,
+            'dia_semana' => 1,
+            'hora_inicio' => '09:00:00',
+            'hora_fim' => '10:00:00',
+        ]
+    ),
+    'Um formulário aberto antes de outra alteração não pode sobrescrever o horário mais recente.'
+);
+
 // Aulas adjacentes são permitidas: o intervalo final não conflita com o próximo início.
 $scheduleB = $schedules->create(
     $actorId,
