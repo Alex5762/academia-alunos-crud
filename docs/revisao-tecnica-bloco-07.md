@@ -48,7 +48,7 @@ A CI #1530 aprovou sete jobs funcionais no HEAD correspondente. O job de publica
 - FR-01 total de check-ins: manter usando `COUNT(*)` por `data_local`.
 - FR-02 alunos distintos: manter com `COUNT(DISTINCT aluno_id)`.
 - FR-03 evolução diária: manter; completar dias sem registros com zero na apresentação, não inventar registros no banco.
-- FR-04 distribuição por dia da semana: **ajustar a interpretação**. O total bruto de segundas pode ser maior que o total bruto de domingos simplesmente porque o período selecionado pode conter uma segunda-feira a mais. Recomenda-se apresentar a média de check-ins por ocorrência de cada dia da semana (total daquele dia dividido pela quantidade de vezes que ele aparece no intervalo), acompanhada do número de ocorrências e, se útil, do total bruto. Isso evita comparar denominadores diferentes.
+- FR-04 distribuição por dia da semana: **decisão aprovada em 23/11/2026**. Apresentar média de check-ins por ocorrência de cada dia (total bruto daquele weekday dividido pela quantidade de datas daquele weekday no intervalo), quantidade de ocorrências e total bruto. Arredondar a média para uma casa decimal somente na apresentação. Se não houver nenhuma ocorrência daquele dia no período, exibir média como não aplicável (—), total bruto 0 e ocorrências 0; não apresentar média zero.
 - Reforçar em todas as telas que check-in significa entrada na academia, não presença em aula, modalidade ou turma.
 
 ## 6. Revisão do relatório financeiro
