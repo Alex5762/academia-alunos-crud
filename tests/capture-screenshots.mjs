@@ -127,7 +127,7 @@ try {
       throw new Error(`O CSV ${reportType} aparenta conter dados pessoais.`);
     }
     if (!csvText.includes(expectedCsvMarkers[reportType])) {
-      throw new Error(\`O CSV \${reportType} não contém o indicador principal esperado.\`);
+      throw new Error("O CSV " + reportType + " não contém o indicador principal esperado.");
     }
     if (!download.suggestedFilename().includes(reportType)) {
       throw new Error(`O nome do arquivo CSV não identifica o relatório ${reportType}.`);
