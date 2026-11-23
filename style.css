@@ -3934,3 +3934,8 @@ body:not(.dashboard-body) .theme-option[aria-pressed="true"] {
 :root[data-theme="dark"] .reports-error { color:#ffb7b7; background:#402a35; border-color:#69404b; }
 @media(max-width:760px) { .reports-stat-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } .reports-filter-form { grid-template-columns:repeat(2,minmax(0,1fr)); } .reports-filter-actions { grid-column:1/-1; } }
 @media(max-width:440px) { .reports-filter-form { grid-template-columns:minmax(0,1fr); } .reports-filter-actions { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); } .reports-filter-actions .button { width:100%; padding-inline:9px; font-size:.72rem; } .reports-stat-grid { gap:9px; } .reports-stat { padding:13px; } .reports-stat strong { font-size:1.55rem; } }
+
+/* Barras do relatório de frequência; a tabela mantém o valor textual equivalente. */
+.frequency-visual-cell { min-width:150px; }
+.frequency-bar-track { display:block; width:100%; height:9px; overflow:hidden; background:var(--canvas); border:1px solid var(--line); border-radius:999px; }
+.frequency-bar { display:block; height:100%; background:var(--primary); border-radius:999px; }
