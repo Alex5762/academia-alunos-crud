@@ -58,7 +58,7 @@ final class EnrollmentReportQuery
             report_rows AS (
                 SELECT
                     'TOTAL' AS metric,
-                    CAST('' AS CHAR(100)) AS label,
+                    (CAST('' AS CHAR(100)) COLLATE utf8mb4_unicode_ci) AS label,
                     COUNT(*) AS quantity,
                     COUNT(valor_contratado) AS known_values_count,
                     SUM(valor_contratado) AS known_value_sum
@@ -68,10 +68,10 @@ final class EnrollmentReportQuery
 
                 SELECT
                     'PLAN' AS metric,
-                    COALESCE(
+                    (COALESCE(
                         NULLIF(TRIM(plano_nome_contratado), ''),
                         'Plano não informado no snapshot'
-                    ) AS label,
+                    ) COLLATE utf8mb4_unicode_ci) AS label,
                     COUNT(*) AS quantity,
                     COUNT(valor_contratado) AS known_values_count,
                     SUM(valor_contratado) AS known_value_sum
@@ -85,7 +85,7 @@ final class EnrollmentReportQuery
 
                 SELECT
                     'ORIGIN' AS metric,
-                    CAST(origem AS CHAR(100)) AS label,
+                    (CAST(origem AS CHAR(100)) COLLATE utf8mb4_unicode_ci) AS label,
                     COUNT(*) AS quantity,
                     COUNT(valor_contratado) AS known_values_count,
                     SUM(valor_contratado) AS known_value_sum
@@ -96,7 +96,7 @@ final class EnrollmentReportQuery
 
                 SELECT
                     'CANCELLATIONS' AS metric,
-                    CAST('' AS CHAR(100)) AS label,
+                    (CAST('' AS CHAR(100)) COLLATE utf8mb4_unicode_ci) AS label,
                     COUNT(*) AS quantity,
                     0 AS known_values_count,
                     CAST(NULL AS DECIMAL(10,2)) AS known_value_sum
