@@ -100,7 +100,7 @@ final class FrequencyReportQuery
                 'weekday_iso'=>$iso,
                 'calendar_occurrences'=>$occurrences,
                 'total_checkins'=>$stats['total_checkins'],
-                'average_per_occurrence'=>$occurrences > 0 ? $stats['total_checkins'] / $occurrences : null,
+                'average_per_occurrence'=>$occurrences > 0 ? (float)($stats['total_checkins'] / $occurrences) : null,
             ];
         }
 
@@ -109,7 +109,7 @@ final class FrequencyReportQuery
             'fr02_distinct_students'=>$distinct,
             'fr03_daily_series'=>$series,
             'fr04_by_weekday'=>$byWeekday,
-            'fr05_average_days_per_student'=>$distinct > 0 ? $total / $distinct : null,
+            'fr05_average_days_per_student'=>$distinct > 0 ? (float)($total / $distinct) : null,
         ];
     }
 }
