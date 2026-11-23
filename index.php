@@ -1,8 +1,75 @@
 <?php
 require_once __DIR__ . '/funcoes.php';
 require_once __DIR__ . '/conexao.php';
+require_once __DIR__ . '/src/Domain/Reports/ReportPeriod.php';
+require_once __DIR__ . '/src/Domain/Reports/OperationalReportQuery.php';
+require_once __DIR__ . '/src/Domain/Reports/FrequencyReportQuery.php';
+require_once __DIR__ . '/src/Domain/Reports/FinanceReportQuery.php';
+require_once __DIR__ . '/src/Domain/Finance/FinanceMoneyFormatter.php';
+
+use FitControl\\Domain\\Reports\\ReportPeriod;
+use FitControl\\Domain\\Reports\\OperationalReportQuery;
+use FitControl\\Domain\\Reports\\FrequencyReportQuery;
+use FitControl\\Domain\\Reports\\FinanceReportQuery;
+use FitControl\\Domain\\Finance\\FinanceMoneyFormatter;
+
 $usuario = exigirAutenticacao($pdo);
 exigirPermissao($usuario, 'dashboard.view');
+
+// Um único instante e um único período civil são compartilhados pelos cartões.
+$dashboardTimezone = new DateTimeZone(ReportPeriod::ACADEMY_TIMEZONE);
+$dashboardAsOf = new DateTimeImmutable('now', $dashboardTimezone);
+try {
+    $dashboardPeriod = ReportPeriod::fromInput($_GET['de'] ?? null, $_GET['ate'] ?? null, $dashboardAsOf);
+} catch (InvalidArgumentException | OutOfRangeException $exception) {
+    http_response_code(400);
+    header('Content-Type: text/plain; charset=UTF-8');
+    exit('Período inválido. Informe duas datas reais no formato AAAA-MM-DD, em ordem e com no máximo 365 dias inclusivos.');
+}
+
+$dashboardMetrics = [];
+$dashboardErrors = [];
+$operationalQuery = null;
+if (usuarioTemPermissao($usuario, 'students.view') || usuarioTemPermissao($usuario, 'enrollments.view')) {
+    try {
+        $operationalQuery = new OperationalReportQuery($pdo);
+    } catch (Throwable $exception) {
+        error_log('Visão geral operacional: ' . $exception->getMessage());
+        $dashboardErrors['operational'] = true;
+    }
+}
+if (usuarioTemPermissao($usuario, 'students.view')) {
+    try {
+        $dashboardMetrics['students'] = ($operationalQuery ?? new OperationalReportQuery($pdo))->studentCounts();
+    } catch (Throwable $exception) {
+        error_log('Visão geral de alunos: ' . $exception->getMessage());
+        $dashboardErrors['students'] = true;
+    }
+}
+if (usuarioTemPermissao($usuario, 'enrollments.view')) {
+    try {
+        $dashboardMetrics['enrollments'] = ($operationalQuery ?? new OperationalReportQuery($pdo))->enrollmentSnapshot($dashboardAsOf);
+    } catch (Throwable $exception) {
+        error_log('Visão geral de matrículas: ' . $exception->getMessage());
+        $dashboardErrors['enrollments'] = true;
+    }
+}
+if (usuarioTemPermissao($usuario, 'attendance.view')) {
+    try {
+        $dashboardMetrics['frequency'] = (new FrequencyReportQuery($pdo))->forPeriod($dashboardPeriod);
+    } catch (Throwable $exception) {
+        error_log('Visão geral de frequência: ' . $exception->getMessage());
+        $dashboardErrors['frequency'] = true;
+    }
+}
+if (usuarioTemPermissao($usuario, 'finance.view')) {
+    try {
+        $dashboardMetrics['finance'] = (new FinanceReportQuery($pdo))->forPeriod($dashboardPeriod);
+    } catch (Throwable $exception) {
+        error_log('Visão geral financeira: ' . $exception->getMessage());
+        $dashboardErrors['finance'] = true;
+    }
+}
 
 // Pesquisa por nome, e-mail ou telefone; filtro padrão mostra apenas alunos ativos.
 $busca = $_GET['busca'] ?? '';
@@ -40,14 +107,15 @@ $consulta = $pdo->prepare($sqlAlunos);
 $consulta->execute($parametros);
 $alunos = $consulta->fetchAll();
 
-// Indicadores globais: contagem por status e planos calculados somente para ativos.
+// A distribuição cadastral considera apenas alunos ativos; rótulos vazios são agrupados.
 $estatisticas = $pdo->query(
-    'SELECT
+    "SELECT
         COUNT(*) AS total_alunos,
         COALESCE(SUM(ativo = 1), 0) AS alunos_ativos,
         COALESCE(SUM(ativo = 0), 0) AS alunos_inativos,
-        COUNT(DISTINCT CASE WHEN ativo = 1 THEN plano END) AS total_planos
-     FROM alunos'
+        COUNT(DISTINCT CASE WHEN ativo = 1
+            THEN COALESCE(NULLIF(TRIM(plano), ''), 'Não informado') END) AS total_planos
+     FROM alunos"
 )->fetch();
 
 $totalAlunos = (int) ($estatisticas['total_alunos'] ?? 0);
@@ -56,15 +124,19 @@ $alunosInativos = (int) ($estatisticas['alunos_inativos'] ?? 0);
 $totalPlanos = (int) ($estatisticas['total_planos'] ?? 0);
 
 $distribuicaoPlanos = $pdo->query(
-    'SELECT plano, COUNT(*) AS quantidade
+    "SELECT COALESCE(NULLIF(TRIM(plano), ''), 'Não informado') AS plano,
+            COUNT(*) AS quantidade
      FROM alunos
      WHERE ativo = 1
-     GROUP BY plano
-     ORDER BY quantidade DESC, plano ASC'
+     GROUP BY COALESCE(NULLIF(TRIM(plano), ''), 'Não informado')
+     ORDER BY quantidade DESC, plano ASC"
 )->fetchAll();
 
 $planoDestaque = $distribuicaoPlanos[0]['plano'] ?? '—';
 $quantidadeDestaque = (int) ($distribuicaoPlanos[0]['quantidade'] ?? 0);
+$dashboardPeriodStart = $dashboardPeriod->getStartDateString();
+$dashboardPeriodEnd = $dashboardPeriod->getEndDateString();
+$dashboardReportQuery = http_build_query(['de' => $dashboardPeriodStart, 'ate' => $dashboardPeriodEnd]);
 
 $mensagem = $_SESSION['mensagem'] ?? '';
 unset($_SESSION['mensagem']);
@@ -252,39 +324,63 @@ function iniciaisNome($nome) {
                 </div>
             <?php } ?>
 
-            <section class="stats-grid" aria-label="Indicadores gerais">
-                <article class="stat-card">
-                    <div class="stat-topline">
-                        <span class="stat-label">Alunos ativos</span>
-                        <span class="stat-icon stat-icon-blue" aria-hidden="true">
-                            <svg viewBox="0 0 24 24"><path d="M16 20v-1.5a3.5 3.5 0 0 0-3.5-3.5h-5A3.5 3.5 0 0 0 4 18.5V20"/><circle cx="10" cy="7.5" r="3.5"/><path d="M17 8h4M19 6v4"/></svg>
-                        </span>
-                    </div>
-                    <div class="stat-value"><?= $alunosAtivos ?></div>
-                    <p class="stat-footnote"><?= $alunosInativos ?> aluno(s) inativo(s)</p>
-                </article>
+            <section class="dashboard-metrics" aria-label="Indicadores gerenciais">
+                <div class="dashboard-metrics-heading">
+                    <div><span class="eyebrow">SITUAÇÃO ATUAL E ATENÇÃO</span><h2>Operação da academia</h2></div>
+                    <a class="text-link" href="relatorios.php?<?= escapar($dashboardReportQuery) ?>">Ver relatórios</a>
+                </div>
+                <section class="stats-grid" aria-label="Situação atual e atenção">
+                    <article class="stat-card">
+                        <div class="stat-topline"><span class="stat-label">Alunos ativos</span><span class="stat-icon stat-icon-blue" aria-hidden="true">●</span></div>
+                        <div class="stat-value"><?= isset($dashboardMetrics['students']) ? $dashboardMetrics['students']['active'] : '—' ?></div>
+                        <p class="stat-footnote"><?= isset($dashboardMetrics['students']) ? 'Fotografia cadastral atual' : 'Indicador indisponível' ?></p>
+                        <a class="stat-card-link" href="relatorios.php?<?= escapar($dashboardReportQuery) ?>">Relatório operacional</a>
+                    </article>
+                    <article class="stat-card">
+                        <div class="stat-topline"><span class="stat-label">Matrículas vigentes</span><span class="stat-icon stat-icon-green" aria-hidden="true">✓</span></div>
+                        <div class="stat-value"><?= isset($dashboardMetrics['enrollments']) ? $dashboardMetrics['enrollments']['status']['active'] : '—' ?></div>
+                        <p class="stat-footnote"><?= isset($dashboardMetrics['enrollments']) ? 'Contratos vigentes neste instante' : 'Indicador indisponível' ?></p>
+                        <a class="stat-card-link" href="relatorios.php?<?= escapar($dashboardReportQuery) ?>">Relatório de matrículas</a>
+                    </article>
+                    <article class="stat-card stat-card-highlight">
+                        <div class="stat-topline"><span class="stat-label">Matrículas terminando em até 7 dias</span><span class="stat-icon stat-icon-violet" aria-hidden="true">◷</span></div>
+                        <div class="stat-value"><?= isset($dashboardMetrics['enrollments']) ? $dashboardMetrics['enrollments']['upcoming_ends']['days_7'] : '—' ?></div>
+                        <p class="stat-footnote">Janela móvel; independente do filtro</p>
+                        <a class="stat-card-link" href="relatorios.php?<?= escapar($dashboardReportQuery) ?>">Ver matrículas</a>
+                    </article>
+                </section>
 
-                <article class="stat-card">
-                    <div class="stat-topline">
-                        <span class="stat-label">Planos em uso</span>
-                        <span class="stat-icon stat-icon-green" aria-hidden="true">
-                            <svg viewBox="0 0 24 24"><path d="M4 6.5h16M4 12h16M4 17.5h16"/><circle cx="8" cy="6.5" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="11" cy="17.5" r="1.5"/></svg>
-                        </span>
-                    </div>
-                    <div class="stat-value"><?= $totalPlanos ?></div>
-                    <p class="stat-footnote">Categorias com alunos cadastrados</p>
-                </article>
-
-                <article class="stat-card stat-card-highlight">
-                    <div class="stat-topline">
-                        <span class="stat-label">Plano mais frequente</span>
-                        <span class="stat-icon stat-icon-violet" aria-hidden="true">
-                            <svg viewBox="0 0 24 24"><path d="m12 3 2.7 5.5 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1-4.4-4.3 6.1-.9L12 3Z"/></svg>
-                        </span>
-                    </div>
-                    <div class="stat-value stat-value-text"><?= escapar($planoDestaque) ?></div>
-                    <p class="stat-footnote"><?= $quantidadeDestaque ?> <?= $quantidadeDestaque === 1 ? 'aluno' : 'alunos' ?> neste plano</p>
-                </article>
+                <div class="dashboard-metrics-heading dashboard-metrics-heading-period">
+                    <div><span class="eyebrow">MOVIMENTAÇÃO NO PERÍODO</span><h2>Atividade e recebimentos</h2></div>
+                    <form method="get" action="index.php" class="dashboard-period-form">
+                        <label for="dashboard-de">De</label><input type="date" id="dashboard-de" name="de" value="<?= escapar($dashboardPeriodStart) ?>" required>
+                        <label for="dashboard-ate">Até</label><input type="date" id="dashboard-ate" name="ate" value="<?= escapar($dashboardPeriodEnd) ?>" required>
+                        <button type="submit" class="button button-search">Aplicar</button>
+                    </form>
+                </div>
+                <section class="stats-grid" aria-label="Movimentação no período">
+                    <article class="stat-card">
+                        <div class="stat-topline"><span class="stat-label">Check-ins no período</span><span class="stat-icon stat-icon-blue" aria-hidden="true">↗</span></div>
+                        <div class="stat-value"><?= isset($dashboardMetrics['frequency']) ? $dashboardMetrics['frequency']['fr01_total_checkins'] : '—' ?></div>
+                        <p class="stat-footnote"><?= isset($dashboardMetrics['frequency']) ? escapar($dashboardPeriodStart . ' a ' . $dashboardPeriodEnd) : 'Indicador indisponível' ?></p>
+                        <a class="stat-card-link" href="relatorios.php?<?= escapar($dashboardReportQuery) ?>">Relatório de frequência</a>
+                    </article>
+                    <article class="stat-card">
+                        <div class="stat-topline"><span class="stat-label">Alunos com check-in</span><span class="stat-icon stat-icon-green" aria-hidden="true">◎</span></div>
+                        <div class="stat-value"><?= isset($dashboardMetrics['frequency']) ? $dashboardMetrics['frequency']['fr02_distinct_students'] : '—' ?></div>
+                        <p class="stat-footnote">Alunos distintos no período</p>
+                        <a class="stat-card-link" href="relatorios.php?<?= escapar($dashboardReportQuery) ?>">Relatório de frequência</a>
+                    </article>
+                    <?php if (usuarioTemPermissao($usuario, 'finance.view')) { ?>
+                    <article class="stat-card stat-card-highlight">
+                        <div class="stat-topline"><span class="stat-label">Recebido no período</span><span class="stat-icon stat-icon-violet" aria-hidden="true">R$</span></div>
+                        <div class="stat-value stat-value-text"><?= isset($dashboardMetrics['finance']) ? escapar(FinanceMoneyFormatter::formatDecimal($dashboardMetrics['finance']['fn01_received_decimal'])) : '—' ?></div>
+                        <p class="stat-footnote"><?= isset($dashboardMetrics['finance']) ? 'Pagamentos registrados por data informada' : 'Indicador indisponível' ?></p>
+                        <a class="stat-card-link" href="relatorios.php?<?= escapar($dashboardReportQuery) ?>">Relatório financeiro</a>
+                    </article>
+                    <?php } ?>
+                </section>
+                <?php if ($dashboardErrors !== []) { ?><p class="reports-error" role="status">Um ou mais indicadores não puderam ser consultados. Os demais dados disponíveis continuam exibidos.</p><?php } ?>
             </section>
 
             <section class="overview-grid">
