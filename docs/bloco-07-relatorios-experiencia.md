@@ -1,6 +1,6 @@
 # Bloco 07 — Relatórios e experiência
 
-> **Estado:** primeira tela `relatorios.php` e consultas OP-01 a OP-06/MT-01 a MT-05 implementadas e cobertas na CI. Frequência, financeiro, cartões de resumo, CSV e regressão final permanecem pendentes. Nenhuma migration ou alteração de schema foi feita.
+> **Estado:** tela `relatorios.php` com OP-01 a OP-06/MT-01 a MT-05 cobertos na CI #1571; frequência FR-01 a FR-05 implementada e adicionada ao job MySQL 8.0/MariaDB 10.11, aguardando nova execução. Financeiro, cartões de resumo, CSV e regressão final permanecem pendentes. Nenhuma migration ou alteração de schema foi feita.
 > **Branch de referência:** `feat/dashboard-portfolio`.
 > **Dependência anterior:** Bloco 06 com validação automatizada aprovada na CI #1512. A validação manual dos blocos no XAMPP/dispositivo permanece adiada e registrada separadamente.
 > **Regra:** a especificação global foi aprovada; seguir a sequência técnica registrada e validar cada incremento antes de avançar.
@@ -102,6 +102,8 @@ Para o período selecionado:
 - média de dias com check-in por aluno frequentador (FR-05), como indicador secundário.
 
 O período usa `checkins.data_local`, que já representa a data civil no fuso da academia. Não converter essa coluna para UTC nem derivar presenças de horários da grade. FR-03 completa todas as datas civis do intervalo com zero quando não há registro; isso não afirma que a academia estava aberta. FR-04 divide pelo número de ocorrências de cada weekday no calendário do período, independentemente de feriados ou fechamentos, pois o sistema não mantém calendário operacional. FR-05 é `FR-01 / FR-02`, usando o mesmo filtro; mede dias com entrada por aluno que compareceu pelo menos uma vez. Quando FR-02 for zero, exibir não aplicável (—). Não incluir alunos ativos sem check-in no denominador.
+
+> **Implementação FR-01 a FR-05:** consulta em `FrequencyReportQuery`, série civil com preenchimento de zeros, média por ocorrência real do calendário ISO e FR-05 não aplicável quando não há frequentadores. A página exige `attendance.view` antes de executar a consulta. A nova execução da CI deve confirmar o teste de banco nos dois motores suportados.
 
 ### 3.4 Relatório financeiro
 
