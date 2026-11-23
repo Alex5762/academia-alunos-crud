@@ -415,6 +415,9 @@ jobs:
       - name: Test UTC audit timestamp formatting in academy timezone
         run: php tests/utc-academy-time-format.php
 
+      - name: Test report period validation
+        run: php tests/report-period.php
+
       - name: Test role-based access control matrix
         run: php tests/access-control.php
 
@@ -450,6 +453,8 @@ jobs:
           test -f src/Domain/Enrollment/EnrollmentStatus.php
           test -f tests/enrollment-status.php
           test -f tests/utc-academy-time-format.php
+          test -f src/Domain/Reports/ReportPeriod.php
+          test -f tests/report-period.php
           test -f src/Security/AccessControl.php
           test -f tests/access-control.php
           test -f database/migrations/007_administrative_roles.sql
