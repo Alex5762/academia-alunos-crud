@@ -146,6 +146,51 @@ for (const engine of engines) {
     await page.setViewportSize({ width: 320, height: 780 });
     await assertNoDocumentOverflow(page, engine.name, "financeiro mobile estreito de 320px");
 
+    const reportsResponse = await page.goto(baseUrl + "/relatorios.php", {
+      waitUntil: "domcontentloaded",
+    });
+    ensure(reportsResponse?.ok(), engine.name + ": a página de relatórios não abriu.");
+    await page.getByRole("heading", { name: "Relatórios" }).waitFor();
+    const reportStart = await page.locator("#report-start").inputValue();
+    const reportEnd = await page.locator("#report-end").inputValue();
+    ensure(
+      Boolean(reportStart && reportEnd && reportStart <= reportEnd),
+      engine.name + ": o filtro de período dos relatórios é inválido.",
+    );
+    const reportExports = page.locator(".reports-export-links a");
+    ensure(
+      await reportExports.count() === 4,
+      engine.name + ": o perfil administrativo não recebeu os quatro links CSV.",
+    );
+    for (const reportType of ["operacional", "matriculas", "frequencia", "financeiro"]) {
+      const link = page.locator(`.reports-export-links a[href*="tipo=${reportType}"]`);
+      ensure(
+        await link.count() === 1,
+        engine.name + ": link CSV ausente/duplicado para " + reportType + ".",
+      );
+      const target = new URL(await link.getAttribute("href"), baseUrl);
+      ensure(
+        target.searchParams.get("de") === reportStart && target.searchParams.get("ate") === reportEnd,
+        engine.name + ": o CSV " + reportType + " não preservou o período.",
+      );
+    }
+    const exportTargets = await reportExports.evaluateAll((elements) => elements.map((element) => {
+      const rect = element.getBoundingClientRect();
+      return { width: rect.width, height: rect.height };
+    }));
+    ensure(
+      exportTargets.every((target) => target.width >= 24 && target.height >= 24),
+      engine.name + ": há alvo de exportação inferior a 24 × 24 CSS px.",
+    );
+    await assertNoDocumentOverflow(page, engine.name, "relatórios desktop");
+    await page.setViewportSize({ width: 390, height: 844 });
+    await assertNoDocumentOverflow(page, engine.name, "relatórios mobile de 390px");
+    await page.setViewportSize({ width: 320, height: 780 });
+    await assertNoDocumentOverflow(page, engine.name, "relatórios mobile estreito de 320px");
+    await page.setViewportSize({ width: 1280, height: 900 });
+
+    await page.setViewportSize({ width: 1280, height: 900 });
+    const classesResponse = await page.goto(baseUrl + "/aulas.php", {
     await page.setViewportSize({ width: 1280, height: 900 });
     const classesResponse = await page.goto(baseUrl + "/aulas.php", {
       waitUntil: "domcontentloaded",
