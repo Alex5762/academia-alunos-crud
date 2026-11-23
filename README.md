@@ -46,7 +46,7 @@ O módulo oferece grade semanal fixa, catálogo de modalidades e instrutores, ca
 
 ## Bloco 07 — Relatórios e experiência (especificação revisada; implementação não iniciada)
 
-A direção da Visão geral gerencial foi aceita. O catálogo 07.1 e o desenho de contratos 07.2 foram revisados tecnicamente e aguardam aprovação global em `docs/bloco-07-catalogo-indicadores.md` e `docs/bloco-07.2-contratos-consulta.md`, vinculados à proposta `docs/bloco-07-relatorios-experiencia.md`. A nomenclatura “Recebido no período” foi aprovada para pagamentos agrupados por `data_pagamento`, com legenda de que são lançamentos registrados, não liquidação bancária, faturamento ou lucro. Nenhuma tela, consulta, endpoint ou migration do Bloco 07 foi criada.
+A direção da Visão geral gerencial foi aceita. O catálogo 07.1 e o desenho de contratos 07.2 foram revisados tecnicamente e aguardam aprovação global em `docs/bloco-07-catalogo-indicadores.md` e `docs/bloco-07.2-contratos-consulta.md`, vinculados à proposta `docs/bloco-07-relatorios-experiencia.md`. A nomenclatura “Recebido no período” foi aprovada para pagamentos agrupados por `data_pagamento`, com legenda de que são lançamentos registrados, não liquidação bancária, faturamento ou lucro. A distribuição semanal de frequência também foi definida como média de check-ins por ocorrência de cada dia, acompanhada do total bruto e do número de ocorrências. Nenhuma tela, consulta, endpoint ou migration do Bloco 07 foi criada.
 
 ## Funcionalidades
 
