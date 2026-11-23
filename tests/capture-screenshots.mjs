@@ -142,8 +142,14 @@ try {
   const reportReflow = await desktop.evaluate(() => ({
     viewport: document.documentElement.clientWidth,
     document: document.documentElement.scrollWidth,
-    unlabeledControls: [...document.querySelectorAll("input,button,select,textarea")]
-      .filter((element) => !element.labels?.length && !element.getAttribute("aria-label") && !element.getAttribute("aria-labelledby"))
+    unlabeledControls: [...document.querySelectorAll(".reports-page input, .reports-page button, .reports-page select, .reports-page textarea")]
+      .filter((element) => {
+        const hasExplicitName = element.labels?.length
+          || element.getAttribute("aria-label")
+          || element.getAttribute("aria-labelledby");
+        const hasVisibleButtonName = element instanceof HTMLButtonElement && element.innerText.trim() !== "";
+        return !hasExplicitName && !hasVisibleButtonName;
+      })
       .map((element) => element.outerHTML.slice(0, 120)),
     exportTargets: [...document.querySelectorAll(".reports-export-links a")].map((element) => ({
       width: element.getBoundingClientRect().width,
