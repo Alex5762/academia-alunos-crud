@@ -44,7 +44,7 @@ O módulo cria uma cobrança única pelo contrato, registra pagamentos parciais 
 
 O módulo oferece grade semanal fixa, catálogo de modalidades e instrutores, cadastro/edição/inativação de horários, filtros, proteção contra conflitos e auditoria. A CI #1512 aprovou os testes de banco, HTTP e Playwright em Chromium, Firefox e WebKit, incluindo MySQL 8.0 e MariaDB 10.11. A aplicação controlada da migration 014 no XAMPP e a inspeção manual em dispositivo físico continuam pendentes. Consulte `docs/bloco-06-aulas-agenda.md`.
 
-## Bloco 07 — Relatórios e experiência (em implementação)
+## Bloco 07 — Relatórios e experiência (implementação e CI concluídas; validação manual pendente)
 
 A tela `relatorios.php` apresenta OP-01 a OP-06, MT-01 a MT-05 e FR-01 a FR-05; a CI #1579 validou os relatórios operacionais, matrículas e frequência em MySQL 8.0/MariaDB 10.11. Nesta etapa, FN-01 a FN-06 foram integrados por `FinanceReportQuery`, com autorização `finance.view` antes da consulta, reconciliação por forma de pagamento e saldos calculados pelas regras canônicas `FinanceDashboardStatus`. O teste de integração financeiro foi ampliado e a nova CI precisa confirmar o incremento. Cartões da Visão geral, CSV e regressão final de acessibilidade permanecem pendentes. Não houve migration ou alteração de schema; a avaliação de índice por `data_pagamento` continua dependente de EXPLAIN com volume representativo. Consulte os documentos do Bloco 07.
 
