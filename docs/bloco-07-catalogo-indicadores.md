@@ -1,6 +1,6 @@
 # Bloco 07.1 — Catálogo e contrato dos indicadores
 
-> **Estado:** definições revisadas; decisões aprovadas até 23/11/2026: direção da Visão geral gerencial, nomenclatura “Recebido no período”, regra FR-04 e indicadores FN-04 e FN-05. FN-06 e os demais indicadores/decisões de experiência e permissão continuam em revisão. Nenhuma consulta, tela ou exportação do Bloco 07 foi implementada.
+> **Estado:** definições revisadas; decisões aprovadas até 23/11/2026: direção da Visão geral gerencial, nomenclatura “Recebido no período”, regra FR-04 e indicadores FN-04, FN-05 e FN-06. Os demais indicadores/decisões de experiência e permissão continuam em revisão. Nenhuma consulta, tela ou exportação do Bloco 07 foi implementada.
 > **Branch:** `feat/dashboard-portfolio`.
 > **Documento principal:** [Bloco 07 — Relatórios e experiência](bloco-07-relatorios-experiencia.md).
 
@@ -138,7 +138,7 @@ A seção inteira requer `finance.view` tanto para HTML quanto para endpoints e 
 | FN-03 | Recebido por forma de pagamento | FN-01 agrupado por `forma_pagamento` | Data declarada de pagamento e forma |
 | FN-04 | Cobranças com vencimento no período | Quantidade e soma do valor original de cobranças não canceladas financeiramente cuja `data_vencimento` está no período. Separar em dois grupos: matrícula não cancelada e matrícula cancelada/em revisão. | Data de vencimento; classificação conforme estado atual da matrícula, não data de recebimento |
 | FN-05 | Saldo cobrável atual | Soma, por cobrança não cancelada financeiramente e vinculada a matrícula não cancelada, de `max(valor_total - pagamentos_acumulados, 0)` | Fotografia atual |
-| FN-06 | Saldo em revisão atual | Mesma diferença positiva para cobrança não cancelada financeiramente cuja matrícula está cancelada | Fotografia atual; valor exige decisão/revisão |
+| FN-06 | Saldo em revisão atual | Soma de `max(valor_total - pagamentos_acumulados, 0)` para cobranças não canceladas financeiramente vinculadas a matrículas canceladas | Fotografia atual; exige análise e não representa reembolso |
 
 Regras adicionais:
 - `data_pagamento` é uma data inserida no lançamento e pode ser retroativa mediante justificativa. FN-01 usa essa data; `registrado_em_utc` é o instante em que o lançamento entrou no sistema.
@@ -146,7 +146,7 @@ Regras adicionais:
 - Os pagamentos atuais são append-only; não existe neste escopo um fluxo de estorno que permita calcular recebimento líquido. Não subtrair cobranças, cancelamentos de matrícula ou valores em revisão do total de pagamentos.
 - **FN-04 — decisão aprovada em 23/11/2026:** consultar `cobrancas.data_vencimento` no intervalo inclusivo e excluir cobranças com `cancelada_em_utc` preenchido. Apresentar quantidade e soma de `valor_total` em dois grupos: (A) matrícula não cancelada (`matriculas.cancelada_em IS NULL`), incluindo matrículas agendadas, ativas ou vencidas; (B) matrícula cancelada (`matriculas.cancelada_em IS NOT NULL`), identificada como “Em revisão”. A separação usa o estado atual da matrícula, não reconstrói seu estado na data do vencimento. O valor é o total nominal original da cobrança, mesmo quando parcialmente paga ou quitada; não representa recebido, inadimplência ou saldo em aberto. A consulta não precisa juntar `pagamentos`, evitando multiplicar cobranças por lançamentos.
 - **FN-05 — decisão aprovada em 23/11/2026:** apresentar o **“Saldo cobrável atual”**, calculado pela soma de `max(valor_total - pagamentos_acumulados, 0)` apenas para cobranças não canceladas financeiramente (`cobrancas.cancelada_em_utc IS NULL`) vinculadas a matrículas não canceladas (`matriculas.cancelada_em IS NULL`). É uma fotografia atual, independente do período selecionado. Reutilizar `FinanceDashboardStatus::collectibleBalanceCents()` como regra canônica ou comprovar paridade do agregado SQL com esse método. A legenda deve esclarecer que é o saldo restante de cobranças atualmente cobráveis, não apenas valores vencidos.
-- FN-06 continua pendente de aprovação. A separação de cobrança cancelada financeiramente e matrícula cancelada deve ser mantida; os valores em revisão não entram no FN-05.
+- **FN-06 — decisão aprovada em 23/11/2026:** apresentar o **“Saldo em revisão atual”**, calculado pela soma de `max(valor_total - pagamentos_acumulados, 0)` somente para cobranças não canceladas financeiramente (`cobrancas.cancelada_em_utc IS NULL`) vinculadas a matrículas canceladas (`matriculas.cancelada_em IS NOT NULL`). É uma fotografia atual, independente do período selecionado. Reutilizar `FinanceDashboardStatus::reviewBalanceCents()` como regra canônica ou comprovar paridade do agregado SQL com esse método. A legenda deve esclarecer: “Saldo restante de cobranças vinculadas a matrículas canceladas, ainda não canceladas financeiramente. Os valores exigem análise e não representam automaticamente valores a reembolsar.” Saldo zero não elimina eventual decisão sobre devolução de pagamentos já recebidos; o FN-06 não calcula reembolso.
 - Usar DECIMAL/string/centavos inteiros e o formatador financeiro existente. Não converter moeda para float.
 - Se uma cobrança vinculada a matrícula cancelada ainda não foi financeiramente cancelada, seu saldo vai para FN-06, não FN-05.
 
@@ -226,4 +226,4 @@ A interface deve preservar os filtros validados ao navegar entre relatórios e a
 6. 07.7 — CSV agregado seguro.
 7. 07.8 — acessibilidade, responsividade, temas e regressão completa.
 
-**Decisões registradas:** “Recebido no período” foi aprovado; em 23/11/2026, FR-04 foi aprovado para exibir média de check-ins por ocorrência do dia da semana, acompanhada de total bruto e quantidade de ocorrências. Os demais itens ainda aguardam revisão. Até a aprovação global, não iniciar migrations, consultas novas nem telas do Bloco 07.
+**Decisões registradas:** “Recebido no período”, FR-04, FN-04, FN-05 e FN-06 foram aprovados em 23/11/2026. FN-06 usa o saldo restante de cobranças não canceladas financeiramente ligadas a matrículas canceladas; não representa valor de reembolso. Os demais indicadores, filtros e permissões continuam em revisão. A aprovação individual não equivale à aprovação global nem autoriza iniciar a implementação do Bloco 07.
