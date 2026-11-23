@@ -138,6 +138,34 @@ function valorFinanceiroRelatorio(string|int|null $value): string
         <p class="reports-note">Período inclusivo: <?= escapar($period->getStartInclusiveLocal()->format('d/m/Y')) ?> a <?= escapar($period->getEndInclusiveLocal()->format('d/m/Y')) ?>. Atualizado em <?= escapar($asOf->format('d/m/Y H:i:s')) ?> (horário da academia).</p>
     </section>
 
+    <section class="settings-card reports-section" aria-labelledby="reports-export-title">
+        <div class="settings-card-heading">
+            <span class="settings-icon" aria-hidden="true">⇩</span>
+            <div><h2 id="reports-export-title">Exportar dados agregados</h2><p>CSV sem dados pessoais. Cada arquivo respeita as permissões do seu perfil e o período selecionado.</p></div>
+        </div>
+        <nav class="reports-export-links" aria-label="Exportações disponíveis">
+            <?php
+            $exportQuery = [
+                'de' => $period->getStartDateString(),
+                'ate' => $period->getEndDateString(),
+            ];
+            ?>
+            <?php if (usuarioTemPermissao($usuario, 'students.view')) { ?>
+                <a class="button button-search" href="exportar-relatorio.php?<?= escapar(http_build_query($exportQuery + ['tipo' => 'operacional'])) ?>">Operacional (CSV)</a>
+            <?php } ?>
+            <?php if (usuarioTemPermissao($usuario, 'enrollments.view')) { ?>
+                <a class="button button-search" href="exportar-relatorio.php?<?= escapar(http_build_query($exportQuery + ['tipo' => 'matriculas'])) ?>">Matrículas (CSV)</a>
+            <?php } ?>
+            <?php if ($canViewFrequency) { ?>
+                <a class="button button-search" href="exportar-relatorio.php?<?= escapar(http_build_query($exportQuery + ['tipo' => 'frequencia'])) ?>">Frequência (CSV)</a>
+            <?php } ?>
+            <?php if ($canViewFinance) { ?>
+                <a class="button button-search" href="exportar-relatorio.php?<?= escapar(http_build_query($exportQuery + ['tipo' => 'financeiro'])) ?>">Financeiro (CSV)</a>
+            <?php } ?>
+        </nav>
+        <p class="reports-note">A exportação inclui somente indicadores e agrupamentos exibidos nos relatórios. A proteção contra fórmulas é voltada à leitura humana em planilhas; o prefixo de segurança passa a fazer parte do texto exportado.</p>
+    </section>
+
     <?php if ($students !== null || $studentError !== null) { ?>
     <section class="settings-card reports-section" aria-labelledby="reports-students-title">
         <div class="settings-card-heading"><span class="settings-icon" aria-hidden="true">◎</span><div><h2 id="reports-students-title">Situação cadastral</h2><p>Fotografia atual; não é alterada pelo período.</p></div></div>
