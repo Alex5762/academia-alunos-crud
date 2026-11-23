@@ -317,6 +317,194 @@ MANAGER_DETAIL_HTTP="$(curl -sS -o "$TMP_DIR/manager-audit-detail.html" -w '%{ht
 [[ "$MANAGER_DETAIL_HTTP" == "200" ]] || fail "Gestor deveria consultar detalhes de auditoria; recebeu $MANAGER_DETAIL_HTTP."
 assert_contains "$TMP_DIR/manager-audit-detail.html" "Alteração de perfil"
 assert_contains "$TMP_DIR/manager-audit-detail.html" "OPERADOR → GESTOR"
+
+echo "1.2.2.1/10 - Validando CRUD HTTP da grade fixa de aulas..."
+SCHEDULE_SUFFIX="$(date +%s%N)"
+MODALITY_A_NAME="Modalidade HTTP A $SCHEDULE_SUFFIX"
+MODALITY_B_NAME="Modalidade HTTP B $SCHEDULE_SUFFIX"
+INSTRUCTOR_NAME="Instrutor HTTP $SCHEDULE_SUFFIX"
+
+db_exec "INSERT INTO modalidades (nome, descricao)
+    VALUES ('$MODALITY_A_NAME', 'Fixture de integração HTTP A'),
+           ('$MODALITY_B_NAME', 'Fixture de integração HTTP B')"
+SCHEDULE_MODALITY_A_ID="$(db_value "SELECT id FROM modalidades WHERE nome = '$MODALITY_A_NAME'")"
+SCHEDULE_MODALITY_B_ID="$(db_value "SELECT id FROM modalidades WHERE nome = '$MODALITY_B_NAME'")"
+db_exec "INSERT INTO instrutores (nome) VALUES ('$INSTRUCTOR_NAME')"
+SCHEDULE_INSTRUCTOR_ID="$(db_value "SELECT id FROM instrutores WHERE nome = '$INSTRUCTOR_NAME'")"
+
+MANAGER_SCHEDULE_HTTP="$(curl -sS -o "$TMP_DIR/manager-schedules.html" -w '%{http_code}' -c "$NEW_COOKIE_JAR" -b "$NEW_COOKIE_JAR" "$BASE_URL/gerenciar-horarios.php")"
+[[ "$MANAGER_SCHEDULE_HTTP" == "200" ]] || fail "Gestor deveria abrir a gestão de horários; recebeu $MANAGER_SCHEDULE_HTTP."
+assert_contains "$TMP_DIR/manager-schedules.html" "Novo horário"
+SCHEDULE_TOKEN="$(get_token "$TMP_DIR/manager-schedules.html")"
+
+SCHEDULE_CSRF_HTTP="$(curl -sS -o "$TMP_DIR/schedule-csrf.html" -w '%{http_code}' -c "$NEW_COOKIE_JAR" -b "$NEW_COOKIE_JAR" "$BASE_URL/gerenciar-horarios.php" \
+    --data-urlencode "token=token-invalido" \
+    --data-urlencode "acao=criar_horario" \
+    --data-urlencode "modalidade_id=$SCHEDULE_MODALITY_A_ID" \
+    --data-urlencode "instrutor_id=$SCHEDULE_INSTRUCTOR_ID" \
+    --data-urlencode "dia_semana=1" \
+    --data-urlencode "hora_inicio=08:00" \
+    --data-urlencode "hora_fim=09:00")"
+[[ "$SCHEDULE_CSRF_HTTP" == "403" ]] || fail "Cadastro de horário sem CSRF válido deveria retornar 403; recebeu $SCHEDULE_CSRF_HTTP."
+
+SCHEDULE_CREATE_A_HTTP="$(curl -sS -o "$TMP_DIR/schedule-created-a.html" -w '%{http_code}' -c "$NEW_COOKIE_JAR" -b "$NEW_COOKIE_JAR" "$BASE_URL/gerenciar-horarios.php" \
+    --data-urlencode "token=$SCHEDULE_TOKEN" \
+    --data-urlencode "acao=criar_horario" \
+    --data-urlencode "modalidade_id=$SCHEDULE_MODALITY_A_ID" \
+    --data-urlencode "instrutor_id=$SCHEDULE_INSTRUCTOR_ID" \
+    --data-urlencode "dia_semana=1" \
+    --data-urlencode "hora_inicio=08:00" \
+    --data-urlencode "hora_fim=09:00")"
+[[ "$SCHEDULE_CREATE_A_HTTP" == "303" ]] || fail "Criação do primeiro horário deveria redirecionar com 303; recebeu $SCHEDULE_CREATE_A_HTTP."
+SCHEDULE_A_ID="$(db_value "SELECT id FROM horarios_aula WHERE modalidade_id = $SCHEDULE_MODALITY_A_ID AND dia_semana = 1 AND hora_inicio = '08:00:00'")"
+[[ "$SCHEDULE_A_ID" =~ ^[0-9]+$ ]] || fail "O primeiro horário não foi persistido."
+
+curl -fsS -c "$NEW_COOKIE_JAR" -b "$NEW_COOKIE_JAR" "$BASE_URL/gerenciar-horarios.php" -o "$TMP_DIR/schedule-before-b.html"
+SCHEDULE_TOKEN="$(get_token "$TMP_DIR/schedule-before-b.html")"
+SCHEDULE_CREATE_B_HTTP="$(curl -sS -o "$TMP_DIR/schedule-created-b.html" -w '%{http_code}' -c "$NEW_COOKIE_JAR" -b "$NEW_COOKIE_JAR" "$BASE_URL/gerenciar-horarios.php" \
+    --data-urlencode "token=$SCHEDULE_TOKEN" \
+    --data-urlencode "acao=criar_horario" \
+    --data-urlencode "modalidade_id=$SCHEDULE_MODALITY_B_ID" \
+    --data-urlencode "instrutor_id=$SCHEDULE_INSTRUCTOR_ID" \
+    --data-urlencode "dia_semana=1" \
+    --data-urlencode "hora_inicio=09:00" \
+    --data-urlencode "hora_fim=10:00")"
+[[ "$SCHEDULE_CREATE_B_HTTP" == "303" ]] || fail "Horários adjacentes do mesmo instrutor deveriam ser permitidos; recebeu $SCHEDULE_CREATE_B_HTTP."
+SCHEDULE_B_ID="$(db_value "SELECT id FROM horarios_aula WHERE modalidade_id = $SCHEDULE_MODALITY_B_ID AND dia_semana = 1 AND hora_inicio = '09:00:00'")"
+[[ "$SCHEDULE_B_ID" =~ ^[0-9]+$ ]] || fail "O segundo horário não foi persistido."
+
+curl -fsS -c "$NEW_COOKIE_JAR" -b "$NEW_COOKIE_JAR" "$BASE_URL/gerenciar-horarios.php" -o "$TMP_DIR/schedule-before-overlap.html"
+SCHEDULE_TOKEN="$(get_token "$TMP_DIR/schedule-before-overlap.html")"
+SCHEDULE_CREATE_OVERLAP_HTTP="$(curl -sS -o "$TMP_DIR/schedule-overlap-rejected.html" -w '%{http_code}' -c "$NEW_COOKIE_JAR" -b "$NEW_COOKIE_JAR" "$BASE_URL/gerenciar-horarios.php" \
+    --data-urlencode "token=$SCHEDULE_TOKEN" \
+    --data-urlencode "acao=criar_horario" \
+    --data-urlencode "modalidade_id=$SCHEDULE_MODALITY_A_ID" \
+    --data-urlencode "instrutor_id=$SCHEDULE_INSTRUCTOR_ID" \
+    --data-urlencode "dia_semana=1" \
+    --data-urlencode "hora_inicio=08:30" \
+    --data-urlencode "hora_fim=09:30")"
+[[ "$SCHEDULE_CREATE_OVERLAP_HTTP" == "422" ]] || fail "Criação sobreposta para o mesmo instrutor deveria retornar 422; recebeu $SCHEDULE_CREATE_OVERLAP_HTTP."
+assert_contains "$TMP_DIR/schedule-overlap-rejected.html" "O instrutor já possui uma aula que conflita com esse horário."
+
+# Abre o formulário e depois altera o registro por fora para simular uma tela obsoleta.
+curl -fsS -c "$NEW_COOKIE_JAR" -b "$NEW_COOKIE_JAR" "$BASE_URL/gerenciar-horarios.php" -o "$TMP_DIR/schedule-stale-form.html"
+SCHEDULE_TOKEN="$(get_token "$TMP_DIR/schedule-stale-form.html")"
+db_exec "UPDATE horarios_aula SET hora_fim = '08:45:00' WHERE id = $SCHEDULE_A_ID"
+SCHEDULE_STALE_HTTP="$(curl -sS -o "$TMP_DIR/schedule-stale-rejected.html" -w '%{http_code}' -c "$NEW_COOKIE_JAR" -b "$NEW_COOKIE_JAR" "$BASE_URL/gerenciar-horarios.php" \
+    --data-urlencode "token=$SCHEDULE_TOKEN" \
+    --data-urlencode "acao=editar_horario" \
+    --data-urlencode "id=$SCHEDULE_A_ID" \
+    --data-urlencode "modalidade_id=$SCHEDULE_MODALITY_A_ID" \
+    --data-urlencode "instrutor_id=$SCHEDULE_INSTRUCTOR_ID" \
+    --data-urlencode "dia_semana=1" \
+    --data-urlencode "hora_inicio=08:00" \
+    --data-urlencode "hora_fim=08:30" \
+    --data-urlencode "original_modalidade_id=$SCHEDULE_MODALITY_A_ID" \
+    --data-urlencode "original_instrutor_id=$SCHEDULE_INSTRUCTOR_ID" \
+    --data-urlencode "original_dia_semana=1" \
+    --data-urlencode "original_hora_inicio=08:00:00" \
+    --data-urlencode "original_hora_fim=09:00:00")"
+[[ "$SCHEDULE_STALE_HTTP" == "422" ]] || fail "Edição com snapshot antigo deveria retornar 422; recebeu $SCHEDULE_STALE_HTTP."
+assert_contains "$TMP_DIR/schedule-stale-rejected.html" "O horário foi alterado desde que o formulário foi aberto."
+
+# Reabre a tela para obter o snapshot atual e salva uma edição válida.
+curl -fsS -c "$NEW_COOKIE_JAR" -b "$NEW_COOKIE_JAR" "$BASE_URL/gerenciar-horarios.php" -o "$TMP_DIR/schedule-current-form.html"
+SCHEDULE_TOKEN="$(get_token "$TMP_DIR/schedule-current-form.html")"
+SCHEDULE_UPDATE_A_HTTP="$(curl -sS -o "$TMP_DIR/schedule-updated-a.html" -w '%{http_code}' -c "$NEW_COOKIE_JAR" -b "$NEW_COOKIE_JAR" "$BASE_URL/gerenciar-horarios.php" \
+    --data-urlencode "token=$SCHEDULE_TOKEN" \
+    --data-urlencode "acao=editar_horario" \
+    --data-urlencode "id=$SCHEDULE_A_ID" \
+    --data-urlencode "modalidade_id=$SCHEDULE_MODALITY_A_ID" \
+    --data-urlencode "instrutor_id=$SCHEDULE_INSTRUCTOR_ID" \
+    --data-urlencode "dia_semana=1" \
+    --data-urlencode "hora_inicio=08:00" \
+    --data-urlencode "hora_fim=08:50" \
+    --data-urlencode "original_modalidade_id=$SCHEDULE_MODALITY_A_ID" \
+    --data-urlencode "original_instrutor_id=$SCHEDULE_INSTRUCTOR_ID" \
+    --data-urlencode "original_dia_semana=1" \
+    --data-urlencode "original_hora_inicio=08:00:00" \
+    --data-urlencode "original_hora_fim=08:45:00")"
+[[ "$SCHEDULE_UPDATE_A_HTTP" == "303" ]] || fail "A edição válida do primeiro horário deveria redirecionar com 303; recebeu $SCHEDULE_UPDATE_A_HTTP."
+UPDATED_A="$(db_value "SELECT COUNT(*) FROM horarios_aula WHERE id = $SCHEDULE_A_ID AND hora_inicio = '08:00:00' AND hora_fim = '08:50:00'")"
+[[ "$UPDATED_A" == "1" ]] || fail "A edição válida do primeiro horário não foi persistida."
+
+# Tenta mover o segundo horário para um intervalo que colide com o primeiro.
+curl -fsS -c "$NEW_COOKIE_JAR" -b "$NEW_COOKIE_JAR" "$BASE_URL/gerenciar-horarios.php" -o "$TMP_DIR/schedule-before-conflict-edit.html"
+SCHEDULE_TOKEN="$(get_token "$TMP_DIR/schedule-before-conflict-edit.html")"
+SCHEDULE_CONFLICT_EDIT_HTTP="$(curl -sS -o "$TMP_DIR/schedule-conflict-edit-rejected.html" -w '%{http_code}' -c "$NEW_COOKIE_JAR" -b "$NEW_COOKIE_JAR" "$BASE_URL/gerenciar-horarios.php" \
+    --data-urlencode "token=$SCHEDULE_TOKEN" \
+    --data-urlencode "acao=editar_horario" \
+    --data-urlencode "id=$SCHEDULE_B_ID" \
+    --data-urlencode "modalidade_id=$SCHEDULE_MODALITY_B_ID" \
+    --data-urlencode "instrutor_id=$SCHEDULE_INSTRUCTOR_ID" \
+    --data-urlencode "dia_semana=1" \
+    --data-urlencode "hora_inicio=08:30" \
+    --data-urlencode "hora_fim=09:30" \
+    --data-urlencode "original_modalidade_id=$SCHEDULE_MODALITY_B_ID" \
+    --data-urlencode "original_instrutor_id=$SCHEDULE_INSTRUCTOR_ID" \
+    --data-urlencode "original_dia_semana=1" \
+    --data-urlencode "original_hora_inicio=09:00:00" \
+    --data-urlencode "original_hora_fim=10:00:00")"
+[[ "$SCHEDULE_CONFLICT_EDIT_HTTP" == "422" ]] || fail "Edição com conflito de instrutor deveria retornar 422; recebeu $SCHEDULE_CONFLICT_EDIT_HTTP."
+assert_contains "$TMP_DIR/schedule-conflict-edit-rejected.html" "O instrutor já possui uma aula que conflita com esse horário."
+
+# A edição sem conflito move o segundo horário para terça-feira.
+curl -fsS -c "$NEW_COOKIE_JAR" -b "$NEW_COOKIE_JAR" "$BASE_URL/gerenciar-horarios.php" -o "$TMP_DIR/schedule-before-valid-edit-b.html"
+SCHEDULE_TOKEN="$(get_token "$TMP_DIR/schedule-before-valid-edit-b.html")"
+SCHEDULE_UPDATE_B_HTTP="$(curl -sS -o "$TMP_DIR/schedule-updated-b.html" -w '%{http_code}' -c "$NEW_COOKIE_JAR" -b "$NEW_COOKIE_JAR" "$BASE_URL/gerenciar-horarios.php" \
+    --data-urlencode "token=$SCHEDULE_TOKEN" \
+    --data-urlencode "acao=editar_horario" \
+    --data-urlencode "id=$SCHEDULE_B_ID" \
+    --data-urlencode "modalidade_id=$SCHEDULE_MODALITY_B_ID" \
+    --data-urlencode "instrutor_id=$SCHEDULE_INSTRUCTOR_ID" \
+    --data-urlencode "dia_semana=2" \
+    --data-urlencode "hora_inicio=09:00" \
+    --data-urlencode "hora_fim=10:00" \
+    --data-urlencode "original_modalidade_id=$SCHEDULE_MODALITY_B_ID" \
+    --data-urlencode "original_instrutor_id=$SCHEDULE_INSTRUCTOR_ID" \
+    --data-urlencode "original_dia_semana=1" \
+    --data-urlencode "original_hora_inicio=09:00:00" \
+    --data-urlencode "original_hora_fim=10:00:00")"
+[[ "$SCHEDULE_UPDATE_B_HTTP" == "303" ]] || fail "A edição sem conflito do segundo horário deveria redirecionar com 303; recebeu $SCHEDULE_UPDATE_B_HTTP."
+UPDATED_B="$(db_value "SELECT COUNT(*) FROM horarios_aula WHERE id = $SCHEDULE_B_ID AND dia_semana = 2")"
+[[ "$UPDATED_B" == "1" ]] || fail "A alteração do dia do segundo horário não foi persistida."
+
+# Inativar é lógico: os dois registros e seus eventos continuam consultáveis.
+curl -fsS -c "$NEW_COOKIE_JAR" -b "$NEW_COOKIE_JAR" "$BASE_URL/gerenciar-horarios.php" -o "$TMP_DIR/schedule-before-deactivate-a.html"
+SCHEDULE_TOKEN="$(get_token "$TMP_DIR/schedule-before-deactivate-a.html")"
+SCHEDULE_DEACTIVATE_A_HTTP="$(curl -sS -o "$TMP_DIR/schedule-deactivated-a.html" -w '%{http_code}' -c "$NEW_COOKIE_JAR" -b "$NEW_COOKIE_JAR" "$BASE_URL/gerenciar-horarios.php" \
+    --data-urlencode "token=$SCHEDULE_TOKEN" \
+    --data-urlencode "acao=inativar_horario" \
+    --data-urlencode "id=$SCHEDULE_A_ID")"
+[[ "$SCHEDULE_DEACTIVATE_A_HTTP" == "303" ]] || fail "Inativação do primeiro horário deveria redirecionar com 303; recebeu $SCHEDULE_DEACTIVATE_A_HTTP."
+
+curl -fsS -c "$NEW_COOKIE_JAR" -b "$NEW_COOKIE_JAR" "$BASE_URL/gerenciar-horarios.php" -o "$TMP_DIR/schedule-before-deactivate-b.html"
+SCHEDULE_TOKEN="$(get_token "$TMP_DIR/schedule-before-deactivate-b.html")"
+SCHEDULE_DEACTIVATE_B_HTTP="$(curl -sS -o "$TMP_DIR/schedule-deactivated-b.html" -w '%{http_code}' -c "$NEW_COOKIE_JAR" -b "$NEW_COOKIE_JAR" "$BASE_URL/gerenciar-horarios.php" \
+    --data-urlencode "token=$SCHEDULE_TOKEN" \
+    --data-urlencode "acao=inativar_horario" \
+    --data-urlencode "id=$SCHEDULE_B_ID")"
+[[ "$SCHEDULE_DEACTIVATE_B_HTTP" == "303" ]] || fail "Inativação do segundo horário deveria redirecionar com 303; recebeu $SCHEDULE_DEACTIVATE_B_HTTP."
+
+curl -fsS -c "$NEW_COOKIE_JAR" -b "$NEW_COOKIE_JAR" "$BASE_URL/gerenciar-horarios.php" -o "$TMP_DIR/schedule-history.html"
+assert_contains "$TMP_DIR/schedule-history.html" "$MODALITY_A_NAME"
+assert_contains "$TMP_DIR/schedule-history.html" "$MODALITY_B_NAME"
+assert_contains "$TMP_DIR/schedule-history.html" "Registro preservado para histórico"
+
+SCHEDULE_AUDIT_COUNT="$(db_value "SELECT COUNT(*) FROM auditoria
+    WHERE usuario_id = $NOVO_USUARIO_ID
+      AND entidade = 'horarios_aula'
+      AND entidade_id IN ($SCHEDULE_A_ID, $SCHEDULE_B_ID)
+      AND acao IN ('horario_aula_criado', 'horario_aula_editado', 'horario_aula_inativado')")"
+[[ "$SCHEDULE_AUDIT_COUNT" == "6" ]] || fail "Esperava 6 eventos de criação, edição e inativação dos horários; encontrei $SCHEDULE_AUDIT_COUNT."
+SCHEDULE_INACTIVE_COUNT="$(db_value "SELECT COUNT(*) FROM horarios_aula WHERE id IN ($SCHEDULE_A_ID, $SCHEDULE_B_ID) AND ativo = 0")"
+[[ "$SCHEDULE_INACTIVE_COUNT" == "2" ]] || fail "Os dois horários deveriam permanecer inativos no histórico."
+
+# Fixtures descartáveis removidos após confirmar a cadeia de auditoria no banco efêmero.
+db_exec "DELETE FROM horarios_aula WHERE id IN ($SCHEDULE_A_ID, $SCHEDULE_B_ID)"
+db_exec "DELETE FROM instrutores WHERE id = $SCHEDULE_INSTRUCTOR_ID"
+db_exec "DELETE FROM modalidades WHERE id IN ($SCHEDULE_MODALITY_A_ID, $SCHEDULE_MODALITY_B_ID)"
+
 INVALID_AUDIT_ENTITY_HTTP="$(curl -sS -o "$TMP_DIR/invalid-audit-entity.html" -w '%{http_code}' -c "$NEW_COOKIE_JAR" -b "$NEW_COOKIE_JAR" "$BASE_URL/detalhes-auditoria.php?entidade=usuarios%3BSELECT&id=1")"
 [[ "$INVALID_AUDIT_ENTITY_HTTP" == "400" ]] || fail "Entidade de auditoria manipulada deveria retornar 400."
 INVALID_AUDIT_ID_HTTP="$(curl -sS -o "$TMP_DIR/invalid-audit-id.html" -w '%{http_code}' -c "$NEW_COOKIE_JAR" -b "$NEW_COOKIE_JAR" "$BASE_URL/detalhes-auditoria.php?entidade=usuarios&id=0")"
@@ -348,6 +536,8 @@ RBAC_LEGACY_HTTP="$(curl -sS -o "$TMP_DIR/operator-legacy.html" -w '%{http_code}
 [[ "$RBAC_LEGACY_HTTP" == "403" ]] || fail "Operador deveria receber 403 na revisão de legados; recebeu $RBAC_LEGACY_HTTP."
 RBAC_FINANCE_HTTP="$(curl -sS -o "$TMP_DIR/operator-finance.html" -w '%{http_code}' -c "$NEW_COOKIE_JAR" -b "$NEW_COOKIE_JAR" "$BASE_URL/financeiro.php")"
 [[ "$RBAC_FINANCE_HTTP" == "403" ]] || fail "Operador deveria receber 403 no módulo financeiro; recebeu $RBAC_FINANCE_HTTP."
+RBAC_SCHEDULE_MANAGEMENT_HTTP="$(curl -sS -o "$TMP_DIR/operator-schedule-management.html" -w '%{http_code}' -c "$NEW_COOKIE_JAR" -b "$NEW_COOKIE_JAR" "$BASE_URL/gerenciar-horarios.php")"
+[[ "$RBAC_SCHEDULE_MANAGEMENT_HTTP" == "403" ]] || fail "Operador deveria receber 403 na gestão de horários; recebeu $RBAC_SCHEDULE_MANAGEMENT_HTTP."
 RBAC_PLANS_HTTP="$(curl -sS -o "$TMP_DIR/operator-plans.html" -w '%{http_code}' -c "$NEW_COOKIE_JAR" -b "$NEW_COOKIE_JAR" "$BASE_URL/planos.php")"
 [[ "$RBAC_PLANS_HTTP" == "200" ]] || fail "Operador deveria consultar planos; recebeu $RBAC_PLANS_HTTP."
 
