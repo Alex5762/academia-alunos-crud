@@ -51,19 +51,6 @@ final class FinanceReportQuery
 
         // Pagamentos são consultados sem JOIN: cancelamentos posteriores não
         // podem apagar lançamentos históricos dos indicadores FN-01 a FN-03.
-        $summaryQuery = $this->pdo->prepare(
-            'SELECT COUNT(*) AS payment_count,
-                    COALESCE(SUM(valor), 0.00) AS received_total
-             FROM pagamentos
-             WHERE data_pagamento >= :start_date
-               AND data_pagamento <= :end_date'
-        );
-        $summaryQuery->execute(['start_date' => $start, 'end_date' => $end]);
-        $summary = $summaryQuery->fetch(PDO::FETCH_ASSOC);
-        if (!is_array($summary)) {
-            throw new DomainException('Não foi possível consultar os pagamentos do período.');
-        }
-
         $byMethodQuery = $this->pdo->prepare(
             'SELECT forma_pagamento, COUNT(*) AS payment_count,
                     SUM(valor) AS received_total
@@ -86,6 +73,8 @@ final class FinanceReportQuery
             ];
         }
 
+        // FN-01 e FN-02 são derivados dos mesmos grupos de FN-03: uma única
+        // consulta observa a mesma população e elimina divergência entre snapshots.
         $methodGroups = [];
         $groupedCents = 0;
         $groupedCount = 0;
@@ -93,19 +82,24 @@ final class FinanceReportQuery
             if (!isset($methodRows[$method])) {
                 continue;
             }
-            $methodGroups[] = $methodRows[$method];
-            $groupedCents += FinanceMoneyFormatter::toCents($methodRows[$method]['received_decimal']);
-            $groupedCount += $methodRows[$method]['payment_count'];
+            $amountCents = FinanceMoneyFormatter::toCents($methodRows[$method]['received_decimal']);
+            $count = $methodRows[$method]['payment_count'];
+            if ($amountCents < 0 || $amountCents > PHP_INT_MAX - $groupedCents
+                || $count < 1 || $count > PHP_INT_MAX - $groupedCount) {
+                throw new DomainException('Os totais financeiros excedem o intervalo numérico suportado.');
+            }
+
+            $groupedCents += $amountCents;
+            $groupedCount += $count;
+            $methodGroups[] = [
+                'method' => $method,
+                'payment_count' => $count,
+                'received_decimal' => FinanceMoneyFormatter::decimalFromCents($amountCents),
+            ];
         }
 
-        $receivedDecimal = (string) $summary['received_total'];
-        $paymentCount = (int) $summary['payment_count'];
-        if (
-            $groupedCount !== $paymentCount
-            || $groupedCents !== FinanceMoneyFormatter::toCents($receivedDecimal)
-        ) {
-            throw new DomainException('Os grupos por forma de pagamento não reconciliam com o total do período.');
-        }
+        $receivedDecimal = FinanceMoneyFormatter::decimalFromCents($groupedCents);
+        $paymentCount = $groupedCount;
 
         // FN-04 considera a cobrança uma vez, sem juntar pagamentos.
         $dueQuery = $this->pdo->prepare(
