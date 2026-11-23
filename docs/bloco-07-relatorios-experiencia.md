@@ -1,6 +1,6 @@
 # Bloco 07 — Relatórios e experiência
 
-> **Estado:** direção da Visão geral aceita; decisões aprovadas por etapas: OP-01 a OP-06, MT-01 a MT-05, FR-01 a FR-05, FN-01 a FN-06, filtros comuns, matriz de permissões por seção e escopo do CSV agregado (23/11/2026). Os critérios finais de apresentação continuam em revisão. Nenhuma funcionalidade do Bloco 07 foi implementada.
+> **Estado:** direção da Visão geral aceita; decisões aprovadas por etapas: OP-01 a OP-06, MT-01 a MT-05, FR-01 a FR-05, FN-01 a FN-06, filtros comuns, matriz de permissões por seção e escopo do CSV agregado (23/11/2026). Os critérios finais de apresentação foram aprovados em 23/11/2026. O fechamento global dos contratos ainda é necessário antes da implementação; nenhuma funcionalidade do Bloco 07 foi implementada.
 > **Branch de referência:** `feat/dashboard-portfolio`.
 > **Dependência anterior:** Bloco 06 com validação automatizada aprovada na CI #1512. A validação manual dos blocos no XAMPP/dispositivo permanece adiada e registrada separadamente.
 > **Regra:** revisar e aprovar o catálogo `bloco-07-catalogo-indicadores.md` antes de iniciar a etapa 07.2. A aprovação da direção da Visão geral não antecipa a aprovação automática de cada fórmula ou endpoint.
@@ -54,6 +54,14 @@ A visualização da frequência pode apresentar uma evolução diária de check-
 O resumo financeiro deve ser omitido para perfis sem `finance.view`. Além de ocultar o cartão, a camada de servidor não deve enviar valores financeiros ao cliente nem permitir consulta indireta por endpoint. As demais seções seguem suas permissões de domínio.
 
 A Visão geral deve reutilizar os mesmos agregadores/serviços e as mesmas definições dos relatórios detalhados. Não manter fórmulas SQL independentes para o cartão e para o relatório correspondente. Cada indicador terá um atalho para seu relatório de origem.
+
+**Composição aprovada em 23/11/2026:** substituir a linha atual de três cards pelos seis indicadores VG-01 a VG-06, organizados em dois grupos. “Situação atual e atenção”: VG-01 Alunos ativos, VG-02 Matrículas vigentes e VG-06 Matrículas terminando em até 7 dias. “Movimentação no período”: VG-03 Check-ins no período, VG-04 Alunos com check-in no período e VG-05 Recebido no período, este último somente para quem possui `finance.view`. O cartão financeiro é omitido por completo para o Operador, sem espaço reservado ou placeholder. O seletor `de`/`ate` acompanha a movimentação no período e não altera VG-01, VG-02 ou VG-06.
+
+Preservar no dashboard a pesquisa, os filtros e a tabela de alunos, além do atalho de cadastro. Manter a distribuição de planos como painel secundário, corrigindo a proporção: cada grupo de planos contém somente alunos com `ativo = 1`, portanto o denominador dos percentuais deve ser `$alunosAtivos`, não `$totalAlunos`. Rotular o painel como distribuição do plano cadastral dos alunos ativos, sem sugerir que o campo `alunos.plano` é o snapshot contratual da matrícula. Se não houver alunos ativos ou grupos para exibir, apresentar estado vazio contextual e nunca dividir por zero.
+
+**Hierarquia dos relatórios aprovada:** operacional com indicadores resumidos e tabelas de situação; matrículas com tabelas por situação, plano e origem; frequência com gráfico de barras diário acompanhado por tabela ou resumo equivalente; financeiro com resumo numérico e tabela por forma de pagamento, sem gráfico decorativo obrigatório. Não esconder valores ou categorias essenciais em hover, tooltip ou cor isolada.
+
+**Estados de interface:** zero é valor legítimo; ausência de registros recebe mensagem contextual; média não aplicável usa `—`; falha de consulta apresenta erro controlado, nunca zero; falta de permissão omite a seção. Como as páginas são renderizadas no servidor, skeletons e animações de carregamento ficam fora do MVP enquanto não houver carregamento assíncrono.
 
 **Limites de apresentação:** priorizar poucos indicadores acionáveis; não incluir percentuais de crescimento, rankings, metas, churn, previsões, faturamento projetado ou comparações com períodos anteriores sem base temporal e definição confiáveis. Estados sem dados, zero legítimo, falha de consulta e falta de permissão devem ser tratados como situações diferentes.
 
@@ -118,8 +126,13 @@ Pagamentos retroativos com justificativa são atribuídos à `data_pagamento`, a
 - preservar os filtros validados ao navegar entre relatórios e ao exportar CSV; revalidar no servidor em cada requisição;
 - rótulo visível do período aplicado e indicação do eixo temporal de cada métrica;
 - estados vazios, erro de filtro, carregamento e ausência de dados;
-- gráficos simples e responsivos, sempre acompanhados por tabela ou resumo textual equivalente;
-- navegação por teclado, foco visível, rótulos acessíveis e compatibilidade com tema claro/escuro.
+- gráficos simples e responsivos, sempre acompanhados por tabela ou resumo textual equivalente; nenhum dado pode depender somente de cor, hover ou tooltip;
+- navegação completa por teclado e foco visível em todos os controles;
+- contraste de texto mínimo de 4,5:1 (3:1 para texto grande) e contraste mínimo de 3:1 para informação visual não textual relevante de controles/estados contra as cores adjacentes;
+- alvos de interação com pelo menos 24 × 24 CSS px, respeitando as exceções de espaçamento e demais exceções da WCAG 2.2;
+- reflow sem perda de informação ou funcionalidade a 320 CSS px; permitir rolagem horizontal localizada apenas quando uma tabela de dados realmente exigir estrutura bidimensional;
+- compatibilidade com tema claro/escuro, foco verificável nos dois temas e respeito a `prefers-reduced-motion`;
+- não criar skeletons para a renderização server-side síncrona do MVP.
 
 ### 3.6 Exportação CSV — escopo aprovado para o MVP
 
@@ -172,6 +185,10 @@ Cada seção e cada endpoint CSV devem revalidar a permissão correspondente no 
 
 - [ ] Definições de cada indicador e eixo temporal aprovadas e documentadas.
 - [ ] Visão geral separa fotografia atual, movimentação do período e alertas próximos.
+- [ ] A linha atual de três cards é substituída pelos seis cartões VG-01 a VG-06, nos dois grupos aprovados e em ordem responsiva.
+- [ ] O Operador não recebe nem reserva espaço para VG-05; a seção financeira é omitida integralmente.
+- [ ] A pesquisa, os filtros e a tabela de alunos, bem como o atalho de cadastro, são preservados.
+- [ ] A distribuição por plano continua secundária, usa `$alunosAtivos` como denominador, identifica `alunos.plano` como dado cadastral e apresenta estado vazio se não houver alunos ativos/grupos.
 - [ ] Cartões da Visão geral apresentam os mesmos resultados dos relatórios de origem, reutilizando seus agregadores/serviços.
 - [ ] Perfis sem `finance.view` não recebem valores financeiros nem conseguem consultá-los por endpoints; a Visão geral do Operador não executa consultas financeiras e omite completamente a seção.
 - [ ] Sem `de` e `ate`, o padrão é primeiro dia do mês até hoje em `America/Sao_Paulo`; se somente um parâmetro faltar, a requisição é rejeitada.
@@ -186,7 +203,12 @@ Cada seção e cada endpoint CSV devem revalidar a permissão correspondente no 
 - [ ] Campos textuais não confiáveis recebem a neutralização tab-prefix definida para a variante de planilha, além do escaping CSV correto; casos de fórmula maliciosa, UTF-8, aspas e separadores são testados.
 - [ ] Abertura no Excel e LibreOffice é verificada quando os ambientes estiverem disponíveis, com documentação do trade-off e sem alegação de proteção universal.
 - [ ] PDF, XLSX e exportação nominal permanecem fora do MVP.
-- [ ] Estados vazios, erros, acessibilidade, teclado, tema claro/escuro e viewports mobile/desktop são cobertos.
+- [ ] Zero legítimo, ausência de registros, não aplicável, erro de consulta e falta de permissão são estados distintos; falha nunca vira zero.
+- [ ] Relatório operacional e de matrículas privilegia tabelas; frequência usa barras diárias com equivalente textual/tabular; financeiro usa resumo e tabela por forma, sem depender de gráfico decorativo.
+- [ ] Foco visível por teclado é verificável em todos os controles; estados não textuais relevantes atendem contraste 3:1 com cores adjacentes; texto normal atende 4,5:1.
+- [ ] Alvos interativos atendem 24 × 24 CSS px ou uma exceção da WCAG 2.2 é documentada; reflow é testado a 320 CSS px sem perda de informação ou funcionalidade.
+- [ ] Tema claro/escuro, `prefers-reduced-motion`, navegação por teclado e gráficos que não dependem só de cor são cobertos.
+- [ ] Skeletons ficam fora enquanto a página for renderizada de forma síncrona no servidor.
 - [ ] Testes de regressão comprovam que os relatórios não alteram dados operacionais nem a cadeia de auditoria.
 - [ ] MySQL 8.0 e MariaDB 10.11 passam pela CI; o smoke test local permanece separado e documentado.
 
@@ -220,7 +242,9 @@ Entregáveis desta etapa:
 
 **Decisão técnica registrada em 23/11/2026:** MT-01 a MT-04 contam inícios efetivos; cancelamentos anteriores ou simultâneos ao início não criam vigência e ficam fora da coorte de início. MT-05 conta eventos de cancelamento inclusive quando a matrícula nunca chegou a vigorar. MT-02 a MT-04 reutilizam exatamente a coorte de MT-01.
 
-**Decisão registrada em 23/11/2026:** o rótulo **“Recebido no período”** foi aprovado para a soma dos pagamentos por `data_pagamento`, com legenda esclarecendo que se trata de pagamentos registrados e não de liquidação bancária. A decisão foi complementada pela aprovação de FR-04, FN-01 a FN-06 e do contrato de filtros/permissões: mês até hoje como padrão; ambos os parâmetros ausentes aplicam o padrão, somente um ausente é erro; datas futuras podem ser selecionadas explicitamente; limite de 365 dias inclusivos; filtros persistem na navegação/CSV; cada seção é autorizada antes da consulta, e o Operador não executa nem recebe dados financeiros. **Escopo de exportação CSV aprovado em 23/11/2026:** um arquivo agregado por relatório, mesmos filtros e permissões da tela, sem PII; escaping CSV correto e neutralização tab-prefix dos campos textuais não confiáveis para leitura em planilhas; teste em Excel/LibreOffice quando disponíveis, sem alegar proteção universal. PDF, XLSX e exportação nominal ficam fora do MVP. FN-06 é fotografia atual do saldo restante de cobranças não canceladas financeiramente ligadas a matrículas canceladas; não representa reembolso. Os demais indicadores, filtros e permissões continuam em revisão.
+**Decisão registrada em 23/11/2026:** o rótulo **“Recebido no período”** foi aprovado para a soma dos pagamentos por `data_pagamento`, com legenda esclarecendo que se trata de pagamentos registrados e não de liquidação bancária. A decisão foi complementada pela aprovação de FR-04, FN-01 a FN-06 e do contrato de filtros/permissões: mês até hoje como padrão; ambos os parâmetros ausentes aplicam o padrão, somente um ausente é erro; datas futuras podem ser selecionadas explicitamente; limite de 365 dias inclusivos; filtros persistem na navegação/CSV; cada seção é autorizada antes da consulta, e o Operador não executa nem recebe dados financeiros. **Escopo de exportação CSV aprovado em 23/11/2026:** um arquivo agregado por relatório, mesmos filtros e permissões da tela, sem PII; escaping CSV correto e neutralização tab-prefix dos campos textuais não confiáveis para leitura em planilhas; teste em Excel/LibreOffice quando disponíveis, sem alegar proteção universal. PDF, XLSX e exportação nominal ficam fora do MVP.
+
+**Critérios de apresentação aprovados em 23/11/2026:** seis cards VG-01 a VG-06 em dois grupos; preservar pesquisa/lista de alunos e atalho de cadastro; manter distribuição de planos como painel secundário e calcular percentuais com a base de alunos ativos (`$alunosAtivos`), não total de cadastrados. O painel deve informar que usa o plano cadastral e exibir estado vazio quando não houver alunos ativos/grupos. Relatórios operacional e de matrículas priorizam tabelas; frequência usa barras diárias e tabela/resumo equivalente; financeiro usa resumo e tabela por forma. Zero, vazio, não aplicável, erro e falta de permissão são estados distintos. Acessibilidade: foco de teclado visível, contraste WCAG aplicável, alvos mínimos, reflow a 320 CSS px, dois temas, redução de movimento e informação não dependente só de cor/hover. Skeletons ficam fora da renderização server-side síncrona. FN-06 é fotografia atual do saldo restante de cobranças não canceladas financeiramente ligadas a matrículas canceladas; não representa reembolso. Os demais indicadores, filtros e permissões continuam em revisão.
 
 **Saída esperada da 07.1:** especificação revisável e testável, sem alteração de banco nem implementação de telas. A etapa seguinte só começa depois da revisão das fórmulas e do contrato de acesso.
 

@@ -1,6 +1,6 @@
 # Revisão técnica do Bloco 07 — aderência, métricas e arquitetura
 
-> **Estado:** revisão técnica em andamento; decisões aprovadas até 23/11/2026 incluem Visão geral, OP-01 a OP-06, MT-01 a MT-05, “Recebido no período”, FR-01 a FR-05, FN-04, FN-05 e FN-06. As demais recomendações continuam sujeitas à revisão e aprovação do responsável pelo projeto.
+> **Estado:** revisão técnica em andamento; decisões aprovadas até 23/11/2026 incluem Visão geral, OP-01 a OP-06, MT-01 a MT-05, “Recebido no período”, FR-01 a FR-05, FN-04, FN-05 e FN-06. O escopo de filtros, permissões, CSV agregado e critérios finais de apresentação foi aprovado em 23/11/2026; a implementação ainda depende do fechamento global dos contratos.
 > **Data:** 23/11/2026.
 > **Escopo analisado:** catálogo 07.1, contratos 07.2, código atual de alunos, matrículas, frequência, financeiro, RBAC e dashboard.
 > **Importante:** esta revisão não implementa funcionalidades, não altera schema e não substitui a aprovação do escopo.
@@ -24,7 +24,23 @@ A CI #1555 aprovou sete jobs funcionais, incluindo a migration 015 em MySQL 8.0 
 | VG-05 — Recebido no período | **Manter com legenda obrigatória** | Somar `pagamentos.valor` por `data_pagamento`. O serviço permite lançamento retroativo justificado, então essa é a data declarada do pagamento, não necessariamente o instante de registro nem uma liquidação bancária comprovada. Usar a legenda “Soma dos pagamentos registrados pela data informada no lançamento”. |
 | VG-06 — Matrículas terminando em 7 dias | **Manter e definir janela** | Somente matrículas ATIVAS; condição `asOf < fim_exclusivo_em <= asOf + 7 dias de calendário local`. O limite de sete dias é inclusivo; no próprio fim exclusivo, a matrícula já está VENCIDA e não entra. |
 
-**Decisão recomendada:** manter os seis cartões. São poucos, cobrem quatro domínios existentes e não dependem de criar novos dados.
+**Decisão aprovada em 23/11/2026:** manter seis cartões, em dois grupos: situação atual/atenção (VG-01, VG-02 e VG-06) e movimentação selecionada (VG-03, VG-04 e VG-05). O Operador não recebe nem reserva espaço para o cartão financeiro.
+
+### Decisões de apresentação e aderência ao dashboard atual
+
+A leitura de `index.php` confirma que a página já contém a barra lateral, cabeçalho, linha de três cards, painel de distribuição por plano, atalho de cadastro, pesquisa e tabela de alunos. A decisão é substituir somente a linha de três cards pelos seis indicadores aprovados, preservando a pesquisa, os filtros, a tabela de alunos e o atalho de cadastro. Não reconstruir a página nem alterar sua navegação geral.
+
+O painel de distribuição atual consulta `alunos.plano` apenas para `ativo = 1`, mas calcula o percentual dividindo por `$totalAlunos`, que inclui inativos. Isso torna o percentual inconsistente com a população agrupada. Corrigir o denominador para `$alunosAtivos`; o rótulo deve identificar a distribuição do plano cadastral entre alunos ativos, não snapshots contratuais. O estado vazio também precisa considerar ausência de alunos ativos/grupos, e não somente `$totalAlunos === 0`, evitando painel vazio quando todos os alunos estiverem inativos. Proteger a divisão por zero.
+
+A estrutura CSS existente suporta cards em três colunas no desktop, duas no breakpoint de 760 px e uma coluna até 420 px; os novos seis cards podem reutilizar esses padrões sem novo sistema de layout. A responsividade de relatórios deve preservar a leitura sem rolagem horizontal da página inteira; tabelas com estrutura bidimensional podem ter rolagem localizada e identificada. A distribuição por planos permanece secundária.
+
+Para a hierarquia dos relatórios, usar tabelas para situação operacional e matrículas; gráfico de barras diário acompanhado por tabela/resumo textual para frequência; resumo numérico e tabela por forma no financeiro. Nenhum valor essencial depende de hover, tooltip ou cor isolada. Zero, estado vazio, não aplicável, erro de consulta e falta de permissão são estados distintos. Como as páginas são renderizadas no servidor, skeletons ficam fora enquanto não houver carregamento assíncrono.
+
+### Acessibilidade — verificação da base visual
+
+`style.css` já oferece `:focus-visible`, `prefers-reduced-motion`, `.visually-hidden`, rolagem localizada em tabela, dois temas e breakpoints mobile. O contorno global atual usa `rgba(49, 95, 232, 0.28)`. A composição aproximada sobre o canvas claro resulta em cerca de 1,50:1 e sobre o canvas escuro em cerca de 1,32:1, abaixo dos 3:1 esperados para a informação visual não textual que identifica o estado focado contra cores adjacentes (WCAG 2.2 SC 1.4.11). O teste definitivo deve medir o contorno contra o fundo adjacente real de links, botões, inputs e selects em ambos os temas; substituir a cor translúcida por indicador sólido/duplo se necessário.
+
+Requisitos adotados: foco de teclado visível (SC 2.4.7) e contraste não textual suficiente para o estado focado (SC 1.4.11); texto normal com 4,5:1 (SC 1.4.3); alvos de pelo menos 24 × 24 CSS px ou exceção aplicável (SC 2.5.8); reflow a 320 CSS px sem perda de informação/funcionalidade, exceto conteúdo essencialmente bidimensional como tabelas de dados (SC 1.4.10). Gráficos terão tabela/resumo equivalente e não dependerão somente de cor. Preservar suporte a tema escuro e redução de movimento já existente.
 
 ## 3. Revisão dos relatórios operacionais
 
@@ -154,5 +170,10 @@ Não alterar `index.php` inteiro de uma vez. Extrair somente as consultas novas 
 - [PHP — PDO::prepare](https://www.php.net/manual/pt_BR/pdo.prepare.php): marcadores representam literais completos, não palavras-chave/identificadores SQL.
 - [PHP — DateTimeImmutable::createFromFormat](https://www.php.net/manual/pt_BR/datetimeimmutable.createfromformat.php): parsing estrito exige verificação de erros e do valor normalizado.
 - [OWASP — CSV Injection](https://owasp.org/www-community/attacks/CSV_Injection): fórmulas maliciosas, neutralização por célula e trade-offs em planilhas.
+- [W3C — WCAG 2.2, SC 1.4.3 Contrast (Minimum)](https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html): texto normal em 4,5:1 e texto grande em 3:1.
+- [W3C — WCAG 2.2, SC 1.4.11 Non-text Contrast](https://www.w3.org/WAI/WCAG22/Understanding/non-text-contrast): componentes, gráficos e estados visuais relevantes com contraste 3:1 contra cores adjacentes.
+- [W3C — WCAG 2.2, SC 2.4.7 Focus Visible](https://www.w3.org/WAI/WCAG22/Understanding/focus-visible): foco de teclado precisa permanecer visível; os indicadores também se relacionam com SC 1.4.11.
+- [W3C — WCAG 2.2, SC 2.5.8 Target Size (Minimum)](https://www.w3.org/WAI/WCAG22/Understanding/target-size-minimum): alvos de pelo menos 24 × 24 CSS px, com exceções definidas.
+- [W3C — WCAG 2.2, SC 1.4.10 Reflow](https://www.w3.org/WAI/WCAG22/Understanding/reflow): apresentação sem perda de informação/funcionalidade a 320 CSS px, exceto conteúdos que exijam layout bidimensional.
 
-**Resultado desta revisão:** o desenho geral combina com o FitControl. O contrato de período, a matriz de autorização e o escopo de CSV agregado foram aprovados em 23/11/2026. A implementação deve respeitar o padrão mês-até-hoje, validação estrita, persistência dos filtros, autorização antes da consulta e neutralização documentada de fórmulas para planilhas. Permanecem pendentes os critérios finais de apresentação e o fechamento global do catálogo/contratos; nenhuma consulta, tela ou exportação foi implementada.
+**Resultado desta revisão:** o desenho geral combina com o FitControl. O contrato de período, a matriz de autorização e o escopo de CSV agregado foram aprovados em 23/11/2026. A implementação deve respeitar o padrão mês-até-hoje, validação estrita, persistência dos filtros, autorização antes da consulta e neutralização documentada de fórmulas para planilhas. Os critérios finais de apresentação foram aprovados em 23/11/2026; permanece pendente apenas o fechamento global de consistência entre catálogo, contratos e roadmap. Nenhuma consulta, tela, relatório ou exportação foi implementada.

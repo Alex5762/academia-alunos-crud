@@ -1,6 +1,6 @@
 # Bloco 07.2 — Contratos de consulta e validação
 
-> **Estado:** desenho técnico revisado; as decisões do catálogo estão sendo aprovadas por etapas. OP-01 a OP-06, MT-01 a MT-05, FR-01 a FR-05, FN-01 a FN-06 e o contrato comum de filtros/permissões foram aprovados/definidos em 23/11/2026; os critérios finais de experiência permanecem em revisão. Não representa implementação.
+> **Estado:** desenho técnico revisado; as decisões do catálogo estão sendo aprovadas por etapas. OP-01 a OP-06, MT-01 a MT-05, FR-01 a FR-05, FN-01 a FN-06 e o contrato comum de filtros/permissões foram aprovados/definidos em 23/11/2026; os critérios finais de apresentação foram aprovados em 23/11/2026; o fechamento global dos contratos ainda é necessário. Não representa implementação.
 > **Pré-requisito:** catálogo 07.1 e definições de indicadores aprovados.
 > **Escopo desta etapa:** contratos de entrada/saída, datas, relógio, autorização, agregação e testes. Sem migrations, alteração de schema, telas ou exportação.
 
@@ -208,6 +208,16 @@ MT-01 a MT-05 usam `enrollments.view` e o período local normalizado em limites 
 - FN-06: incluir matrícula cancelada com cobrança sem pagamentos (saldo total), pagamento parcial (saldo restante) e pagamento integral (saldo zero); excluir cobrança cancelada financeiramente; comprovar paridade entre o agregado SQL pré-agregado e `FinanceDashboardStatus::reviewBalanceCents()`. Deixar explícito que saldo zero não calcula nem exclui eventual reembolso.
 - Valores DECIMAL/centavos sem float.
 - Perfil Operador não aciona consulta financeira e não recebe campos financeiros.
+
+### Apresentação e acessibilidade
+- Os cartões VG-01 a VG-06 aparecem nos dois grupos aprovados; Operador não recebe VG-05 nem espaço/placeholder financeiro.
+- O painel de distribuição cadastral usa somente alunos ativos como denominador; zero alunos ativos ou ausência de grupos produz estado vazio e nunca divisão por zero.
+- Pesquisa, filtros, listagem de alunos e atalho de cadastro permanecem disponíveis após a composição dos cards.
+- Relatórios operacional/matrículas usam apresentação tabular; frequência oferece gráfico de barras diário com tabela/resumo equivalente; financeiro oferece resumo e tabela por forma.
+- Zero, ausência, não aplicável, erro e falta de permissão são distinguíveis; nenhum número essencial depende de cor, hover ou tooltip.
+- Verificar foco visível por teclado e contraste não textual 3:1 contra cores adjacentes (WCAG 2.2 SC 2.4.7/1.4.11); texto normal 4.5:1 (SC 1.4.3).
+- Testar alvos de 24 × 24 CSS px ou exceções aplicáveis (SC 2.5.8), reflow a 320 CSS px (SC 1.4.10), temas claro/escuro e `prefers-reduced-motion`.
+- Não exigir skeleton para páginas com renderização server-side síncrona.
 
 ### Segurança e regressão
 - Página global exige `dashboard.view`; cada seção valida a permissão de domínio antes de instanciar/executar sua consulta.
