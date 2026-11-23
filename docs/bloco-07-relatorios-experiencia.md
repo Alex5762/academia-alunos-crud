@@ -1,9 +1,9 @@
 # Bloco 07 — Relatórios e experiência
 
-> **Estado:** proposta inicial de escopo; ainda não aprovada nem implementada.
+> **Estado:** direção da visão geral gerencial aceita para especificação; etapa 07.1 em andamento. As definições finais dos relatórios, fórmulas, filtros, exportações e permissões ainda precisam ser fechadas. Nenhuma funcionalidade do Bloco 07 foi implementada.
 > **Branch de referência:** `feat/dashboard-portfolio`.
 > **Dependência anterior:** Bloco 06 com validação automatizada aprovada na CI #1512. A validação manual dos blocos no XAMPP/dispositivo permanece adiada e registrada separadamente.
-> **Regra:** não iniciar implementação antes de confirmar indicadores, filtros, exportações e permissões.
+> **Regra:** concluir e revisar a etapa 07.1 antes de iniciar a implementação. A aprovação da visão geral autoriza sua especificação, não antecipa a aprovação automática de cada fórmula ou endpoint.
 
 ## 1. Objetivo
 
@@ -23,6 +23,34 @@ O bloco deve melhorar a leitura dos dados e a navegação, mantendo PHP, PDO, My
 | `horarios_aula` | Grade semanal recorrente | O Bloco 06 não cria sessões datadas nem presença por aula; portanto não há taxa de ocupação, presença por modalidade ou faltas por aula. |
 
 Não criar dados históricos artificiais nem reconstruir estados passados que as tabelas atuais não conseguem provar.
+
+
+## 2.1 Visão geral gerencial — direção aceita para especificação
+
+A Visão geral será uma **camada resumida dentro do dashboard existente**, não um segundo módulo de BI nem uma página paralela. Seu papel é ajudar a equipe a identificar rapidamente a situação da academia e abrir o relatório correspondente quando precisar investigar um número.
+
+A tela deve distinguir explicitamente três grupos de informação:
+
+**Fotografia atual (referência: momento da consulta)**
+- alunos ativos, conforme o status cadastral atual;
+- matrículas vigentes, conforme as regras de vigência e cancelamento existentes.
+
+**Movimentação no período selecionado**
+- check-ins realizados no período, quantidade de entradas e alunos distintos;
+- total efetivamente recebido no período, usando `pagamentos.data_pagamento`, somente para quem possui `finance.view`.
+
+**Atenção próxima (referência: data atual)**
+- matrículas cujo término contratual está previsto nos próximos 7 dias, respeitando `fim_exclusivo_em` e sem tratar cobranças como pagamentos.
+
+O período padrão dos indicadores de movimentação será o mês civil atual, no fuso `America/Sao_Paulo`. Alterar o período não deve alterar os cartões de fotografia atual nem deslocar a janela do alerta de próximos 7 dias. A interface deve exibir o período aplicado e identificar os cartões que representam situação atual.
+
+A visualização da frequência pode apresentar uma evolução diária de check-ins, acompanhada por resumo textual ou tabela. Não deve sugerir ocupação de aulas, presença em modalidades ou frequência individual por aula.
+
+O resumo financeiro deve ser omitido para perfis sem `finance.view`. Além de ocultar o cartão, a camada de servidor não deve enviar valores financeiros ao cliente nem permitir consulta indireta por endpoint. As demais seções seguem suas permissões de domínio.
+
+A Visão geral deve reutilizar os mesmos agregadores/serviços e as mesmas definições dos relatórios detalhados. Não manter fórmulas SQL independentes para o cartão e para o relatório correspondente. Cada indicador terá um atalho para seu relatório de origem.
+
+**Limites de apresentação:** priorizar poucos indicadores acionáveis; não incluir percentuais de crescimento, rankings, metas, churn, previsões, faturamento projetado ou comparações com períodos anteriores sem base temporal e definição confiáveis. Estados sem dados, zero legítimo, falha de consulta e falta de permissão devem ser tratados como situações diferentes.
 
 ## 3. Escopo proposto para o MVP
 
@@ -128,6 +156,9 @@ Cada seção e cada endpoint CSV devem revalidar a permissão correspondente no 
 ## 7. Critérios de aceite propostos
 
 - [ ] Definições de cada indicador e eixo temporal aprovadas e documentadas.
+- [ ] Visão geral separa fotografia atual, movimentação do período e alertas próximos.
+- [ ] Cartões da Visão geral apresentam os mesmos resultados dos relatórios de origem, reutilizando seus agregadores/serviços.
+- [ ] Perfis sem `finance.view` não recebem valores financeiros nem conseguem consultá-los por endpoints.
 - [ ] Filtros de data rejeitam datas inválidas, períodos invertidos e intervalos acima do limite.
 - [ ] Agregados de matrículas respeitam `inicio_em`, `fim_exclusivo_em`, cancelamento e origem.
 - [ ] Agregados de frequência usam `data_local` e contam alunos distintos sem duplicar entradas.
@@ -147,5 +178,18 @@ Cada seção e cada endpoint CSV devem revalidar a permissão correspondente no 
 4. Confirmar CSV agregado somente, sem dados pessoais, deixando PDF/XLSX fora do MVP.
 5. Confirmar mês atual como período padrão e limite de 365 dias por consulta.
 6. Confirmar o uso das permissões existentes, com financeiro visível somente para Administrador/Gestor.
+7. Confirmar a Visão geral como camada de resumo do dashboard existente, com fotografia atual, indicadores do período, alerta de términos próximos e atalhos para relatórios.
+
+### Etapa 07.1 — definição dos indicadores (em andamento)
+
+Entregáveis desta etapa:
+- catálogo de indicadores com nome exibido, finalidade, fórmula, fonte de dados, eixo temporal, referência de data, permissão exigida e ressalvas;
+- distinção entre fotografia atual, movimentação por período e alertas ancorados na data atual;
+- contrato de filtros e parâmetros compartilhados pelos relatórios;
+- matriz de visibilidade da Visão geral por permissão;
+- mapeamento de cada cartão para o relatório detalhado que serve de fonte de verdade;
+- decisões registradas sobre métricas que não podem ser calculadas com os dados atuais.
+
+**Saída esperada da 07.1:** especificação revisável e testável, sem alteração de banco nem implementação de telas. A etapa seguinte só começa depois da revisão das fórmulas e do contrato de acesso.
 
 **Recomendação:** implementar primeiro consultas agregadas e testes de domínio/SQL; depois a página de relatórios; por último os endpoints CSV e a cobertura Playwright. Só iniciar após aprovação deste escopo.
