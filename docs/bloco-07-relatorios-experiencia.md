@@ -188,7 +188,7 @@ Cada seção e cada endpoint CSV devem revalidar a permissão correspondente no 
 
 - [ ] Definições de cada indicador e eixo temporal aprovadas e documentadas.
 - [ ] Visão geral separa fotografia atual, movimentação do período e alertas próximos.
-- [x] A linha atual de três cards foi substituída pelos seis cartões VG-01 a VG-06, nos dois grupos aprovados; a validação visual/HTTP aguarda CI.
+- [x] A linha atual de três cards foi substituída pelos seis cartões VG-01 a VG-06, nos dois grupos aprovados; os testes de integração/visão geral passaram na CI #45245709878.
 - [ ] O Operador não recebe nem reserva espaço para VG-05; a seção financeira é omitida integralmente.
 - [x] A pesquisa, os filtros e a tabela de alunos, bem como o atalho de cadastro, são preservados; a pesquisa mantém os limites do período selecionado.
 - [x] A distribuição por plano continua secundária, usa `$alunosAtivos` como denominador, identifica `alunos.plano` como dado cadastral, agrupa valores vazios/somente espaços em “Não informado” e apresenta estado vazio se não houver alunos ativos.
