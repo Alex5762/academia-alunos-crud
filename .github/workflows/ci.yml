@@ -692,6 +692,7 @@ jobs:
           php scripts/registrar-eventos-demo.php
 
           export FITCONTROL_TEST_PASSWORD="$(cat "$RUNNER_TEMP/fitcontrol-test-password")"
+          bash tests/integration-class-schedule.sh
           rm -f "$RUNNER_TEMP/fitcontrol-test-password"
           node tests/capture-screenshots.mjs
           node tests/browser-compatibility.mjs
