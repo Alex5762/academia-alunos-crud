@@ -1,6 +1,6 @@
 # Revisão técnica do Bloco 07 — aderência, métricas e arquitetura
 
-> **Estado:** primeira fatia operacional/matrículas implementada na branch; aguarda CI em MySQL 8.0 e MariaDB 10.11. Frequência, financeiro, overview cards e CSV permanecem pendentes.
+> **Estado atualizado após CI #1595:** consultas operacionais, matrículas, frequência e financeiro implementadas e validadas em MySQL 8.0/MariaDB 10.11. Permanecem pendentes cartões VG-01 a VG-06 no dashboard, CSV agregado e regressão final.
 > **Data:** 23/11/2026.
 > **Escopo analisado:** catálogo 07.1, contratos 07.2, código atual de alunos, matrículas, frequência, financeiro, RBAC e dashboard.
 > **Importante:** esta revisão não implementa funcionalidades, não altera schema e não substitui a aprovação do escopo.
@@ -157,7 +157,7 @@ Não alterar `index.php` inteiro de uma vez. Extrair somente as consultas novas 
 1. **Concluído:** `ReportPeriod` e integração HTTP em `relatorios.php`, com captura única de `asOf`, preservação de `de`/`ate` e HTTP 400 sem fallback.
 2. **Concluído e validado na CI #1571:** OP-01 a OP-06 e MT-01 a MT-05 em consultas específicas, com validação defensiva de intervalos e execução MySQL 8.0/MariaDB 10.11.
 3. **Concluído e validado na CI #1579:** FR-01 a FR-05, com FR-03 preenchida por data civil, FR-04 calculado por ocorrência real do calendário e FR-05 limitado aos frequentadores.
-4. **Implementado nesta etapa; aguardando nova CI:** FN-01 a FN-06 em `FinanceReportQuery`, com RBAC `finance.view`, pagamentos históricos sem JOIN de estado atual, agregação de cobranças por vencimento e saldos FN-05/FN-06 pelas regras canônicas `FinanceDashboardStatus`. O teste de integração cobre as cinco formas, retroativos, cancelamentos posteriores, período vazio e paridade de saldos. O `EXPLAIN` foi incluído como diagnóstico de CI, mas o volume de fixtures não é representativo para decisão de índice.
+4. **Concluído e validado na CI #1595:** FN-01 a FN-06 em `FinanceReportQuery`, com RBAC `finance.view`, pagamentos históricos sem JOIN de estado atual, agregação de cobranças por vencimento e saldos FN-05/FN-06 pelas regras canônicas `FinanceDashboardStatus`. O teste de integração cobre as cinco formas, retroativos, cancelamentos posteriores, período vazio e paridade de saldos. O `EXPLAIN` é executado como diagnóstico, mas o volume de fixtures não é representativo para decisão de índice.
 5. Integrar os cartões no dashboard existente (07.6), reutilizando agregadores sem duplicar SQL e corrigindo a distribuição cadastral por plano.
 6. Implementar CSV agregado seguro (07.7) por último, com escaping, neutralização documentada e testes em leitores de planilha.
 7. Finalizar regressão (07.8): desktop/mobile, reflow a 320 CSS px, temas claro/escuro, teclado/foco, contraste, redução de movimento, acessibilidade e comparação com a experiência anterior.
@@ -174,4 +174,4 @@ Não alterar `index.php` inteiro de uma vez. Extrair somente as consultas novas 
 - [W3C — WCAG 2.2, SC 2.5.8 Target Size (Minimum)](https://www.w3.org/WAI/WCAG22/Understanding/target-size-minimum): alvos de pelo menos 24 × 24 CSS px, com exceções definidas.
 - [W3C — WCAG 2.2, SC 1.4.10 Reflow](https://www.w3.org/WAI/WCAG22/Understanding/reflow): apresentação sem perda de informação/funcionalidade a 320 CSS px, exceto conteúdos que exijam layout bidimensional.
 
-**Resultado desta revisão:** `ReportPeriod`, OP-01 a OP-06, MT-01 a MT-05 e FR-01 a FR-05 foram validados nas CIs #1571 e #1579. FN-01 a FN-06 foram implementados em `FinanceReportQuery` e integrados à tela com autorização `finance.view`; o teste de integração ampliado aguarda a nova CI. Nenhuma alteração de schema foi feita. Cartões do dashboard, CSV e regressão final permanecem pendentes.
+**Resultado atualizado após a CI #1595:** `ReportPeriod`, OP-01 a OP-06, MT-01 a MT-05, FR-01 a FR-05 e FN-01 a FN-06 estão implementados e validados em MySQL 8.0/MariaDB 10.11. Nenhuma alteração de schema foi feita para o Bloco 07. O próximo incremento é integrar os seis cartões VG-01 a VG-06 à Visão geral, corrigir a distribuição cadastral por plano e depois implementar o CSV agregado seguro. A regressão visual/acessível específica dos relatórios ainda precisa ser concluída.
