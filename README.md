@@ -44,9 +44,9 @@ O módulo cria uma cobrança única pelo contrato, registra pagamentos parciais 
 
 O módulo oferece grade semanal fixa, catálogo de modalidades e instrutores, cadastro/edição/inativação de horários, filtros, proteção contra conflitos e auditoria. A CI #1512 aprovou os testes de banco, HTTP e Playwright em Chromium, Firefox e WebKit, incluindo MySQL 8.0 e MariaDB 10.11. A aplicação controlada da migration 014 no XAMPP e a inspeção manual em dispositivo físico continuam pendentes. Consulte `docs/bloco-06-aulas-agenda.md`.
 
-## Bloco 07 — Relatórios e experiência (especificação em andamento; ainda não implementado)
+## Bloco 07 — Relatórios e experiência (especificação documentada; implementação não iniciada)
 
-A direção da Visão geral gerencial foi aceita para especificação. Ela será uma camada resumida do dashboard existente, separando situação atual, movimentações do período e alertas próximos, com atalhos para relatórios detalhados. A especificação inicial da etapa 07.1 está registrada em `docs/bloco-07-catalogo-indicadores.md`, vinculada à proposta `docs/bloco-07-relatorios-experiencia.md`, e aguarda revisão. Os indicadores financeiros são lançamentos registrados no sistema, não valores conciliados com banco. Nenhuma tela, consulta ou exportação do Bloco 07 foi implementada.
+A direção da Visão geral gerencial foi aceita. O catálogo técnico 07.1 e o desenho de contratos 07.2 estão documentados em `docs/bloco-07-catalogo-indicadores.md` e `docs/bloco-07.2-contratos-consulta.md`, vinculados à proposta `docs/bloco-07-relatorios-experiencia.md`. A nomenclatura “Recebido no período” foi aprovada para soma de pagamentos por `data_pagamento`, sem representar faturamento ou lucro. O restante do catálogo e os contratos aguardam aprovação antes da implementação. Nenhuma tela, consulta, endpoint ou migration do Bloco 07 foi criada.
 
 ## Funcionalidades
 
