@@ -241,7 +241,7 @@ A interface deve preservar `de` e `ate` validados ao navegar entre relatórios e
 2. **Concluído:** consultas operacionais e de matrículas (OP-01 a OP-06 e MT-01 a MT-05).
 3. **Concluído e validado na CI #1595:** relatório de frequência (FR-01 a FR-05).
 4. **Concluído e validado na CI #1595:** relatório financeiro (FN-01 a FN-06), incluindo integração e regras de autorização `finance.view`.
-5. **Concluído na branch; aguardando CI:** integrar VG-01 a VG-06 à Visão geral, reutilizando os agregadores existentes e corrigindo a distribuição de planos para usar alunos ativos como denominador e agrupar planos vazios em “Não informado”.
+5. **Concluído e validado na CI #45245709878:** integrar VG-01 a VG-06 à Visão geral, reutilizando os agregadores existentes e corrigindo a distribuição de planos para usar alunos ativos como denominador e agrupar planos vazios em “Não informado”.
 6. **Implementado na branch; aguardando CI:** CSV agregado por seção, filtros, RBAC, escaping e neutralização de fórmulas. Próximo: regressão final visual/acessível e verificação manual de abertura em Excel/LibreOffice.
 7. **Fechamento:** regressão visual/HTTP, acessibilidade, responsividade, temas e compatibilidade.
 
