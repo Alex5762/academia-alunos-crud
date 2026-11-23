@@ -1,6 +1,6 @@
 # Revisão técnica do Bloco 07 — aderência, métricas e arquitetura
 
-> **Estado atualizado após CI #1595, CI #45245709878 e CI #45247639018:** consultas OP/MT/FR/FN, cartões VG-01 a VG-06, endpoint CSV, escritor UTF-8/escaping/neutralização e testes unitários/HTTP aprovados (sete jobs funcionais). A cobertura Playwright foi ampliada depois para baixar os quatro arquivos e verificar BOM, conteúdo principal, nome, período e ausência de PII; nova CI pendente. Regressão visual/acessível final e teste manual Excel/LibreOffice continuam pendentes.
+> **Estado atualizado após CIs #1595, #45245709878, #45247639018 e #45249934923:** consultas, cartões e exportação CSV aprovados; Playwright também confirmou downloads dos quatro arquivos, BOM, indicador principal, nome, período e ausência de PII. Incremento atual corrige contraste textual dos relatórios e amplia testes de acessibilidade para reflow 320px, foco, rótulos, alvos, movimento reduzido e contraste 4,5:1 nos dois temas; aguarda CI. A inspeção manual Excel/LibreOffice e validação física/local continuam pendentes.
 > **Data:** 23/11/2026.
 > **Escopo analisado:** catálogo 07.1, contratos 07.2, código atual de alunos, matrículas, frequência, financeiro, RBAC e dashboard.
 > **Importante:** esta revisão não implementa funcionalidades, não altera schema e não substitui a aprovação do escopo.
