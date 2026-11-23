@@ -10,8 +10,6 @@ use FitControl\Domain\Finance\FinanceMoneyFormatter;
 use FitControl\Domain\Finance\FinancePaymentHistoryQuery;
 use FitControl\Domain\Reports\FinanceReportQuery;
 use FitControl\Domain\Reports\ReportPeriod;
-use FitControl\Domain\Reports\FinanceReportQuery;
-use FitControl\Domain\Reports\ReportPeriod;
 
 require_once dirname(__DIR__) . '/src/Domain/Enrollment/EnrollmentPeriodCalculator.php';
 require_once dirname(__DIR__) . '/src/Domain/Enrollment/EnrollmentInterval.php';
@@ -22,8 +20,6 @@ require_once dirname(__DIR__) . '/src/Domain/Finance/FinanceService.php';
 require_once dirname(__DIR__) . '/src/Domain/Finance/FinanceDashboardStatus.php';
 require_once dirname(__DIR__) . '/src/Domain/Finance/FinanceMoneyFormatter.php';
 require_once dirname(__DIR__) . '/src/Domain/Finance/FinancePaymentHistoryQuery.php';
-require_once dirname(__DIR__) . '/src/Domain/Reports/ReportPeriod.php';
-require_once dirname(__DIR__) . '/src/Domain/Reports/FinanceReportQuery.php';
 require_once dirname(__DIR__) . '/src/Domain/Reports/ReportPeriod.php';
 require_once dirname(__DIR__) . '/src/Domain/Reports/FinanceReportQuery.php';
 
