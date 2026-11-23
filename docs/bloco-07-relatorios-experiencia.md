@@ -184,7 +184,7 @@ Cada seção e cada endpoint CSV devem revalidar a permissão correspondente no 
 6. Confirmar o uso das permissões existentes, com financeiro visível somente para Administrador/Gestor.
 7. Confirmar a Visão geral como camada de resumo do dashboard existente, com fotografia atual, indicadores do período, alerta de términos próximos e atalhos para relatórios.
 
-### Etapa 07.1 — definição dos indicadores (especificação inicial concluída para revisão)
+### Etapa 07.1 — definição dos indicadores (catálogo documentado; aprovação parcial)
 
 Catálogo detalhado: [Bloco 07.1 — Catálogo e contrato dos indicadores](bloco-07-catalogo-indicadores.md).
 
@@ -196,6 +196,14 @@ Entregáveis desta etapa:
 - mapeamento de cada cartão para o relatório detalhado que serve de fonte de verdade;
 - decisões registradas sobre métricas que não podem ser calculadas com os dados atuais.
 
+**Decisão registrada em 23/11/2026:** nomenclatura **“Recebido no período”** aprovada para a soma de pagamentos por `data_pagamento`; não chamar de faturamento ou lucro. O catálogo continua aguardando aprovação global das demais fórmulas e permissões.
+
 **Saída esperada da 07.1:** especificação revisável e testável, sem alteração de banco nem implementação de telas. A etapa seguinte só começa depois da revisão das fórmulas e do contrato de acesso.
 
 **Recomendação:** implementar primeiro consultas agregadas e testes de domínio/SQL; depois a página de relatórios; por último os endpoints CSV e a cobertura Playwright. Só iniciar após aprovação deste escopo.
+
+### Etapa 07.2 — contratos de consulta e validação (desenho inicial documentado)
+
+Documento: [Bloco 07.2 — Contratos de consulta e validação](bloco-07.2-contratos-consulta.md).
+
+O desenho define responsabilidades para período imutável, relógio único, política de autorização, consultas agregadas, payload de saída e matriz de testes. Não introduz migrations, telas ou código de relatório. A implementação da 07.2 depende da aprovação do catálogo 07.1 e deste contrato.
