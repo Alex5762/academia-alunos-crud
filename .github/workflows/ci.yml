@@ -481,6 +481,9 @@ jobs:
           test -f src/Domain/Reports/FinanceReportQuery.php
           test -f src/Domain/Reports/FinanceReportQuery.php
           test -f relatorios.php
+          test -f exportar-relatorio.php
+          test -f src/Domain/Reports/ReportCsvExporter.php
+          test -f tests/report-csv-exporter.php
           test -f tests/report-period.php
           test -f tests/database-reports.php
           test -f tests/database-frequency-reports.php
