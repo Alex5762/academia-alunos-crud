@@ -259,11 +259,11 @@ A migration 014 cria modalidades, instrutores e horários semanais recorrentes. 
 
 ### Bloco 07 — Relatórios e experiência
 
-**Estado: catálogo 07.1 e desenho de contratos 07.2 documentados; aprovação parcial registrada, implementação ainda não iniciada.** Documentos: [proposta do Bloco 07](bloco-07-relatorios-experiencia.md), [catálogo 07.1](bloco-07-catalogo-indicadores.md) e [contratos 07.2](bloco-07.2-contratos-consulta.md).
+**Estado: catálogo 07.1 e desenho de contratos 07.2 revisados tecnicamente; aprovação global pendente e implementação não iniciada.** Documentos: [proposta do Bloco 07](bloco-07-relatorios-experiencia.md), [catálogo 07.1](bloco-07-catalogo-indicadores.md) e [contratos 07.2](bloco-07.2-contratos-consulta.md).
 
-A nomenclatura **“Recebido no período”** foi aprovada em 23/11/2026 para a soma dos pagamentos por `data_pagamento`; não representa faturamento, lucro ou recebimento conciliado. O restante do catálogo e a matriz de permissões aguardam revisão global.
+A nomenclatura **“Recebido no período”** foi aprovada para a soma dos pagamentos pela `data_pagamento`, com legenda indicando que são pagamentos registrados pela data declarada, não liquidação bancária, faturamento ou lucro. A revisão também padronizou a janela inclusiva de sete dias e a omissão integral de seções sem permissão.
 
-O desenho 07.2 formaliza período imutável, limites local/UTC, relógio único, autorização antes das consultas, payload agregado e testes. Ainda não foram criadas consultas, telas, endpoints ou migrations. Implementação da 07.2 só começa após aprovação do catálogo e dos contratos.
+O desenho 07.2 formaliza período imutável, limites local/UTC, relógio único, autorização antes das consultas, payload agregado e testes. Não há consultas, telas, endpoints ou migrations do Bloco 07. A implementação depende da aprovação global do catálogo e dos contratos.
 
 **Fora do escopo:** presença por modalidade/aula, histórico não reconstruível, dados pessoais em exportações, PDF/XLSX, BI, previsões, metas, churn e comparações percentuais sem base temporal confiável.
 
