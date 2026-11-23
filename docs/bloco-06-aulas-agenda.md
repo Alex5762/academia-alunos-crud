@@ -1,6 +1,6 @@
 # Bloco 06 — Grade fixa de aulas
 
-> **Estado:** schema, serviços de domínio, consulta filtrada, grade semanal, CRUD de modalidades/instrutores e gestão visual dos horários implementados; cobertura HTTP/Playwright ampliada e aguardando CI; validação local/XAMPP pendente.
+> **Estado:** implementação e cobertura automatizada do Bloco 06 aprovadas na CI #1512 (MySQL 8.0 e MariaDB 10.11); validação manual no XAMPP pendente.
 > **Branch de trabalho:** `feat/dashboard-portfolio`.
 > **Dependências:** autenticação/RBAC, cadastro de funcionários e auditoria existentes. A validação manual pelo XAMPP continua adiada e não bloqueia a especificação nem os testes automatizados.
 >
@@ -155,7 +155,10 @@ Essas evoluções não devem criar dependências no primeiro MVP. Em particular,
 - [x] `ClassScheduleQuery` centraliza a leitura da grade com filtros por dia, modalidade e instrutor.
 - [x] `aulas.php` apresenta a grade semanal, indicadores e filtros, com acesso controlado por `classes.view`.
 - [x] `gestao-aulas.php` oferece CRUD de modalidades e instrutores, com CSRF e autorização `classes.manage`.
-- [x] A página foi adicionada à navegação do painel e possui layout responsivo.
+- [x] `gerenciar-horarios.php` oferece cadastro, edição e inativação lógica de horários usando `ClassScheduleService`, CSRF e autorização `classes.manage`.
+- [x] `ClassScheduleQuery::allSchedulesForManagement()` disponibiliza horários ativos e inativos para a administração, mantendo o histórico visível.
+- [x] A grade semanal oferece atalho para a gestão de horários; a gestão possui layout responsivo.
+- [x] A edição envia o snapshot original do formulário e rejeita estado desatualizado antes de sobrescrever uma alteração concorrente.
 - [x] A gestão dos catálogos possui formulários responsivos, vínculo opcional com funcionário e feedback de validação.
 - [x] Alterações e eventos da cadeia de auditoria são confirmados na mesma transação.
 - [x] Inativação é lógica; modalidade/instrutor com horários ativos precisa ter a grade revisada antes.
@@ -164,17 +167,17 @@ Essas evoluções não devem criar dependências no primeiro MVP. Em particular,
 - [x] Testes da consulta verificam filtros, horários sem instrutor e exclusão de itens inativos.
 - [x] Teste de regressão rejeita formulário de edição com snapshot original desatualizado.
 - [x] Cobertura HTTP adicionada para criação, edição, conflitos, inativação, CSRF, RBAC e auditoria.
-- [x] Playwright ampliado para abrir a gestão e exercitar cadastro, edição e inativação nos três navegadores, com larguras mobile.
+- [x] Playwright abre a gestão e exercita cadastro, edição e inativação em Chromium, Firefox e WebKit, verificando larguras mobile de 390px e 320px.
+- [x] CI #1512 aprovada: 7 jobs de validação concluídos com sucesso; execução do CRUD HTTP e validação visual concluídas nos três navegadores.
 - [x] O serviço serializa gravações por instrutor e rejeita sobreposições no mesmo dia; horários adjacentes são permitidos.
 - [x] RBAC inicial permite consulta aos três perfis e gestão somente a Administrador/Gestor.
 - [x] CI #1450 aprovou a migration nos dois motores; nova suíte de serviços está sendo integrada à CI.
 
 ### Próximas etapas
 
-1. Aguardar e revisar a CI #1503, incluindo os novos cenários HTTP e Playwright.
-2. Corrigir eventuais falhas de integração e repetir a validação.
-3. Revisar acessibilidade/responsividade com os cenários reais de CRUD.
-4. Executar validação local no XAMPP quando o ambiente estiver disponível.
+1. Executar a validação manual no XAMPP, após backup do banco local e aplicação controlada da migration 014.
+2. Conferir no navegador o cadastro, a edição, a inativação, a resposta aos conflitos e a preservação do histórico.
+3. Registrar evidências da validação manual e fazer a revisão final do PR antes de propor a integração.
 
 ## 10. Referências e fronteiras com os outros blocos
 
@@ -183,4 +186,4 @@ Essas evoluções não devem criar dependências no primeiro MVP. Em particular,
 - **Bloco 07 — Relatórios:** relatórios de participação ou ocupação podem ser avaliados quando houver dados de sessões e presenças.
 - **Bloco 08 — Preparação para produção:** continua dependendo de validações e revisão próprias.
 
-**Estado técnico:** migration, serviços de domínio, consulta filtrada, grade semanal, CRUD de modalidades/instrutores e gestão de horários estão implementados na branch. Os testes HTTP e Playwright específicos foram adicionados; a CI #1503 precisa aprová-los. A validação local/XAMPP continua pendente.
+**Estado técnico:** migration, serviços de domínio, consulta administrativa e filtrada, grade semanal, CRUD de modalidades/instrutores e gestão de horários estão implementados na branch. A CI #1512 aprovou a suíte automatizada de banco, HTTP e Playwright em Chromium, Firefox e WebKit. A validação manual no XAMPP permanece pendente.
