@@ -3795,3 +3795,16 @@ body:not(.dashboard-body) .theme-option[aria-pressed="true"] {
         justify-content: space-between;
     }
 }
+
+.class-schedule-manage-link {
+    display: flex;
+    justify-content: flex-end;
+    margin: 18px 0 0;
+}
+
+@media (max-width: 620px) {
+    .class-schedule-manage-link .button {
+        width: 100%;
+        justify-content: center;
+    }
+}
