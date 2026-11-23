@@ -1,6 +1,6 @@
 # Bloco 07.2 — Contratos de consulta e validação
 
-> **Estado:** período integrado a `relatorios.php`; consultas OP-01 a OP-06 e MT-01 a MT-05 implementadas e cobertas por teste de banco. Frequência, financeiro, cartões do dashboard e CSV permanecem pendentes. Não houve migration ou alteração de schema.
+> **Estado:** período, consultas OP-01 a OP-06/MT-01 a MT-05 e a primeira implementação de FR-01 a FR-05 integrados a `relatorios.php`. A validação de frequência foi adicionada ao job MySQL 8.0/MariaDB 10.11 e aguarda a nova CI. Financeiro, cartões do dashboard e CSV permanecem pendentes. Não houve migration ou alteração de schema.
 > **Pré-requisito:** catálogo 07.1 e definições de indicadores aprovados.
 > **Escopo desta etapa:** contratos de entrada/saída, datas, relógio, autorização, agregação e testes. Sem migrations, alteração de schema, telas ou exportação.
 
@@ -123,6 +123,8 @@ MT-01 a MT-05 usam `enrollments.view` e o período local normalizado em limites 
 - Dias sem registros continuam presentes na série FR-03, sem inferir funcionamento da academia.
 - Para FR-04, usar o número real de ocorrências do weekday no calendário; feriados e fechamentos não são conhecidos pelo modelo atual.
 - O resultado de FR-05 não pode exceder o número de datas do período quando a regra de unicidade está íntegra.
+
+**Implementação FR-01 a FR-05:** `FrequencyReportQuery::forPeriod()` usa uma instrução SQL somente leitura para obter resumo e agregação diária no mesmo snapshot; completa datas e calcula ocorrências dos weekdays em PHP, iterando datas civis em UTC. O controller autoriza `attendance.view` antes de executar a consulta. O teste de banco cobre limites inclusivos, frequentador repetido, aluno ativo sem check-in, lacunas diárias, denominadores semanais diferentes, período de uma data e período sem registros. A aprovação final depende da nova execução da CI em MySQL 8.0 e MariaDB 10.11.
 
 ## 6. Fronteira de autorização
 
