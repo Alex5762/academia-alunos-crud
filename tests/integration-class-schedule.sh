@@ -38,4 +38,15 @@ HTTP="$(curl -sS -o "$TMP/update-b" -w '%{http_code}' -c "$JAR" -b "$JAR" "$BASE
 for ID in "$SIDA" "$SIDB"; do curl -fsS -c "$JAR" -b "$JAR" "$BASE_URL/gerenciar-horarios.php" -o "$TMP/form"; TOKEN="$(get_token "$TMP/form")"; HTTP="$(curl -sS -o "$TMP/deactivate" -w '%{http_code}' -c "$JAR" -b "$JAR" "$BASE_URL/gerenciar-horarios.php" --data-urlencode "token=$TOKEN" --data-urlencode acao=inativar_horario --data-urlencode id="$ID")"; [[ "$HTTP" == 303 ]] || fail "Inativação deveria retornar 303; recebeu $HTTP."; done
 [[ "$(db "SELECT COUNT(*) FROM auditoria WHERE usuario_id=$ACTOR AND entidade='horarios_aula' AND entidade_id IN ($SIDA,$SIDB) AND acao IN ('horario_aula_criado','horario_aula_editado','horario_aula_inativado')")" == 6 ]] || fail "Eventos de auditoria esperados não foram encontrados."
 [[ "$(db "SELECT COUNT(*) FROM horarios_aula WHERE id IN ($SIDA,$SIDB) AND ativo=0")" == 2 ]] || fail "Horários não foram preservados como inativos."
+curl -fsS -c "$OPERATOR_JAR" -b "$OPERATOR_JAR" "$BASE_URL/login.php" -o "$TMP/operator-login"
+OPERATOR_TOKEN="$(get_token "$TMP/operator-login")"
+curl -fsS -L -c "$OPERATOR_JAR" -b "$OPERATOR_JAR" "$BASE_URL/login.php" \
+    --data-urlencode "token=$OPERATOR_TOKEN" \
+    --data-urlencode "email=funcionario-ci@example.test" \
+    --data-urlencode "senha=SenhaNova-Funcionario-2026!" \
+    -o "$TMP/operator-dashboard"
+grep -Fq "Visão geral" "$TMP/operator-dashboard" || fail "Login do Operador falhou."
+OPERATOR_HTTP="$(curl -sS -o "$TMP/operator-denied" -w '%{http_code}' -c "$OPERATOR_JAR" -b "$OPERATOR_JAR" "$BASE_URL/gerenciar-horarios.php")"
+[[ "$OPERATOR_HTTP" == 403 ]] || fail "Operador deveria receber 403 na gestão de horários; recebeu $OPERATOR_HTTP."
+
 echo "Bloco 06 HTTP: CRUD, conflitos, snapshot, CSRF e auditoria aprovados."
