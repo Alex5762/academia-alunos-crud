@@ -44,9 +44,9 @@ O módulo cria uma cobrança única pelo contrato, registra pagamentos parciais 
 
 O módulo oferece grade semanal fixa, catálogo de modalidades e instrutores, cadastro/edição/inativação de horários, filtros, proteção contra conflitos e auditoria. A CI #1512 aprovou os testes de banco, HTTP e Playwright em Chromium, Firefox e WebKit, incluindo MySQL 8.0 e MariaDB 10.11. A aplicação controlada da migration 014 no XAMPP e a inspeção manual em dispositivo físico continuam pendentes. Consulte `docs/bloco-06-aulas-agenda.md`.
 
-## Bloco 07 — Relatórios e experiência (implementação inicial em andamento)
+## Bloco 07 — Relatórios e experiência (primeira fatia implementada)
 
-A especificação global foi aprovada e reconciliada. O primeiro incremento técnico implementa `src/Domain/Reports/ReportPeriod.php`: período padrão do primeiro dia do mês até hoje em `America/Sao_Paulo`, parsing estrito de `YYYY-MM-DD`, rejeição de parâmetros parciais/inválidos e intervalos acima de 365 dias inclusivos, aceitação de datas futuras explícitas e limites locais/UTC para colunas `DATE` e `DATETIME`. O teste puro `tests/report-period.php` cobre 40 asserções, incluindo transição histórica de horário de verão. A CI executa esse teste. A integração com controllers, consultas, telas e CSV ainda não foi implementada; não houve migration ou alteração de schema. Consulte `docs/bloco-07.2-contratos-consulta.md` e os demais documentos do Bloco 07.
+A primeira tela `relatorios.php` apresenta OP-01 a OP-06 e MT-01 a MT-05, com filtros `de`/`ate`, autorização no servidor e consultas agregadas em `OperationalReportQuery` e `EnrollmentReportQuery`. `ReportPeriod` valida o período padrão mês-até-hoje, parsing estrito, limite de 365 dias e limites locais/UTC. Os testes de período e integração de relatórios entram na CI para MySQL 8.0 e MariaDB 10.11. Frequência, financeiro, cartões na Visão geral, CSV e regressão final de acessibilidade permanecem pendentes. Não houve migration ou alteração de schema. Consulte os documentos do Bloco 07.
 
 ## Funcionalidades
 
@@ -138,10 +138,13 @@ academia-alunos-crud/
 │   ├── Domain/Classes/ClassScheduleQuery.php
 │   ├── Domain/Enrollment/
 │   ├── Domain/Reports/ReportPeriod.php
+│   ├── Domain/Reports/OperationalReportQuery.php
+│   ├── Domain/Reports/EnrollmentReportQuery.php
 │   └── Security/
 ├── tests/
 │   ├── browser-compatibility.mjs
 │   ├── report-period.php
+│   ├── database-reports.php
 │   ├── database-attendance-checkin.php
 │   ├── database-class-schedule-migration.php
 │   ├── database-class-schedule-services.php
@@ -155,6 +158,7 @@ academia-alunos-crud/
 ├── registrar-checkin.php
 ├── login.php
 ├── index.php
+├── relatorios.php
 ├── detalhes-aluno.php
 ├── usuarios.php
 ├── planos.php

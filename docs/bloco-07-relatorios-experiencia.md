@@ -1,6 +1,6 @@
 # Bloco 07 — Relatórios e experiência
 
-> **Estado:** especificação global aprovada em 23/11/2026; implementação inicial da 07.2 em andamento. `ReportPeriod` e seus testes puros foram criados; integração HTTP, consultas, telas e CSV permanecem pendentes. Nenhuma migration ou alteração de schema foi feita.
+> **Estado:** primeira tela `relatorios.php` e consultas OP-01 a OP-06/MT-01 a MT-05 implementadas e cobertas na CI. Frequência, financeiro, cartões de resumo, CSV e regressão final permanecem pendentes. Nenhuma migration ou alteração de schema foi feita.
 > **Branch de referência:** `feat/dashboard-portfolio`.
 > **Dependência anterior:** Bloco 06 com validação automatizada aprovada na CI #1512. A validação manual dos blocos no XAMPP/dispositivo permanece adiada e registrada separadamente.
 > **Regra:** a especificação global foi aprovada; seguir a sequência técnica registrada e validar cada incremento antes de avançar.
@@ -256,4 +256,4 @@ Entregáveis desta etapa:
 
 Documento: [Bloco 07.2 — Contratos de consulta e validação](bloco-07.2-contratos-consulta.md).
 
-O contrato 07.2 define entrada/saída, datas, relógio de referência, fronteira de autorização, consultas agregadas e matriz de testes. A arquitetura reutiliza `AccessControl`, captura única de relógio por requisição, consultas específicas por domínio e arrays com chaves estáveis. **Primeiro incremento concluído:** `ReportPeriod` implementado em `src/Domain/Reports/ReportPeriod.php`, com teste puro em `tests/report-period.php` e etapa dedicada no workflow CI. O teste cobre 40 asserções: padrão mês-até-hoje, parsing estrito, parâmetros ausentes/parciais e tipos inesperados, período invertido, limite 365/366, datas futuras, conversão local/UTC, ano bissexto, limites DATETIME e transição histórica de horário de verão. A integração com controllers, propagação de `asOf`, autorização e consultas permanece pendente. Nenhuma migration, alteração de schema, tela ou exportação foi criada.
+O contrato 07.2 define entrada/saída, datas, relógio de referência, fronteira de autorização, consultas agregadas e matriz de testes. `relatorios.php` integra `ReportPeriod`, valida o período antes de consultar e mantém `de`/`ate`. `OperationalReportQuery` implementa OP-01 a OP-06 em agregados com detecção de intervalos inválidos; `EnrollmentReportQuery` implementa MT-01 a MT-05 em uma instrução, preservando valores DECIMAL e snapshots de plano. `tests/database-reports.php` valida contagens, janelas 7/30, coorte efetiva, eventos de cancelamento e falha controlada para intervalos inválidos em MySQL 8.0/MariaDB 10.11. Nenhuma migration, alteração de schema ou exportação foi criada.

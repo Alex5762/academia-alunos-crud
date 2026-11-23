@@ -1,6 +1,6 @@
 # Bloco 07.2 — Contratos de consulta e validação
 
-> **Estado:** especificação global aprovada; primeiro incremento implementado: `ReportPeriod` e testes puros. A integração com controllers, captura única de `asOf`, autorização e consultas permanece pendente. Não houve migration, alteração de schema, tela ou exportação.
+> **Estado:** período integrado a `relatorios.php`; consultas OP-01 a OP-06 e MT-01 a MT-05 implementadas e cobertas por teste de banco. Frequência, financeiro, cartões do dashboard e CSV permanecem pendentes. Não houve migration ou alteração de schema.
 > **Pré-requisito:** catálogo 07.1 e definições de indicadores aprovados.
 > **Escopo desta etapa:** contratos de entrada/saída, datas, relógio, autorização, agregação e testes. Sem migrations, alteração de schema, telas ou exportação.
 
@@ -32,7 +32,7 @@ Uma consulta recebe:
 - `asOf`: instante confiável único, capturado pelo controller no fuso `America/Sao_Paulo` e passado explicitamente às regras temporais.
 - identidade/perfil autenticado: resolvido exclusivamente no servidor a partir da sessão; não aceitar objeto `permissions` fornecido pelo cliente. A autorização consulta `AccessControl` no servidor.
 
-**Implementado no primeiro incremento:** `ReportPeriod::fromInput($startDate, $endDate, $asOf)` recebe valores mistos para rejeitar também arrays/números enviados por query string. Quando ambos são `null`, cria o mês civil atual até a data de `asOf`; se somente um estiver ausente, falha. O objeto é imutável e expõe `getStartDateString()`, `getEndDateString()`, `getInclusiveDayCount()`, `getStartInclusiveLocal()`, `getEndInclusiveLocal()`, `getEndExclusiveLocal()`, `getStartInclusiveUtc()` e `getEndExclusiveUtc()`. Datas futuras explícitas são aceitas. A classe não lê o relógio, não acessa banco e não depende de controller. Testes: `tests/report-period.php` (40 asserções).
+**Implementado:** `ReportPeriod::fromInput($startDate, $endDate, $asOf)` recebe valores mistos para rejeitar arrays/números. Ambos `null` aplicam o mês civil atual até a data de `asOf`; ausência parcial falha. O objeto é imutável e expõe datas locais/UTC, strings de data e quantidade de dias inclusivos. Datas futuras explícitas são aceitas. `relatorios.php` captura um único `asOf` local, valida o período antes de consultar e retorna HTTP 400 sem fallback silencioso. O formulário preserva `de`/`ate`.
 
 Regras:
 1. A entrada HTTP usa `de` e `ate`. Se ambos estiverem ausentes, aplicar o período padrão do primeiro dia do mês civil atual até hoje, em `America/Sao_Paulo`.
@@ -257,6 +257,6 @@ A etapa só é considerada pronta quando:
 4. testes de datas, matrícula, moeda e RBAC passarem em MySQL 8.0 e MariaDB 10.11;
 5. nenhuma migration ou alteração de schema tiver sido introduzida sem necessidade comprovada e aprovação separada.
 
-**Parcialmente concluído:** parsing, período padrão, limites inclusivos/semiabertos, conversão UTC, limite de 365 dias, datas futuras e testes puros do objeto de valor. A integração HTTP e os demais critérios continuam pendentes.
+**Concluído nesta fatia:** `ReportPeriod`, integração HTTP, captura única de `asOf`, preservação de `de`/`ate`, HTTP 400 para período inválido, OP-01 a OP-06 e MT-01 a MT-05 em consultas específicas e teste integrado com fixtures transacionais. Frequência, financeiro, CSV e regressão visual permanecem pendentes.
 
-Após essa etapa, a 07.3 pode implementar os relatórios operacional e de matrículas sobre os contratos aprovados.
+Próximo incremento: implementar frequência FR-01 a FR-05, incluindo série diária com datas sem registros preenchidas com zero.
