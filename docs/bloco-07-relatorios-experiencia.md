@@ -1,6 +1,6 @@
 # Bloco 07 — Relatórios e experiência
 
-> **Estado:** direção da Visão geral aceita; decisões aprovadas por etapas: “Recebido no período”, FR-04 e FN-04 (23/11/2026). Os demais indicadores e critérios continuam em revisão. Nenhuma funcionalidade do Bloco 07 foi implementada.
+> **Estado:** direção da Visão geral aceita; decisões aprovadas por etapas: “Recebido no período”, FR-04, FN-04 e FN-05 (23/11/2026). FN-06 e os demais indicadores/critério continuam em revisão. Nenhuma funcionalidade do Bloco 07 foi implementada.
 > **Branch de referência:** `feat/dashboard-portfolio`.
 > **Dependência anterior:** Bloco 06 com validação automatizada aprovada na CI #1512. A validação manual dos blocos no XAMPP/dispositivo permanece adiada e registrada separadamente.
 > **Regra:** revisar e aprovar o catálogo `bloco-07-catalogo-indicadores.md` antes de iniciar a etapa 07.2. A aprovação da direção da Visão geral não antecipa a aprovação automática de cada fórmula ou endpoint.
@@ -179,7 +179,7 @@ Cada seção e cada endpoint CSV devem revalidar a permissão correspondente no 
 
 1. Confirmar os indicadores operacionais e de matrícula listados nas seções 3.1 e 3.2.
 2. Confirmar o relatório de frequência com total de entradas, alunos distintos e evolução diária.
-3. FN-01 a FN-04: definições aprovadas até 23/11/2026, incluindo vencimentos pelo período inclusivo e separação nominal entre matrículas não canceladas e canceladas/em revisão. FN-05 e FN-06 ainda precisam de aprovação específica.
+3. FN-01 a FN-05: definições aprovadas até 23/11/2026. FN-04 separa valores nominais por vencimento e situação atual da matrícula; FN-05 soma o saldo positivo de cobranças financeiramente não canceladas ligadas a matrículas não canceladas, como fotografia atual. FN-06 ainda precisa de aprovação específica.
 4. Confirmar CSV agregado somente, sem dados pessoais, deixando PDF/XLSX fora do MVP.
 5. Confirmar mês atual como período padrão e limite de 365 dias por consulta.
 6. Confirmar o uso das permissões existentes, com financeiro visível somente para Administrador/Gestor.
@@ -199,7 +199,7 @@ Entregáveis desta etapa:
 
 **Decisão registrada em 23/11/2026:** nomenclatura **“Recebido no período”** aprovada para a soma de pagamentos por `data_pagamento`; não chamar de faturamento ou lucro. O catálogo continua aguardando aprovação global das demais fórmulas e permissões.
 
-**Decisão registrada em 23/11/2026:** o rótulo **“Recebido no período”** foi aprovado para a soma dos pagamentos por `data_pagamento`, com legenda esclarecendo que se trata de pagamentos registrados e não de liquidação bancária. Os demais indicadores, filtros e permissões aguardam aprovação global.
+**Decisão registrada em 23/11/2026:** o rótulo **“Recebido no período”** foi aprovado para a soma dos pagamentos por `data_pagamento`, com legenda esclarecendo que se trata de pagamentos registrados e não de liquidação bancária. A decisão foi complementada pela aprovação de FR-04, FN-04 e FN-05; os demais indicadores, filtros e permissões continuam em revisão.
 
 **Saída esperada da 07.1:** especificação revisável e testável, sem alteração de banco nem implementação de telas. A etapa seguinte só começa depois da revisão das fórmulas e do contrato de acesso.
 

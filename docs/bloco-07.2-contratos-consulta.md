@@ -1,6 +1,6 @@
 # Bloco 07.2 — Contratos de consulta e validação
 
-> **Estado:** desenho técnico revisado; as decisões do catálogo estão sendo aprovadas por etapas. FN-04 foi aprovado em 23/11/2026; FN-05, FN-06 e demais itens permanecem em revisão. Não representa implementação.
+> **Estado:** desenho técnico revisado; as decisões do catálogo estão sendo aprovadas por etapas. FN-04 e FN-05 foram aprovados em 23/11/2026; FN-06 e demais itens permanecem em revisão. Não representa implementação.
 > **Pré-requisito:** catálogo 07.1 e definições de indicadores aprovados.
 > **Escopo desta etapa:** contratos de entrada/saída, datas, relógio, autorização, agregação e testes. Sem migrations, alteração de schema, telas ou exportação.
 
@@ -103,7 +103,7 @@ Regras:
 - Não adicionar índices preventivos ou migrations nesta etapa. Primeiro medir planos/consultas e demonstrar necessidade.
 - Não adicionar cache até existir medição; se futuramente adicionado, chave deve incluir período, instante/referência e conjunto de permissões.
 - Não usar `SQL_CALC_FOUND_ROWS`, nem buscar colunas não necessárias.
-- As consultas de matrícula devem respeitar cancelamentos e snapshots; consultas financeiras devem manter cobrança cancelada, saldo cobrável e saldo em revisão separados.
+- As consultas de matrícula devem respeitar cancelamentos e snapshots; consultas financeiras devem manter cobrança cancelada, saldo cobrável e saldo em revisão separados. FN-05 é fotografia atual: somar `max(valor_total - pagamentos_acumulados, 0)` para cobranças não canceladas financeiramente vinculadas a matrículas não canceladas, independentemente do período selecionado; reutilizar `FinanceDashboardStatus::collectibleBalanceCents()` ou provar paridade do agregado SQL.
 - **FN-04 aprovado:** filtrar `cobrancas.data_vencimento` com limites `>= :start_date` e `<= :end_date`; excluir `cobrancas.cancelada_em_utc IS NOT NULL`; agrupar por `matriculas.cancelada_em IS NULL` (grupo regular) versus `IS NOT NULL` (grupo “Em revisão”). Para cada grupo, retornar `COUNT(c.id)` e `SUM(c.valor_total)` como valor nominal original. O grupo regular inclui matrículas agendadas, ativas e vencidas, desde que não canceladas. A classificação reflete a situação atual, não a situação histórica na data do vencimento. Não juntar `pagamentos` nesta consulta, pois o indicador não calcula saldo e o join poderia multiplicar cobranças.
 
 ## 8. Matriz mínima de testes
@@ -140,6 +140,7 @@ Regras:
 - Cobrança cancelada financeiramente.
 - FN-04: datas de vencimento nos dois limites inclusivos; exclusão de cobrança cancelada financeiramente; separação entre matrícula não cancelada e cancelada/em revisão; matrícula agendada, ativa e vencida no grupo não cancelado; cobrança com pagamento parcial ou integral continua somando o valor original; ausência de duplicação por múltiplos pagamentos.
 - Matrícula cancelada com saldo em revisão.
+- FN-05: agregar pagamentos por cobrança antes do relacionamento; incluir somente cobrança não cancelada financeiramente ligada a matrícula não cancelada; calcular `max(valor_total - pagamentos_acumulados, 0)`; comprovar paridade com `FinanceDashboardStatus::collectibleBalanceCents()`; não aplicar filtro histórico de datas; saldo parcial, quitado, cancelamento financeiro e matrícula cancelada tratados corretamente.
 - Valores DECIMAL/centavos sem float.
 - Perfil Operador não aciona consulta financeira e não recebe campos financeiros.
 
