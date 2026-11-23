@@ -1,6 +1,6 @@
 # Bloco 07.1 — Catálogo e contrato dos indicadores
 
-> **Estado:** catálogo revisado tecnicamente; nomenclatura “Recebido no período” aprovada. Aprovação global dos demais indicadores e permissões ainda pendente. Nenhuma consulta, tela ou exportação do Bloco 07 foi implementada.
+> **Estado:** definições revisadas; decisões aprovadas até 23/11/2026: direção da Visão geral gerencial, nomenclatura “Recebido no período”, regra FR-04 e formato FN-04. Os demais indicadores e decisões de experiência/permissão continuam em revisão. Nenhuma consulta, tela ou exportação do Bloco 07 foi implementada.
 > **Branch:** `feat/dashboard-portfolio`.
 > **Documento principal:** [Bloco 07 — Relatórios e experiência](bloco-07-relatorios-experiencia.md).
 
@@ -136,7 +136,7 @@ A seção inteira requer `finance.view` tanto para HTML quanto para endpoints e 
 | FN-01 | Recebido no período | Soma de `pagamentos.valor` pela `data_pagamento` dentro do período local | Data declarada de pagamento |
 | FN-02 | Quantidade de pagamentos | Contagem de lançamentos incluídos em FN-01 | Data declarada de pagamento |
 | FN-03 | Recebido por forma de pagamento | FN-01 agrupado por `forma_pagamento` | Data declarada de pagamento e forma |
-| FN-04 | Cobranças com vencimento no período | Quantidade e soma do valor original de cobranças não canceladas financeiramente cuja `data_vencimento` está no período; apresentar separadamente de FN-01 | Data de vencimento, não data de recebimento |
+| FN-04 | Cobranças com vencimento no período | Quantidade e soma do valor original de cobranças não canceladas financeiramente cuja `data_vencimento` está no período. Separar em dois grupos: matrícula não cancelada e matrícula cancelada/em revisão. | Data de vencimento; classificação conforme estado atual da matrícula, não data de recebimento |
 | FN-05 | Saldo cobrável atual | Soma, por cobrança não cancelada financeiramente e vinculada a matrícula não cancelada, de `max(valor_total - pagamentos_acumulados, 0)` | Fotografia atual |
 | FN-06 | Saldo em revisão atual | Mesma diferença positiva para cobrança não cancelada financeiramente cuja matrícula está cancelada | Fotografia atual; valor exige decisão/revisão |
 
@@ -144,7 +144,7 @@ Regras adicionais:
 - `data_pagamento` é uma data inserida no lançamento e pode ser retroativa mediante justificativa. FN-01 usa essa data; `registrado_em_utc` é o instante em que o lançamento entrou no sistema.
 - FN-01 é a soma dos lançamentos de pagamento registrados manualmente no sistema cuja `data_pagamento` pertence ao período selecionado. O cartão usa o rótulo aprovado **“Recebido no período”**, acompanhado da legenda “Soma dos pagamentos registrados pela data informada no lançamento”. Como o serviço permite lançamentos retroativos com justificativa, a data do indicador é a data declarada do pagamento, não necessariamente o instante em que o sistema recebeu o lançamento. O sistema não comprova liquidação bancária; o indicador não representa receita contábil, lucro, conciliação bancária ou fluxo líquido após estornos.
 - Os pagamentos atuais são append-only; não existe neste escopo um fluxo de estorno que permita calcular recebimento líquido. Não subtrair cobranças, cancelamentos de matrícula ou valores em revisão do total de pagamentos.
-- FN-04 informa cobranças com vencimento, não pagamentos registrados nem saldo em aberto. Cobrança com pagamento integral continua tendo valor original; portanto não chamar a soma de FN-04 de “inadimplência”.
+- **FN-04 — decisão aprovada em 23/11/2026:** consultar `cobrancas.data_vencimento` no intervalo inclusivo e excluir cobranças com `cancelada_em_utc` preenchido. Apresentar quantidade e soma de `valor_total` em dois grupos: (A) matrícula não cancelada (`matriculas.cancelada_em IS NULL`), incluindo matrículas agendadas, ativas ou vencidas; (B) matrícula cancelada (`matriculas.cancelada_em IS NOT NULL`), identificada como “Em revisão”. A separação usa o estado atual da matrícula, não reconstrói seu estado na data do vencimento. O valor é o total nominal original da cobrança, mesmo quando parcialmente paga ou quitada; não representa recebido, inadimplência ou saldo em aberto. A consulta não precisa juntar `pagamentos`, evitando multiplicar cobranças por lançamentos.
 - FN-05 e FN-06 são saldos atuais e não devem reagir ao filtro histórico de datas. Cancelamento financeiro da cobrança zera sua contribuição; matrícula cancelada move o saldo não resolvido para revisão.
 - Usar DECIMAL/string/centavos inteiros e o formatador financeiro existente. Não converter moeda para float.
 - Se uma cobrança vinculada a matrícula cancelada ainda não foi financeiramente cancelada, seu saldo vai para FN-06, não FN-05.

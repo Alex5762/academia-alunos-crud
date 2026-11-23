@@ -26,10 +26,10 @@ Enquanto o acesso ao XAMPP/dispositivo não estiver disponível, continuar com e
 ### Blocos ainda por desenvolver
 
 - **Bloco 06 — Grade fixa de aulas:** implementação e validação automatizada aprovadas na CI #1512; validação manual no XAMPP/dispositivo permanece pendente.
-- **Bloco 07 — Relatórios e experiência:** proposta de escopo registrada em `docs/bloco-07-relatorios-experiencia.md`; aguarda aprovação das decisões antes da implementação.
+- **Bloco 07 — Relatórios e experiência:** especificação em revisão por etapas. Direção da Visão geral, “Recebido no período”, FR-04 e FN-04 aprovados; FN-05, FN-06 e demais decisões continuam pendentes. Implementação ainda não iniciada.
 - **Bloco 08 — Preparação para produção:** etapa futura, não iniciar como se fosse apenas deploy; depende de revisão independente e plano operacional/de segurança.
 
-**Próximo passo: revisar e aprovar globalmente o catálogo 07.1 e o contrato 07.2**. Só então iniciar a implementação dos contratos de consulta e testes. A validação manual do Bloco 06 permanece adiada e não deve ser declarada concluída. A validação local dos Blocos 03–05 permanece registrada como adiada, não como concluída.
+**Próximo passo: continuar a revisão individual dos indicadores ainda pendentes no catálogo 07.1 e validar os contratos 07.2 correspondentes**. A implementação só começa após o fechamento e a aprovação do escopo necessário. A validação manual do Bloco 06 permanece adiada e não deve ser declarada concluída. A validação local dos Blocos 03–05 permanece registrada como adiada, não como concluída.
 
 ---
 

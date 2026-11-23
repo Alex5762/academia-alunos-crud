@@ -1,6 +1,6 @@
 # Bloco 07.2 — Contratos de consulta e validação
 
-> **Estado:** desenho técnico inicial revisado; aguarda aprovação junto ao catálogo 07.1. Não representa implementação.
+> **Estado:** desenho técnico revisado; as decisões do catálogo estão sendo aprovadas por etapas. FN-04 foi aprovado em 23/11/2026; FN-05, FN-06 e demais itens permanecem em revisão. Não representa implementação.
 > **Pré-requisito:** catálogo 07.1 e definições de indicadores aprovados.
 > **Escopo desta etapa:** contratos de entrada/saída, datas, relógio, autorização, agregação e testes. Sem migrations, alteração de schema, telas ou exportação.
 
@@ -104,6 +104,7 @@ Regras:
 - Não adicionar cache até existir medição; se futuramente adicionado, chave deve incluir período, instante/referência e conjunto de permissões.
 - Não usar `SQL_CALC_FOUND_ROWS`, nem buscar colunas não necessárias.
 - As consultas de matrícula devem respeitar cancelamentos e snapshots; consultas financeiras devem manter cobrança cancelada, saldo cobrável e saldo em revisão separados.
+- **FN-04 aprovado:** filtrar `cobrancas.data_vencimento` com limites `>= :start_date` e `<= :end_date`; excluir `cobrancas.cancelada_em_utc IS NOT NULL`; agrupar por `matriculas.cancelada_em IS NULL` (grupo regular) versus `IS NOT NULL` (grupo “Em revisão”). Para cada grupo, retornar `COUNT(c.id)` e `SUM(c.valor_total)` como valor nominal original. O grupo regular inclui matrículas agendadas, ativas e vencidas, desde que não canceladas. A classificação reflete a situação atual, não a situação histórica na data do vencimento. Não juntar `pagamentos` nesta consulta, pois o indicador não calcula saldo e o join poderia multiplicar cobranças.
 
 ## 8. Matriz mínima de testes
 
@@ -137,6 +138,7 @@ Regras:
 - Pagamento por `data_pagamento`, mesmo quando `registrado_em_utc` pertence a outro dia.
 - Pagamento parcial e integral.
 - Cobrança cancelada financeiramente.
+- FN-04: datas de vencimento nos dois limites inclusivos; exclusão de cobrança cancelada financeiramente; separação entre matrícula não cancelada e cancelada/em revisão; matrícula agendada, ativa e vencida no grupo não cancelado; cobrança com pagamento parcial ou integral continua somando o valor original; ausência de duplicação por múltiplos pagamentos.
 - Matrícula cancelada com saldo em revisão.
 - Valores DECIMAL/centavos sem float.
 - Perfil Operador não aciona consulta financeira e não recebe campos financeiros.

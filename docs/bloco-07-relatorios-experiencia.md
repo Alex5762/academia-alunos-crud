@@ -1,6 +1,6 @@
 # Bloco 07 — Relatórios e experiência
 
-> **Estado:** direção da Visão geral aceita; catálogo 07.1 e desenho 07.2 documentados e revisados tecnicamente. Recomendações da revisão aguardam decisão. Nenhuma funcionalidade do Bloco 07 foi implementada.
+> **Estado:** direção da Visão geral aceita; decisões aprovadas por etapas: “Recebido no período”, FR-04 e FN-04 (23/11/2026). Os demais indicadores e critérios continuam em revisão. Nenhuma funcionalidade do Bloco 07 foi implementada.
 > **Branch de referência:** `feat/dashboard-portfolio`.
 > **Dependência anterior:** Bloco 06 com validação automatizada aprovada na CI #1512. A validação manual dos blocos no XAMPP/dispositivo permanece adiada e registrada separadamente.
 > **Regra:** revisar e aprovar o catálogo `bloco-07-catalogo-indicadores.md` antes de iniciar a etapa 07.2. A aprovação da direção da Visão geral não antecipa a aprovação automática de cada fórmula ou endpoint.
@@ -179,7 +179,7 @@ Cada seção e cada endpoint CSV devem revalidar a permissão correspondente no 
 
 1. Confirmar os indicadores operacionais e de matrícula listados nas seções 3.1 e 3.2.
 2. Confirmar o relatório de frequência com total de entradas, alunos distintos e evolução diária.
-3. Confirmar o relatório financeiro limitado a recebimentos por `data_pagamento`, vencimentos de cobranças e fotografia atual de saldos.
+3. FN-01 a FN-04: definições aprovadas até 23/11/2026, incluindo vencimentos pelo período inclusivo e separação nominal entre matrículas não canceladas e canceladas/em revisão. FN-05 e FN-06 ainda precisam de aprovação específica.
 4. Confirmar CSV agregado somente, sem dados pessoais, deixando PDF/XLSX fora do MVP.
 5. Confirmar mês atual como período padrão e limite de 365 dias por consulta.
 6. Confirmar o uso das permissões existentes, com financeiro visível somente para Administrador/Gestor.

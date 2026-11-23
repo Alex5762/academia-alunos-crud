@@ -1,6 +1,6 @@
 # Revisão técnica do Bloco 07 — aderência, métricas e arquitetura
 
-> **Estado:** primeira revisão técnica concluída; recomendações registradas, aguardando decisão do responsável pelo projeto.
+> **Estado:** revisão técnica em andamento; decisões aprovadas até 23/11/2026 incluem Visão geral, “Recebido no período”, FR-04 e FN-04. As demais recomendações continuam sujeitas à revisão e aprovação do responsável pelo projeto.
 > **Data:** 23/11/2026.
 > **Escopo analisado:** catálogo 07.1, contratos 07.2, código atual de alunos, matrículas, frequência, financeiro, RBAC e dashboard.
 > **Importante:** esta revisão não implementa funcionalidades, não altera schema e não substitui a aprovação do escopo.
@@ -58,7 +58,7 @@ A CI #1530 aprovou sete jobs funcionais no HEAD correspondente. O job de publica
 | FN-01 — Recebido no período | **Manter** | Mesmo cálculo e legenda de VG-05. A fonte da verdade é `pagamentos`; não somar cobranças. |
 | FN-02 — Quantidade de pagamentos | **Manter** | Contar exatamente os lançamentos que compõem FN-01, pelo mesmo filtro `data_pagamento`. |
 | FN-03 — Por forma de pagamento | **Manter** | Agrupar os mesmos pagamentos por `forma_pagamento`; usar valores ENUM existentes. |
-| FN-04 — Cobranças com vencimento | **Manter com separação de revisão** | Consultar cobranças não canceladas financeiramente cuja `data_vencimento` pertence ao período. Separar as vinculadas a matrícula não cancelada das vinculadas a matrícula cancelada (“em revisão”). Somar o valor original contratado da cobrança, nunca chamar isso de recebido, inadimplência ou saldo em aberto. Deixar claro que a seleção é por vencimento e a classificação de cancelamento/revisão é a situação atual, não reconstrução histórica. |
+| FN-04 — Cobranças com vencimento | **Aprovado em 23/11/2026** | Filtrar `data_vencimento` pelo intervalo inclusivo e excluir cobranças canceladas financeiramente. Exibir quantidade e soma do valor nominal original em dois grupos: matrícula não cancelada (inclui agendada, ativa ou vencida) e matrícula cancelada (“Em revisão”). A classificação usa o estado atual da matrícula, não reconstrói o estado na data de vencimento. Não chamar os valores de recebimento, inadimplência ou saldo em aberto; não juntar pagamentos à consulta nominal. |
 | FN-05 — Saldo cobrável atual | **Manter** | Reutilizar a regra de `FinanceDashboardStatus::collectibleBalanceCents()` ou cálculo equivalente já testado. É fotografia atual, independente do filtro de período. |
 | FN-06 — Saldo em revisão atual | **Manter** | Reutilizar `FinanceDashboardStatus::reviewBalanceCents()`. Não tratar saldo de contrato cancelado como cobrança normalmente cobrável. |
 
@@ -66,7 +66,7 @@ A CI #1530 aprovou sete jobs funcionais no HEAD correspondente. O job de publica
 
 1. Pagamentos são append-only; não existe fluxo de estorno implementado. Não tentar subtrair pagamentos nem chamar a soma de recebimento líquido.
 2. O serviço aceita `data_pagamento` retroativa mediante observação, e impede datas futuras. A legenda deve tornar essa semântica visível.
-3. FN-04 é valor nominal das cobranças que vencem no período, não o saldo ainda aberto. Cobranças quitadas continuam com seu valor original.
+3. FN-04 é valor nominal das cobranças que vencem no período, não o saldo ainda aberto. Cobranças quitadas continuam com seu valor original. O total e a quantidade são separados entre matrículas não canceladas e canceladas/em revisão, conforme o estado atual; cobranças canceladas financeiramente são excluídas.
 4. Uma cobrança de matrícula cancelada pode permanecer não cancelada financeiramente para revisão, especialmente quando já houve pagamento. Separar esse grupo.
 5. Para calcular saldos, pré-agregar pagamentos por cobrança antes do JOIN com cobranças/matrículas. Evitar multiplicação de linhas e soma duplicada.
 6. Usar DECIMAL/string/centavos inteiros e o formatador existente; nunca converter moeda para float.
