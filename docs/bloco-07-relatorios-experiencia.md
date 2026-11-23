@@ -1,12 +1,13 @@
 # Bloco 07 — Relatórios e experiência
 
-> **Estado:** direção da Visão geral aceita; catálogo técnico da etapa 07.1 documentado e aguardando revisão/aprovação. Nenhuma funcionalidade do Bloco 07 foi implementada.
+> **Estado:** direção da Visão geral aceita; catálogo 07.1 e desenho 07.2 documentados e revisados tecnicamente. Recomendações da revisão aguardam decisão. Nenhuma funcionalidade do Bloco 07 foi implementada.
 > **Branch de referência:** `feat/dashboard-portfolio`.
 > **Dependência anterior:** Bloco 06 com validação automatizada aprovada na CI #1512. A validação manual dos blocos no XAMPP/dispositivo permanece adiada e registrada separadamente.
 > **Regra:** revisar e aprovar o catálogo `bloco-07-catalogo-indicadores.md` antes de iniciar a etapa 07.2. A aprovação da direção da Visão geral não antecipa a aprovação automática de cada fórmula ou endpoint.
 
 ## Documentos do bloco
 
+- [Revisão técnica de indicadores e arquitetura](revisao-tecnica-bloco-07.md) — parecer de aderência ao código atual e boas práticas; recomendações aguardam aprovação.
 - [Catálogo e contrato dos indicadores — etapa 07.1](bloco-07-catalogo-indicadores.md)
 
 ## 1. Objetivo
