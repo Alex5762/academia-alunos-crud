@@ -1,6 +1,6 @@
 # Bloco 07.2 — Contratos de consulta e validação
 
-> **Estado:** `ReportPeriod`, OP-01 a OP-06, MT-01 a MT-05, FR-01 a FR-05 e FN-01 a FN-06 estão integrados à página `relatorios.php` e validados na CI #1595 em MySQL 8.0/MariaDB 10.11. As consultas financeiras passam pelos testes de integração e autorização `finance.view`. Cartões VG-01 a VG-06 no dashboard, CSV agregado e regressão visual final permanecem pendentes. Nenhuma migration ou alteração de schema foi feita.
+> **Estado:** `ReportPeriod`, OP-01 a OP-06, MT-01 a MT-05, FR-01 a FR-05 e FN-01 a FN-06 estão integrados à página `relatorios.php` e validados na CI #1595 em MySQL 8.0/MariaDB 10.11. As consultas financeiras passam pelos testes de integração e autorização `finance.view`. VG-01 a VG-06 e o filtro de período foram integrados à Visão geral na branch; a nova cobertura visual/HTTP aguarda CI. CSV agregado e regressão visual final permanecem pendentes. Nenhuma migration ou alteração de schema foi feita.
 > **Pré-requisito:** catálogo 07.1 e definições de indicadores aprovados.
 > **Escopo desta etapa:** contratos de entrada/saída, datas, relógio, autorização, agregação e testes. Sem migrations, alteração de schema, telas ou exportação.
 
@@ -217,7 +217,7 @@ MT-01 a MT-05 usam `enrollments.view` e o período local normalizado em limites 
 **Implementação FN-01 a FN-06:** `FinanceReportQuery::forPeriod()` consulta pagamentos sem JOIN com matrículas/cobranças, agrega FN-01/FN-02 e agrupa FN-03 pela allowlist do ENUM, validando reconciliação em centavos. FN-04 consulta cobranças sem JOIN com pagamentos e separa matrículas não canceladas/em revisão. FN-05/FN-06 pré-agregam pagamentos por cobrança e reutilizam `FinanceDashboardStatus` para os saldos atuais. `relatorios.php` executa a consulta somente após verificar `finance.view`; a seção é omitida para Operador. O teste `database-finance.php` foi ampliado para cobrir datas retroativas, cancelamentos posteriores, as cinco formas, períodos vazios, vencimentos e paridade dos saldos. A nova CI ainda precisa confirmar esse incremento.
 
 ### Apresentação e acessibilidade
-- Os cartões VG-01 a VG-06 aparecem nos dois grupos aprovados; Operador não recebe VG-05 nem espaço/placeholder financeiro.
+- [x] Os cartões VG-01 a VG-06 aparecem nos dois grupos aprovados; Operador não recebe VG-05 nem espaço/placeholder financeiro. A cobertura Playwright da renderização aguarda CI.
 - O painel de distribuição cadastral usa somente alunos ativos como denominador; zero alunos ativos ou ausência de grupos produz estado vazio e nunca divisão por zero.
 - Pesquisa, filtros, listagem de alunos e atalho de cadastro permanecem disponíveis após a composição dos cards.
 - Relatórios operacional/matrículas usam apresentação tabular; frequência oferece gráfico de barras diário com tabela/resumo equivalente; financeiro oferece resumo e tabela por forma.
