@@ -29,7 +29,7 @@ Enquanto o acesso ao XAMPP/dispositivo não estiver disponível, continuar com e
 - **Bloco 07 — Relatórios e experiência:** proposta de escopo registrada em `docs/bloco-07-relatorios-experiencia.md`; aguarda aprovação das decisões antes da implementação.
 - **Bloco 08 — Preparação para produção:** etapa futura, não iniciar como se fosse apenas deploy; depende de revisão independente e plano operacional/de segurança.
 
-**Próximo passo: concluir e revisar a etapa 07.1 do Bloco 07 — Relatórios e experiência**, fechando o catálogo de indicadores, seus eixos temporais, filtros e permissões antes de iniciar a implementação. A validação manual do Bloco 06 permanece adiada e não deve ser declarada concluída. A validação local dos Blocos 03–05 permanece registrada como adiada, não como concluída.
+**Próximo passo: revisar e aprovar o catálogo técnico da etapa 07.1 do Bloco 07 — Relatórios e experiência**. Depois da aprovação, iniciar 07.2 com contratos de consulta, relógio, validação de período e testes. A validação manual do Bloco 06 permanece adiada e não deve ser declarada concluída. A validação local dos Blocos 03–05 permanece registrada como adiada, não como concluída.
 
 ---
 
@@ -259,17 +259,13 @@ A migration 014 cria modalidades, instrutores e horários semanais recorrentes. 
 
 ### Bloco 07 — Relatórios e experiência
 
-**Estado: direção da Visão geral gerencial aceita para especificação; etapa 07.1 em andamento. Nenhuma funcionalidade do bloco foi implementada.** Documento: [Bloco 07 — Relatórios e experiência](bloco-07-relatorios-experiencia.md). Catálogo técnico: [Bloco 07.1 — Catálogo e contrato dos indicadores](bloco-07-catalogo-indicadores.md).
+**Estado: direção da Visão geral gerencial aceita; catálogo técnico da etapa 07.1 documentado e aguardando revisão/aprovação. Nenhuma funcionalidade do bloco foi implementada.** Documentos: [proposta do Bloco 07](bloco-07-relatorios-experiencia.md) e [catálogo de indicadores 07.1](bloco-07-catalogo-indicadores.md).
 
-A Visão geral será uma camada de resumo dentro do dashboard existente, separando fotografia atual (alunos e matrículas vigentes), movimentação do período (check-ins e pagamentos registrados conforme permissão) e alertas próximos (términos contratuais nos próximos 7 dias). Os cartões devem reutilizar os mesmos agregadores dos relatórios detalhados; perfis sem `finance.view` não podem receber nem consultar dados financeiros.
+A Visão geral será uma camada resumida dentro do dashboard existente, distinguindo fotografia atual, movimentação do período e alertas próximos. Os cartões reutilizarão as definições dos relatórios detalhados; dados financeiros exigem `finance.view` e não podem ser enviados ao perfil Operador.
 
-A etapa 07.1 possui catálogo técnico inicial com fórmulas, fontes, eixos temporais, filtros, permissões e links entre cartões e relatórios; aguarda revisão antes da implementação. Pagamentos são descritos como lançamentos registrados no sistema, sem alegação de conciliação bancária.
+O catálogo 07.1 formaliza fórmulas, fontes, eixos temporais, conversão local/UTC, filtros de até 365 dias, permissões, exportação CSV agregada e limites semânticos. A próxima etapa, 07.2, só começa após a revisão e aprovação do catálogo.
 
-A proposta prevê filtros de até 365 dias, gráficos acompanhados por tabelas e exportação CSV somente agregada, sem dados pessoais. As permissões existentes serão reutilizadas: relatórios operacionais conforme `students.view`/`enrollments.view`, frequência com `attendance.view` e financeiro exclusivamente com `finance.view` (Administrador/Gestor). Não serão criadas permissões genéricas nem migrations preventivas.
-
-**Fora do escopo:** presença por modalidade/aula, saldos financeiros históricos não reconstruíveis, exportação de dados pessoais, PDF/XLSX, BI, previsões, metas e churn.
-
-**Próximo passo:** concluir e revisar a etapa 07.1, fechando o catálogo de indicadores, os eixos temporais, os filtros e as permissões antes de iniciar a implementação.
+**Fora do escopo:** presença por modalidade/aula, histórico não reconstruível, dados pessoais em exportações, PDF/XLSX, BI, previsões, metas, churn e comparações percentuais sem base temporal confiável.
 
 ### Bloco 08 — Preparação para produção
 
