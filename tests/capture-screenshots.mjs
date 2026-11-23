@@ -133,6 +133,63 @@ try {
       throw new Error(`O nome do arquivo CSV não identifica o relatório ${reportType}.`);
     }
   }
+  // Reflow WCAG em 320 CSS px, controles rotulados, foco visível e movimento reduzido.
+  await desktop.setViewportSize({ width: 320, height: 900 });
+  await desktop.goto(`${baseUrl}/relatorios.php?de=${periodStart}&ate=${periodEnd}`, {
+    waitUntil: "networkidle",
+  });
+  await desktop.getByRole("heading", { name: "Relatórios" }).waitFor();
+  const reportReflow = await desktop.evaluate(() => ({
+    viewport: document.documentElement.clientWidth,
+    document: document.documentElement.scrollWidth,
+    unlabeledControls: [...document.querySelectorAll("input,button,select,textarea")]
+      .filter((element) => !element.labels?.length && !element.getAttribute("aria-label") && !element.getAttribute("aria-labelledby"))
+      .map((element) => element.outerHTML.slice(0, 120)),
+    exportTargets: [...document.querySelectorAll(".reports-export-links a")].map((element) => ({
+      width: element.getBoundingClientRect().width,
+      height: element.getBoundingClientRect().height,
+    })),
+  }));
+  if (reportReflow.document > reportReflow.viewport) {
+    throw new Error(`Relatórios excederam a largura em 320px (${reportReflow.document}px > ${reportReflow.viewport}px).`);
+  }
+  if (reportReflow.unlabeledControls.length) {
+    throw new Error("Relatórios possuem controles sem nome acessível: " + reportReflow.unlabeledControls.join("; "));
+  }
+  if (reportReflow.exportTargets.some((target) => target.width < 24 || target.height < 24)) {
+    throw new Error("Há alvo de exportação menor que 24 × 24 CSS px.");
+  }
+  await desktop.locator("#report-start").focus();
+  await desktop.keyboard.press("Tab");
+  const keyboardFocus = await desktop.evaluate(() => {
+    const element = document.activeElement;
+    const style = element ? getComputedStyle(element) : null;
+    return {
+      id: element?.id ?? "",
+      focusVisible: element?.matches(":focus-visible") ?? false,
+      outlineStyle: style?.outlineStyle ?? "none",
+      outlineWidth: style?.outlineWidth ?? "0px",
+    };
+  });
+  if (!keyboardFocus.focusVisible || keyboardFocus.outlineStyle === "none" || Number.parseFloat(keyboardFocus.outlineWidth) < 2) {
+    throw new Error("A navegação por teclado não apresenta indicador de foco visível no filtro de relatórios.");
+  }
+  await desktop.emulateMedia({ reducedMotion: "reduce" });
+  const reducedMotion = await desktop.evaluate(() => ({
+    preference: matchMedia("(prefers-reduced-motion: reduce)").matches,
+    transition: getComputedStyle(document.querySelector(".reports-export-links a")).transitionDuration,
+    animation: getComputedStyle(document.querySelector(".reports-export-links a")).animationDuration,
+  }));
+  const toMilliseconds = (value) => Math.max(...value.split(",").map((part) => {
+    const trimmed = part.trim();
+    return trimmed.endsWith("ms") ? Number.parseFloat(trimmed) : Number.parseFloat(trimmed) * 1000;
+  }));
+  if (!reducedMotion.preference || toMilliseconds(reducedMotion.transition) > 1 || toMilliseconds(reducedMotion.animation) > 1) {
+    throw new Error("A página de relatórios não respeitou prefers-reduced-motion.");
+  }
+  await desktop.emulateMedia({ reducedMotion: "no-preference" });
+  await desktop.setViewportSize({ width: 1440, height: 1100 });
+
   await desktop.goto(`${baseUrl}/index.php`, { waitUntil: "networkidle" });
   await desktop.getByRole("heading", { name: "Visão geral" }).waitFor();
 
