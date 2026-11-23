@@ -7,11 +7,11 @@ require_once __DIR__ . '/src/Domain/Reports/FrequencyReportQuery.php';
 require_once __DIR__ . '/src/Domain/Reports/FinanceReportQuery.php';
 require_once __DIR__ . '/src/Domain/Finance/FinanceMoneyFormatter.php';
 
-use FitControl\Domain\Reports\\ReportPeriod;
-use FitControl\Domain\Reports\\OperationalReportQuery;
-use FitControl\Domain\Reports\\FrequencyReportQuery;
-use FitControl\Domain\Reports\\FinanceReportQuery;
-use FitControl\Domain\Finance\\FinanceMoneyFormatter;
+use FitControl\Domain\Reports\ReportPeriod;
+use FitControl\Domain\Reports\OperationalReportQuery;
+use FitControl\Domain\Reports\FrequencyReportQuery;
+use FitControl\Domain\Reports\FinanceReportQuery;
+use FitControl\Domain\Finance\FinanceMoneyFormatter;
 
 $usuario = exigirAutenticacao($pdo);
 exigirPermissao($usuario, 'dashboard.view');
