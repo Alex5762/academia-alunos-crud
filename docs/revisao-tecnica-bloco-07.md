@@ -1,6 +1,6 @@
 # Revisão técnica do Bloco 07 — aderência, métricas e arquitetura
 
-> **Estado atualizado após CI #1595:** consultas operacionais, matrículas, frequência e financeiro implementadas e validadas em MySQL 8.0/MariaDB 10.11. Permanecem pendentes cartões VG-01 a VG-06 no dashboard, CSV agregado e regressão final.
+> **Estado atualizado após CI #1595 e incremento VG:** consultas operacionais, matrículas, frequência e financeiro implementadas e validadas em MySQL 8.0/MariaDB 10.11. VG-01 a VG-06 e o filtro de período foram integrados à Visão geral na branch, com cobertura Playwright atualizada e CI pendente. Permanecem CSV agregado e regressão final.
 > **Data:** 23/11/2026.
 > **Escopo analisado:** catálogo 07.1, contratos 07.2, código atual de alunos, matrículas, frequência, financeiro, RBAC e dashboard.
 > **Importante:** esta revisão não implementa funcionalidades, não altera schema e não substitui a aprovação do escopo.
@@ -174,4 +174,4 @@ Não alterar `index.php` inteiro de uma vez. Extrair somente as consultas novas 
 - [W3C — WCAG 2.2, SC 2.5.8 Target Size (Minimum)](https://www.w3.org/WAI/WCAG22/Understanding/target-size-minimum): alvos de pelo menos 24 × 24 CSS px, com exceções definidas.
 - [W3C — WCAG 2.2, SC 1.4.10 Reflow](https://www.w3.org/WAI/WCAG22/Understanding/reflow): apresentação sem perda de informação/funcionalidade a 320 CSS px, exceto conteúdos que exijam layout bidimensional.
 
-**Resultado atualizado após a CI #1595:** `ReportPeriod`, OP-01 a OP-06, MT-01 a MT-05, FR-01 a FR-05 e FN-01 a FN-06 estão implementados e validados em MySQL 8.0/MariaDB 10.11. Nenhuma alteração de schema foi feita para o Bloco 07. O próximo incremento é integrar os seis cartões VG-01 a VG-06 à Visão geral, corrigir a distribuição cadastral por plano e depois implementar o CSV agregado seguro. A regressão visual/acessível específica dos relatórios ainda precisa ser concluída.
+**Resultado atualizado:** `ReportPeriod`, OP-01 a OP-06, MT-01 a MT-05, FR-01 a FR-05 e FN-01 a FN-06 estão implementados e validados na CI #1595 em MySQL 8.0/MariaDB 10.11. Os cartões VG-01 a VG-06 e o filtro de período foram integrados à Visão geral na branch, com teste de captura visual atualizado; essa alteração aguarda CI. Nenhuma alteração de schema foi feita para o Bloco 07. Permanecem o CSV agregado seguro e a regressão visual/acessível final.
