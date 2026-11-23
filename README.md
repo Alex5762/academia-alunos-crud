@@ -40,6 +40,14 @@ As imagens abaixo são capturadas automaticamente pelo GitHub Actions com regist
 
 O módulo cria uma cobrança única pelo contrato, registra pagamentos parciais com transações, idempotência, histórico append-only, auditoria e controle de saldo. O painel separa valores cobráveis de valores em revisão e restringe as operações por RBAC. Os achados F-01 a F-08 foram implementados e validados nas CIs financeiras #1332, #1361, #1362, #1385 e #1397; a CI geral #1420 passou com integração CRUD/Playwright e teste HTTP de bloqueio do perfil Operador. Consulte `docs/bloco-05-financeiro.md` e `docs/revisao-financeira-2026-11-22.md`. O banco local/XAMPP ainda não foi migrado nem testado manualmente; o módulo não deve ser considerado pronto para produção.
 
+## Bloco 06 — Aulas e agenda (CI aprovada; validação local pendente)
+
+O módulo oferece grade semanal fixa, catálogo de modalidades e instrutores, cadastro/edição/inativação de horários, filtros, proteção contra conflitos e auditoria. A CI #1512 aprovou os testes de banco, HTTP e Playwright em Chromium, Firefox e WebKit, incluindo MySQL 8.0 e MariaDB 10.11. A aplicação controlada da migration 014 no XAMPP e a inspeção manual em dispositivo físico continuam pendentes. Consulte `docs/bloco-06-aulas-agenda.md`.
+
+## Bloco 07 — Relatórios e experiência (proposta; ainda não implementado)
+
+O escopo inicial está documentado em `docs/bloco-07-relatorios-experiencia.md` e aguarda aprovação antes da implementação. A proposta utiliza os dados existentes de alunos, matrículas, check-ins, cobranças e pagamentos, com permissões por domínio e exportação CSV agregada sem dados pessoais.
+
 ## Funcionalidades
 
 - Dashboard com total de alunos cadastrados.
