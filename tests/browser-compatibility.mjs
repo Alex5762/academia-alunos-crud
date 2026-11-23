@@ -210,7 +210,14 @@ for (const engine of engines) {
     await page.getByRole("status").filter({
       hasText: "Horário inativado. O registro e a auditoria foram preservados.",
     }).waitFor();
-    await page.getByText("Registro preservado para histórico").waitFor();
+    const inactiveHistoryNote = page.locator(".class-schedule-inactive-note").filter({
+      hasText: "Registro preservado para histórico",
+    });
+    ensure(
+      await inactiveHistoryNote.count() >= 1,
+      engine.name + ": o horário inativado não foi preservado no histórico.",
+    );
+    await inactiveHistoryNote.first().waitFor();
 
     await page.setViewportSize({ width: 390, height: 844 });
     await assertNoDocumentOverflow(page, engine.name, "gestão de horários após CRUD mobile de 390px");
