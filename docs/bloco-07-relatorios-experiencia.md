@@ -1,9 +1,13 @@
 # Bloco 07 — Relatórios e experiência
 
-> **Estado:** direção da visão geral gerencial aceita para especificação; etapa 07.1 em andamento. As definições finais dos relatórios, fórmulas, filtros, exportações e permissões ainda precisam ser fechadas. Nenhuma funcionalidade do Bloco 07 foi implementada.
+> **Estado:** direção da Visão geral aceita; catálogo técnico da etapa 07.1 documentado e aguardando revisão/aprovação. Nenhuma funcionalidade do Bloco 07 foi implementada.
 > **Branch de referência:** `feat/dashboard-portfolio`.
 > **Dependência anterior:** Bloco 06 com validação automatizada aprovada na CI #1512. A validação manual dos blocos no XAMPP/dispositivo permanece adiada e registrada separadamente.
-> **Regra:** concluir e revisar a etapa 07.1 antes de iniciar a implementação. A aprovação da visão geral autoriza sua especificação, não antecipa a aprovação automática de cada fórmula ou endpoint.
+> **Regra:** revisar e aprovar o catálogo `bloco-07-catalogo-indicadores.md` antes de iniciar a etapa 07.2. A aprovação da direção da Visão geral não antecipa a aprovação automática de cada fórmula ou endpoint.
+
+## Documentos do bloco
+
+- [Catálogo e contrato dos indicadores — etapa 07.1](bloco-07-catalogo-indicadores.md)
 
 ## 1. Objetivo
 
