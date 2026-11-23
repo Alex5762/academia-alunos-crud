@@ -37,7 +37,7 @@ A tela deve distinguir explicitamente três grupos de informação:
 
 **Movimentação no período selecionado**
 - check-ins realizados no período, quantidade de entradas e alunos distintos;
-- total efetivamente recebido no período, usando `pagamentos.data_pagamento`, somente para quem possui `finance.view`.
+- total de pagamentos registrados no período, usando `pagamentos.data_pagamento`, somente para quem possui `finance.view`.
 
 **Atenção próxima (referência: data atual)**
 - matrículas cujo término contratual está previsto nos próximos 7 dias, respeitando `fim_exclusivo_em` e sem tratar cobranças como pagamentos.
@@ -91,9 +91,9 @@ O período usa `checkins.data_local`, que já representa a data civil no fuso da
 
 Visível somente a quem possui `finance.view`:
 
-- total recebido no período, agrupado por `pagamentos.data_pagamento`;
+- total de pagamentos registrados no período, agrupado por `pagamentos.data_pagamento`;
 - quantidade de pagamentos e distribuição por forma de pagamento;
-- valores de cobranças com vencimento no período, apresentados separadamente do dinheiro recebido;
+- valores de cobranças com vencimento no período, apresentados separadamente dos pagamentos registrados;
 - fotografia atual de saldo cobrável e saldo em revisão, caso reutilize os indicadores existentes do painel financeiro.
 
 Não apresentar saldo histórico de uma data passada como fato garantido sem definir uma consulta temporal que considere pagamentos, cancelamentos e lançamentos retroativos. Não somar cobranças canceladas nem tratar matrícula cancelada como pagamento estornado.
@@ -162,7 +162,7 @@ Cada seção e cada endpoint CSV devem revalidar a permissão correspondente no 
 - [ ] Filtros de data rejeitam datas inválidas, períodos invertidos e intervalos acima do limite.
 - [ ] Agregados de matrículas respeitam `inicio_em`, `fim_exclusivo_em`, cancelamento e origem.
 - [ ] Agregados de frequência usam `data_local` e contam alunos distintos sem duplicar entradas.
-- [ ] Agregados financeiros distinguem cobranças, pagamentos recebidos, saldo cobrável e saldo em revisão.
+- [ ] Agregados financeiros distinguem cobranças, pagamentos registrados, saldo cobrável e saldo em revisão.
 - [ ] Operador não consegue consultar nem exportar dados financeiros; Admin/Gestor conseguem.
 - [ ] Todos os endpoints validam autorização no servidor e usam consultas preparadas.
 - [ ] CSV contém somente agregados permitidos, respeita filtros/RBAC e neutraliza conteúdo de fórmula.
@@ -180,7 +180,9 @@ Cada seção e cada endpoint CSV devem revalidar a permissão correspondente no 
 6. Confirmar o uso das permissões existentes, com financeiro visível somente para Administrador/Gestor.
 7. Confirmar a Visão geral como camada de resumo do dashboard existente, com fotografia atual, indicadores do período, alerta de términos próximos e atalhos para relatórios.
 
-### Etapa 07.1 — definição dos indicadores (em andamento)
+### Etapa 07.1 — definição dos indicadores (especificação inicial concluída para revisão)
+
+Catálogo detalhado: [Bloco 07.1 — Catálogo e contrato dos indicadores](bloco-07-catalogo-indicadores.md).
 
 Entregáveis desta etapa:
 - catálogo de indicadores com nome exibido, finalidade, fórmula, fonte de dados, eixo temporal, referência de data, permissão exigida e ressalvas;
