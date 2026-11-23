@@ -141,12 +141,14 @@ academia-alunos-crud/
 │   ├── Domain/Reports/OperationalReportQuery.php
 │   ├── Domain/Reports/EnrollmentReportQuery.php
 │   ├── Domain/Reports/FrequencyReportQuery.php
+│   ├── Domain/Reports/FinanceReportQuery.php
 │   └── Security/
 ├── tests/
 │   ├── browser-compatibility.mjs
 │   ├── report-period.php
 │   ├── database-reports.php
 │   ├── database-frequency-reports.php
+│   ├── database-finance.php (inclui FN-01 a FN-06)
 │   ├── database-attendance-checkin.php
 │   ├── database-class-schedule-migration.php
 │   ├── database-class-schedule-services.php
