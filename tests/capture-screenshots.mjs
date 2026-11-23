@@ -190,7 +190,7 @@ try {
   await desktop.emulateMedia({ reducedMotion: "no-preference" });
   const measureReportContrast = () => desktop.evaluate(() => {
     const luminance = (color) => {
-      const values = color.match(/[\\d.]+/g)?.map(Number) ?? [];
+      const values = color.match(/[\d.]+/g)?.map(Number) ?? [];
       if (values.length < 3) return null;
       const channels = values.slice(0, 3).map((value) => {
         const normalized = value / 255;
@@ -206,7 +206,7 @@ try {
         let background = "rgb(255, 255, 255)";
         while (ancestor && ancestor !== document.documentElement) {
           const candidate = getComputedStyle(ancestor).backgroundColor;
-          const components = candidate.match(/[\\d.]+/g)?.map(Number) ?? [];
+          const components = candidate.match(/[\d.]+/g)?.map(Number) ?? [];
           if (components.length >= 4 ? components[3] > 0 : candidate !== "rgba(0, 0, 0, 0)") {
             background = candidate;
             break;
