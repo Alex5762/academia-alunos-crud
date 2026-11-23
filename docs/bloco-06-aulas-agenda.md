@@ -1,6 +1,6 @@
 # Bloco 06 — Grade fixa de aulas
 
-> **Estado:** escopo inicial do MVP definido; implementação ainda não iniciada.
+> **Estado:** schema, serviços de domínio e RBAC inicial implementados; interface ainda não iniciada.
 > **Branch de trabalho:** `feat/dashboard-portfolio`.
 > **Dependências:** autenticação/RBAC, cadastro de funcionários e auditoria existentes. A validação manual pelo XAMPP continua adiada e não bloqueia a especificação nem os testes automatizados.
 >
@@ -63,7 +63,7 @@ O modelo deve permanecer pequeno e refletir a operação de grade aberta.
 
 A tabela `horarios_aula` pode usar uma linha por combinação de dia/horário. Não é necessário introduzir uma entidade de turma/coorte ou uma tabela de sessões concretas enquanto a operação for de participação livre.
 
-Os nomes e tipos finais das colunas, chaves estrangeiras, índices e restrições serão confirmados após inspeção do schema real e antes de escrever a migration. A implementação ainda não começou.
+Os nomes e tipos finais das colunas, chaves estrangeiras, índices e restrições serão confirmados após inspeção do schema real e antes de escrever a migration. A migration 014 e os serviços de domínio iniciais foram implementados na branch. A validação automatizada da migration passou em MySQL 8.0 e MariaDB 10.11. A aplicação local no XAMPP continua pendente.
 
 ## 4. Regras de negócio
 
@@ -147,12 +147,24 @@ Essas evoluções não devem criar dependências no primeiro MVP. Em particular,
 - [x] **Instrutores:** cadastro independente, com vínculo opcional a uma conta existente em `usuarios`.
 - [x] **Web-first:** painel responsivo no navegador, sem aplicativo nativo.
 
-### Antes da implementação
+### Implementação técnica registrada
 
-1. Inspecionar o schema atual de `usuarios` e confirmar tipos das chaves e padrão de timestamps.
-2. Confirmar os campos finais da modalidade e do horário, incluindo se a descrição será necessária.
-3. Confirmar a migration e os índices para evitar conflito de instrutor e duplicidade de horários.
-4. Definir telas, estados vazios, mensagens de validação e testes de RBAC.
+- [x] Migration `014_grade_fixa_aulas.sql` cria `modalidades`, `instrutores` e `horarios_aula`.
+- [x] `ClassCatalogService` implementa criação, edição e inativação de modalidades e instrutores.
+- [x] `ClassScheduleService` implementa criação, edição e inativação de horários recorrentes.
+- [x] Alterações e eventos da cadeia de auditoria são confirmados na mesma transação.
+- [x] Inativação é lógica; modalidade/instrutor com horários ativos precisa ter a grade revisada antes.
+- [x] Horários ativos exigem modalidade ativa e, quando atribuído, instrutor ativo.
+- [x] O serviço serializa gravações por instrutor e rejeita sobreposições no mesmo dia; horários adjacentes são permitidos.
+- [x] RBAC inicial permite consulta aos três perfis e gestão somente a Administrador/Gestor.
+- [x] CI #1450 aprovou a migration nos dois motores; nova suíte de serviços está sendo integrada à CI.
+
+### Próximas etapas
+
+1. Concluir a validação dos serviços e da matriz RBAC na CI.
+2. Implementar consultas de leitura e telas de modalidades/instrutores.
+3. Implementar a visualização e manutenção da grade semanal.
+4. Cobrir os fluxos com integração HTTP/Playwright e revisar acessibilidade/responsividade.
 
 ## 10. Referências e fronteiras com os outros blocos
 
@@ -161,4 +173,4 @@ Essas evoluções não devem criar dependências no primeiro MVP. Em particular,
 - **Bloco 07 — Relatórios:** relatórios de participação ou ocupação podem ser avaliados quando houver dados de sessões e presenças.
 - **Bloco 08 — Preparação para produção:** continua dependendo de validações e revisão próprias.
 
-**Estado técnico:** esta é uma especificação de escopo. Nenhuma migration, tabela, tela ou fluxo de aulas foi implementado ainda.
+**Estado técnico:** migration e serviços de domínio estão implementados na branch. Ainda não existem telas do Bloco 06, e a aplicação local/XAMPP continua pendente.
