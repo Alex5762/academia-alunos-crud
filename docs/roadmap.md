@@ -29,7 +29,7 @@ Enquanto o acesso ao XAMPP/dispositivo não estiver disponível, continuar com e
 - **Bloco 07 — Relatórios e experiência:** proposta de escopo registrada em `docs/bloco-07-relatorios-experiencia.md`; aguarda aprovação das decisões antes da implementação.
 - **Bloco 08 — Preparação para produção:** etapa futura, não iniciar como se fosse apenas deploy; depende de revisão independente e plano operacional/de segurança.
 
-**Próximo bloco recomendado: Bloco 07 — Relatórios e experiência**, começando pela aprovação do escopo documentado. A validação manual do Bloco 06 permanece adiada e não deve ser declarada concluída. A validação local dos Blocos 03–05 permanece registrada como adiada, não como concluída.
+**Próximo passo: concluir e revisar a etapa 07.1 do Bloco 07 — Relatórios e experiência**, fechando o catálogo de indicadores, seus eixos temporais, filtros e permissões antes de iniciar a implementação. A validação manual do Bloco 06 permanece adiada e não deve ser declarada concluída. A validação local dos Blocos 03–05 permanece registrada como adiada, não como concluída.
 
 ---
 
