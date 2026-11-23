@@ -7,11 +7,11 @@ require_once __DIR__ . '/src/Domain/Reports/FrequencyReportQuery.php';
 require_once __DIR__ . '/src/Domain/Reports/FinanceReportQuery.php';
 require_once __DIR__ . '/src/Domain/Finance/FinanceMoneyFormatter.php';
 
-use FitControl\\Domain\\Reports\\ReportPeriod;
-use FitControl\\Domain\\Reports\\OperationalReportQuery;
-use FitControl\\Domain\\Reports\\FrequencyReportQuery;
-use FitControl\\Domain\\Reports\\FinanceReportQuery;
-use FitControl\\Domain\\Finance\\FinanceMoneyFormatter;
+use FitControl\Domain\Reports\\ReportPeriod;
+use FitControl\Domain\Reports\\OperationalReportQuery;
+use FitControl\Domain\Reports\\FrequencyReportQuery;
+use FitControl\Domain\Reports\\FinanceReportQuery;
+use FitControl\Domain\Finance\\FinanceMoneyFormatter;
 
 $usuario = exigirAutenticacao($pdo);
 exigirPermissao($usuario, 'dashboard.view');
@@ -393,19 +393,19 @@ function iniciaisNome($nome) {
                         <span class="panel-caption">Distribuição atual</span>
                     </div>
 
-                    <?php if ($totalAlunos === 0) { ?>
+                    <?php if ($alunosAtivos === 0) { ?>
                         <div class="compact-empty">
                             <span class="empty-illustration" aria-hidden="true">
                                 <svg viewBox="0 0 24 24"><path d="M4 19V5M4 19h16M8 15l3-4 3 2 5-7"/></svg>
                             </span>
-                            <strong>Sem dados para exibir</strong>
-                            <span>Os planos aparecerão aqui depois do primeiro cadastro.</span>
+                            <strong>Sem alunos ativos para distribuir</strong>
+                            <span>A distribuição considera somente cadastros ativos.</span>
                         </div>
                     <?php } else { ?>
                         <div class="plan-list">
                             <?php foreach ($distribuicaoPlanos as $item) {
                                 $quantidade = (int) $item['quantidade'];
-                                $percentual = (int) round(($quantidade / $totalAlunos) * 100);
+                                $percentual = (int) round(($quantidade / $alunosAtivos) * 100);
                                 $classe = classePlano($item['plano']);
                             ?>
                                 <div class="plan-row">
@@ -450,6 +450,8 @@ function iniciaisNome($nome) {
                         <p><?= count($alunos) ?> <?= count($alunos) === 1 ? 'registro encontrado' : 'registros encontrados' ?><?= $busca !== '' ? ' para sua pesquisa' : '' ?></p>
                     </div>
                     <form action="index.php#alunos" method="get" class="search-form">
+                        <input type="hidden" name="de" value="<?= escapar($dashboardPeriodStart) ?>">
+                        <input type="hidden" name="ate" value="<?= escapar($dashboardPeriodEnd) ?>">
                         <label class="visually-hidden" for="filtro-status">Situação dos alunos</label>
                         <select id="filtro-status" name="status" class="search-status">
                             <option value="ativos" <?= $filtroStatus === 'ativos' ? 'selected' : '' ?>>Ativos</option>
