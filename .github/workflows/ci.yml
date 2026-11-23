@@ -445,6 +445,9 @@ jobs:
       - name: Test exact financial money formatting
         run: php tests/finance-money-format.php
 
+      - name: Test CSV formula neutralization, UTF-8 and escaping
+        run: php tests/report-csv-exporter.php
+
       - name: Check required project files
         run: |
           test -f index.php
