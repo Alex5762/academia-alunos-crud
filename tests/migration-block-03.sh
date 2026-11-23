@@ -33,6 +33,8 @@ for migration in \
   "${MYSQL_BIN}" --host="${MYSQL_HOST}" --port="${MYSQL_PORT}" --user="${MYSQL_USER}" < "${migration_dir}/${migration}"
 done
 
+bash tests/migration-student-status-constraint.sh
+
 echo "Criando alunos legados antes das migrations 005/006..."
 mysql_cmd <<'SQL'
 INSERT INTO alunos (nome, telefone, email, plano, ativo) VALUES

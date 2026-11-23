@@ -1,6 +1,6 @@
 # Bloco 07.1 — Catálogo e contrato dos indicadores
 
-> **Estado:** definições revisadas; decisões aprovadas até 23/11/2026: direção da Visão geral gerencial, nomenclatura “Recebido no período”, regra FR-04 e indicadores FN-04, FN-05 e FN-06. Os demais indicadores/decisões de experiência e permissão continuam em revisão. Nenhuma consulta, tela ou exportação do Bloco 07 foi implementada.
+> **Estado:** definições revisadas; decisões aprovadas até 23/11/2026: direção da Visão geral gerencial, OP-01 a OP-03, nomenclatura “Recebido no período”, regra FR-04 e indicadores FN-04, FN-05 e FN-06. Os demais indicadores/decisões de experiência e permissão continuam em revisão. Nenhuma consulta, tela ou exportação do Bloco 07 foi implementada.
 > **Branch:** `feat/dashboard-portfolio`.
 > **Documento principal:** [Bloco 07 — Relatórios e experiência](bloco-07-relatorios-experiencia.md).
 
@@ -85,12 +85,14 @@ O fim é exclusivo: no instante exato de `fim_exclusivo_em`, a matrícula já es
 
 | ID | Métrica | Definição | Observação |
 |---|---|---|---|
-| OP-01 | Total de alunos | Contagem de todos os registros em `alunos` | Fotografia atual; não é histórico |
-| OP-02 | Alunos ativos | Contagem com `ativo = 1` | Fotografia atual |
-| OP-03 | Alunos inativos | Contagem com `ativo = 0` | Fotografia atual |
+| OP-01 | Total de alunos | Contagem de todos os registros em `alunos` | Fotografia cadastral atual; não é histórico nem depende do período |
+| OP-02 | Alunos ativos | Contagem com `ativo = 1` | Fotografia cadastral atual; não depende do período |
+| OP-03 | Alunos inativos | Contagem com `ativo = 0` | Fotografia cadastral atual; não depende do período |
 | OP-04 | Matrículas por situação | Contagem por cada situação derivada no instante único da consulta | Não somar com status cadastral de aluno |
 | OP-05 | Matrículas com início próximo | Matrículas AGENDADAS com início depois de agora e até agora + 7 ou 30 dias de calendário, incluindo o limite final | Janela móvel, não depende do período selecionado |
 | OP-06 | Matrículas com término próximo | Matrículas ATIVAS com fim exclusivo depois de agora e até agora + 7 ou 30 dias de calendário, incluindo o limite final | Janela móvel; 7 dias alimenta VG-06 |
+
+**Decisão aprovada em 23/11/2026 — OP-01, OP-02 e OP-03.** Os três indicadores usam uma única fotografia cadastral no momento da consulta, ignoram o filtro de datas e exigem `students.view`. OP-01 conta todos os registros de `alunos`; OP-02 conta `ativo = 1`; OP-03 conta `ativo = 0`. A consulta deve retornar os três valores em um único agregado sobre `alunos`, evitando leituras separadas com referências diferentes. A migration 015 adiciona a restrição `CHECK (ativo IN (0, 1))`; com esse domínio garantido, vale a invariável **OP-01 = OP-02 + OP-03**. Status cadastral não substitui nem altera a situação contratual das matrículas.
 
 ### 4.2 Matrículas
 

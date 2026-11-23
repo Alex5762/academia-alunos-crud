@@ -1,6 +1,6 @@
 # Bloco 07 — Relatórios e experiência
 
-> **Estado:** direção da Visão geral aceita; decisões aprovadas por etapas: “Recebido no período”, FR-04, FN-04, FN-05 e FN-06 (23/11/2026). Os demais indicadores/critério continuam em revisão. Nenhuma funcionalidade do Bloco 07 foi implementada.
+> **Estado:** direção da Visão geral aceita; decisões aprovadas por etapas: OP-01 a OP-03, “Recebido no período”, FR-04, FN-04, FN-05 e FN-06 (23/11/2026). Os demais indicadores/critério continuam em revisão. Nenhuma funcionalidade do Bloco 07 foi implementada.
 > **Branch de referência:** `feat/dashboard-portfolio`.
 > **Dependência anterior:** Bloco 06 com validação automatizada aprovada na CI #1512. A validação manual dos blocos no XAMPP/dispositivo permanece adiada e registrada separadamente.
 > **Regra:** revisar e aprovar o catálogo `bloco-07-catalogo-indicadores.md` antes de iniciar a etapa 07.2. A aprovação da direção da Visão geral não antecipa a aprovação automática de cada fórmula ou endpoint.
@@ -60,6 +60,8 @@ A Visão geral deve reutilizar os mesmos agregadores/serviços e as mesmas defin
 ## 3. Escopo proposto para o MVP
 
 ### 3.1 Visão operacional
+
+**Decisão aprovada em 23/11/2026 — OP-01 a OP-03:** total de alunos = todos os registros de `alunos`; alunos ativos = `ativo = 1`; alunos inativos = `ativo = 0`. São fotografias cadastrais atuais, exigem `students.view` e não são alteradas pelo filtro de período. Os três valores devem vir de um único agregado. A migration 015 protege o domínio binário de `ativo`, permitindo conferir a invariável total = ativos + inativos. Não confundir o estado cadastral com matrículas vigentes (VG-02).
 
 Indicadores de situação atual, claramente identificados como fotografia do momento da consulta:
 
@@ -177,7 +179,7 @@ Cada seção e cada endpoint CSV devem revalidar a permissão correspondente no 
 
 ## 8. Decisões que precisam de aprovação antes da implementação
 
-1. Confirmar os indicadores operacionais e de matrícula listados nas seções 3.1 e 3.2.
+1. Confirmar os demais indicadores operacionais e de matrícula das seções 3.1 e 3.2; OP-01 a OP-03 já foram aprovados em 23/11/2026.
 2. Confirmar o relatório de frequência com total de entradas, alunos distintos e evolução diária.
 3. FN-01 a FN-06: definições aprovadas por etapas até 23/11/2026. FN-04 separa valores nominais por vencimento e situação atual da matrícula; FN-05 soma o saldo positivo das cobranças ainda cobráveis; FN-06 soma o saldo positivo das cobranças em revisão vinculadas a matrículas canceladas, sem representar reembolso.
 4. Confirmar CSV agregado somente, sem dados pessoais, deixando PDF/XLSX fora do MVP.
@@ -198,6 +200,8 @@ Entregáveis desta etapa:
 - decisões registradas sobre métricas que não podem ser calculadas com os dados atuais.
 
 **Decisão registrada em 23/11/2026:** nomenclatura **“Recebido no período”** aprovada para a soma de pagamentos por `data_pagamento`; não chamar de faturamento ou lucro. O catálogo continua aguardando aprovação global das demais fórmulas e permissões.
+
+**Decisão registrada em 23/11/2026:** OP-01, OP-02 e OP-03 foram aprovados como fotografias cadastrais independentes do período, sob `students.view`, com contagem agregada única e domínio de `ativo` protegido pela migration 015. **A migration 015 é uma proteção de integridade cadastral separada; não implementa consultas ou telas do Bloco 07.**
 
 **Decisão registrada em 23/11/2026:** o rótulo **“Recebido no período”** foi aprovado para a soma dos pagamentos por `data_pagamento`, com legenda esclarecendo que se trata de pagamentos registrados e não de liquidação bancária. A decisão foi complementada pela aprovação de FR-04, FN-04, FN-05 e FN-06. FN-06 é fotografia atual do saldo restante de cobranças não canceladas financeiramente ligadas a matrículas canceladas; não representa reembolso. Os demais indicadores, filtros e permissões continuam em revisão.
 

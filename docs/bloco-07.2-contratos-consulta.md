@@ -1,6 +1,6 @@
 # Bloco 07.2 — Contratos de consulta e validação
 
-> **Estado:** desenho técnico revisado; as decisões do catálogo estão sendo aprovadas por etapas. FN-04, FN-05 e FN-06 foram aprovados em 23/11/2026; os demais itens permanecem em revisão. Não representa implementação.
+> **Estado:** desenho técnico revisado; as decisões do catálogo estão sendo aprovadas por etapas. OP-01 a OP-03 e FN-04, FN-05 e FN-06 foram aprovados em 23/11/2026; os demais itens permanecem em revisão. Não representa implementação.
 > **Pré-requisito:** catálogo 07.1 e definições de indicadores aprovados.
 > **Escopo desta etapa:** contratos de entrada/saída, datas, relógio, autorização, agregação e testes. Sem migrations, alteração de schema, telas ou exportação.
 
@@ -79,6 +79,10 @@ Regras:
 - Para o indicador VG-05/FN-01, usar o rótulo aprovado “Recebido no período” e legenda que esclareça ser a soma dos pagamentos registrados pela `data_pagamento` informada, não comprovação de liquidação bancária.
 - Não incluir nomes, e-mails, telefones, observações, IDs individuais ou outros dados pessoais.
 - O dashboard não calcula métricas: apenas apresenta o resultado retornado.
+
+### 5.1 Invariantes cadastrais usados por OP-01 a OP-03
+
+OP-01 (total), OP-02 (ativos) e OP-03 (inativos) são fotografias atuais de `alunos`, sem filtro de período, e exigem `students.view`. Retornar os três em um único agregado; usar `COUNT(*)` e somas condicionais para `ativo = 1` e `ativo = 0`. A migration 015, fora da implementação de relatórios, adiciona `CHECK (ativo IN (0, 1))` e impede que registros com estado não binário quebrem a reconciliação total = ativos + inativos.
 
 ## 6. Fronteira de autorização
 
