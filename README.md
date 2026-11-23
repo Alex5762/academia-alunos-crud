@@ -46,7 +46,7 @@ O módulo oferece grade semanal fixa, catálogo de modalidades e instrutores, ca
 
 ## Bloco 07 — Relatórios e experiência (especificação em andamento; ainda não implementado)
 
-A direção da Visão geral gerencial foi aceita para especificação. Ela será uma camada resumida do dashboard existente, separando situação atual, movimentações do período e alertas próximos, com atalhos para relatórios detalhados. A etapa 07.1 está formalizando indicadores, fórmulas, eixos temporais, filtros e permissões em `docs/bloco-07-relatorios-experiencia.md`. Nenhuma tela, consulta ou exportação do Bloco 07 foi implementada.
+A direção da Visão geral gerencial foi aceita para especificação. Ela será uma camada resumida do dashboard existente, separando situação atual, movimentações do período e alertas próximos, com atalhos para relatórios detalhados. A especificação inicial da etapa 07.1 está registrada em `docs/bloco-07-catalogo-indicadores.md`, vinculada à proposta `docs/bloco-07-relatorios-experiencia.md`, e aguarda revisão. Os indicadores financeiros são lançamentos registrados no sistema, não valores conciliados com banco. Nenhuma tela, consulta ou exportação do Bloco 07 foi implementada.
 
 ## Funcionalidades
 
@@ -245,6 +245,8 @@ Para conferir os resultados, consulte a aba **Actions** do GitHub. Uma execuçã
 - [Bloco 04 — frequência e check-in](docs/bloco-04-frequencia-checkin.md)
 - [Bloco 05 — financeiro](docs/bloco-05-financeiro.md)
 - [Bloco 06 — grade fixa de aulas](docs/bloco-06-aulas-agenda.md)
+- [Bloco 07 — relatórios e experiência](docs/bloco-07-relatorios-experiencia.md)
+- [Bloco 07.1 — catálogo e contrato dos indicadores](docs/bloco-07-catalogo-indicadores.md)
 - [Revisão técnica do financeiro](docs/revisao-financeira-2026-11-22.md)
 - [Procedimento seguro para aplicar migrations 005–013 e validar o XAMPP](docs/guia-migrations-xampp.md)
 - [Bloco 05 — financeiro: arquitetura, implementação e validação](docs/bloco-05-financeiro.md)
