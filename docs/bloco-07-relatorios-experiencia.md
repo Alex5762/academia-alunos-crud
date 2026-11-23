@@ -198,12 +198,14 @@ Entregáveis desta etapa:
 
 **Decisão registrada em 23/11/2026:** nomenclatura **“Recebido no período”** aprovada para a soma de pagamentos por `data_pagamento`; não chamar de faturamento ou lucro. O catálogo continua aguardando aprovação global das demais fórmulas e permissões.
 
+**Decisão registrada em 23/11/2026:** o rótulo **“Recebido no período”** foi aprovado para a soma dos pagamentos por `data_pagamento`, com legenda esclarecendo que se trata de pagamentos registrados e não de liquidação bancária. Os demais indicadores, filtros e permissões aguardam aprovação global.
+
 **Saída esperada da 07.1:** especificação revisável e testável, sem alteração de banco nem implementação de telas. A etapa seguinte só começa depois da revisão das fórmulas e do contrato de acesso.
 
 **Recomendação:** implementar primeiro consultas agregadas e testes de domínio/SQL; depois a página de relatórios; por último os endpoints CSV e a cobertura Playwright. Só iniciar após aprovação deste escopo.
 
-### Etapa 07.2 — contratos de consulta e validação (desenho inicial documentado)
+### Etapa 07.2 — contratos de consulta e validação (desenho revisado; aprovação pendente)
 
 Documento: [Bloco 07.2 — Contratos de consulta e validação](bloco-07.2-contratos-consulta.md).
 
-O desenho define responsabilidades para período imutável, relógio único, política de autorização, consultas agregadas, payload de saída e matriz de testes. Não introduz migrations, telas ou código de relatório. A implementação da 07.2 depende da aprovação do catálogo 07.1 e deste contrato.
+O desenho define responsabilidades para período imutável, relógio único, política de autorização, consultas agregadas, payload de saída e matriz de testes. A revisão alinhou a omissão integral de seções não autorizadas, a janela inclusiva dos próximos sete dias e a legenda do indicador financeiro. Não introduz migrations, telas ou código de relatório. A implementação da 07.2 depende da aprovação global do catálogo 07.1 e deste contrato.
