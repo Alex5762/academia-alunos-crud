@@ -1,6 +1,6 @@
 # Bloco 07.2 — Contratos de consulta e validação
 
-> **Estado:** consultas OP/MT/FR/FN validadas na CI #1595; cartões VG-01 a VG-06 na CI #45245709878; endpoint CSV, escritor seguro e testes unitários/HTTP de RBAC/PII aprovados na CI #45247639018 (sete jobs funcionais). A cobertura Playwright posterior baixa os quatro arquivos e verifica BOM, indicador principal, nome, período e ausência de PII; aguarda nova CI. Nenhuma migration ou alteração de schema foi feita.
+> **Estado:** consultas OP/MT/FR/FN, cartões VG-01 a VG-06 e exportação CSV validados nas CIs #1595, #45245709878, #45247639018 e #45249934923. Incremento posterior corrige contraste e amplia Playwright para reflow a 320 CSS px, controles rotulados, foco visível, alvos de 24 × 24, movimento reduzido e contraste textual nos temas claro/escuro; aguarda nova CI. Nenhuma migration ou alteração de schema foi feita.
 > **Pré-requisito:** catálogo 07.1 e definições de indicadores aprovados.
 > **Escopo desta etapa:** contratos de entrada/saída, datas, relógio, autorização, agregação e testes. Sem migrations, alteração de schema, telas ou exportação.
 
