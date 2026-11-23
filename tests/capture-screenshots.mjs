@@ -189,8 +189,17 @@ try {
   }
   await desktop.emulateMedia({ reducedMotion: "no-preference" });
   await desktop.setViewportSize({ width: 1440, height: 1100 });
-
   await desktop.goto(`${baseUrl}/index.php`, { waitUntil: "networkidle" });
+  await desktop.getByRole("heading", { name: "Visão geral" }).waitFor();
+  await desktop.setViewportSize({ width: 320, height: 900 });
+  const dashboardReflow320 = await desktop.evaluate(() => ({
+    viewport: document.documentElement.clientWidth,
+    document: document.documentElement.scrollWidth,
+  }));
+  if (dashboardReflow320.document > dashboardReflow320.viewport) {
+    throw new Error(`Visão geral excedeu a largura em 320px (${dashboardReflow320.document}px > ${dashboardReflow320.viewport}px).`);
+  }
+  await desktop.setViewportSize({ width: 1440, height: 1100 });
   await desktop.getByRole("heading", { name: "Visão geral" }).waitFor();
 
   await desktop.getByRole("link", { name: /Ver detalhes de/ }).first().click();
