@@ -188,6 +188,51 @@ try {
     throw new Error("A página de relatórios não respeitou prefers-reduced-motion.");
   }
   await desktop.emulateMedia({ reducedMotion: "no-preference" });
+  const measureReportContrast = () => desktop.evaluate(() => {
+    const luminance = (color) => {
+      const values = color.match(/[\\d.]+/g)?.map(Number) ?? [];
+      if (values.length < 3) return null;
+      const channels = values.slice(0, 3).map((value) => {
+        const normalized = value / 255;
+        return normalized <= 0.04045 ? normalized / 12.92 : ((normalized + 0.055) / 1.055) ** 2.4;
+      });
+      return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2];
+    };
+    const samples = [];
+    for (const selector of [".reports-note", ".reports-stat span", ".reports-table thead th", ".reports-empty"]) {
+      for (const element of document.querySelectorAll(selector)) {
+        const foreground = getComputedStyle(element).color;
+        let ancestor = element;
+        let background = "rgb(255, 255, 255)";
+        while (ancestor && ancestor !== document.documentElement) {
+          const candidate = getComputedStyle(ancestor).backgroundColor;
+          const components = candidate.match(/[\\d.]+/g)?.map(Number) ?? [];
+          if (components.length >= 4 ? components[3] > 0 : candidate !== "rgba(0, 0, 0, 0)") {
+            background = candidate;
+            break;
+          }
+          ancestor = ancestor.parentElement;
+        }
+        const fg = luminance(foreground);
+        const bg = luminance(background);
+        const contrast = fg === null || bg === null ? 0 : (Math.max(fg, bg) + 0.05) / (Math.min(fg, bg) + 0.05);
+        samples.push({ selector, foreground, background, contrast });
+      }
+    }
+    return samples;
+  });
+  const lightContrast = await measureReportContrast();
+  const lightFailures = lightContrast.filter((sample) => sample.contrast < 4.5);
+  if (lightFailures.length) {
+    throw new Error("Contraste textual insuficiente no tema claro: " + JSON.stringify(lightFailures.slice(0, 5)));
+  }
+  await desktop.evaluate(() => document.documentElement.setAttribute("data-theme", "dark"));
+  const darkContrast = await measureReportContrast();
+  const darkFailures = darkContrast.filter((sample) => sample.contrast < 4.5);
+  if (darkFailures.length) {
+    throw new Error("Contraste textual insuficiente no tema escuro: " + JSON.stringify(darkFailures.slice(0, 5)));
+  }
+  await desktop.evaluate(() => document.documentElement.removeAttribute("data-theme"));
   await desktop.setViewportSize({ width: 1440, height: 1100 });
   await desktop.goto(`${baseUrl}/index.php`, { waitUntil: "networkidle" });
   await desktop.getByRole("heading", { name: "Visão geral" }).waitFor();
