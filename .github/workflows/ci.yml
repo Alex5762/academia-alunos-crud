@@ -295,6 +295,7 @@ jobs:
           mysql --host=127.0.0.1 --port=3306 --user=root < database/migrations/011_pagamento_idempotencia.sql
           mysql --host=127.0.0.1 --port=3306 --user=root < database/migrations/012_pagamentos_append_only.sql
           mysql --host=127.0.0.1 --port=3306 --user=root < database/migrations/013_financeiro_valores_positivos.sql
+          mysql --host=127.0.0.1 --port=3306 --user=root < database/migrations/014_grade_fixa_aulas.sql
           php scripts/inicializar-integridade-auditoria.php
           mysql --host=127.0.0.1 --port=3306 --user=root < database/migrations/014_grade_fixa_aulas.sql
 
@@ -499,6 +500,7 @@ jobs:
           test -f src/Domain/Classes/ClassScheduleQuery.php
           test -f aulas.php
           test -f gestao-aulas.php
+          test -f gerenciar-horarios.php
           test -f tests/database-class-schedule-query.php
           test -f tests/database-class-schedule-services.php
           test -f tests/database-class-schedule-concurrency.php
