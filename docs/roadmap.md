@@ -1,34 +1,35 @@
 # Roadmap do FitControl
 
-## Estado de continuidade — 22/11/2026
+## Estado de continuidade — 23/11/2026
 
 **A validação manual no XAMPP e em aparelho físico está temporariamente indisponível. Essa pendência foi aceita e não bloqueia a continuidade do desenvolvimento na branch.** Não executar migrations no banco local, não inserir dados reais e não declarar validação local concluída.
 
 ### Evidências automatizadas disponíveis
 
-- Blocos 01–05 possuem implementação relevante e cobertura automatizada na branch.
+- Blocos 01–06 possuem implementação relevante e cobertura automatizada na branch.
 - Bloco 03: migrations de planos/matrículas e preservação de legado aprovadas em MySQL 8.0 e MariaDB 10.11.
 - Bloco 04: regras de check-in, duplicidade diária, auditoria, integração HTTP e compatibilidade visual aprovadas em MySQL 8.0 e MariaDB 10.11.
 - Bloco 05: F-01 a F-08 validados pelas CIs financeiras #1332, #1361, #1362, #1385 e #1397; integração HTTP/Playwright e bloqueio do perfil OPERADOR aprovados na CI #1420.
-- CI #1420 aprovou oito jobs (sete funcionais e publicação de screenshots ignorada pela condição do workflow). As mudanças posteriores de documentação/roadmap devem continuar passando pela CI do HEAD atual antes de iniciar o próximo bloco.
+- Bloco 06: CI #1512 aprovada; sete jobs funcionais concluídos com sucesso, incluindo migration/compatibilidade MySQL 8.0 e MariaDB 10.11, CRUD HTTP e Playwright em Chromium, Firefox e WebKit. O job de publicação de screenshots foi ignorado pela condição do workflow.
+- PR #1 permanece aberta em Draft. A `main` não foi alterada; não fazer merge sem revisão e aprovação explícita.
 - A CI executa em bancos efêmeros e navegadores automatizados. Ela não substitui backup, inspeção de versão/engine, aplicação local de migrations, smoke test no XAMPP ou inspeção física.
 
 ### Pendências adiadas — não bloqueiam o próximo bloco
 
-1. Aplicar as migrations 005–013 em uma cópia local descartável, somente após confirmar versão, InnoDB, backup restaurável e estado prévio do schema.
+1. Aplicar as migrations 005–014 em uma cópia local descartável, somente após confirmar versão, InnoDB, backup restaurável e estado prévio do schema.
 2. Executar o smoke test manual descrito em `docs/guia-migrations-xampp.md`, usando exclusivamente alunos, planos, matrículas e pagamentos fictícios.
-3. Inspecionar em aparelho físico/navegador instalado os fluxos e capturas responsivas dos Blocos 00–05.
+3. Inspecionar em aparelho físico/navegador instalado os fluxos e capturas responsivas dos Blocos 00–06.
 4. Registrar os resultados locais e reconciliar o estado da PR #1 antes de qualquer decisão de sair de Draft ou integrar à `main`.
 
 Enquanto o acesso ao XAMPP/dispositivo não estiver disponível, continuar com especificação, implementação, testes automatizados, migrations testadas na CI, revisão de segurança e documentação dos blocos seguintes.
 
 ### Blocos ainda por desenvolver
 
-- **Bloco 06 — Grade fixa de aulas:** escopo inicial definido; implementação ainda não iniciada.
-- **Bloco 07 — Relatórios e experiência:** ainda requer definição de indicadores, filtros, exportação e permissões.
+- **Bloco 06 — Grade fixa de aulas:** implementação e validação automatizada aprovadas na CI #1512; validação manual no XAMPP/dispositivo permanece pendente.
+- **Bloco 07 — Relatórios e experiência:** proposta de escopo registrada em `docs/bloco-07-relatorios-experiencia.md`; aguarda aprovação das decisões antes da implementação.
 - **Bloco 08 — Preparação para produção:** etapa futura, não iniciar como se fosse apenas deploy; depende de revisão independente e plano operacional/de segurança.
 
-**Próximo bloco recomendado: Bloco 06 — Grade fixa de aulas**, começando pela inspeção do schema, migration e critérios de aceite. A validação local dos Blocos 03–05 permanece registrada como adiada, não como concluída.
+**Próximo bloco recomendado: Bloco 07 — Relatórios e experiência**, começando pela aprovação do escopo documentado. A validação manual do Bloco 06 permanece adiada e não deve ser declarada concluída. A validação local dos Blocos 03–05 permanece registrada como adiada, não como concluída.
 
 ---
 
@@ -57,7 +58,7 @@ Limites conhecidos:
 - Não há recuperação de senha por e-mail nem MFA.
 - O campo `alunos.plano` permanece preservado como texto legado; catálogo, matrículas e revisão dos vínculos estão implementados e validados por CI. A aplicação das migrations 005/006 no XAMPP local continua pendente.
 - Frequência/check-in (Bloco 04) e financeiro (Bloco 05) estão implementados na branch e validados por CI em MySQL 8.0 e MariaDB 10.11; a validação local/manual continua pendente.
-- A especificação do Bloco 06 (grade semanal fixa) está documentada, mas ainda não foi implementada. O Bloco 07 ainda requer definição.
+- O Bloco 06 (grade semanal fixa) está implementado e aprovado na CI #1512; a validação local/XAMPP permanece pendente. O Bloco 07 possui proposta inicial documentada, ainda não aprovada nem implementada.
 - A preparação para produção (Bloco 08) continua pendente e exige revisão de segurança, privilégios SQL, backups/restauração, HTTPS, monitoramento e privacidade.
 - A aplicação permanece acadêmica/local; não está preparada para uso público ou dados reais.
 
@@ -242,7 +243,11 @@ Entregas implementadas e validadas pela CI:
 
 ### Bloco 06 — Aulas e agenda
 
-**Estado: schema, serviços de domínio, grade semanal e CRUD de modalidades/instrutores implementados; manutenção de horários pendente.** Documento: [Bloco 06 — Grade fixa de aulas](bloco-06-aulas-agenda.md).
+**Estado: implementação e validação automatizada aprovadas na CI #1512.** Documento: [Bloco 06 — Grade fixa de aulas](bloco-06-aulas-agenda.md).
+
+A migration 014, serviços de domínio, consulta filtrada, grade semanal, gestão de modalidades/instrutores e CRUD de horários estão implementados. A suíte HTTP valida criação, edição, conflitos, snapshot concorrente, inativação, CSRF, RBAC, histórico e auditoria. Playwright validou cadastro, edição, inativação, acessibilidade e responsividade em Chromium, Firefox e WebKit. A CI #1512 passou nos sete jobs funcionais; o job de publicação de screenshots foi ignorado pela condição do workflow.
+
+**Pendente e adiado:** aplicação controlada das migrations 005–014 no XAMPP após backup, inspeção da versão/engine e verificação do schema; smoke test manual e inspeção em dispositivo físico. Não declarar validação local concluída.
 
 O MVP cobre cadastro de modalidades, instrutores independentes com vínculo opcional a funcionário, horários recorrentes por dia da semana e consulta da grade. Não haverá reservas, controle de vagas, lista de espera, presença por aula, QR Code, catraca ou portal do aluno nesta etapa.
 
@@ -250,17 +255,17 @@ O MVP cobre cadastro de modalidades, instrutores independentes com vínculo opci
 
 **Escopo deliberadamente reduzido:** não há fila de espera, reservas, controle de vagas, sessões datadas ou presença por aula no MVP. O check-in geral do Bloco 04 permanece separado e não será interpretado como participação em uma aula.
 
-A migration 014 cria somente modalidades, instrutores e horários semanais recorrentes. `ClassCatalogService` e `ClassScheduleService` implementam as operações de domínio com transações e auditoria atômica; a validação de sobreposição serializa alterações por instrutor. `ClassScheduleQuery` centraliza as consultas filtradas; `aulas.php` apresenta a grade semanal e `gestao-aulas.php` gerencia modalidades e instrutores com CSRF e RBAC. A CI #1468 aprovou serviços e concorrência em MySQL 8.0 e MariaDB 10.11. A nova suíte de consultas e as páginas estão conectadas à CI atual. Permanecem pendentes a manutenção da grade, os testes HTTP/Playwright específicos e a aplicação local; não executar no XAMPP antes de backup e conferência dos pré-requisitos.
+A migration 014 cria modalidades, instrutores e horários semanais recorrentes. `ClassCatalogService` e `ClassScheduleService` implementam operações transacionais com auditoria atômica e proteção contra sobreposição concorrente. `ClassScheduleQuery` centraliza consultas; `aulas.php`, `gestao-aulas.php` e `gerenciar-horarios.php` oferecem consulta e gestão com CSRF/RBAC. A CI #1512 aprovou testes de banco, HTTP e Playwright nos três navegadores. A validação local/XAMPP continua pendente.
 
 ### Bloco 07 — Relatórios e experiência
 
-**Objetivo:** melhorar a leitura operacional dos dados e a usabilidade.
+**Estado: proposta inicial documentada; aguarda aprovação e não foi implementada.** Documento: [Bloco 07 — Relatórios e experiência](bloco-07-relatorios-experiencia.md).
 
-Possíveis entregas:
-- Relatórios por período.
-- Indicadores de evolução.
-- Exportação controlada.
-- Melhorias de acessibilidade e navegação.
+A proposta considera indicadores atuais de alunos e matrículas, inícios de contrato por período, check-ins por data civil local e recebimentos por data de pagamento. Prevê filtros de até 365 dias, gráficos acompanhados por tabelas e exportação CSV somente agregada, sem dados pessoais.
+
+As permissões existentes serão reutilizadas: relatórios operacionais conforme `students.view`/`enrollments.view`, frequência com `attendance.view` e financeiro exclusivamente com `finance.view` (Administrador/Gestor). Não serão criadas permissões genéricas nem migrations preventivas.
+
+**Fora do escopo proposto:** presença por modalidade/aula, saldos financeiros históricos não reconstruíveis, exportação de dados pessoais, PDF/XLSX, BI e previsões.
 
 ### Bloco 08 — Preparação para produção
 
