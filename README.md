@@ -44,9 +44,9 @@ O módulo cria uma cobrança única pelo contrato, registra pagamentos parciais 
 
 O módulo oferece grade semanal fixa, catálogo de modalidades e instrutores, cadastro/edição/inativação de horários, filtros, proteção contra conflitos e auditoria. A CI #1512 aprovou os testes de banco, HTTP e Playwright em Chromium, Firefox e WebKit, incluindo MySQL 8.0 e MariaDB 10.11. A aplicação controlada da migration 014 no XAMPP e a inspeção manual em dispositivo físico continuam pendentes. Consulte `docs/bloco-06-aulas-agenda.md`.
 
-## Bloco 07 — Relatórios e experiência (proposta; ainda não implementado)
+## Bloco 07 — Relatórios e experiência (especificação em andamento; ainda não implementado)
 
-O escopo inicial está documentado em `docs/bloco-07-relatorios-experiencia.md` e aguarda aprovação antes da implementação. A proposta utiliza os dados existentes de alunos, matrículas, check-ins, cobranças e pagamentos, com permissões por domínio e exportação CSV agregada sem dados pessoais.
+A direção da Visão geral gerencial foi aceita para especificação. Ela será uma camada resumida do dashboard existente, separando situação atual, movimentações do período e alertas próximos, com atalhos para relatórios detalhados. A etapa 07.1 está formalizando indicadores, fórmulas, eixos temporais, filtros e permissões em `docs/bloco-07-relatorios-experiencia.md`. Nenhuma tela, consulta ou exportação do Bloco 07 foi implementada.
 
 ## Funcionalidades
 
