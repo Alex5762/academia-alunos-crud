@@ -158,6 +158,12 @@ function iniciaisNome($nome) {
                 <span>Frequência</span>
             </a>
             <?php } ?>
+            <?php if (usuarioTemPermissao($usuario, 'classes.view')) { ?>
+            <a class="nav-link" href="aulas.php">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4M16 2v4M3 9h18M8 13h3M8 17h3"/></svg>
+                <span>Grade de aulas</span>
+            </a>
+            <?php } ?>
             <a class="nav-link" href="planos.php">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/><path d="M7 4v16M17 4v16"/></svg>
                 <span>Planos</span>
