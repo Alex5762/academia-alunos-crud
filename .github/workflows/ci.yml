@@ -498,6 +498,7 @@ jobs:
           test -f src/Domain/Classes/ClassScheduleService.php
           test -f src/Domain/Classes/ClassScheduleQuery.php
           test -f aulas.php
+          test -f gestao-aulas.php
           test -f tests/database-class-schedule-query.php
           test -f tests/database-class-schedule-services.php
           test -f tests/database-class-schedule-concurrency.php
