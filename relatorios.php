@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 use FitControl\Domain\Reports\EnrollmentReportQuery;
+use FitControl\Domain\Reports\FrequencyReportQuery;
 use FitControl\Domain\Reports\OperationalReportQuery;
 use FitControl\Domain\Reports\ReportPeriod;
 use FitControl\Domain\Finance\FinanceMoneyFormatter;
@@ -11,6 +12,7 @@ require_once __DIR__ . '/conexao.php';
 require_once __DIR__ . '/src/Domain/Reports/ReportPeriod.php';
 require_once __DIR__ . '/src/Domain/Reports/OperationalReportQuery.php';
 require_once __DIR__ . '/src/Domain/Reports/EnrollmentReportQuery.php';
+require_once __DIR__ . '/src/Domain/Reports/FrequencyReportQuery.php';
 require_once __DIR__ . '/src/Domain/Finance/FinanceMoneyFormatter.php';
 
 $usuario = exigirAutenticacao($pdo);
@@ -32,6 +34,10 @@ $snapshot = null;
 $snapshotError = null;
 $movement = null;
 $movementError = null;
+$frequency = null;
+$frequencyError = null;
+$frequencyMaxDailyCheckins = 0;
+$canViewFrequency = usuarioTemPermissao($usuario, 'attendance.view');
 
 if (usuarioTemPermissao($usuario, 'students.view')) {
     try {
@@ -39,6 +45,18 @@ if (usuarioTemPermissao($usuario, 'students.view')) {
     } catch (Throwable $exception) {
         error_log('Relatório de alunos: ' . $exception->getMessage());
         $studentError = 'Não foi possível consultar os indicadores de alunos.';
+    }
+}
+
+if ($canViewFrequency) {
+    try {
+        $frequency = (new FrequencyReportQuery($pdo))->forPeriod($period);
+        if ($frequency['fr03_daily_series'] !== []) {
+            $frequencyMaxDailyCheckins = max(array_column($frequency['fr03_daily_series'], 'checkins'));
+        }
+    } catch (Throwable $exception) {
+        error_log('Relatório de frequência: ' . $exception->getMessage());
+        $frequencyError = 'Não foi possível consultar os indicadores de frequência.';
     }
 }
 
@@ -91,7 +109,7 @@ function valorContratadoRelatorio(?string $value): string
     <section class="settings-card reports-section" aria-labelledby="reports-period-title">
         <div class="settings-card-heading">
             <span class="settings-icon" aria-hidden="true">▦</span>
-            <div><h2 id="reports-period-title">Período de análise</h2><p>O período afeta apenas os indicadores de movimentação.</p></div>
+            <div><h2 id="reports-period-title">Período de análise</h2><p>O período afeta os indicadores de movimentação e frequência.</p></div>
         </div>
         <form method="get" action="relatorios.php" class="reports-filter-form">
             <div><label for="report-start">De</label><input id="report-start" type="date" name="de" value="<?= escapar($period->getStartDateString()) ?>" required></div>
@@ -155,6 +173,58 @@ function valorContratadoRelatorio(?string $value): string
             </table></div><?php } ?>
         </div><?php } ?>
     </section><?php } ?>
+    <?php if ($canViewFrequency && ($frequency !== null || $frequencyError !== null)) { ?>
+    <section class="settings-card reports-section" aria-labelledby="reports-frequency-title">
+        <div class="settings-card-heading"><span class="settings-icon" aria-hidden="true">◷</span><div><h2 id="reports-frequency-title">Frequência</h2><p>Entradas registradas no período selecionado, pela data civil local.</p></div></div>
+        <?php if ($frequencyError !== null) { ?>
+            <p class="reports-error" role="alert"><?= escapar($frequencyError) ?></p>
+        <?php } else { ?>
+            <div class="reports-stat-grid">
+                <article class="reports-stat"><span>Total de check-ins (FR-01)</span><strong><?= $frequency['fr01_total_checkins'] ?></strong></article>
+                <article class="reports-stat"><span>Alunos frequentadores (FR-02)</span><strong><?= $frequency['fr02_distinct_students'] ?></strong></article>
+                <article class="reports-stat"><span>Média de dias por frequentador (FR-05)</span><strong><?= $frequency['fr05_average_days_per_student'] === null ? '—' : escapar(number_format($frequency['fr05_average_days_per_student'], 1, ',', '.')) ?></strong></article>
+            </div>
+            <div class="reports-table-section">
+                <h3>Evolução diária (FR-03)</h3>
+                <div class="table-scroll" role="region" aria-label="Evolução diária dos check-ins" tabindex="0">
+                    <table class="reports-table frequency-daily-table">
+                        <thead><tr><th scope="col">Data</th><th scope="col">Check-ins</th><th scope="col">Representação visual</th></tr></thead>
+                        <tbody>
+                        <?php foreach ($frequency['fr03_daily_series'] as $day) {
+                            $dayLabel = substr($day['date'], 8, 2) . '/' . substr($day['date'], 5, 2) . '/' . substr($day['date'], 0, 4);
+                            $barWidth = $frequencyMaxDailyCheckins > 0 ? ($day['checkins'] / $frequencyMaxDailyCheckins) * 100 : 0;
+                        ?>
+                            <tr><th scope="row"><?= escapar($dayLabel) ?></th><td><?= $day['checkins'] ?></td>
+                                <td class="frequency-visual-cell"><span class="frequency-bar-track" aria-hidden="true"><span class="frequency-bar" style="width: <?= escapar(number_format($barWidth, 2, '.', '')) ?>%;"></span></span></td>
+                            </tr>
+                        <?php } ?>
+                        </tbody>
+                    </table>
+                </div>
+                <p class="reports-note">A tabela mantém os valores disponíveis sem depender da barra visual. Datas sem entrada aparecem com zero; isso não confirma que a academia estava aberta.</p>
+            </div>
+            <div class="reports-table-section">
+                <h3>Média por dia da semana (FR-04)</h3>
+                <div class="table-scroll" role="region" aria-label="Média de check-ins por ocorrência de dia da semana" tabindex="0">
+                    <table class="reports-table">
+                        <thead><tr><th scope="col">Dia da semana</th><th scope="col">Média por ocorrência</th><th scope="col">Total bruto</th><th scope="col">Ocorrências no calendário</th></tr></thead>
+                        <tbody>
+                        <?php
+                        $frequencyWeekdayLabels = [1=>'Segunda-feira',2=>'Terça-feira',3=>'Quarta-feira',4=>'Quinta-feira',5=>'Sexta-feira',6=>'Sábado',7=>'Domingo'];
+                        foreach ($frequency['fr04_by_weekday'] as $weekday) {
+                            $weekdayLabel = $frequencyWeekdayLabels[$weekday['weekday_iso']] ?? 'Dia inválido';
+                            $weekdayAverage = $weekday['average_per_occurrence'] === null ? '—' : number_format($weekday['average_per_occurrence'], 1, ',', '.');
+                        ?>
+                            <tr><th scope="row"><?= escapar($weekdayLabel) ?></th><td><?= escapar($weekdayAverage) ?></td><td><?= $weekday['total_checkins'] ?></td><td><?= $weekday['calendar_occurrences'] ?></td></tr>
+                        <?php } ?>
+                        </tbody>
+                    </table>
+                </div>
+                <p class="reports-note">A média usa todas as ocorrências do dia no calendário do período, não apenas dias de funcionamento. Um dia sem ocorrência exibe “—”; uma ocorrência com zero entradas exibe média 0,0.</p>
+            </div>
+        <?php } ?>
+    </section>
+    <?php } ?>
     <a class="settings-back" href="index.php">Voltar ao painel</a>
 </main>
 </body>
