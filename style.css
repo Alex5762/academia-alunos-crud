@@ -3909,27 +3909,28 @@ body:not(.dashboard-body) .theme-option[aria-pressed="true"] {
 
 /* Relatórios — primeira fatia operacional e de matrículas */
 .reports-page { width: min(100%, 1040px); }
-.reports-section { margin-bottom: 18px; }
+.reports-section { margin-bottom: 18px; --reports-muted:#626c7c; }
 .reports-filter-form { display:grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr) auto; align-items:end; gap:13px; }
 .reports-filter-form > div:not(.reports-filter-actions) { display:grid; gap:7px; }
 .reports-filter-form label { color:var(--ink); font-size:.78rem; font-weight:700; }
 .reports-filter-form input { width:100%; min-height:42px; padding:0 11px; color:var(--ink); background:var(--surface); border:1px solid var(--line); border-radius:8px; font:inherit; font-size:.82rem; }
 .reports-filter-actions { display:flex; flex-wrap:wrap; gap:8px; }
-.reports-note { margin:14px 0 0; color:var(--muted); font-size:.73rem; line-height:1.55; }
+.reports-note { margin:14px 0 0; color:var(--reports-muted); font-size:.73rem; line-height:1.55; }
 .reports-stat-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; }
 .reports-stat-grid-compact { grid-template-columns:repeat(2,minmax(0,1fr)); margin-bottom:22px; }
 .reports-stat { display:grid; min-width:0; gap:9px; padding:16px; background:var(--canvas); border:1px solid var(--line); border-radius:11px; }
-.reports-stat span { color:var(--muted); font-size:.72rem; font-weight:650; }
+.reports-stat span { color:var(--reports-muted); font-size:.72rem; font-weight:650; }
 .reports-stat strong { color:var(--ink); font-size:1.8rem; font-weight:800; letter-spacing:-.045em; line-height:1.1; font-variant-numeric:tabular-nums; }
 .reports-table-section { margin-top:22px; }
 .reports-table-section h3 { margin:0 0 11px; color:var(--ink); font-size:.9rem; }
 .reports-table { width:100%; min-width:520px; border-collapse:collapse; }
 .reports-table thead { background:var(--canvas); }
 .reports-table th,.reports-table td { padding:11px 13px; border-bottom:1px solid var(--line); color:var(--ink); font-size:.77rem; text-align:left; vertical-align:middle; }
-.reports-table thead th { color:var(--muted); font-size:.66rem; font-weight:800; letter-spacing:.045em; }
+.reports-table thead th { color:var(--reports-muted); font-size:.66rem; font-weight:800; letter-spacing:.045em; }
 .reports-table tbody th { font-weight:650; }
-.reports-empty { margin:0; padding:18px; color:var(--muted); background:var(--canvas); border-radius:9px; font-size:.8rem; }
+.reports-empty { margin:0; padding:18px; color:var(--reports-muted); background:var(--canvas); border-radius:9px; font-size:.8rem; }
 .reports-error { margin:0; padding:13px 15px; color:#9a3434; background:#fff0f0; border:1px solid #f1caca; border-radius:9px; font-size:.8rem; line-height:1.5; }
+:root[data-theme="dark"] .reports-section { --reports-muted:#a0abc0; }
 :root[data-theme="dark"] .reports-stat { background:#202c41; border-color:#34415a; }
 :root[data-theme="dark"] .reports-error { color:#ffb7b7; background:#402a35; border-color:#69404b; }
 @media(max-width:760px) { .reports-stat-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } .reports-filter-form { grid-template-columns:repeat(2,minmax(0,1fr)); } .reports-filter-actions { grid-column:1/-1; } }
@@ -3950,6 +3951,17 @@ body:not(.dashboard-body) .theme-option[aria-pressed="true"] {
 .text-link { color:var(--blue); font-size:.8rem; font-weight:750; text-decoration:none; }
 .text-link:hover { text-decoration:underline; }
 :root[data-theme="dark"] .dashboard-period-form input { color:var(--ink); background:var(--surface); border-color:var(--line); }
+.dashboard-metrics .eyebrow,
+.dashboard-metrics .stat-label,
+.dashboard-metrics .stat-footnote { color:#626c7c; }
+:root[data-theme="dark"] .dashboard-metrics .eyebrow,
+:root[data-theme="dark"] .dashboard-metrics .stat-label,
+:root[data-theme="dark"] .dashboard-metrics .stat-footnote { color:#a0abc0; }
+.reports-page a:focus-visible,
+.reports-page button:focus-visible,
+.reports-page input:focus-visible,
+.dashboard-period-form input:focus-visible,
+.dashboard-period-form button:focus-visible { outline:3px solid var(--blue); outline-offset:3px; }
 @media(max-width:760px) { .dashboard-metrics-heading { align-items:flex-start; flex-direction:column; } .dashboard-period-form { width:100%; } .dashboard-period-form input { flex:1 1 125px; min-width:0; } }
 @media(max-width:440px) { .dashboard-period-form { display:grid; grid-template-columns:auto minmax(0,1fr); } .dashboard-period-form .button { grid-column:1/-1; width:100%; } }
 
