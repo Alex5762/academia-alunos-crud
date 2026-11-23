@@ -29,7 +29,7 @@ Enquanto o acesso ao XAMPP/dispositivo não estiver disponível, continuar com e
 - **Bloco 07 — Relatórios e experiência:** proposta de escopo registrada em `docs/bloco-07-relatorios-experiencia.md`; aguarda aprovação das decisões antes da implementação.
 - **Bloco 08 — Preparação para produção:** etapa futura, não iniciar como se fosse apenas deploy; depende de revisão independente e plano operacional/de segurança.
 
-**Próximo passo: revisar e aprovar o catálogo técnico da etapa 07.1 do Bloco 07 — Relatórios e experiência**. Depois da aprovação, iniciar 07.2 com contratos de consulta, relógio, validação de período e testes. A validação manual do Bloco 06 permanece adiada e não deve ser declarada concluída. A validação local dos Blocos 03–05 permanece registrada como adiada, não como concluída.
+**Próximo passo: revisar e aprovar globalmente o catálogo 07.1 e o contrato 07.2**. Só então iniciar a implementação dos contratos de consulta e testes. A validação manual do Bloco 06 permanece adiada e não deve ser declarada concluída. A validação local dos Blocos 03–05 permanece registrada como adiada, não como concluída.
 
 ---
 
@@ -259,11 +259,11 @@ A migration 014 cria modalidades, instrutores e horários semanais recorrentes. 
 
 ### Bloco 07 — Relatórios e experiência
 
-**Estado: direção da Visão geral gerencial aceita; catálogo técnico da etapa 07.1 documentado e aguardando revisão/aprovação. Nenhuma funcionalidade do bloco foi implementada.** Documentos: [proposta do Bloco 07](bloco-07-relatorios-experiencia.md) e [catálogo de indicadores 07.1](bloco-07-catalogo-indicadores.md).
+**Estado: catálogo 07.1 e desenho de contratos 07.2 documentados; aprovação parcial registrada, implementação ainda não iniciada.** Documentos: [proposta do Bloco 07](bloco-07-relatorios-experiencia.md), [catálogo 07.1](bloco-07-catalogo-indicadores.md) e [contratos 07.2](bloco-07.2-contratos-consulta.md).
 
-A Visão geral será uma camada resumida dentro do dashboard existente, distinguindo fotografia atual, movimentação do período e alertas próximos. Os cartões reutilizarão as definições dos relatórios detalhados; dados financeiros exigem `finance.view` e não podem ser enviados ao perfil Operador.
+A nomenclatura **“Recebido no período”** foi aprovada em 23/11/2026 para a soma dos pagamentos por `data_pagamento`; não representa faturamento, lucro ou recebimento conciliado. O restante do catálogo e a matriz de permissões aguardam revisão global.
 
-O catálogo 07.1 formaliza fórmulas, fontes, eixos temporais, conversão local/UTC, filtros de até 365 dias, permissões, exportação CSV agregada e limites semânticos. A próxima etapa, 07.2, só começa após a revisão e aprovação do catálogo.
+O desenho 07.2 formaliza período imutável, limites local/UTC, relógio único, autorização antes das consultas, payload agregado e testes. Ainda não foram criadas consultas, telas, endpoints ou migrations. Implementação da 07.2 só começa após aprovação do catálogo e dos contratos.
 
 **Fora do escopo:** presença por modalidade/aula, histórico não reconstruível, dados pessoais em exportações, PDF/XLSX, BI, previsões, metas, churn e comparações percentuais sem base temporal confiável.
 
