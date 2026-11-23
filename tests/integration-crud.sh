@@ -318,6 +318,22 @@ MANAGER_DETAIL_HTTP="$(curl -sS -o "$TMP_DIR/manager-audit-detail.html" -w '%{ht
 assert_contains "$TMP_DIR/manager-audit-detail.html" "Alteração de perfil"
 assert_contains "$TMP_DIR/manager-audit-detail.html" "OPERADOR → GESTOR"
 
+curl -fsS -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/cadastro.php" -o "$TMP_DIR/form.html"
+TOKEN="$(get_token "$TMP_DIR/form.html")"
+assert_contains "$TMP_DIR/form.html" 'autocomplete="tel"'
+assert_contains "$TMP_DIR/form.html" 'Informe o DDD e o número'
+
+HTTP_CODE="$(curl -sS -o "$TMP_DIR/csrf.html" -w '%{http_code}' \
+    -c "$COOKIE_JAR" -b "$COOKIE_JAR" \
+    -X POST "$BASE_URL/salvar.php" \
+    --data-urlencode "token=token-invalido" \
+    --data-urlencode "id=" \
+    --data-urlencode "nome=Teste CSRF" \
+    --data-urlencode "telefone=21999990000" \
+    --data-urlencode "email=csrf@example.test" \
+    --data-urlencode "plano=Mensal")"
+[[ "$HTTP_CODE" == "403" ]] || fail "Token CSRF inválido deveria retornar HTTP 403; retornou $HTTP_CODE."
+
 echo "2/10 - Conferindo validação de e-mail e telefone no servidor..."
 curl -fsS -L -c "$COOKIE_JAR" -b "$COOKIE_JAR" \
     -X POST "$BASE_URL/salvar.php" \
