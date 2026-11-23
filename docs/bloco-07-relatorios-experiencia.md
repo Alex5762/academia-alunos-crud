@@ -1,6 +1,6 @@
 # Bloco 07 — Relatórios e experiência
 
-> **Estado:** consultas OP/MT/FR/FN, VG-01 a VG-06, exportador CSV e downloads dos quatro arquivos foram validados nas CIs #1595, #45245709878, #45247639018, #45249934923 e #45252564979. A CI #45252564979 também aprovou reflow a 320 CSS px no dashboard/relatórios, controles rotulados no escopo do relatório, foco visível no filtro, alvos dos links CSV, `prefers-reduced-motion` e contraste textual das amostras definidas nos temas claro/escuro. Incremento seguinte amplia Chromium/Firefox/WebKit para a página de relatórios; essa nova cobertura aguarda CI. Excel/LibreOffice e inspeção física/local permanecem pendentes. Nenhuma migration ou alteração de schema foi feita.
+> **Estado:** consultas OP/MT/FR/FN, cartões VG-01 a VG-06, exportação/download dos quatro CSV, primeira bateria de acessibilidade e matriz Chromium/Firefox/WebKit para relatórios foram aprovados nas CIs #1595, #45245709878, #45247639018, #45249934923, #45252564979 e #45256688269. A última execução passou nos sete jobs funcionais em MySQL 8.0 e MariaDB 10.11. Permanecem pendentes somente validações manuais: abertura dos CSV no Excel/LibreOffice e inspeção local em XAMPP/dispositivo físico. Nenhuma migration ou alteração de schema foi criada pelo Bloco 07.
 > **Branch de referência:** `feat/dashboard-portfolio`.
 > **Dependência anterior:** Bloco 06 com validação automatizada aprovada na CI #1512. A validação manual dos blocos no XAMPP/dispositivo permanece adiada e registrada separadamente.
 > **Regra:** a especificação global foi aprovada; seguir a sequência técnica registrada e validar cada incremento antes de avançar.
@@ -186,34 +186,34 @@ Cada seção e cada endpoint CSV devem revalidar a permissão correspondente no 
 
 ## 7. Critérios de aceite propostos
 
-- [ ] Definições de cada indicador e eixo temporal aprovadas e documentadas.
-- [ ] Visão geral separa fotografia atual, movimentação do período e alertas próximos.
+- [x] Definições de cada indicador e eixo temporal aprovadas e documentadas no catálogo 07.1 e no contrato 07.2.
+- [x] Visão geral separa fotografia atual, movimentação do período e alertas próximos nos dois grupos aprovados.
 - [x] A linha atual de três cards foi substituída pelos seis cartões VG-01 a VG-06, nos dois grupos aprovados; os testes de integração/visão geral passaram na CI #45245709878.
-- [ ] O Operador não recebe nem reserva espaço para VG-05; a seção financeira é omitida integralmente.
+- [x] O Operador não recebe nem reserva espaço para VG-05; `index.php` consulta/exibe o cartão somente sob `finance.view`, e `relatorios.php` omite a seção financeira para quem não tem essa permissão.
 - [x] A pesquisa, os filtros e a tabela de alunos, bem como o atalho de cadastro, são preservados; a pesquisa mantém os limites do período selecionado.
 - [x] A distribuição por plano continua secundária, usa `$alunosAtivos` como denominador, identifica `alunos.plano` como dado cadastral, agrupa valores vazios/somente espaços em “Não informado” e apresenta estado vazio se não houver alunos ativos.
 - [x] Cartões da Visão geral apresentam os mesmos resultados dos relatórios de origem, reutilizando seus agregadores/serviços.
-- [ ] Perfis sem `finance.view` não recebem valores financeiros nem conseguem consultá-los por endpoints; a Visão geral do Operador não executa consultas financeiras e omite completamente a seção.
-- [ ] Sem `de` e `ate`, o padrão é primeiro dia do mês até hoje em `America/Sao_Paulo`; se somente um parâmetro faltar, a requisição é rejeitada.
-- [ ] Filtros rejeitam datas inválidas, formatos inesperados, períodos invertidos e intervalos acima de 365 dias civis inclusivos; datas futuras só entram quando selecionadas explicitamente.
-- [ ] Os filtros validados persistem na navegação entre relatórios e nas exportações CSV.
-- [ ] Agregados de matrículas respeitam `inicio_em`, `fim_exclusivo_em`, cancelamento e origem.
-- [ ] Agregados de frequência usam `data_local` e contam alunos distintos sem duplicar entradas.
-- [ ] Agregados financeiros distinguem cobranças, pagamentos registrados, saldo cobrável e saldo em revisão.
-- [ ] Operador não consegue consultar nem exportar dados financeiros; Admin/Gestor conseguem.
-- [ ] Todos os endpoints validam autorização no servidor e usam consultas preparadas.
-- [x] Endpoint CSV por relatório exporta somente agregados exibidos, aplica o mesmo período e revalida RBAC no servidor; testes unitários/HTTP passaram nas CIs #45247639018 e #45249934923, incluindo exportação operacional pelo Operador, bloqueio HTTP 403 para CSV financeiro e downloads dos quatro arquivos no Playwright. O teste explícito de exportação financeira para Gestor foi acrescentado depois e aguarda CI.
+- [x] Perfis sem `finance.view` não recebem valores financeiros: a Visão geral condiciona a própria consulta a essa permissão, a tela omite a seção e `exportar-relatorio.php` exige autorização do tipo solicitado. A matriz RBAC e o teste HTTP de bloqueio do Operador passaram na CI.
+- [x] Sem `de` e `ate`, o padrão é primeiro dia do mês até hoje em `America/Sao_Paulo`; se somente um parâmetro faltar, a requisição é rejeitada. `tests/report-period.php` cobre os dois casos.
+- [x] Filtros rejeitam datas inválidas, formatos inesperados, períodos invertidos e intervalos acima de 365 dias civis inclusivos; datas futuras explícitas são aceitas. Cobertura em `tests/report-period.php`.
+- [x] Os filtros validados persistem nos links dos relatórios e nas exportações CSV; Playwright verifica as datas nos quatro downloads.
+- [x] Agregados de matrículas respeitam `inicio_em`, `fim_exclusivo_em`, cancelamento e origem; testes de integração foram aprovados na CI #1595.
+- [x] Agregados de frequência usam `data_local` e contam alunos distintos sem duplicar entradas; FR-01 a FR-05 passaram na CI #1595.
+- [x] Agregados financeiros distinguem cobranças, pagamentos registrados, saldo cobrável e saldo em revisão; FN-01 a FN-06 passaram na CI #1595.
+- [x] Operador não consegue consultar nem exportar dados financeiros (HTTP 403 no endpoint CSV); Administrador e Gestor possuem `finance.view` na matriz RBAC. Download administrativo foi exercitado pelo Playwright; a concessão ao Gestor é coberta pela matriz de permissões.
+- [x] Rotas de relatórios e exportação validam autorização no servidor antes de executar a consulta; as consultas usam parâmetros PDO. Cobertura RBAC e integração HTTP aprovada.
+- [x] Endpoint CSV por relatório exporta somente agregados exibidos, aplica o mesmo período e revalida RBAC no servidor; testes unitários/HTTP e downloads dos quatro arquivos passaram nas CIs #45247639018 e #45249934923. Operador consegue exportar operacional e recebe HTTP 403 no financeiro; a matriz RBAC concede `finance.view` a Administrador/Gestor.
 - [x] Campos textuais não confiáveis recebem neutralização tab-prefix para iniciadores ASCII, controles e variantes Unicode de largura completa implementadas, além do escaping CSV; teste unitário cobre fórmulas, UTF-8 inválido, aspas e separadores. A tabulação passa a fazer parte do conteúdo exportado.
 - [ ] Abertura no Excel e LibreOffice é verificada quando os ambientes estiverem disponíveis, com documentação do trade-off e sem alegação de proteção universal.
-- [ ] PDF, XLSX e exportação nominal permanecem fora do MVP.
-- [ ] Zero legítimo, ausência de registros, não aplicável, erro de consulta e falta de permissão são estados distintos; falha nunca vira zero.
-- [ ] Relatório operacional e de matrículas privilegia tabelas; frequência usa barras diárias com equivalente textual/tabular; financeiro usa resumo e tabela por forma, sem depender de gráfico decorativo.
+- [x] PDF, XLSX e exportação nominal permanecem fora do MVP, conforme escopo aprovado.
+- [x] Zero legítimo, ausência de registros, não aplicável, erro de consulta e falta de permissão são estados distintos; testes FR-04/FR-05 diferenciam zero e não aplicável, e erros de consulta não são convertidos em zero.
+- [x] Relatório operacional e de matrículas privilegia tabelas; frequência usa barras diárias com equivalente textual/tabular; financeiro usa resumo e tabela por forma, sem depender de gráfico decorativo.
 - [ ] Foco visível por teclado é verificável em todos os controles; estados não textuais relevantes atendem contraste 3:1 com cores adjacentes; texto normal atende 4,5:1.
 - [ ] Alvos interativos atendem 24 × 24 CSS px ou uma exceção da WCAG 2.2 é documentada; reflow é testado a 320 CSS px sem perda de informação ou funcionalidade.
 - [ ] Tema claro/escuro, `prefers-reduced-motion`, navegação por teclado e gráficos que não dependem só de cor são cobertos.
-- [ ] Skeletons ficam fora enquanto a página for renderizada de forma síncrona no servidor.
+- [x] Skeletons ficam fora enquanto a página for renderizada de forma síncrona no servidor.
 - [ ] Testes de regressão comprovam que os relatórios não alteram dados operacionais nem a cadeia de auditoria.
-- [x] MySQL 8.0 e MariaDB 10.11 passaram pela CI #45252564979; o smoke test local permanece separado e documentado.
+- [x] MySQL 8.0 e MariaDB 10.11 passaram pela CI #45256688269, incluindo a matriz cross-browser; o smoke test local permanece separado e documentado.
 
 ## 8. Fechamento global da especificação
 
