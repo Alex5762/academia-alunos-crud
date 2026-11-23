@@ -90,4 +90,24 @@ final class ClassScheduleQuery
 
         return $query->fetchAll(PDO::FETCH_ASSOC);
     }
+    /**
+     * Lista os horários ativos e inativos para a manutenção administrativa.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function allSchedulesForManagement(): array
+    {
+        return $this->pdo->query(
+            'SELECT h.id, h.modalidade_id, h.instrutor_id, h.dia_semana,
+                    h.hora_inicio, h.hora_fim, h.ativo,
+                    m.nome AS modalidade_nome, m.ativo AS modalidade_ativa,
+                    i.nome AS instrutor_nome, i.ativo AS instrutor_ativo
+             FROM horarios_aula h
+             INNER JOIN modalidades m ON m.id = h.modalidade_id
+             LEFT JOIN instrutores i ON i.id = h.instrutor_id
+             ORDER BY h.ativo DESC, h.dia_semana ASC, h.hora_inicio ASC,
+                      m.nome ASC, h.id ASC'
+        )->fetchAll(PDO::FETCH_ASSOC);
+    }
+
 }
