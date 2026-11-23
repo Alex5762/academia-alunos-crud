@@ -1,6 +1,6 @@
 # Bloco 07.2 — Contratos de consulta e validação
 
-> **Estado:** consultas OP/MT/FR/FN validadas na CI #1595 e cartões VG-01 a VG-06 validados na CI #45245709878. Endpoint CSV por seção e escritor seguro implementados na branch; testes unitários de fórmula/UTF-8/escaping e testes HTTP de RBAC/PII foram adicionados à CI, aguardando nova execução. Nenhuma migration ou alteração de schema foi feita.
+> **Estado:** consultas OP/MT/FR/FN validadas na CI #1595; cartões VG-01 a VG-06 na CI #45245709878; endpoint CSV, escritor seguro e testes unitários/HTTP de RBAC/PII aprovados na CI #45247639018 (sete jobs funcionais). A cobertura Playwright posterior baixa os quatro arquivos e verifica BOM, indicador principal, nome, período e ausência de PII; aguarda nova CI. Nenhuma migration ou alteração de schema foi feita.
 > **Pré-requisito:** catálogo 07.1 e definições de indicadores aprovados.
 > **Escopo desta etapa:** contratos de entrada/saída, datas, relógio, autorização, agregação e testes. Sem migrations, alteração de schema, telas ou exportação.
 
