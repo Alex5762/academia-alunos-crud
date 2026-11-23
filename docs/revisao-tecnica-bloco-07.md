@@ -1,6 +1,6 @@
 # Revisão técnica do Bloco 07 — aderência, métricas e arquitetura
 
-> **Estado:** revisão técnica em andamento; decisões aprovadas até 23/11/2026 incluem Visão geral, “Recebido no período”, FR-04, FN-04 e FN-05. FN-06 e as demais recomendações continuam sujeitas à revisão e aprovação do responsável pelo projeto.
+> **Estado:** revisão técnica em andamento; decisões aprovadas até 23/11/2026 incluem Visão geral, “Recebido no período”, FR-04, FN-04, FN-05 e FN-06. As demais recomendações continuam sujeitas à revisão e aprovação do responsável pelo projeto.
 > **Data:** 23/11/2026.
 > **Escopo analisado:** catálogo 07.1, contratos 07.2, código atual de alunos, matrículas, frequência, financeiro, RBAC e dashboard.
 > **Importante:** esta revisão não implementa funcionalidades, não altera schema e não substitui a aprovação do escopo.
@@ -60,7 +60,7 @@ A CI #1530 aprovou sete jobs funcionais no HEAD correspondente. O job de publica
 | FN-03 — Por forma de pagamento | **Manter** | Agrupar os mesmos pagamentos por `forma_pagamento`; usar valores ENUM existentes. |
 | FN-04 — Cobranças com vencimento | **Aprovado em 23/11/2026** | Filtrar `data_vencimento` pelo intervalo inclusivo e excluir cobranças canceladas financeiramente. Exibir quantidade e soma do valor nominal original em dois grupos: matrícula não cancelada (inclui agendada, ativa ou vencida) e matrícula cancelada (“Em revisão”). A classificação usa o estado atual da matrícula, não reconstrói o estado na data de vencimento. Não chamar os valores de recebimento, inadimplência ou saldo em aberto; não juntar pagamentos à consulta nominal. |
 | FN-05 — Saldo cobrável atual | **Aprovado em 23/11/2026** | Exibir a soma de `max(valor_total - pagamentos_acumulados, 0)` somente para cobranças não canceladas financeiramente e vinculadas a matrículas não canceladas. Fotografia atual, sem filtro histórico. Reutilizar `FinanceDashboardStatus::collectibleBalanceCents()` ou demonstrar paridade do agregado SQL com a regra testada. Não chamar de inadimplência, pois pode incluir valores ainda não vencidos. |
-| FN-06 — Saldo em revisão atual | **Manter** | Reutilizar `FinanceDashboardStatus::reviewBalanceCents()`. Não tratar saldo de contrato cancelado como cobrança normalmente cobrável. |
+| FN-06 — Saldo em revisão atual | **Aprovado em 23/11/2026** | Somar `max(valor_total - pagamentos_acumulados, 0)` apenas para cobranças não canceladas financeiramente vinculadas a matrículas canceladas. Fotografia atual, independente do filtro de período. Reutilizar `FinanceDashboardStatus::reviewBalanceCents()` ou comprovar paridade SQL. Identificar como valor sujeito a análise, não como reembolso. |
 
 ### Regras essenciais do financeiro
 
@@ -68,7 +68,7 @@ A CI #1530 aprovou sete jobs funcionais no HEAD correspondente. O job de publica
 2. O serviço aceita `data_pagamento` retroativa mediante observação, e impede datas futuras. A legenda deve tornar essa semântica visível.
 3. FN-04 é valor nominal das cobranças que vencem no período, não o saldo ainda aberto. Cobranças quitadas continuam com seu valor original. O total e a quantidade são separados entre matrículas não canceladas e canceladas/em revisão, conforme o estado atual; cobranças canceladas financeiramente são excluídas.
 4. Uma cobrança de matrícula cancelada pode permanecer não cancelada financeiramente para revisão, especialmente quando já houve pagamento. Separar esse grupo.
-5. Para calcular FN-05/FN-06, pré-agregar pagamentos por cobrança antes do JOIN com cobranças/matrículas. Evitar multiplicação de linhas e soma duplicada. FN-05 inclui somente `c.cancelada_em_utc IS NULL` e `m.cancelada_em IS NULL`, aplica `max(valor_total - pagamentos_acumulados, 0)` e não depende do filtro de período. A implementação deve reutilizar `FinanceDashboardStatus::collectibleBalanceCents()` ou testar paridade com a regra.
+5. Para calcular FN-05/FN-06, pré-agregar pagamentos por cobrança antes do JOIN com cobranças/matrículas. Evitar multiplicação de linhas e soma duplicada. FN-05 inclui somente `c.cancelada_em_utc IS NULL` e `m.cancelada_em IS NULL`; FN-06 inclui somente `c.cancelada_em_utc IS NULL` e `m.cancelada_em IS NOT NULL`. Ambos aplicam `max(valor_total - pagamentos_acumulados, 0)`, são fotografias atuais independentes do filtro de período e devem ter paridade comprovada com `FinanceDashboardStatus::collectibleBalanceCents()` e `FinanceDashboardStatus::reviewBalanceCents()`, respectivamente. FN-06 não mede nem calcula reembolso, inclusive quando o saldo restante é zero.
 6. Usar DECIMAL/string/centavos inteiros e o formatador existente; nunca converter moeda para float.
 7. Nunca executar consultas financeiras para o perfil Operador.
 
