@@ -4,6 +4,7 @@ declare(strict_types=1);
 use FitControl\Domain\Reports\EnrollmentReportQuery;
 use FitControl\Domain\Reports\FrequencyReportQuery;
 use FitControl\Domain\Reports\FinanceReportQuery;
+use FitControl\Domain\Reports\FinanceReportQuery;
 use FitControl\Domain\Reports\OperationalReportQuery;
 use FitControl\Domain\Reports\ReportPeriod;
 use FitControl\Domain\Finance\FinanceMoneyFormatter;
@@ -14,6 +15,7 @@ require_once __DIR__ . '/src/Domain/Reports/ReportPeriod.php';
 require_once __DIR__ . '/src/Domain/Reports/OperationalReportQuery.php';
 require_once __DIR__ . '/src/Domain/Reports/EnrollmentReportQuery.php';
 require_once __DIR__ . '/src/Domain/Reports/FrequencyReportQuery.php';
+require_once __DIR__ . '/src/Domain/Reports/FinanceReportQuery.php';
 require_once __DIR__ . '/src/Domain/Finance/FinanceDashboardStatus.php';
 require_once __DIR__ . '/src/Domain/Reports/FinanceReportQuery.php';
 require_once __DIR__ . '/src/Domain/Finance/FinanceMoneyFormatter.php';
@@ -41,9 +43,21 @@ $frequency = null;
 $frequencyError = null;
 $frequencyMaxDailyCheckins = 0;
 $canViewFrequency = usuarioTemPermissao($usuario, 'attendance.view');
+$financeReport = null;
+$financeReportError = null;
+$canViewFinance = usuarioTemPermissao($usuario, 'finance.view');
 $finance = null;
 $financeError = null;
 $canViewFinance = usuarioTemPermissao($usuario, 'finance.view');
+
+if ($canViewFinance) {
+    try {
+        $financeReport = (new FinanceReportQuery($pdo))->forPeriod($period);
+    } catch (Throwable $exception) {
+        error_log('Relatório financeiro: ' . $exception->getMessage());
+        $financeReportError = 'Não foi possível consultar os indicadores financeiros.';
+    }
+}
 
 if (usuarioTemPermissao($usuario, 'students.view')) {
     try {
@@ -102,13 +116,18 @@ function valorContratadoRelatorio(?string $value): string
 {
     return $value === null ? 'Sem valores informados' : FinanceMoneyFormatter::formatDecimal($value);
 }
+
+function valorFinanceiroRelatorio(string|int|null $value): string
+{
+    return FinanceMoneyFormatter::formatDecimal($value);
+}
 ?>
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Indicadores operacionais e relatórios de matrículas da academia.">
+    <meta name="description" content="Indicadores operacionais, frequência, matrículas e relatórios financeiros da academia.">
     <title>Relatórios | FitControl</title>
     <link rel="stylesheet" href="style.css">
     <?= renderizarMonitorSessao() ?>
@@ -124,7 +143,7 @@ function valorContratadoRelatorio(?string $value): string
     <section class="settings-card reports-section" aria-labelledby="reports-period-title">
         <div class="settings-card-heading">
             <span class="settings-icon" aria-hidden="true">▦</span>
-            <div><h2 id="reports-period-title">Período de análise</h2><p>O período afeta os indicadores de movimentação e frequência.</p></div>
+            <div><h2 id="reports-period-title">Período de análise</h2><p>O período afeta movimentação, frequência, recebimentos e vencimentos. Saldos cobrável e em revisão são fotografias atuais.</p></div>
         </div>
         <form method="get" action="relatorios.php" class="reports-filter-form">
             <div><label for="report-start">De</label><input id="report-start" type="date" name="de" value="<?= escapar($period->getStartDateString()) ?>" required></div>
@@ -327,6 +346,53 @@ function valorContratadoRelatorio(?string $value): string
                 <p class="reports-note">O valor é o total original das cobranças não canceladas financeiramente, mesmo quando já houve pagamento parcial ou integral. A separação considera a situação atual da matrícula e não representa recebido, inadimplência ou saldo em aberto.</p>
             </div>
             <p class="reports-note">FN-05 e FN-06 são fotografias atuais e não mudam com o filtro de período. O saldo em revisão não calcula reembolso; qualquer devolução exige análise e fluxo próprio.</p>
+        <?php } ?>
+    </section>
+    <?php } ?>
+    <?php if ($canViewFinance && ($financeReport !== null || $financeReportError !== null)) { ?>
+    <section class="settings-card reports-section" aria-labelledby="reports-finance-title">
+        <div class="settings-card-heading"><span class="settings-icon" aria-hidden="true">R$</span><div><h2 id="reports-finance-title">Financeiro</h2><p>Recebimentos pela data declarada, vencimentos do período e saldos atuais.</p></div></div>
+        <?php if ($financeReportError !== null) { ?>
+            <p class="reports-error" role="alert"><?= escapar($financeReportError) ?></p>
+        <?php } else { ?>
+            <div class="reports-stat-grid">
+                <article class="reports-stat"><span>Recebido no período (FN-01)</span><strong><?= escapar(valorFinanceiroRelatorio($financeReport['fn01_received_decimal'])) ?></strong></article>
+                <article class="reports-stat"><span>Quantidade de pagamentos (FN-02)</span><strong><?= $financeReport['fn02_payment_count'] ?></strong></article>
+                <article class="reports-stat"><span>Saldo cobrável atual (FN-05)</span><strong><?= escapar(FinanceMoneyFormatter::formatCents($financeReport['fn05_collectible_balance_cents'])) ?></strong></article>
+                <article class="reports-stat"><span>Saldo em revisão atual (FN-06)</span><strong><?= escapar(FinanceMoneyFormatter::formatCents($financeReport['fn06_review_balance_cents'])) ?></strong></article>
+            </div>
+            <div class="reports-table-section">
+                <h3>Recebido por forma de pagamento (FN-03)</h3>
+                <?php if ($financeReport['fn03_by_method'] === []) { ?>
+                    <p class="reports-empty">Nenhum pagamento registrado no período selecionado.</p>
+                <?php } else { ?>
+                    <div class="table-scroll" role="region" aria-label="Recebimentos por forma de pagamento" tabindex="0">
+                        <table class="reports-table">
+                            <thead><tr><th scope="col">Forma de pagamento</th><th scope="col">Lançamentos</th><th scope="col">Total recebido</th></tr></thead>
+                            <tbody>
+                            <?php foreach ($financeReport['fn03_by_method'] as $group) { ?>
+                                <tr><th scope="row"><?= escapar($group['method']) ?></th><td><?= $group['payment_count'] ?></td><td><?= escapar(valorFinanceiroRelatorio($group['received_decimal'])) ?></td></tr>
+                            <?php } ?>
+                            </tbody>
+                        </table>
+                    </div>
+                <?php } ?>
+                <p class="reports-note">A soma usa a data informada no lançamento, inclusive pagamentos retroativos justificados. Não representa conciliação bancária, lucro ou recebimento líquido.</p>
+            </div>
+            <div class="reports-table-section">
+                <h3>Cobranças com vencimento no período (FN-04)</h3>
+                <div class="table-scroll" role="region" aria-label="Cobranças por vencimento e situação da matrícula" tabindex="0">
+                    <table class="reports-table">
+                        <thead><tr><th scope="col">Grupo</th><th scope="col">Cobranças</th><th scope="col">Valor nominal</th></tr></thead>
+                        <tbody>
+                            <tr><th scope="row">Matrículas não canceladas</th><td><?= $financeReport['fn04_due_charges']['collectible']['charge_count'] ?></td><td><?= escapar(valorFinanceiroRelatorio($financeReport['fn04_due_charges']['collectible']['nominal_total_decimal'])) ?></td></tr>
+                            <tr><th scope="row">Em revisão (matrículas canceladas)</th><td><?= $financeReport['fn04_due_charges']['review']['charge_count'] ?></td><td><?= escapar(valorFinanceiroRelatorio($financeReport['fn04_due_charges']['review']['nominal_total_decimal'])) ?></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <p class="reports-note">FN-04 apresenta o valor original das cobranças não canceladas financeiramente; pagamentos parciais ou integrais não reduzem esse valor nominal. A classificação reflete a situação atual da matrícula.</p>
+            </div>
+            <p class="reports-note">FN-05 considera cobranças não canceladas ligadas a matrículas não canceladas. FN-06 separa saldos de cobranças ligadas a matrículas canceladas para revisão; não calcula nem presume reembolso. Os dois saldos independem do período selecionado.</p>
         <?php } ?>
     </section>
     <?php } ?>
