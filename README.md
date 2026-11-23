@@ -247,6 +247,7 @@ Para conferir os resultados, consulte a aba **Actions** do GitHub. Uma execuçã
 - [Bloco 06 — grade fixa de aulas](docs/bloco-06-aulas-agenda.md)
 - [Bloco 07 — relatórios e experiência](docs/bloco-07-relatorios-experiencia.md)
 - [Bloco 07.1 — catálogo e contrato dos indicadores](docs/bloco-07-catalogo-indicadores.md)
+- [Revisão técnica do Bloco 07](docs/revisao-tecnica-bloco-07.md)
 - [Revisão técnica do financeiro](docs/revisao-financeira-2026-11-22.md)
 - [Procedimento seguro para aplicar migrations 005–013 e validar o XAMPP](docs/guia-migrations-xampp.md)
 - [Bloco 05 — financeiro: arquitetura, implementação e validação](docs/bloco-05-financeiro.md)
