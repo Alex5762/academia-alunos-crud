@@ -20,6 +20,8 @@ A autorização é aplicada no servidor por `exigirPermissao()`; ocultar um link
 | Consultar cobranças e situação financeira | ✓ | ✓ | — |
 | Registrar pagamentos parciais/integrais | ✓ | ✓ | — |
 | Cancelar cobrança sem pagamentos após cancelamento da matrícula | ✓ | ✓ | — |
+| Consultar grade, modalidades e instrutores | ✓ | ✓ | ✓ |
+| Gerenciar modalidades, horários e instrutores | ✓ | ✓ | — |
 | Preferências locais e alteração da própria senha | ✓ | ✓ | ✓ |
 
 ## Regras de segurança
