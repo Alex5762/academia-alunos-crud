@@ -259,11 +259,11 @@ A migration 014 cria modalidades, instrutores e horários semanais recorrentes. 
 
 ### Bloco 07 — Relatórios e experiência
 
-**Estado: direção da Visão geral gerencial aceita para especificação; etapa 07.1 em andamento. Nenhuma funcionalidade do bloco foi implementada.** Documento: [Bloco 07 — Relatórios e experiência](bloco-07-relatorios-experiencia.md).
+**Estado: direção da Visão geral gerencial aceita para especificação; etapa 07.1 em andamento. Nenhuma funcionalidade do bloco foi implementada.** Documento: [Bloco 07 — Relatórios e experiência](bloco-07-relatorios-experiencia.md). Catálogo técnico: [Bloco 07.1 — Catálogo e contrato dos indicadores](bloco-07-catalogo-indicadores.md).
 
-A Visão geral será uma camada de resumo dentro do dashboard existente, separando fotografia atual (alunos e matrículas vigentes), movimentação do período (check-ins e recebimentos conforme permissão) e alertas próximos (términos contratuais nos próximos 7 dias). Os cartões devem reutilizar os mesmos agregadores dos relatórios detalhados; perfis sem `finance.view` não podem receber nem consultar dados financeiros.
+A Visão geral será uma camada de resumo dentro do dashboard existente, separando fotografia atual (alunos e matrículas vigentes), movimentação do período (check-ins e pagamentos registrados conforme permissão) e alertas próximos (términos contratuais nos próximos 7 dias). Os cartões devem reutilizar os mesmos agregadores dos relatórios detalhados; perfis sem `finance.view` não podem receber nem consultar dados financeiros.
 
-A etapa 07.1 formaliza fórmulas, fontes, eixos temporais, filtros, permissões e links entre cartões e relatórios. A direção aprovada não substitui a revisão das definições de cada indicador.
+A etapa 07.1 possui catálogo técnico inicial com fórmulas, fontes, eixos temporais, filtros, permissões e links entre cartões e relatórios; aguarda revisão antes da implementação. Pagamentos são descritos como lançamentos registrados no sistema, sem alegação de conciliação bancária.
 
 A proposta prevê filtros de até 365 dias, gráficos acompanhados por tabelas e exportação CSV somente agregada, sem dados pessoais. As permissões existentes serão reutilizadas: relatórios operacionais conforme `students.view`/`enrollments.view`, frequência com `attendance.view` e financeiro exclusivamente com `finance.view` (Administrador/Gestor). Não serão criadas permissões genéricas nem migrations preventivas.
 
