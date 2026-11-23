@@ -1,4 +1,4 @@
-import { mkdir } from "node:fs/promises";
+import { mkdir, readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
 
@@ -78,6 +78,54 @@ try {
     fullPage: true,
     animations: "disabled",
   });
+
+  // Os quatro relatórios devem exportar no mesmo período validado e sem PII.
+  await desktop.goto(`${baseUrl}/relatorios.php?de=${periodStart}&ate=${periodEnd}`, {
+    waitUntil: "networkidle",
+  });
+  await desktop.getByRole("heading", { name: "Relatórios" }).waitFor();
+  const exportLinks = desktop.locator('.reports-export-links a[href*="exportar-relatorio.php"]');
+  const expectedExports = ["operacional", "matriculas", "frequencia", "financeiro"];
+  if (await exportLinks.count() !== expectedExports.length) {
+    throw new Error("O perfil Administrador não recebeu os quatro links de exportação esperados.");
+  }
+  for (const reportType of expectedExports) {
+    const link = desktop.locator(
+      `.reports-export-links a[href*="tipo=${reportType}"]`,
+    );
+    if (await link.count() !== 1) {
+      throw new Error(`Link CSV ausente ou duplicado para o relatório ${reportType}.`);
+    }
+    const href = await link.getAttribute("href");
+    const target = new URL(href, baseUrl);
+    if (target.searchParams.get("de") !== periodStart || target.searchParams.get("ate") !== periodEnd) {
+      throw new Error(`O CSV ${reportType} não preservou o período selecionado.`);
+    }
+
+    const downloadPromise = desktop.waitForEvent("download");
+    await link.click();
+    const download = await downloadPromise;
+    if (await download.failure()) {
+      throw new Error(`Falha ao baixar o CSV ${reportType}.`);
+    }
+    const downloadedPath = await download.path();
+    if (!downloadedPath) {
+      throw new Error(`O navegador não disponibilizou o arquivo CSV ${reportType}.`);
+    }
+    const csvBytes = await readFile(downloadedPath);
+    const csvText = csvBytes.toString("utf8");
+    if (csvBytes.length < 3 || csvBytes[0] !== 0xef || csvBytes[1] !== 0xbb || csvBytes[2] !== 0xbf) {
+      throw new Error(`O CSV ${reportType} não contém BOM UTF-8 esperado para planilhas.`);
+    }
+    if (/@example\\.test|\\b(?:telefone|email|e-mail)\\b/i.test(csvText)) {
+      throw new Error(`O CSV ${reportType} aparenta conter dados pessoais.`);
+    }
+    if (!download.suggestedFilename().includes(reportType)) {
+      throw new Error(`O nome do arquivo CSV não identifica o relatório ${reportType}.`);
+    }
+  }
+  await desktop.goto(`${baseUrl}/index.php`, { waitUntil: "networkidle" });
+  await desktop.getByRole("heading", { name: "Visão geral" }).waitFor();
 
   await desktop.getByRole("link", { name: /Ver detalhes de/ }).first().click();
   await desktop.getByRole("heading", { level: 1 }).waitFor();
