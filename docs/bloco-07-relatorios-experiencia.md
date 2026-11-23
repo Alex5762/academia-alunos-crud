@@ -1,6 +1,6 @@
 # Bloco 07 — Relatórios e experiência
 
-> **Estado:** OP-01 a OP-06, MT-01 a MT-05 e FR-01 a FR-05 integrados à tela e validados na CI #1579 em MySQL 8.0/MariaDB 10.11. FN-01 a FN-06 implementados e integrados nesta etapa; teste financeiro ampliado aguarda nova CI. Cartões de resumo, CSV e regressão final permanecem pendentes. Nenhuma migration ou alteração de schema foi feita.
+> **Estado:** OP-01 a OP-06, MT-01 a MT-05, FR-01 a FR-05 e FN-01 a FN-06 estão implementados e validados na CI #1595 em MySQL 8.0/MariaDB 10.11. A página `relatorios.php` integra as consultas autorizadas. Permanecem pendentes os cartões VG-01 a VG-06 na Visão geral, o CSV agregado e a regressão final específica do bloco. Nenhuma migration ou alteração de schema foi feita.
 > **Branch de referência:** `feat/dashboard-portfolio`.
 > **Dependência anterior:** Bloco 06 com validação automatizada aprovada na CI #1512. A validação manual dos blocos no XAMPP/dispositivo permanece adiada e registrada separadamente.
 > **Regra:** a especificação global foi aprovada; seguir a sequência técnica registrada e validar cada incremento antes de avançar.
@@ -224,7 +224,7 @@ Cada seção e cada endpoint CSV devem revalidar a permissão correspondente no 
 4. **CSV:** somente agregados, mesmos filtros/permissões, sem PII, escaping e neutralização para planilhas; PDF, XLSX e exportação individual fora do MVP.
 5. **Apresentação:** seis cartões em dois grupos, preservação da listagem de alunos, ajuste do denominador de planos para alunos ativos, tabelas/gráfico conforme definido, estados de interface distintos e critérios de acessibilidade/responsividade aprovados.
 
-**Fechamento global concluído em 23/11/2026.** A implementação começou pelo objeto de valor `ReportPeriod`; sua integração HTTP e os demais componentes permanecem como entregas técnicas pendentes.
+**Fechamento global concluído em 23/11/2026.** O contrato `ReportPeriod`, as consultas operacionais, matrículas, frequência e financeiro foram implementados; a CI #1595 aprovou os testes correspondentes em MySQL 8.0 e MariaDB 10.11. A integração dos cartões de Visão geral, o CSV agregado e a regressão final permanecem como entregas técnicas.
 
 ### Etapa 07.1 — definição dos indicadores (catálogo revisado e aprovado por etapas; especificação sem implementação)
 
@@ -250,11 +250,11 @@ Entregáveis desta etapa:
 
 **Critérios de apresentação aprovados em 23/11/2026:** seis cards VG-01 a VG-06 em dois grupos; preservar pesquisa/lista de alunos e atalho de cadastro; manter distribuição de planos como painel secundário e calcular percentuais com a base de alunos ativos (`$alunosAtivos`), não total de cadastrados; valores vazios/somente espaços aparecem em “Não informado” e permanecem incluídos no total. O painel informa que usa o plano cadastral e exibe estado vazio quando não houver alunos ativos. Relatórios operacional e de matrículas priorizam tabelas; frequência usa barras diárias e tabela/resumo equivalente; financeiro usa resumo e tabela por forma. Zero, vazio, não aplicável, erro e falta de permissão são estados distintos. Acessibilidade: foco de teclado visível, contraste WCAG aplicável, alvos mínimos, reflow a 320 CSS px, dois temas, redução de movimento e informação não dependente só de cor/hover. Skeletons ficam fora da renderização server-side síncrona. FN-06 é fotografia atual do saldo restante de cobranças não canceladas financeiramente ligadas a matrículas canceladas; não representa reembolso. As definições dos indicadores, filtros, permissões e critérios de apresentação já foram aprovadas por etapas; falta somente a revisão global de consistência antes de autorizar a implementação.
 
-**Saída da 07.1:** catálogo de indicadores documentado, revisado e aprovado por etapas, sem alteração de banco ou implementação de telas. As definições individuais estão fechadas; a implementação permanece bloqueada apenas até o fechamento global da especificação e sua autorização explícita.
+**Saída da 07.1:** catálogo de indicadores documentado, revisado e aprovado globalmente, sem alteração de banco. As definições funcionais, temporais, de permissão e apresentação estão fechadas; a implementação das consultas e da página de relatórios avançou nas etapas 07.2–07.5.
 
 **Sequência aprovada para execução, após autorização global:** implementar primeiro o contrato de período e seus testes; depois consultas agregadas por domínio; integrar cartões ao dashboard usando os mesmos agregadores; implementar CSV por último; finalizar com regressão, acessibilidade, responsividade e compatibilidade.
 
-### Etapa 07.2 — contratos de consulta e validação (implementação inicial em andamento)
+### Etapa 07.2 — contratos de consulta e validação (base implementada; ampliar cartões, CSV e regressão)
 
 Documento: [Bloco 07.2 — Contratos de consulta e validação](bloco-07.2-contratos-consulta.md).
 
