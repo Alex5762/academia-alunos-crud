@@ -93,10 +93,51 @@ final class ClassScheduleService
         $this->beginOwnedTransaction();
 
         try {
+            // Snapshot inicial sem lock: permite descobrir as referências antigas.
+            // Os locks efetivos seguem uma ordem estável: modalidades -> instrutores -> horário.
+            $snapshotQuery = $this->pdo->prepare(
+                'SELECT id, modalidade_id, instrutor_id, ativo
+                 FROM horarios_aula WHERE id = :id'
+            );
+            $snapshotQuery->execute(['id' => $scheduleId]);
+            $snapshot = $snapshotQuery->fetch(PDO::FETCH_ASSOC);
+            if (!$snapshot) {
+                throw new DomainException('Horário não encontrado.');
+            }
+            if ((int) $snapshot['ativo'] !== 1) {
+                throw new DomainException('Horários inativos não podem ser editados; crie um novo horário.');
+            }
+
+            $modalityIds = array_values(array_unique([
+                (int) $snapshot['modalidade_id'],
+                $modalityId,
+            ]));
+            sort($modalityIds, SORT_NUMERIC);
+            foreach ($modalityIds as $id) {
+                $this->lockActiveModality($id);
+            }
+
+            $instructorIds = array_values(array_unique(array_filter([
+                self::nullableInt($snapshot['instrutor_id']),
+                $instructorId,
+            ], static fn (?int $id): bool => $id !== null)));
+            sort($instructorIds, SORT_NUMERIC);
+            foreach ($instructorIds as $id) {
+                $this->lockActiveInstructor($id);
+            }
+
             $current = $this->lockSchedule($scheduleId);
-            $this->lockActiveModality($modalityId);
+            if (
+                (int) $current['modalidade_id'] !== (int) $snapshot['modalidade_id']
+                || self::nullableInt($current['instrutor_id']) !== self::nullableInt($snapshot['instrutor_id'])
+                || (int) $current['ativo'] !== 1
+            ) {
+                throw new DomainException(
+                    'O horário foi alterado por outra operação. Recarregue a grade e tente novamente.'
+                );
+            }
+
             if ($instructorId !== null) {
-                $this->lockActiveInstructor($instructorId);
                 $this->assertNoInstructorOverlap(
                     $instructorId,
                     $weekday,
