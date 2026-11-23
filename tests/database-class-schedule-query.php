@@ -82,6 +82,19 @@ $ownSchedules = array_values(array_filter(
 ));
 assertClassScheduleQuery(count($ownSchedules) === 2, 'A grade deve incluir os dois horários de teste.');
 
+$managementRows = $query->allSchedulesForManagement();
+$managedSchedule = array_values(array_filter(
+    $managementRows,
+    static fn (array $row): bool => (int) $row['id'] === $scheduleA
+));
+assertClassScheduleQuery(
+    count($managedSchedule) === 1
+    && (int) $managedSchedule[0]['ativo'] === 1
+    && $managedSchedule[0]['modalidade_nome'] === 'Consulta funcional ' . $suffix
+    && $managedSchedule[0]['instrutor_nome'] === 'Instrutor consulta ' . $suffix,
+    'A consulta administrativa deve apresentar os dados completos do horário ativo.'
+);
+
 $monday = $query->activeWeeklySchedule(1);
 assertClassScheduleQuery(
     count(array_filter($monday, static fn (array $row): bool => (int) $row['id'] === $scheduleA)) === 1,
@@ -131,6 +144,15 @@ $afterDeactivation = $query->activeWeeklySchedule(null, $modalityA);
 assertClassScheduleQuery(
     $afterDeactivation === [],
     'Horários inativados não devem aparecer na grade pública/interna.'
+);
+$managementAfterDeactivation = $query->allSchedulesForManagement();
+$managedInactive = array_values(array_filter(
+    $managementAfterDeactivation,
+    static fn (array $row): bool => (int) $row['id'] === $scheduleA
+));
+assertClassScheduleQuery(
+    count($managedInactive) === 1 && (int) $managedInactive[0]['ativo'] === 0,
+    'A consulta administrativa deve preservar a visibilidade do horário inativado.'
 );
 
 $schedules->deactivate($scheduleB, $actorId);
