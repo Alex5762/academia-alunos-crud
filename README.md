@@ -53,3 +53,8 @@ A CI valida sintaxe PHP, política de senha, RBAC, configuração de banco, migr
 ## Escopo futuro
 
 Planos, matrículas, frequência, financeiro, grade, dashboard e relatórios serão integrados em PRs independentes, com suas migrations e regressões próprias. A migration 010 permanece fora desta etapa.
+
+
+### Rate limit e auditoria de autenticação
+
+O login bloqueia uma combinação de e-mail normalizado e origem após cinco falhas em uma janela de 15 minutos, por mais 15 minutos. A tabela de tentativas guarda hashes SHA-256; falhas de credenciais que passam pelo bloqueio entram na cadeia append-only como `login_falhou`, sem e-mail ou IP. Um login válido limpa o contador. Registros sem atividade por mais de um dia são removidos.
