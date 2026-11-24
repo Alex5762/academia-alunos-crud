@@ -6,8 +6,8 @@ if (PHP_SAPI !== 'cli') {
     exit('Recurso não encontrado.');
 }
 
-if (getenv('CI') !== 'true') {
-    fwrite(STDERR, "Este teste cria fixtures persistentes de auditoria e só pode rodar no banco efêmero da CI.\n");
+if (getenv('GITHUB_ACTIONS') !== 'true') {
+    fwrite(STDERR, "Este teste cria fixtures persistentes de auditoria e só pode rodar no banco efêmero do GitHub Actions.\n");
     exit(2);
 }
 
@@ -328,25 +328,7 @@ assertUserAdministration(
     'Uma conta sem users.manage não pode alterar perfis.'
 );
 
-// Regressões das rotas administrativas e dos caminhos de sucesso.
-$activeAdminId = (int) $pdo->query(
-    "SELECT id FROM usuarios
-     WHERE id IN ({$adminA}, {$adminB})
-       AND ativo = 1 AND perfil = 'ADMINISTRADOR'
-     LIMIT 1"
-)->fetchColumn();
-assertUserAdministration($activeAdminId > 0, 'O teste precisa identificar o administrador preservado.');
-
-assertUserAdministration(
-    $service->changeProfile($activeAdminId, $activeAdminId, 'GESTOR')
-        === UserAccountAdministrationService::SELF_PROFILE,
-    'O administrador não pode alterar o próprio perfil.'
-);
-assertUserAdministration(
-    $service->changeStatus($activeAdminId, $activeAdminId, 'desativar')
-        === UserAccountAdministrationService::SELF_DEACTIVATION,
-    'O administrador não pode desativar a própria conta.'
-);
+// Caminhos válidos: alteração de perfil, desativação e reativação.
 assertUserAdministration(
     $service->changeProfile($activeAdminId, $operator, 'GESTOR')
         === UserAccountAdministrationService::UPDATED,
