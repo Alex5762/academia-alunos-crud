@@ -8,9 +8,9 @@ PR: [#2 — integrar fundação de autenticação e segurança](https://github.c
 
 - Base: `main`, SHA `e1f4c8084dc6dec8c772a699855562944d50e89e`.
 - Branch: `feat/foundation-auth-security`.
-- HEAD validado: `501f49cea8ecd405b0a22057c50ab482ec56fe62`.
-- Comparação: 71 commits à frente, 0 atrás.
-- Diff: 58 arquivos, 5.853 adições e 73 deleções.
+- HEAD validado: `2bafa933f237035e7d5fd105c5cb4715b024aaf2`.
+- Comparação: 75 commits à frente, 0 atrás.
+- Diff: 58 arquivos, 5.938 adições e 73 deleções.
 - PR #2: aberta, não draft, reportada como mergeable, não mesclada.
 - Revisões formais e threads inline: nenhuma registrada na última consulta.
 - `main` permanece no SHA acima; nenhuma migration ou alteração de banco foi executada nesta preparação.
@@ -49,11 +49,11 @@ Links:
 
 ## 4. Portões antes do merge
 
-- [x] Base e branch comparadas: 71 à frente, 0 atrás.
-- [x] HEAD da PR conferido: `501f49cea8ecd405b0a22057c50ab482ec56fe62`.
+- [x] Base e branch comparadas: 75 à frente, 0 atrás.
+- [x] HEAD da PR conferido: `2bafa933f237035e7d5fd105c5cb4715b024aaf2`.
 - [x] Cinco jobs obrigatórios aprovados no evento `pull_request` (#45457276790), 5/5.
 - [x] Cinco jobs complementares aprovados no evento `push` (#45457261651), 5/5.
-- [ ] Regras de proteção da `main` conferidas na interface do GitHub. A API de proteção retornou 403 para a integração; confirmar branch protection/rulesets, checks obrigatórios, política de revisão e restrições de bypass/force-push/exclusão.
+- [x] A API confirma `main` com `protected: true`. [Detalhes da proteção](https://api.github.com/repos/Alex5762/academia-alunos-crud/branches/main/protection) retornam 403 para a integração; conferir manualmente branch protection/rulesets, checks obrigatórios, política de revisão e restrições de bypass/force-push/exclusão.
 - [ ] Confirmar se a proteção exige revisão independente e, se exigir, obter aprovação de outro colaborador. Não há avaliações formais registradas; não há reviewer solicitado.
 - [ ] Confirmar backup íntegro do banco de destino e registrar onde está guardado.
 - [ ] Confirmar o ambiente de destino (local/XAMPP ou outro) e janela de manutenção.
@@ -65,7 +65,7 @@ Links:
 
 - Método recomendado: merge commit, para preservar o histórico incremental usado na revisão por blocos.
 - Antes de mesclar, consultar novamente PR, base, HEAD e CI.
-- Usar o HEAD esperado `501f49cea8ecd405b0a22057c50ab482ec56fe62` como referência deste checkpoint. Se a branch avançar, repetir revisão e CI no novo HEAD.
+- Usar o HEAD esperado `2bafa933f237035e7d5fd105c5cb4715b024aaf2` como referência deste checkpoint. Se a branch avançar, repetir revisão e CI no novo HEAD.
 - Não usar squash ou rebase automaticamente.
 - Depois do merge, confirmar o SHA resultante e que a branch `main` recebeu exatamente a PR #2.
 
@@ -176,3 +176,16 @@ No HEAD `501f49cea8ecd405b0a22057c50ab482ec56fe62`, ambos os eventos terminaram 
 A PR #2 foi consultada novamente: `open`, `merged=false`, `mergeable=true`, `mergeable_state=clean`, base `e1f4c8084dc6dec8c772a699855562944d50e89e`. Comparação: 71 commits à frente, 0 atrás. Não havia avaliações formais, comentários de revisão ou threads inline.
 
 A API de proteção da `main` retornou 403 para a integração; confirmar as regras manualmente. Backup do banco, ambiente de destino, revisão independente caso exigida e autorização explícita continuam pendentes. Nenhum merge ou migration foi executado.
+
+
+## 11. Última confirmação — HEAD 2bafa933
+
+- PR #2 aberta, não draft, não mesclada; GitHub reporta `mergeable=true`.
+- `main` está protegida (`protected: true`) e permanece em `e1f4c8084dc6dec8c772a699855562944d50e89e`.
+- Branch da PR: 75 commits à frente, 0 atrás.
+- CI pull_request #45461133988: sucesso, 5/5 jobs.
+- CI push #45461117533: sucesso, 5/5 jobs.
+- Nenhuma avaliação formal, comentário de revisão ou thread inline registrada.
+- A política detalhada de proteção não pôde ser lida via API (403); conferir na interface do GitHub.
+- Backup do banco, ambiente de destino, janela de manutenção, aprovação independente caso exigida e autorização explícita continuam pendentes.
+- Nenhuma migration, alteração de dados ou merge foi executado.
