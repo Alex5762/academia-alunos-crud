@@ -101,7 +101,7 @@ Ficam fora: matrículas, frequência, financeiro, grade, dashboard completo, rel
 
 ## Etapa 3 — revalidação da autorização na criação de contas — 2026-11-24
 
-**Implementação commitada; CI do novo HEAD pendente.**
+**Implementação concluída e validada em CI.**
 
 - Criado `UserAccountAdministrationService::createAccount()`.
 - A criação usa a mesma transação e o mesmo lock global `SELECT ... FOR UPDATE` compartilhado pelas alterações de perfil/status.
@@ -111,3 +111,15 @@ Ficam fora: matrículas, frequência, financeiro, grade, dashboard completo, rel
 - `tests/database-user-account-administration.php` cobre o cenário concorrente: pré-autorização válida, criação aguardando lock, revogação do perfil, negação posterior da criação e ausência de registro persistido. Também verifica o caminho autorizado e a auditoria.
 - A bateria é executada no MySQL 8.0 e MariaDB 10.11 pelo job de administração de contas.
 - Não houve alteração na `main` nem merge da PR #2.
+
+
+## Validação final do Achado 3 — 2026-11-24
+
+- HEAD validado: `c46373aa2abf20726ff113f70f8d8780defc0cd8`.
+- Run #45417710794 (push): sucesso, 5/5 jobs.
+- Run #45417736963 (pull_request): sucesso, 5/5 jobs.
+- Jobs aprovados em ambos: PHP quality and unit tests; Foundation database (MySQL 8.0); Foundation database (MariaDB 10.11); Foundation HTTP integration (MySQL 8.0); Apache webroot protection.
+- O teste concorrente confirma que uma criação iniciada com pré-autorização válida, mas aguardando o lock enquanto o perfil do ator é revogado, termina com `UNAUTHORIZED` e não persiste a conta.
+- A criação autorizada permanece coberta pelo fluxo HTTP, incluindo auditoria e senha temporária.
+- Os três achados da revisão técnica estão resolvidos e validados. A PR #2 permanece aberta, sem merge, aguardando revisão final e autorização explícita.
+- `main` permanece intacta em `e1f4c8084dc6dec8c772a699855562944d50e89e`.
