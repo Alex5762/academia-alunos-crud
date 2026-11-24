@@ -28,7 +28,7 @@ Cada falha de credenciais que passa pelo bloqueio gera `login_falhou` na cadeia 
 
 ## Achado 3 — revalidação da autorização na criação de contas
 
-**Severidade: média. Implementado; aguardando CI do novo HEAD.**
+**Severidade: média. Resolvido e validado em CI.**
 
 `salvar-usuario.php` mantém a checagem antecipada para rejeição rápida, mas a criação efetiva agora passa por `UserAccountAdministrationService::createAccount()`. O serviço usa a mesma transação com `SELECT ... FOR UPDATE` de todas as contas, revalida ator ativo, perfil com `users.manage` e `deve_trocar_senha = 0`, cria a conta e grava `usuario_criado` na mesma transação. Assim, se a autorização for revogada antes de a operação obter o lock, a criação retorna `UNAUTHORIZED` sem inserir a conta.
 
@@ -52,7 +52,7 @@ A revisão consultou os arquivos e testes versionados no HEAD identificado. A va
 
 ## Decisão atual
 
-**Não aprovar merge ainda.** Os achados 1 e 2 estão resolvidos e validados. O Achado 3 foi implementado e aguarda a CI do novo HEAD antes de ser considerado resolvido.
+**Revisão técnica dos três achados concluída.** Os achados 1, 2 e 3 estão resolvidos e validados em CI. A PR permanece aberta e não mesclada para revisão final e decisão explícita do usuário.
 
 
 ## Validação do Achado 2
@@ -71,4 +71,5 @@ A revisão consultou os arquivos e testes versionados no HEAD identificado. A va
 - Implementação commitada na branch `feat/foundation-auth-security`.
 - `salvar-usuario.php` delega a criação ao `UserAccountAdministrationService`; a autorização é revalidada dentro do lock transacional.
 - O teste concorrente de administração cobre pré-autorização, revogação de perfil antes da obtenção do lock, negação da criação, ausência de conta persistida, caminho autorizado e evento de auditoria.
-- A CI do novo HEAD ainda está pendente; não considerar o achado fechado até os cinco checks passarem em push e pull_request.
+- Run #45417710794 (push) e run #45417736963 (pull_request), no commit `c46373aa2abf20726ff113f70f8d8780defc0cd8`: ambos concluídos com sucesso, 5/5 jobs aprovados em cada.
+- O teste de administração de contas foi executado nos bancos MySQL 8.0 e MariaDB 10.11; o fluxo HTTP de criação existente também passou.
