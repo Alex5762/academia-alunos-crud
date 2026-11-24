@@ -920,6 +920,7 @@ th { background: #edf1f6; }
     .legacy-rectification-current-period dl {
         grid-template-columns: 1fr;
     }
+}
 
 
 /* Tokens e componentes compartilhados das telas do Bloco 03 */
@@ -1042,6 +1043,7 @@ th { background: #edf1f6; }
     background: #20a779;
     border-radius: 50%;
     font-size: 0.75rem;
+}
 
 .button-search {
     min-height: 39px;
@@ -1115,6 +1117,11 @@ th { background: #edf1f6; }
 }
 
 .settings-card-heading p {
+    margin: 4px 0 0;
+    color: var(--muted);
+    font-size: .8rem;
+    line-height: 1.45;
+}
 
 .field-hint {
     color: var(--muted);
@@ -1133,3 +1140,6 @@ th { background: #edf1f6; }
     border-color: #f0d1d5;
 }
 .button-danger:hover {
+    background: #ffe3e3;
+    border-color: #eabfc4;
+}
