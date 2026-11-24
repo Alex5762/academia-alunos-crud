@@ -53,3 +53,27 @@ th { background: #edf1f6; }
     .busca input { margin-bottom: 8px; }
     table { min-width: 650px; }
 }
+
+.status-badge { display:inline-block; padding:.2rem .65rem; border-radius:999px; font-weight:700; }
+.status-ativo { color:#17643a; background:#e8f7ed; }
+.status-inativo { color:#9b2c2c; background:#fcebea; }
+.student-summary { display:flex; flex-wrap:wrap; gap:1rem 2rem; padding:.5rem 1rem; background:#edf1f6; border-radius:.5rem; }
+.student-summary p { margin:.5rem 0; }
+.busca { display:grid; grid-template-columns:minmax(12rem,2fr) minmax(9rem,1fr) auto; gap:.5rem 1rem; align-items:end; }
+.busca label { margin-top:.4rem; }
+.busca button { margin:0; }
+.inline-form { display:inline; }
+.inline-form button { margin:0 .25rem .25rem 0; }
+.dados-aluno { display:grid; grid-template-columns:minmax(7rem,auto) 1fr; gap:.4rem 1rem; }
+.dados-aluno dt { font-weight:700; }
+.dados-aluno dd { margin:0; overflow-wrap:anywhere; }
+.acoes-aluno { display:flex; flex-wrap:wrap; align-items:center; gap:1rem; margin:1.5rem 0; }
+.acoes-aluno form { margin:0; }
+.acoes-aluno button { margin:0; }
+.historico-aluno { padding-left:1.5rem; }
+.historico-aluno li { display:grid; gap:.2rem; padding:.65rem 0; }
+.historico-aluno li span, .observacao-historico { color:#586273; }
+@media (max-width:650px) {
+    .busca { grid-template-columns:1fr; }
+    .student-summary { display:grid; gap:.1rem; }
+}
