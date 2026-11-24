@@ -217,3 +217,12 @@ A antiga PR #1 permanece Draft e não deve ser mesclada em massa.
 - Grupos de banco/migrations, domínio/catálogo e transações/auditoria estão aprovados na revisão estática. Interfaces/endpoints também passaram na revisão estática; a inspeção visual em navegador/dispositivo continua pendente.
 - **A revisão linha a linha do diff completo dos 39 arquivos ainda não está encerrada.** Não retirar a PR do Draft com base somente na CI ou nesta passada.
 - HEAD validado: `07e96f0b8e12e5271171eca9b4544906302e50d9`. Se novos commits forem adicionados, exigir nova CI verde no novo HEAD.
+
+
+### Confirmação posterior — CI no HEAD documental — 2026-11-24
+
+- A execução `45492245921`, associada exatamente ao HEAD `177f59b70b89e1f1645002f601ed9437a9eb60fd`, concluiu com sucesso: **12/12 jobs aprovados**.
+- Nenhum job falhou. A aprovação cobre também as alterações documentais mais recentes.
+- A PR #9 permanece aberta, em Draft, sem merge.
+- A revisão estática dos grupos de banco/migrations, domínio/catálogo, transações/auditoria e endpoints/interfaces foi concluída nesta passada. A revisão linha a linha do diff completo dos 39 arquivos e a inspeção visual em navegador/dispositivo ainda não foram encerradas.
+- Validações locais no XAMPP continuam pendentes até o usuário ter acesso ao computador; não aplicar migrations em banco real sem backup e inspeção prévia.
