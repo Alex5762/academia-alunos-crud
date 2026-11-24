@@ -418,3 +418,30 @@ Este registro é o estado mais recente consultado e supersede os checkpoints pó
 A próxima etapa do Bloco 01 é operacional e depende de acesso ao ambiente: atualizar o clone local para a `main`, identificar e inspecionar o banco, produzir backup verificável, planejar a aplicação das migrations na ordem documentada e executar os smoke tests. Não executar as migrations usando o script de preparação de CI como substituto do runbook local.
 
 **Estado consolidado:** implementação e documentação do Bloco 01 integradas à `main`; validação do banco real e liberação operacional ainda pendentes.
+
+
+## Checkpoint pós-merge — PR #5 — 2026-11-24
+
+Este é o registro mais recente do estado do repositório e atualiza os checkpoints de integração anteriores.
+
+- PR #5 — `docs: consolidar checkpoint pós-PR 4 do Bloco 01`: **fechada e mesclada**.
+- Branch: `docs/checkpoint-pos-pr4-bloco-01`.
+- HEAD integrado: `18d2d379515ee1f66c1ac6f0f232b1b059a7c9b5`.
+- Base anterior da `main`: `052748e551de29b0dac0488b3e18d655ec8f184b`.
+- Commit de merge: `7fcd45c9de3499ce1da19ec84c5bab4556aeada5`; pais correspondem à base anterior e ao HEAD da PR.
+- A consulta à branch `main` após o merge confirmou exatamente o SHA `7fcd45c9de3499ce1da19ec84c5bab4556aeada5`.
+- Escopo da PR: 2 documentos, 79 adições, sem alterações de código PHP ou SQL.
+- CI pós-merge: run #45468240797 (evento `push`) concluída com sucesso, 5/5 checks: PHP quality and unit tests; Foundation database MySQL 8.0; Foundation database MariaDB 10.11; Foundation HTTP integration MySQL 8.0; Apache webroot protection.
+- A branch `main` continua marcada como protegida.
+
+### Observação adicional do runbook
+
+A leitura dos arquivos SQL confirmou que `banco.sql` cria o schema `academia_alunos` e as migrations 001, 002, 003, 007 e 008 executam `USE academia_alunos`. A configuração da aplicação permite informar `DB_NAME`, mas o nome não é atualmente livremente substituível nos SQLs de implantação. Manter a configuração do banco com o schema `academia_alunos`; qualquer renomeação exige alteração coordenada dos scripts SQL e dos testes.
+
+O README recebeu uma orientação explícita para:
+- diferenciar instalação nova de banco que já contém dados;
+- não aplicar cegamente `banco.sql` em banco existente;
+- manter `DB_NAME`/nome local alinhado com `academia_alunos`;
+- revisar perfis herdados como Administrador após a migration 007 e antes de liberar o sistema.
+
+**Estado atual:** integração no GitHub e CI pós-merge continuam verdes. A implantação no banco real, backup local, migrations, revisão de contas e smoke tests locais permanecem pendentes.
