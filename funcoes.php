@@ -28,6 +28,10 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
         'samesite' => 'Lax'
     ]);
 
+    // Evita que o PHP substitua a política explícita de Cache-Control acima
+    // pelo cabeçalho automático do session.cache_limiter ("nocache").
+    session_cache_limiter('');
+
     session_start();
 }
 
