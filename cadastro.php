@@ -36,6 +36,7 @@ $titulo = $editando ? 'Editar aluno' : 'Cadastrar aluno';
     <title><?= escapar($titulo) ?></title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="auth.css">
+    <?= renderizarMonitorSessao() ?>
     <script src="script.js" defer></script>
 </head>
 <body>

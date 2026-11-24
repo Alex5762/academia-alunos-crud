@@ -31,6 +31,7 @@ unset($_SESSION['mensagem']); // Mostra a mensagem apenas uma vez.
     <title>Cadastro de alunos</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="auth.css">
+    <?= renderizarMonitorSessao() ?>
 </head>
 <body>
 <main>
