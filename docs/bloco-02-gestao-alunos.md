@@ -13,10 +13,10 @@ Esta etapa estende o CRUD original sem trazer planos como entidade, matrículas,
 
 ## Banco de dados
 
-1. `004_student_status.sql`: adiciona `alunos.ativo TINYINT(1) NOT NULL DEFAULT 1` e índice `(ativo, nome)`. Os alunos já existentes recebem `ativo = 1`, sem reescrita dos outros campos.
-2. `015_student_status_constraint.sql`: exige `ativo IN (0, 1)`. Requer MySQL 8.0.16+ ou MariaDB 10.11.
+1. `004_student_status.sql`: após as migrations 001, 002 e 003, adiciona `alunos.ativo TINYINT(1) NOT NULL DEFAULT 1` e índice `(ativo, nome)`. Os alunos já existentes recebem `ativo = 1`, sem reescrita dos outros campos.
+2. `015_student_status_constraint.sql`: depois das migrations 007 e 008, exige `ativo IN (0, 1)`. Requer MySQL 8.0.16+ ou MariaDB 10.11.
 
-As duas migrations usam o schema `academia_alunos`, devem ser aplicadas uma única vez e não são uma operação de reexecução livre. Antes de aplicar em banco existente, fazer backup verificável e inspecionar a estrutura/dados. Se a migration 015 encontrar valores inválidos, ela deve falhar sem corrigi-los automaticamente; investigar e decidir explicitamente como tratar esses registros.
+A sequência operacional completa fica: 001, 002, 003, 004, 007, marcador histórico de auditoria, 008 e 015. A migration 015 é aplicada depois da 008 no fluxo integrado porque essa é a sequência consolidada no runbook e no fixture da CI. As migrations usam o schema `academia_alunos`, devem ser aplicadas uma única vez e não são uma operação de reexecução livre. Antes de aplicar em banco existente, fazer backup verificável e inspecionar a estrutura/dados. Se a migration 015 encontrar valores inválidos, ela deve falhar sem corrigi-los automaticamente; investigar e decidir explicitamente como tratar esses registros.
 
 ## Segurança e comportamento
 
