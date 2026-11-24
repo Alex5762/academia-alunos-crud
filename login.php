@@ -170,6 +170,7 @@ $emailPreenchido = isset($_POST['email']) && is_string($_POST['email']) ? $_POST
     <meta name="description" content="Acesso ao painel administrativo FitControl.">
     <title>Entrar | FitControl</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="auth.css">
     <script src="theme.js"></script>
 </head>
 <body class="login-body">

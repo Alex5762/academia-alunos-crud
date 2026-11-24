@@ -16,3 +16,6 @@ Thumbs.db
 .vscode/
 .idea/
 *.swp
+
+# Credenciais locais do banco
+/config/database.local.php

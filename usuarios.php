@@ -30,6 +30,7 @@ foreach ($usuarios as $conta) {
     <meta name="description" content="Gerencie as contas individuais dos funcionários do FitControl.">
     <title>Funcionários | FitControl</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="auth.css">
     <?= renderizarMonitorSessao() ?>
     <script src="theme.js"></script>
 </head>
