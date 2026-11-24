@@ -101,7 +101,7 @@ function runUserAdministrationWorker(array $arguments): never
             !$actor
             || (int) $actor['ativo'] !== 1
             || (int) $actor['deve_trocar_senha'] !== 0
-            || !\\FitControl\\Security\\AccessControl::allows((string) $actor['perfil'], 'users.manage')
+            || !\FitControl\Security\AccessControl::allows((string) $actor['perfil'], 'users.manage')
         ) {
             throw new RuntimeException('A pré-autorização da criação deveria estar válida.');
         }
