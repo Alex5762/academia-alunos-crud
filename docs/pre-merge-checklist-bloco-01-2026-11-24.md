@@ -85,7 +85,11 @@ Nenhuma migration foi executada no ambiente local do usuário durante esta prepa
 - Restaurar o backup do banco somente após avaliar perda de dados escritos depois do backup e com decisão explícita.
 - Não remover as tabelas/triggers de auditoria como atalho de rollback.
 
-## 7. Estado da decisão
+## 7. CI deste checklist
+
+A criação deste checklist gerou o commit `91dc5b0f487fc9f973ebe8b053ca8512d21340a7`. A CI específica desse HEAD ainda não foi localizada/concluída nesta consulta. Não considerar o HEAD atual totalmente validado até confirmar os cinco jobs nos eventos `push` e `pull_request`.
+
+## 8. Estado da decisão
 
 **Preparação técnica concluída; merge não executado.**
 
