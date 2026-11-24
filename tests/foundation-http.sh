@@ -486,7 +486,83 @@ if [[ "\${FITCONTROL_BLOCK_03:-0}" == "1" ]]; then
 
     curl -fsS -b "$ADMIN_JAR" -c "$ADMIN_JAR" "$BASE_URL/revisoes-legado.php" -o "$TMP_DIR/block03-legacy-review.html"
     grep -Fq 'Revisão de vínculos legados' "$TMP_DIR/block03-legacy-review.html" || fail "Fila de revisão de legados não abriu."
-    echo "Bloco 03 HTTP: catálogo, contratação, snapshot, cancelamento e revisão: OK"
+
+    # O perfil OPERADOR pode contratar/cancelar, mas não gerir o catálogo
+    # nem visualizar/decidir/retificar vínculos legados.
+    BLOCK03_OPERATOR_JAR="$TMP_DIR/block03-operator.cookies"
+    curl -fsS -c "$BLOCK03_OPERATOR_JAR" -b "$BLOCK03_OPERATOR_JAR" "$BASE_URL/login.php" -o "$TMP_DIR/block03-operator-login.html"
+    BLOCK03_OPERATOR_TOKEN="$(get_token "$TMP_DIR/block03-operator-login.html")"
+    curl -fsS -L -c "$BLOCK03_OPERATOR_JAR" -b "$BLOCK03_OPERATOR_JAR" "$BASE_URL/login.php" \
+        --data-urlencode "token=$BLOCK03_OPERATOR_TOKEN" \
+        --data-urlencode "email=operator-http@example.test" \
+        --data-urlencode "senha=SenhaOperadorNova-2026!" \
+        -o "$TMP_DIR/block03-operator-dashboard.html"
+    grep -Fq 'Cadastro de alunos' "$TMP_DIR/block03-operator-dashboard.html" || fail "Operador do Bloco 03 não conseguiu autenticar."
+
+    OPERATOR_PLANS_CODE="$(curl -sS -o "$TMP_DIR/block03-operator-plans.html" -w '%{http_code}' -b "$BLOCK03_OPERATOR_JAR" -c "$BLOCK03_OPERATOR_JAR" "$BASE_URL/planos.php?nova_matricula=1&aluno_id=$BLOCK03_STUDENT_ID")"
+    [[ "$OPERATOR_PLANS_CODE" == "200" ]] || fail "Operador deveria consultar catálogo e abrir matrícula; recebeu $OPERATOR_PLANS_CODE."
+    grep -Fq 'Confirmar matrícula' "$TMP_DIR/block03-operator-plans.html" || fail "Operador deveria visualizar o formulário de matrícula."
+    if grep -Fq 'Adicionar plano' "$TMP_DIR/block03-operator-plans.html"; then
+        fail "Operador não deveria visualizar o formulário de gestão do catálogo."
+    fi
+    OPERATOR_PLAN_TOKEN="$(get_token "$TMP_DIR/block03-operator-plans.html")"
+
+    PLAN_COUNT_BEFORE_DENIAL="$(db_value "SELECT COUNT(*) FROM planos")"
+    OPERATOR_SAVE_PLAN_CODE="$(curl -sS -o "$TMP_DIR/block03-operator-save-plan.html" -w '%{http_code}' -b "$BLOCK03_OPERATOR_JAR" -c "$BLOCK03_OPERATOR_JAR" "$BASE_URL/salvar-plano.php" \
+        --data-urlencode "token=$OPERATOR_PLAN_TOKEN" \
+        --data-urlencode "nome=Plano indevido pelo Operador" \
+        --data-urlencode "duracao_valor=1" \
+        --data-urlencode "duracao_unidade=MES" \
+        --data-urlencode "valor_atual=99,90")"
+    [[ "$OPERATOR_SAVE_PLAN_CODE" == "403" ]] || fail "Operador deveria receber 403 ao criar plano; recebeu $OPERATOR_SAVE_PLAN_CODE."
+    PLAN_COUNT_AFTER_DENIAL="$(db_value "SELECT COUNT(*) FROM planos")"
+    [[ "$PLAN_COUNT_AFTER_DENIAL" == "$PLAN_COUNT_BEFORE_DENIAL" ]] || fail "Tentativa negada de criar plano alterou o catálogo."
+
+    OPERATOR_MANAGE_PLAN_CODE="$(curl -sS -o "$TMP_DIR/block03-operator-manage-plan.html" -w '%{http_code}' -b "$BLOCK03_OPERATOR_JAR" -c "$BLOCK03_OPERATOR_JAR" "$BASE_URL/gerenciar-plano.php" \
+        --data-urlencode "token=$OPERATOR_PLAN_TOKEN" \
+        --data-urlencode "id=$PLAN_ID" \
+        --data-urlencode "acao=inativar")"
+    [[ "$OPERATOR_MANAGE_PLAN_CODE" == "403" ]] || fail "Operador deveria receber 403 ao alterar o catálogo; recebeu $OPERATOR_MANAGE_PLAN_CODE."
+    PLAN_STATE_AFTER_DENIAL="$(db_value "SELECT situacao FROM planos WHERE id = $PLAN_ID")"
+    [[ "$PLAN_STATE_AFTER_DENIAL" == "ATIVO" ]] || fail "Tentativa negada alterou a situação do plano."
+
+    OPERATOR_LEGACY_VIEW_CODE="$(curl -sS -o "$TMP_DIR/block03-operator-legacy.html" -w '%{http_code}' -b "$BLOCK03_OPERATOR_JAR" -c "$BLOCK03_OPERATOR_JAR" "$BASE_URL/revisoes-legado.php")"
+    [[ "$OPERATOR_LEGACY_VIEW_CODE" == "403" ]] || fail "Operador deveria receber 403 ao consultar revisões legadas; recebeu $OPERATOR_LEGACY_VIEW_CODE."
+    OPERATOR_LEGACY_DECISION_CODE="$(curl -sS -o "$TMP_DIR/block03-operator-legacy-decision.html" -w '%{http_code}' -b "$BLOCK03_OPERATOR_JAR" -c "$BLOCK03_OPERATOR_JAR" "$BASE_URL/salvar-revisao-legado.php" \
+        --data-urlencode "token=$OPERATOR_PLAN_TOKEN" \
+        --data-urlencode "review_id=1" \
+        --data-urlencode "resultado=LEGADO_SEM_VIGENCIA")"
+    [[ "$OPERATOR_LEGACY_DECISION_CODE" == "403" ]] || fail "Operador deveria receber 403 ao decidir revisão legada; recebeu $OPERATOR_LEGACY_DECISION_CODE."
+    OPERATOR_LEGACY_RECTIFY_CODE="$(curl -sS -o "$TMP_DIR/block03-operator-legacy-rectify.html" -w '%{http_code}' -b "$BLOCK03_OPERATOR_JAR" -c "$BLOCK03_OPERATOR_JAR" "$BASE_URL/retificar-vigencia-legado.php?review_id=1")"
+    [[ "$OPERATOR_LEGACY_RECTIFY_CODE" == "403" ]] || fail "Operador deveria receber 403 ao abrir retificação legada; recebeu $OPERATOR_LEGACY_RECTIFY_CODE."
+
+    OPERATOR_ENROLL_START_TOKEN="$(get_token "$TMP_DIR/block03-operator-plans.html")"
+    curl -fsS -L -b "$BLOCK03_OPERATOR_JAR" -c "$BLOCK03_OPERATOR_JAR" "$BASE_URL/planos.php?nova_matricula=1" \
+        --data-urlencode "token=$OPERATOR_ENROLL_START_TOKEN" \
+        --data-urlencode "acao=criar_matricula" \
+        --data-urlencode "aluno_id=$BLOCK03_STUDENT_ID" \
+        --data-urlencode "plano_id=$PLAN_ID" \
+        --data-urlencode "data_inicio=2027-01-11" \
+        --data-urlencode "hora_inicio=09:00" \
+        -o "$TMP_DIR/block03-operator-enrollment-created.html"
+    grep -Fq 'Matrícula #' "$TMP_DIR/block03-operator-enrollment-created.html" || fail "Operador autorizado não conseguiu criar matrícula."
+    OPERATOR_ENROLLMENT_ID="$(db_value "SELECT id FROM matriculas WHERE aluno_id = $BLOCK03_STUDENT_ID ORDER BY id DESC LIMIT 1")"
+    [[ "$OPERATOR_ENROLLMENT_ID" =~ ^[1-9][0-9]*$ ]] || fail "Matrícula criada pelo Operador não foi encontrada."
+    OPERATOR_DETAIL_TOKEN="$(get_token "$TMP_DIR/block03-operator-enrollment-created.html")"
+    grep -Fq 'Cancelar matrícula' "$TMP_DIR/block03-operator-enrollment-created.html" || fail "Operador deveria visualizar a ação de cancelamento."
+    curl -fsS -L -b "$BLOCK03_OPERATOR_JAR" -c "$BLOCK03_OPERATOR_JAR" "$BASE_URL/cancelar-matricula.php" \
+        --data-urlencode "token=$OPERATOR_DETAIL_TOKEN" \
+        --data-urlencode "student_id=$BLOCK03_STUDENT_ID" \
+        --data-urlencode "enrollment_id=$OPERATOR_ENROLLMENT_ID" \
+        --data-urlencode "motivo_cancelamento=Cancelamento por Operador HTTP" \
+        -o "$TMP_DIR/block03-operator-enrollment-cancelled.html"
+    grep -Fq 'Matrícula cancelada com sucesso.' "$TMP_DIR/block03-operator-enrollment-cancelled.html" || fail "Operador autorizado não conseguiu cancelar matrícula."
+    OPERATOR_CANCELLED_COUNT="$(db_value "SELECT COUNT(*) FROM matriculas WHERE id = $OPERATOR_ENROLLMENT_ID AND cancelada_em IS NOT NULL")"
+    [[ "$OPERATOR_CANCELLED_COUNT" == "1" ]] || fail "Cancelamento do Operador não foi persistido."
+    OPERATOR_CANCEL_AUDIT="$(db_value "SELECT COUNT(*) FROM auditoria WHERE acao = 'matricula_cancelada' AND entidade = 'matriculas' AND entidade_id = $OPERATOR_ENROLLMENT_ID")"
+    [[ "$OPERATOR_CANCEL_AUDIT" == "1" ]] || fail "Cancelamento do Operador não foi auditado exatamente uma vez."
+
+    echo "Bloco 03 HTTP: catálogo, contratação, snapshot, cancelamento e revisão + RBAC Operador: OK"
 fi
 
 echo "Integração HTTP: autenticação, RBAC, CRUD, status de alunos, detalhes e auditoria: OK"
