@@ -655,8 +655,7 @@ try {
         $deleteStudents->execute($studentIds);
     }
 
-    if ($actorId !== null) {
-}
+
 
     $pdo->exec('DROP TABLE IF EXISTS revisoes_legado_eventos');
     $pdo->exec('DROP TABLE IF EXISTS revisoes_legado');

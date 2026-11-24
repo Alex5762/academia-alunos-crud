@@ -274,8 +274,7 @@ try {
         $deletePlans->execute($planIds);
     }
 
-    if ($actorId !== null) {
-}
+
 
     $pdo->exec('DROP TABLE IF EXISTS matriculas');
     $pdo->exec('DROP TABLE IF EXISTS planos');
