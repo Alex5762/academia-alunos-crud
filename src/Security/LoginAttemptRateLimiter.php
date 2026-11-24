@@ -7,6 +7,8 @@ use PDO;
 use Throwable;
 use RuntimeException;
 
+require_once __DIR__ . '/AuditIntegrityChain.php';
+
 /**
  * Rate limit persistente do login.
  *
@@ -139,7 +141,7 @@ final class LoginAttemptRateLimiter
         );
         $delete->execute([
             'email_hash' => $emailHash,
-            'origem_hash' => $originHash,
+            'origin_hash' => $originHash,
         ]);
     }
 }
