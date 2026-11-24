@@ -266,3 +266,45 @@ Antes de liberar o sistema após as migrations:
 **Regra de liberação:** não disponibilizar o sistema a usuários reais enquanto a revisão dos perfis herdados não estiver concluída. O provisionamento do primeiro Administrador por CLI não substitui a revisão de contas preexistentes.
 
 Esta verificação é especialmente importante em banco já existente. Em uma instalação nova sem contas preexistentes, registrar explicitamente que a lista estava vazia antes do provisionamento inicial.
+
+
+## 14. Checkpoint pós-PR #4 — 2026-11-24
+
+Este registro atualiza os estados anteriores deste checklist. As seções 1–13 permanecem como histórico da preparação e da integração da PR #2; as decisões atuais estão registradas abaixo.
+
+### Integrações confirmadas
+
+| PR | Escopo | Commit de merge | CI no commit de merge |
+|---|---|---|---|
+| #2 | Fundação de autenticação e segurança | `c80986b763e23d5a9541334c9894dbd9effa5e27` | 5/5 sucesso |
+| #3 | Checkpoint e runbook do Bloco 01 | `e80ca9d48ad841988a0bcbe56fa232c6036068eb` | 5/5 sucesso |
+| #4 | Gate de revisão dos perfis após migration 007 | `052748e551de29b0dac0488b3e18d655ec8f184b` | 5/5 sucesso |
+
+HEADs das PRs documentais:
+- PR #3: `9d455da527f00b7673db08d40af1e3b5bc8eba9a`.
+- PR #4: `d4f35e3f69aaa53d070108a40e882738b864946f`.
+
+A `main` foi consultada após a PR #4 e aponta para `052748e551de29b0dac0488b3e18d655ec8f184b`. A branch está marcada como protegida. A consulta atual à API de detalhes da proteção retorna 403; não registrar regras detalhadas além do que já foi confirmado em consultas anteriores.
+
+### Situação operacional — não confundir CI com ambiente local
+
+- A CI de banco usa bancos efêmeros de teste no GitHub Actions; ela não aplica migrations no banco XAMPP/local do responsável.
+- Nenhuma migration 001/002/003/007/008 foi executada no ambiente local por meio das PRs #2–#4.
+- Nenhum backup local foi criado ou validado.
+- Nenhum Administrador real foi provisionado no banco local.
+- Nenhum smoke test foi executado no ambiente local após as migrations.
+
+### Gates ainda pendentes para concluir a implantação do Bloco 01
+
+- [ ] Atualizar o clone local para o SHA atual de `main`: `052748e551de29b0dac0488b3e18d655ec8f184b`.
+- [ ] Identificar o ambiente e o banco corretos; inspecionar schema e dados antes de importar ou migrar.
+- [ ] Fazer backup completo fora do webroot e validar sua leitura/restauração em ambiente de teste.
+- [ ] Aplicar as migrations 001, 002, 003 e 007 uma única vez, conforme o runbook e somente após inspeção.
+- [ ] Antes da migration 008, inserir o marcador histórico especificado na seção 6.4.
+- [ ] Aplicar migration 008 e inicializar/verificar a cadeia de auditoria por CLI.
+- [ ] Revisar todas as contas existentes afetadas pela migration 007; registrar a decisão de perfil por conta e confirmar ao menos um Administrador legítimo, ativo e apto a administrar.
+- [ ] Provisionar ou confirmar o Administrador inicial por CLI, sem expor a senha temporária no Git ou em canal público.
+- [ ] Executar e registrar smoke tests de autenticação, troca obrigatória de senha, sessões, RBAC, CRUD protegido, auditoria e logout.
+- [ ] Só liberar o sistema após todos os gates acima estarem concluídos.
+
+**Estado:** PRs #2, #3 e #4 integradas; implementação e documentação no GitHub estão consolidadas. O Bloco 01 ainda não deve ser marcado como operacionalmente concluído enquanto os gates locais acima estiverem pendentes.

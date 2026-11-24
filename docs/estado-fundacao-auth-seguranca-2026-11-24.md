@@ -381,3 +381,40 @@ O código da fundação está integrado e validado por CI. Isso **não significa
 Preparar a aplicação local contra a `main` integrada; identificar e inspecionar o banco de destino; gerar e verificar backup; executar migrations na ordem documentada somente após confirmar o estado real do schema; inicializar a cadeia de auditoria; provisionar o primeiro Administrador via CLI; executar smoke tests de autenticação, RBAC, CRUD, sessões, auditoria e logout.
 
 **Estado atual:** Bloco 01 integrado à `main` e CI pós-merge verde. Implantação/migrations e smoke test no ambiente local ou de destino ainda não foram executados neste checkpoint.
+
+
+## Checkpoint consolidado — PRs #2, #3 e #4 — 2026-11-24
+
+Este registro é o estado mais recente consultado e supersede os checkpoints pós-merge anteriores deste arquivo.
+
+### Estado da integração
+
+- PR #2 — `feat: integrar fundação de autenticação e segurança`: mesclada pela commit `c80986b763e23d5a9541334c9894dbd9effa5e27`.
+- PR #3 — `docs: registrar integração e preparar implantação do Bloco 01`: mesclada pela commit `e80ca9d48ad841988a0bcbe56fa232c6036068eb`; 2 arquivos documentais, 93 adições.
+- PR #4 — `docs: exigir revisão dos perfis após migration RBAC`: mesclada pela commit `052748e551de29b0dac0488b3e18d655ec8f184b`; 1 arquivo documental, 18 adições.
+- HEAD da PR #3: `9d455da527f00b7673db08d40af1e3b5bc8eba9a`.
+- HEAD da PR #4: `d4f35e3f69aaa53d070108a40e882738b864946f`.
+- A referência `main` foi consultada após a PR #4 e aponta para `052748e551de29b0dac0488b3e18d655ec8f184b`.
+- O merge da PR #4 preservou os dois pais esperados: a base anterior da `main` (`e80ca9d48ad841988a0bcbe56fa232c6036068eb`) e o HEAD da PR.
+- A branch `main` continua marcada como protegida. A API de detalhes da regra de proteção não está acessível para esta integração (403); os cinco checks obrigatórios haviam sido confirmados nas consultas anteriores.
+
+### CI dos checkpoints documentais
+
+- PR #3, commit de merge `e80ca9d48ad841988a0bcbe56fa232c6036068eb`: 5/5 checks concluídos com sucesso (Foundation database MySQL 8.0; Foundation database MariaDB 10.11; Foundation HTTP integration MySQL 8.0; Apache webroot protection; PHP quality and unit tests).
+- PR #4, commit de merge `052748e551de29b0dac0488b3e18d655ec8f184b`: 5/5 checks concluídos com sucesso nos mesmos cinco contextos.
+- As alterações das PRs #3 e #4 foram somente documentais; não alteraram código PHP, SQL ou migrations.
+
+### Estado funcional e operacional do Bloco 01
+
+- Código da fundação de autenticação e segurança: integrado à `main` pela PR #2.
+- Estado pós-merge e runbook de implantação: documentados pela PR #3.
+- Gate de revisão dos perfis herdados da migration 007: documentado pela PR #4.
+- Nenhuma migration foi executada no banco local/de destino durante estas integrações.
+- Nenhuma alteração de dados, backup, provisionamento de Administrador ou smoke test no ambiente local foi realizado por estas PRs.
+- O gate da migration 007 continua obrigatório: revisar contas preexistentes, confirmar quem deve manter ADMINISTRADOR, preservar histórico ao ajustar perfis e registrar o resultado antes de liberar o sistema.
+
+### Próximo marco
+
+A próxima etapa do Bloco 01 é operacional e depende de acesso ao ambiente: atualizar o clone local para a `main`, identificar e inspecionar o banco, produzir backup verificável, planejar a aplicação das migrations na ordem documentada e executar os smoke tests. Não executar as migrations usando o script de preparação de CI como substituto do runbook local.
+
+**Estado consolidado:** implementação e documentação do Bloco 01 integradas à `main`; validação do banco real e liberação operacional ainda pendentes.
