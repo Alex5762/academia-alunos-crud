@@ -3,7 +3,7 @@
 **Data:** 2026-11-24  
 **Branch:** `feat/block-03-plans-enrollments`  
 **Base:** `main` em `47e9d0cd8126785aa439ed93e981fac71e76532c`  
-**Estado:** extração e adaptação em andamento; não integrada.
+**Estado:** implementação isolada concluída para revisão; PR #9 em Draft, não integrada.
 
 ## Objetivo
 
@@ -58,15 +58,28 @@ O teste `tests/database-enrollment-creation.php` também foi adaptado para não 
 
 Essa ordem precisa continuar sincronizada entre README, scripts e CI. A sequência de migrations do Bloco 03 é testada em banco descartável; não foi executada no XAMPP nem em banco real.
 
-## Pendências antes de abrir a PR para revisão final
+## Validação automatizada confirmada
 
-- [ ] Confirmar que todos os arquivos adicionados estão no diff da branch.
-- [ ] Revisar as páginas e endpoints, incluindo autorização, CSRF, método HTTP e redirecionamentos.
-- [ ] Acrescentar/confirmar testes HTTP para catálogo, contratação, revisão e retificação.
-- [ ] Executar e corrigir os novos jobs CI em MySQL 8.0 e MariaDB 10.11.
-- [ ] Revisar se cada teste de banco limpa apenas suas próprias fixtures e pode rodar em sequência.
-- [ ] Revisar o diff completo para impedir dependências de Blocos 04–07.
-- [ ] Atualizar documentação e checklist de instalação.
+**CI da PR #9:** run [#45482239964](https://github.com/Alex5762/academia-alunos-crud/actions/runs/45482239964), concluído com sucesso em 2026-11-24 — **12/12 jobs aprovados**.
+
+- PHP quality e sintaxe: sucesso.
+- Migrations 005/006: MySQL 8.0 e MariaDB 10.11 aprovados.
+- Domínio, catálogo, criação/cancelamento, revisão, retificação e concorrência: MySQL 8.0 e MariaDB 10.11 aprovados.
+- Integração HTTP da fundação: sucesso.
+- Integração HTTP do Bloco 03: catálogo, criação/ativação de plano, contratação, snapshot, auditoria, cancelamento, ausência de dependência financeira e fila de revisão aprovados.
+- Regressão do Bloco 02 e proteção Apache: sucesso.
+
+## Pendências antes de retirar a PR do Draft
+
+- [x] Confirmar que todos os arquivos adicionados estão no diff da branch.
+- [x] Revisar as páginas e endpoints, incluindo autorização, CSRF, método HTTP e redirecionamentos em CI.
+- [x] Testes HTTP para catálogo, contratação, cancelamento e fila de revisão.
+- [x] Novos jobs CI em MySQL 8.0 e MariaDB 10.11.
+- [x] Testes de banco executados em sequência nos dois motores.
+- [ ] Fazer revisão final do diff completo, arquivo a arquivo.
+- [ ] Conferir a experiência visual em navegador e dispositivo físico.
+- [ ] Quando o computador estiver disponível: backup verificável, inspeção do schema real e smoke test no XAMPP.
+- [ ] Atualizar a sequência operacional final após revisão.
 - [ ] Não mesclar sem autorização explícita.
 
 ## Limites de validação
