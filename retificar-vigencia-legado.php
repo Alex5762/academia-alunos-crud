@@ -156,6 +156,7 @@ if (!$estruturaDisponivel) {
     <meta name="description" content="Corrija uma vigência legada com evidência e histórico auditável.">
     <title>Retificar vigência | FitControl</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="auth.css">
     <?= renderizarMonitorSessao() ?>
     <script src="theme.js"></script>
 </head>
