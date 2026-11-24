@@ -392,7 +392,7 @@ AUDIT_INACTIVE_REPEAT="$(db_value "SELECT COUNT(*) FROM auditoria WHERE usuario_
 [[ "$AUDIT_INACTIVE_REPEAT" == "1" ]] || fail "Repetir a inativação duplicou o evento de auditoria."
 
 curl -fsS -b "$ADMIN_JAR" -c "$ADMIN_JAR" "$BASE_URL/detalhes-aluno.php?id=$STUDENT_ID&busca=Aluno+Foundation+HTTP&status=inativos" -o "$TMP_DIR/student-details.html"
-grep -Fq 'Detalhes do aluno' "$TMP_DIR/student-details.html" || fail "Página de detalhes não abriu."
+grep -Fq 'PERFIL DO ALUNO' "$TMP_DIR/student-details.html" || fail "Página de detalhes não abriu."
 grep -Fq 'Aluno inativado' "$TMP_DIR/student-details.html" || fail "Histórico não mostrou a inativação."
 
 TOKEN="$(get_token "$TMP_DIR/student-details.html")"
