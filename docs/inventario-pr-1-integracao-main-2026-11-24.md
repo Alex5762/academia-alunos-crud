@@ -17,7 +17,7 @@ Este inventário registra os arquivos que a PR #1 altera e os agrupa por área f
 
 | Grupo de caminho | Quantidade |
 |---|---:|
-| Arquivos na raiz | 0 |
+| Arquivos na raiz | 44 |
 | `.github/` | 2 |
 | `config/` | 2 |
 | `database/` | 16 |
@@ -52,49 +52,86 @@ Outros pontos transversais:
 
 Esses arquivos não devem ser copiados integralmente para várias PRs. É necessário identificar o menor conjunto compartilhado que torna cada camada funcional.
 
-## 4. Aplicação na raiz — classificação inicial
+## 4. Arquivos na raiz — classificação inicial
 
-#### Autenticação, sessões e contas (0)
+### Aplicação PHP (36)
 
+#### Autenticação, sessões e contas (9)
 
+- `alterar-perfil-usuario.php`
+- `alterar-senha.php`
+- `alterar-status-usuario.php`
+- `login.php`
+- `logout.php`
+- `renovar-sessao.php`
+- `salvar-usuario.php`
+- `trocar-senha.php`
+- `usuarios.php`
 
-#### Alunos e cadastro (0)
+#### Alunos e cadastro (5)
 
+- `alterar-status-aluno.php`
+- `cadastro.php`
+- `detalhes-aluno.php`
+- `excluir.php`
+- `salvar.php`
 
+#### Planos, matrículas e legado (8)
 
-#### Planos, matrículas e legado (0)
+- `cancelar-matricula.php`
+- `gerenciar-plano.php`
+- `planos.php`
+- `retificar-vigencia-legado.php`
+- `revisoes-legado.php`
+- `salvar-plano.php`
+- `salvar-retificacao-legado.php`
+- `salvar-revisao-legado.php`
 
+#### Frequência/check-in (2)
 
+- `checkins.php`
+- `registrar-checkin.php`
 
-#### Frequência/check-in (0)
+#### Financeiro (1)
 
+- `financeiro.php`
 
+#### Aulas/grade (3)
 
-#### Financeiro (0)
+- `aulas.php`
+- `gerenciar-horarios.php`
+- `gestao-aulas.php`
 
+#### Relatórios (2)
 
+- `exportar-relatorio.php`
+- `relatorios.php`
 
-#### Aulas/grade (0)
+#### Auditoria e configuração (5)
 
+- `auditoria.php`
+- `conexao.php`
+- `configuracoes.php`
+- `detalhes-auditoria.php`
+- `funcoes.php`
 
+#### Outros arquivos PHP (1)
 
-#### Relatórios (0)
+- `index.php`
 
+### Assets estáticos (4)
 
+- `script.js`
+- `sessao.js`
+- `style.css`
+- `theme.js`
 
-#### Auditoria e configuração (0)
+### Metadados, configuração e arquivos compartilhados (4)
 
-
-
-
-
-### Assets e metadados da raiz
-
-**Assets:**
-
-
-**Metadados e configuração:**
-
+- `.gitignore`
+- `.htaccess`
+- `LICENSE`
+- `README.md`
 
 ## 5. Camada de domínio, segurança e infraestrutura
 
