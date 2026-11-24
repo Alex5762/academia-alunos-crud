@@ -308,3 +308,39 @@ A `main` foi consultada após a PR #4 e aponta para `052748e551de29b0dac0488b3e1
 - [ ] Só liberar o sistema após todos os gates acima estarem concluídos.
 
 **Estado:** PRs #2, #3 e #4 integradas; implementação e documentação no GitHub estão consolidadas. O Bloco 01 ainda não deve ser marcado como operacionalmente concluído enquanto os gates locais acima estiverem pendentes.
+
+
+## 15. Checkpoint pós-merge — PR #5 — 2026-11-24
+
+Este checkpoint supersede as referências de HEAD da `main` registradas nas seções anteriores.
+
+### Integração confirmada
+
+- PR #5: **fechada e mesclada**.
+- Título: `docs: consolidar checkpoint pós-PR 4 do Bloco 01`.
+- HEAD da PR: `18d2d379515ee1f66c1ac6f0f232b1b059a7c9b5`.
+- Commit de merge: `7fcd45c9de3499ce1da19ec84c5bab4556aeada5`.
+- Pais do commit: base anterior `052748e551de29b0dac0488b3e18d655ec8f184b` e HEAD da PR.
+- A referência `main` foi consultada após o merge e aponta para `7fcd45c9de3499ce1da19ec84c5bab4556aeada5`.
+- Alterações: somente os dois documentos de checkpoint; 79 adições, nenhuma exclusão.
+- CI pós-merge push #45468240797: 5/5 checks concluídos com sucesso.
+
+### Precisão do destino SQL
+
+A inspeção de `banco.sql` e das migrations 001, 002, 003, 007 e 008 confirmou o uso explícito de `academia_alunos`. Portanto:
+- [ ] Confirmar que o banco configurado no XAMPP/arquivo local é exatamente `academia_alunos`.
+- Não definir outro `DB_NAME` esperando que os SQLs atuais acompanhem essa escolha. A configuração PHP permite valor configurável, mas os arquivos SQL da implantação ainda fixam o nome do schema.
+- Qualquer intenção de renomear o schema deve virar tarefa técnica própria, com alterações coordenadas nos SQLs, CI e testes; não improvisar durante a implantação.
+
+### Gates operacionais ainda pendentes
+
+- [ ] Atualizar o clone local para a `main` no SHA `7fcd45c9de3499ce1da19ec84c5bab4556aeada5`.
+- [ ] Identificar ambiente e schema alvo e inspecionar os dados existentes.
+- [ ] Fazer backup completo fora do webroot e validar a restauração em ambiente de teste.
+- [ ] Aplicar migrations somente uma vez e na ordem documentada; parar diante de qualquer estado parcial.
+- [ ] Antes da migration 008, inserir o marcador histórico; depois inicializar e verificar a cadeia pelo CLI.
+- [ ] Após a migration 007, revisar contas preexistentes com perfil herdado `ADMINISTRADOR`, preservar a auditoria ao ajustar perfis e registrar o responsável e o resultado.
+- [ ] Provisionar/confirmar um Administrador legítimo, ativo e apto a administrar.
+- [ ] Executar e registrar smoke tests no ambiente local/de destino.
+
+**Estado:** PRs #2–#5 integradas e CI pós-merge verde. A implementação e a documentação no GitHub estão consolidadas; o Bloco 01 ainda depende da implantação controlada e validação no banco real.
