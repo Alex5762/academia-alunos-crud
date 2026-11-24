@@ -407,10 +407,12 @@ jobs:
         with:
           node-version: '24'
 
-      - name: Install Playwright browsers
-        run: |
-          npm install --no-save --no-package-lock playwright@1.65.1
-          npx playwright install --with-deps chromium firefox webkit
+      - name: Install Playwright client
+        run: npm install --no-save --no-package-lock playwright@1.65.1
+
+      - name: Pull pinned Playwright runtime
+        timeout-minutes: 15
+        run: docker pull mcr.microsoft.com/playwright:v1.65.1-noble
 
       - name: Check PHP syntax
         shell: bash
@@ -750,8 +752,14 @@ jobs:
           export FITCONTROL_TEST_PASSWORD="$(cat "$RUNNER_TEMP/fitcontrol-test-password")"
           bash tests/integration-class-schedule.sh
           rm -f "$RUNNER_TEMP/fitcontrol-test-password"
-          node tests/capture-screenshots.mjs
-          node tests/browser-compatibility.mjs
+          docker run --rm --init --ipc=host --network host \
+            --volume "$GITHUB_WORKSPACE:/workspace" \
+            --workdir /workspace \
+            --env BASE_URL \
+            --env FITCONTROL_TEST_PASSWORD \
+            --env PLAYWRIGHT_BROWSERS_PATH=/ms-playwright \
+            mcr.microsoft.com/playwright:v1.65.1-noble \
+            bash -lc 'node tests/capture-screenshots.mjs && node tests/browser-compatibility.mjs'
 
       - name: Upload screenshots
         uses: actions/upload-artifact@v4
