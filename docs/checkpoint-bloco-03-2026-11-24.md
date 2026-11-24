@@ -169,3 +169,31 @@ A antiga PR #1 permanece Draft e não deve ser mesclada em massa.
 4. Manter a PR em Draft e não mesclar sem autorização explícita.
 
 **Link da CI aprovada no HEAD atual:** https://github.com/Alex5762/academia-alunos-crud/actions/runs/45488596825
+
+
+---
+
+## Atualização de continuidade — CSS e manutenção dos testes — 2026-11-24
+
+### CSS
+
+- Foi identificado que o final de `style.css` continha quatro blocos sem fechamento: media query da retificação, `.flash-check`, `.settings-card-heading p` e `.button-danger:hover`.
+- Commit `dd99da1`: fechamento dos blocos e complementação das regras afetadas.
+- Commit `9763709`: etapa `Validate CSS block structure` adicionada ao job de qualidade, comparando a quantidade de chaves de abertura/fechamento.
+- Verificação estática no HEAD `9763709`: 248 chaves de abertura e 248 de fechamento.
+- CI `45490231780`, associada ao commit `9763709`: **12/12 jobs aprovados**.
+
+### Manutenção dos fixtures
+
+- Commits `c871a70` e `bc7f34d`: remoção de blocos vazios `if ($actorId !== null)`, remoção de bloco de limpeza sem uso/variável `legacyEnrollmentIds`, comentários explicando por que o usuário de auditoria permanece no banco descartável e correções de indentação nos blocos `finally`.
+- A auditoria é append-only e sua FK usa `ON DELETE RESTRICT`; portanto, usuários de fixture com eventos vinculados não devem ser apagados. Os testes devem ser executados apenas em banco descartável, nunca em banco de aplicação.
+- O endpoint e o serviço de cancelamento foram conferidos novamente: ambos validam UTF-8 e limite de 255 caracteres, alinhado a `motivo_cancelamento VARCHAR(255)`.
+
+### Estado no momento deste checkpoint
+
+- HEAD da branch: `bc7f34de676fdf99815637e0f73a2fd78cdb694c`.
+- PR #9: aberta, Draft, base `main`, não integrada.
+- CI `45491404616` foi criada para o commit `bc7f34d`; estava pendente na última consulta. A CI verde de `9763709` não substitui a validação deste HEAD.
+- Revisão estática ainda não encerrada: continuar diff completo, com foco em testes de concorrência, endpoints e experiência visual.
+- Pendentes fora da CI: inspeção visual em navegador/dispositivo físico e, quando houver computador, backup verificável, inspeção de schema/engine real, aplicação controlada no XAMPP e smoke tests.
+- Não retirar a PR do Draft nem mesclar sem revisão completa e autorização explícita.
