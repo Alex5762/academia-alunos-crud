@@ -2,9 +2,9 @@
 
 ## Estado confirmado
 
-- PR #2: aberta em Draft, base `main`, sem merge.
+- PR #2: aberta, marcada pronta para revisão após CI completa e revisão de escopo; sem merge.
 - Branch: `feat/foundation-auth-security`.
-- HEAD atual: `d5a077eae43f80d665a729a68f54d9f54ca08090`.
+- HEAD do checkpoint validado: `fd8f8adef73e6ccd727c0469beae29a46f9c679f`.
 - `main`: permanece em `e1f4c8084dc6dec8c772a699855562944d50e89e`.
 - Proteção de branch: ainda desativada (`protected: false`); falta permissão administrativa para configurá-la pela conexão atual.
 - Nenhuma migration foi aplicada ao ambiente local do usuário.
@@ -23,13 +23,16 @@ O workflow foi atualizado para executar explicitamente as duas baterias. O teste
 
 ## CI
 
-Última execução completa anterior à inclusão da bateria HTTP dedicada:
-- Run #45390992407, evento pull_request, HEAD `f37cb19db2e32bcaf5939beee235732724ae5a63`.
-- Cinco jobs aprovados: PHP quality, MySQL 8.0, MariaDB 10.11, HTTP integration e Apache webroot protection.
+Após adicionar `tests/foundation-account-http.sh` ao workflow, o checkpoint `fd8f8adef73e6ccd727c0469beae29a46f9c679f` foi validado integralmente:
+- Run #45392052117, evento pull_request: cinco jobs aprovados.
+- Run #45392039299, evento push: cinco jobs aprovados.
+- No job HTTP da PR, o passo `Verify account administration HTTP endpoints and audit integrity` foi executado e aprovado, além do fluxo `foundation-http.sh`.
+- Checks obrigatórios observados: `PHP quality and unit tests`; `Foundation database (MySQL 8.0)`; `Foundation database (MariaDB 10.11)`; `Foundation HTTP integration (MySQL 8.0)`; `Apache webroot protection`.
 
-Após adicionar `tests/foundation-account-http.sh` ao workflow:
-- Run #45391972285, HEAD `d5a077eae43f80d665a729a68f54d9f54ca08090`.
-- Estado no momento desta atualização: em execução. A aprovação final ainda não está confirmada.
+Revisão do PR #2 no mesmo checkpoint:
+- 54 arquivos alterados; 4.715 adições e 73 remoções.
+- Nenhum comentário de revisão ou review pendente retornado pelo GitHub.
+- GitHub reportou `mergeable: true`; isso não substitui a revisão nem autoriza merge.
 
 ## Escopo da PR #2
 
@@ -39,8 +42,8 @@ Ficam fora: matrículas, frequência, financeiro, grade, dashboard completo, rel
 
 ## Próximos passos
 
-1. Aguardar a CI #45391972285 e confirmar o novo job HTTP dedicado.
-2. Corrigir eventuais falhas e repetir a CI.
-3. Revisar o diff final e manter a PR em Draft até conclusão da revisão.
-4. Configurar proteção da `main` nas Settings do GitHub: exigir PR, checks obrigatórios, bloquear force-push e exclusão; sem exigir aprovação de terceiro no repositório individual.
-5. Só fazer merge após autorização explícita do usuário.
+1. CI do checkpoint `fd8f8ade` concluída com sucesso nos eventos push e pull_request.
+2. Escopo revisado: a PR mantém a fundação, sem matrículas, frequência, financeiro, grade, dashboard, relatórios ou migration 010.
+3. PR #2 pode ficar pronta para revisão; não fazer merge nesta etapa.
+4. Configurar proteção da `main` nas Settings do GitHub: exigir PR, os cinco checks acima, bloquear force-push e exclusão, sem exigir aprovação de terceiro no repositório individual. A conexão GitHub atual não possui permissão administrativa para aplicar essas regras; `main.protected` permanece `false`.
+5. Fazer merge somente após autorização explícita do usuário e após a proteção da `main` estar ativa.
