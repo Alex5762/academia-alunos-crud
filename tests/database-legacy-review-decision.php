@@ -547,6 +547,8 @@ try {
         "Revisão legada transacional: OK; três resultados, materialização comprovada, idempotência, sobreposição e rollback validados.\n"
     );
 } finally {
+    // Este usuário de fixture permanece no banco descartável: a auditoria é append-only
+    // e sua FK usa ON DELETE RESTRICT. Não executar estes testes em banco de aplicação.
     if ($reviewIds !== []) {
         $placeholders = implode(',', array_fill(0, count($reviewIds), '?'));
         $deleteEvents = $pdo->prepare(
@@ -555,13 +557,10 @@ try {
         $deleteEvents->execute($reviewIds);
     }
 
-    if ($legacyEnrollmentIds !== []) {
-        $placeholders = implode(',', array_fill(0, count($legacyEnrollmentIds), '?'));
-}
 
     if ($studentIds !== []) {
         $placeholders = implode(',', array_fill(0, count($studentIds), '?'));
-$deleteEnrollments = $pdo->prepare(
+        $deleteEnrollments = $pdo->prepare(
             "DELETE FROM matriculas WHERE aluno_id IN ({$placeholders})"
         );
         $deleteEnrollments->execute($studentIds);
@@ -577,8 +576,6 @@ $deleteEnrollments = $pdo->prepare(
         $deleteStudents->execute($studentIds);
     }
 
-    if ($actorId !== null) {
-}
 
     $pdo->exec('DROP TABLE IF EXISTS revisoes_legado_eventos');
     $pdo->exec('DROP TABLE IF EXISTS revisoes_legado');

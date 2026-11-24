@@ -507,6 +507,8 @@ try {
         $waitedMilliseconds
     );
 } finally {
+    // Este usuário de fixture permanece no banco descartável: a auditoria é append-only
+    // e sua FK usa ON DELETE RESTRICT. Não executar estes testes em banco de aplicação.
     foreach ([$rectificationPipes, $decisionPipes] as $pipes) {
         foreach ($pipes as $pipe) {
             if (is_resource($pipe)) {
@@ -544,8 +546,6 @@ try {
         $deleteStudent->execute(['student_id' => $studentId]);
     }
 
-    if ($actorId !== null) {
-}
 
     $pdo->exec('DROP TABLE IF EXISTS revisoes_legado_eventos');
     $pdo->exec('DROP TABLE IF EXISTS revisoes_legado');

@@ -616,14 +616,12 @@ try {
         "Retificação de vigência legada: OK; histórico anterior/novo, sobreposição, idempotência, cancelamento preservado e rollback confirmados.\n"
     );
 } finally {
+    // Este usuário de fixture permanece no banco descartável: a auditoria é append-only
+    // e sua FK usa ON DELETE RESTRICT. Não executar estes testes em banco de aplicação.
     if ($triggerCreated) {
         $pdo->exec('DROP TRIGGER IF EXISTS fitcontrol_fail_rectification_audit');
     }
 
-    // O usuário é exclusivo deste fixture. Remover toda a auditoria vinculada
-    // antes de apagar o usuário, cuja FK em auditoria usa ON DELETE RESTRICT.
-    if ($actorId !== null) {
-}
 
     if ($reviewIds !== []) {
         $placeholders = implode(',', array_fill(0, count($reviewIds), '?'));
@@ -631,7 +629,7 @@ try {
             "DELETE FROM revisoes_legado_eventos WHERE revisao_legado_id IN ({$placeholders})"
         );
         $deleteEvents->execute($reviewIds);
-}
+    }
 
     if ($enrollmentIds !== []) {
         $placeholders = implode(',', array_fill(0, count($enrollmentIds), '?'));

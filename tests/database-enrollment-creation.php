@@ -423,9 +423,11 @@ try {
         "Criação transacional de matrícula: OK; snapshot, vigência, auditoria e rollback validados.\n"
     );
 } finally {
+    // Este usuário de fixture permanece no banco descartável: a auditoria é append-only
+    // e sua FK usa ON DELETE RESTRICT. Não executar estes testes em banco de aplicação.
     if ($enrollmentIds !== []) {
         $placeholders = implode(',', array_fill(0, count($enrollmentIds), '?'));
-    $deleteEnrollments = $pdo->prepare(
+        $deleteEnrollments = $pdo->prepare(
             "DELETE FROM matriculas WHERE id IN ({$placeholders})"
         );
         $deleteEnrollments->execute($enrollmentIds);
@@ -444,8 +446,6 @@ try {
         $deleteStudents->execute($studentIds);
     }
 
-    if ($actorId !== null) {
-}
 
     $pdo->exec('DROP TABLE IF EXISTS revisoes_legado');
     $pdo->exec('DROP TABLE IF EXISTS matriculas');

@@ -258,8 +258,8 @@ try {
         "Gerenciamento de planos: OK; rascunho, edição, ativação, inativação, reativação, exclusão protegida, snapshots e auditoria validados.\n"
     );
 } finally {
-    if ($actorId !== null) {
-}
+    // Este usuário de fixture permanece no banco descartável: a auditoria é append-only
+    // e sua FK usa ON DELETE RESTRICT. Não executar estes testes em banco de aplicação.
 
     if ($planIds !== []) {
         $placeholders = implode(',', array_fill(0, count($planIds), '?'));

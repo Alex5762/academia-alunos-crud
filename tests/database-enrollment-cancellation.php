@@ -353,6 +353,8 @@ try {
         "Cancelamento transacional: OK; cancelamento agendado/ativo, vencida/repetida rejeitadas e rollback de auditoria confirmado.\n"
     );
 } finally {
+    // Este usuário de fixture permanece no banco descartável: a auditoria é append-only
+    // e sua FK usa ON DELETE RESTRICT. Não executar estes testes em banco de aplicação.
 if (isset($enrollmentIds) && $enrollmentIds !== []) {
         $placeholders = implode(',', array_fill(0, count($enrollmentIds), '?'));
         $deleteMatriculas = $pdo->prepare(
@@ -369,8 +371,6 @@ if (isset($enrollmentIds) && $enrollmentIds !== []) {
         $deleteStudents->execute($studentIds);
     }
 
-    if ($actorId !== null) {
-}
 
     $pdo->exec('DROP TABLE IF EXISTS matriculas');
 }
