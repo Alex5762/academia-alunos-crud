@@ -9,6 +9,7 @@ if (PHP_SAPI !== 'cli') {
 
 require_once __DIR__ . '/../conexao.php';
 require_once __DIR__ . '/../src/Security/AuditIntegrityChain.php';
+require_once __DIR__ . '/../src/Security/PasswordPolicy.php';
 
 /**
  * Lê um campo não secreto da entrada padrão.
@@ -49,11 +50,7 @@ try {
         strtr(base64_encode(random_bytes(24)), '+/', '-_'),
         '='
     );
-    $senhaHash = password_hash($senhaTemporaria, PASSWORD_DEFAULT);
-
-    if ($senhaHash === false) {
-        throw new RuntimeException('Não foi possível gerar o hash da senha.');
-    }
+    $senhaHash = \\FitControl\\Security\\PasswordPolicy::hash($senhaTemporaria);
 
     $pdo->beginTransaction();
 
