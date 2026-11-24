@@ -175,3 +175,41 @@ Commits desta correção:
 - PR #2 segue aberta e sem merge. main permanece em e1f4c8084dc6dec8c772a699855562944d50e89e. Nenhuma migration foi aplicada ao ambiente local do usuário.
 
 **Próxima etapa:** revisão final do diff e do estado da PR; não mesclar sem autorização explícita.
+
+## Checkpoint operacional consolidado — 2026-11-24
+
+Este checkpoint supersede os estados operacionais antigos descritos nas seções históricas acima. As anotações anteriores permanecem como histórico da evolução da revisão; para a decisão atual, usar os valores desta seção e o checklist `docs/pre-merge-checklist-bloco-01-2026-11-24.md`.
+
+### Estado atual do GitHub
+
+- Repositório: `Alex5762/academia-alunos-crud`.
+- PR #2: aberta, não draft, reportada como mergeable, não mesclada.
+- Branch: `feat/foundation-auth-security`.
+- HEAD no início deste checkpoint: `6fb629e4a57483eae1c66f423a0d873bae44cf06`.
+- Base `main`: `e1f4c8084dc6dec8c772a699855562944d50e89e`.
+- Comparação: 68 commits à frente, 0 atrás; 58 arquivos, 5.764 adições e 73 deleções.
+- Revisões formais e threads inline: nenhuma registrada na consulta.
+- A API de proteção de branch retornou 403 para a integração; a proteção atual precisa ser conferida na interface do GitHub.
+
+### Última correção documental
+
+O comentário em `config/database.local.example.php` foi corrigido para instruir a cópia para `config/database.local.php`. O arquivo local real é ignorado pelo Git. O runbook de pré-merge foi consolidado com:
+- snapshot da PR e estado real de CI;
+- portões obrigatórios antes do merge;
+- verificação de backup e distinção entre instalação inicial e banco existente;
+- ordem única das migrations 001, 002, 003, 007 e 008;
+- marcador histórico antes da migration 008;
+- inicialização e verificação da cadeia;
+- provisionamento CLI do primeiro Administrador;
+- smoke test e plano de recuperação.
+
+### CI do checkpoint
+
+- HEAD `6fb629e4a57483eae1c66f423a0d873bae44cf06`, run pull_request #45456925659: em andamento na última consulta. PHP quality e Apache webroot protection estavam verdes; os jobs de MySQL 8.0, MariaDB 10.11 e integração HTTP ainda estavam em andamento.
+- O checklist foi atualizado depois desse HEAD. A nova CI precisa validar o HEAD documental resultante antes de fechar a preparação.
+
+### Decisão
+
+A preparação técnica e operacional está documentada, mas **não há autorização de merge registrada**. A PR #2 permanece aberta, a `main` permanece intacta e nenhuma migration foi executada no banco local do usuário.
+
+Não mesclar até: CI verde no HEAD atual; regras de proteção da `main` conferidas; revisão formal obtida caso exigida; backup do banco de destino confirmado; autorização explícita do responsável.
