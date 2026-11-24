@@ -43,73 +43,86 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $emailHash = hash('sha256', $email);
             $origemHash = hash('sha256', $ipOrigem);
 
-            // Remove registros inativos e consulta o bloqueio persistente.
-            \FitControl\Security\LoginAttemptRateLimiter::cleanupExpired($pdo);
-            $bloqueado = \FitControl\Security\LoginAttemptRateLimiter::isBlocked(
+            // Serializa o ciclo completo para esta combinação e impede que
+            // requisições simultâneas atravessem o mesmo estado desbloqueado.
+            \\FitControl\\Security\\LoginAttemptRateLimiter::acquireAttemptLock(
                 $pdo,
                 $emailHash,
                 $origemHash
             );
 
-            if ($bloqueado) {
-                $erro = 'E-mail ou senha inválidos.';
-            } else {
-                $consulta = $pdo->prepare(
-                    'SELECT id, nome, email, senha_hash, ativo, deve_trocar_senha, sessao_versao
-                     FROM usuarios
-                     WHERE email = :email
-                     LIMIT 1'
+            try {
+                // Consulta o bloqueio somente depois de obter a admissão exclusiva.
+                \\FitControl\\Security\\LoginAttemptRateLimiter::cleanupExpired($pdo);
+                $bloqueado = \\FitControl\\Security\\LoginAttemptRateLimiter::isBlocked(
+                    $pdo,
+                    $emailHash,
+                    $origemHash
                 );
-                $consulta->execute(['email' => $email]);
-                $usuario = $consulta->fetch();
 
-                $credenciaisValidas = $usuario
-                    && (int) $usuario['ativo'] === 1
-                    && password_verify($senha, $usuario['senha_hash']);
-
-                if (!$credenciaisValidas) {
-                    // O contador e o evento de auditoria são gravados atomicamente.
-                    \FitControl\Security\LoginAttemptRateLimiter::recordFailure(
-                        $pdo,
-                        $emailHash,
-                        $origemHash
-                    );
-
+                if ($bloqueado) {
                     $erro = 'E-mail ou senha inválidos.';
                 } else {
-                    if (!session_regenerate_id(true)) {
-                        throw new RuntimeException('Não foi possível renovar a sessão.');
+                    $consulta = $pdo->prepare(
+                        'SELECT id, nome, email, senha_hash, ativo, deve_trocar_senha, sessao_versao
+                         FROM usuarios
+                         WHERE email = :email
+                         LIMIT 1'
+                    );
+                    $consulta->execute(['email' => $email]);
+                    $usuario = $consulta->fetch();
+
+                    $credenciaisValidas = $usuario
+                        && (int) $usuario['ativo'] === 1
+                        && password_verify($senha, $usuario['senha_hash']);
+
+                    if (!$credenciaisValidas) {
+                        // Contador e evento de auditoria são gravados atomicamente.
+                        \\FitControl\\Security\\LoginAttemptRateLimiter::recordFailure(
+                            $pdo,
+                            $emailHash,
+                            $origemHash
+                        );
+                        $erro = 'E-mail ou senha inválidos.';
+                    } else {
+                        if (!session_regenerate_id(true)) {
+                            throw new RuntimeException('Não foi possível renovar a sessão.');
+                        }
+
+                        $pdo->beginTransaction();
+                        registrarAuditoria(
+                            $pdo,
+                            (int) $usuario['id'],
+                            'login',
+                            'usuarios',
+                            (int) $usuario['id']
+                        );
+                        \\FitControl\\Security\\LoginAttemptRateLimiter::clear(
+                            $pdo,
+                            $emailHash,
+                            $origemHash
+                        );
+                        $pdo->commit();
+
+                        $_SESSION = [];
+                        $instanteAutenticacao = time();
+                        $_SESSION['usuario_id'] = (int) $usuario['id'];
+                        $_SESSION['usuario_sessao_versao'] = (int) $usuario['sessao_versao'];
+                        $_SESSION['usuario_autenticado_em'] = $instanteAutenticacao;
+                        $_SESSION['usuario_ultimo_acesso'] = $instanteAutenticacao;
+                        $_SESSION['token'] = bin2hex(random_bytes(32));
+
+                        redirecionar((int) $usuario['deve_trocar_senha'] === 1 ? 'trocar-senha.php' : 'index.php');
                     }
-
-                    $pdo->beginTransaction();
-                    registrarAuditoria(
-                        $pdo,
-                        (int) $usuario['id'],
-                        'login',
-                        'usuarios',
-                        (int) $usuario['id']
-                    );
-
-                    // Um login válido limpa o contador dessa combinação.
-                    \FitControl\Security\LoginAttemptRateLimiter::clear(
-                        $pdo,
-                        $emailHash,
-                        $origemHash
-                    );
-                    $pdo->commit();
-
-                    // Limpa qualquer estado pré-autenticação e cria novo token CSRF.
-                    $_SESSION = [];
-                    $instanteAutenticacao = time();
-                    $_SESSION['usuario_id'] = (int) $usuario['id'];
-                    $_SESSION['usuario_sessao_versao'] = (int) $usuario['sessao_versao'];
-                    $_SESSION['usuario_autenticado_em'] = $instanteAutenticacao;
-                    $_SESSION['usuario_ultimo_acesso'] = $instanteAutenticacao;
-                    $_SESSION['token'] = bin2hex(random_bytes(32));
-
-                    redirecionar((int) $usuario['deve_trocar_senha'] === 1 ? 'trocar-senha.php' : 'index.php');
                 }
+            } finally {
+                \\FitControl\\Security\\LoginAttemptRateLimiter::releaseAttemptLock(
+                    $pdo,
+                    $emailHash,
+                    $origemHash
+                );
             }
+
         } catch (Throwable $falha) {
             if ($pdo->inTransaction()) {
                 $pdo->rollBack();
