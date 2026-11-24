@@ -14,7 +14,9 @@
 - **SEC-04 — Sessões e cabeçalhos HTTP:** testes de cabeçalhos, cookies, modo estrito, cenários HTTP/HTTPS simulados e rotação de sessão/CSRF. CI #1699 aprovada nos sete jobs funcionais. A correção `session_cache_limiter('')` preserva o `Cache-Control: no-store, private, max-age=0` explícito. HTTPS real, proxy TLS, navegador e XAMPP locais não foram validados.
 - **Limites:** as verificações automatizadas não constituem auditoria independente nem autorização para uso público. MFA, recuperação de senha, HSTS/CSP planejados com cautela, gestão operacional de segredos, backups/restauração, monitoramento e privacidade continuam fora da conclusão dessas quatro revisões.
 
-**Próxima revisão sugerida:** inventariar scripts, estilos, fontes e recursos externos para avaliar uma CSP em modo `Report-Only`. Não aplicar uma política bloqueante nem adicionar `unsafe-inline` por conveniência antes de mapear dependências e testar os fluxos existentes.
+- **SEC-05 — CSP em modo Report-Only:** inventário concluído; a política inicial restringe scripts/estilos a `'self'`, bloqueia atributos inline com `style-src-attr 'none'` e não habilita `unsafe-inline`/ `unsafe-eval`. Os dois atributos de estilo dinâmico foram substituídos por elementos `<progress>`. A validação automatizada em Chromium, Firefox e WebKit está incluída em `tests/browser-compatibility.mjs`; aguarda CI no novo HEAD. Não há coletor remoto de relatórios: o Playwright observa o evento `securitypolicyviolation` durante a navegação de teste.
+ 
+ **Próximo passo:** confirmar zero violações e ausência de regressão visual na CI; manter a política em Report-Only até revisão manual em navegador real. Não converter para enforcement nem habilitar HSTS/HTTPS de produção nesta etapa.
 
 - Blocos 01–06 possuem implementação relevante e cobertura automatizada na branch.
 - Bloco 03: migrations de planos/matrículas e preservação de legado aprovadas em MySQL 8.0 e MariaDB 10.11.

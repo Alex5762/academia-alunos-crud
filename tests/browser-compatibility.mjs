@@ -20,6 +20,35 @@ function ensure(condition, message) {
   }
 }
 
+const requiredCspDirectives = [
+  "default-src 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+  "frame-ancestors 'none'",
+  "object-src 'none'",
+  "script-src 'self'",
+  "script-src-attr 'none'",
+  "style-src 'self'",
+  "style-src-attr 'none'",
+  "img-src 'self'",
+  "font-src 'self'",
+  "connect-src 'self'",
+  "frame-src 'none'",
+  "media-src 'none'",
+  "worker-src 'none'",
+];
+
+function collectMissingCspDirectives(response, engineName, pageName) {
+  const headers = response?.headers() ?? {};
+  const policy = headers["content-security-policy-report-only"] ?? "";
+  const missing = requiredCspDirectives.filter((directive) => !policy.includes(directive));
+  if (missing.length > 0) {
+    return engineName + ": CSP Report-Only ausente/incompleta em " + pageName +
+      ": " + missing.join(", ");
+  }
+  return null;
+}
+
 async function authenticate(page, engineName) {
   const response = await page.goto(baseUrl + "/login.php", { waitUntil: "domcontentloaded" });
   ensure(response?.ok(), engineName + ": a tela de login não abriu.");
@@ -53,7 +82,30 @@ for (const engine of engines) {
       deviceScaleFactor: 1,
     });
 
+    const cspHeaderFailures = [];
     page.on("pageerror", (error) => pageErrors.push(error.message));
+    page.on("response", (response) => {
+      if (!response.request().isNavigationRequest()) return;
+      let responseUrl;
+      try {
+        responseUrl = new URL(response.url());
+      } catch {
+        return;
+      }
+      if (responseUrl.origin !== new URL(baseUrl).origin || response.status() >= 400) return;
+      const failure = collectMissingCspDirectives(response, engine.name, responseUrl.pathname);
+      if (failure) cspHeaderFailures.push(failure);
+    });
+    await page.addInitScript(() => {
+      window.__fitcontrolCspViolations = [];
+      document.addEventListener("securitypolicyviolation", (event) => {
+        if (event.disposition !== "report") return;
+        window.__fitcontrolCspViolations.push({
+          directive: event.effectiveDirective,
+          blockedURI: event.blockedURI,
+        });
+      });
+    });
 
     await authenticate(page, engine.name);
 
@@ -423,6 +475,19 @@ for (const engine of engines) {
     }
     const populatedTheme = await page.locator("html").getAttribute("data-theme");
     ensure(populatedTheme === "dark", engine.name + ": o tema escuro não persistiu ao abrir o perfil com histórico.");
+
+    await page.waitForTimeout(100);
+    const cspViolations = await page.evaluate(
+      () => window.__fitcontrolCspViolations ?? [],
+    );
+    ensure(
+      cspHeaderFailures.length === 0,
+      engine.name + ": cabeçalho CSP incompleto: " + cspHeaderFailures.join(" | "),
+    );
+    ensure(
+      cspViolations.length === 0,
+      engine.name + ": violações CSP Report-Only: " + JSON.stringify(cspViolations),
+    );
 
     ensure(
       pageErrors.length === 0,

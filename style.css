@@ -623,24 +623,38 @@ svg {
 }
 
 .progress-track {
+    -webkit-appearance: none;
+    appearance: none;
+    display: block;
+    width: 100%;
     height: 7px;
+    padding: 0;
     overflow: hidden;
+    border: 0;
     background: #f0f2f7;
     border-radius: 20px;
 }
 
-.progress-fill {
-    display: block;
-    height: 100%;
-    min-width: 3px;
-    border-radius: inherit;
+.progress-track::-webkit-progress-bar {
+    background: #f0f2f7;
+    border-radius: 20px;
 }
 
-.progress-mensal { background: #4771e8; }
-.progress-trimestral { background: #16a392; }
-.progress-semestral { background: #8b70d6; }
-.progress-anual { background: #e2a13b; }
-.progress-outro { background: #8a94a6; }
+.progress-track::-webkit-progress-value {
+    background: var(--progress-color);
+    border-radius: 20px;
+}
+
+.progress-track::-moz-progress-bar {
+    background: var(--progress-color);
+    border-radius: 20px;
+}
+
+.progress-mensal { --progress-color: #4771e8; }
+.progress-trimestral { --progress-color: #16a392; }
+.progress-semestral { --progress-color: #8b70d6; }
+.progress-anual { --progress-color: #e2a13b; }
+.progress-outro { --progress-color: #8a94a6; }
 
 .shortcut-panel {
     position: relative;
@@ -3971,5 +3985,27 @@ body:not(.dashboard-body) .theme-option[aria-pressed="true"] {
 
 /* Barras do relatório de frequência; a tabela mantém o valor textual equivalente. */
 .frequency-visual-cell { min-width:150px; }
-.frequency-bar-track { display:block; width:100%; height:9px; overflow:hidden; background:var(--canvas); border:1px solid var(--line); border-radius:999px; }
-.frequency-bar { display:block; height:100%; background:var(--primary); border-radius:999px; }
+.frequency-bar-track {
+    -webkit-appearance: none;
+    appearance: none;
+    display: block;
+    width: 100%;
+    height: 9px;
+    padding: 0;
+    overflow: hidden;
+    background: var(--canvas);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+}
+.frequency-bar-track::-webkit-progress-bar {
+    background: var(--canvas);
+    border-radius: 999px;
+}
+.frequency-bar-track::-webkit-progress-value {
+    background: var(--primary);
+    border-radius: 999px;
+}
+.frequency-bar-track::-moz-progress-bar {
+    background: var(--primary);
+    border-radius: 999px;
+}

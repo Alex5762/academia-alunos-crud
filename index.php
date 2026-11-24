@@ -416,11 +416,9 @@ function iniciaisNome($nome) {
                                         </span>
                                         <span class="plan-amount"><?= $quantidade ?> <small>(<?= $percentual ?>%)</small></span>
                                     </div>
-                                    <div class="progress-track" role="progressbar"
-                                         aria-label="Alunos no plano <?= escapar($item['plano']) ?>"
-                                         aria-valuenow="<?= $percentual ?>" aria-valuemin="0" aria-valuemax="100">
-                                        <span class="progress-fill progress-<?= escapar($classe) ?>" style="width: <?= $percentual ?>%"></span>
-                                    </div>
+                                    <progress class="progress-track progress-<?= escapar($classe) ?>"
+                                              value="<?= $percentual ?>" max="100"
+                                              aria-label="Alunos no plano <?= escapar($item['plano']) ?>"><?= $percentual ?>%</progress>
                                 </div>
                             <?php } ?>
                         </div>

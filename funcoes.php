@@ -12,6 +12,14 @@ header('Referrer-Policy: strict-origin-when-cross-origin');
 header('Permissions-Policy: camera=(), microphone=(), geolocation=()');
 header('Cache-Control: no-store, private, max-age=0');
 header('Pragma: no-cache');
+header(
+    "Content-Security-Policy-Report-Only: default-src 'none'; "
+    . "base-uri 'self'; form-action 'self'; frame-ancestors 'none'; "
+    . "object-src 'none'; script-src 'self'; script-src-attr 'none'; "
+    . "style-src 'self'; style-src-attr 'none'; img-src 'self'; "
+    . "font-src 'self'; connect-src 'self'; frame-src 'none'; "
+    . "media-src 'none'; worker-src 'none'"
+);
 
 if (session_status() !== PHP_SESSION_ACTIVE) {
     ini_set('session.use_strict_mode', '1');

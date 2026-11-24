@@ -239,10 +239,11 @@ function valorFinanceiroRelatorio(string|int|null $value): string
                         <tbody>
                         <?php foreach ($frequency['fr03_daily_series'] as $day) {
                             $dayLabel = substr($day['date'], 8, 2) . '/' . substr($day['date'], 5, 2) . '/' . substr($day['date'], 0, 4);
-                            $barWidth = $frequencyMaxDailyCheckins > 0 ? ($day['checkins'] / $frequencyMaxDailyCheckins) * 100 : 0;
                         ?>
                             <tr><th scope="row"><?= escapar($dayLabel) ?></th><td><?= $day['checkins'] ?></td>
-                                <td class="frequency-visual-cell"><span class="frequency-bar-track" aria-hidden="true"><span class="frequency-bar" style="width: <?= escapar(number_format($barWidth, 2, '.', '')) ?>%;"></span></span></td>
+                                <td class="frequency-visual-cell"><progress class="frequency-bar-track"
+                                    aria-hidden="true" value="<?= (int) $day['checkins'] ?>"
+                                    max="<?= max(1, (int) $frequencyMaxDailyCheckins) ?>"></progress></td>
                             </tr>
                         <?php } ?>
                         </tbody>
