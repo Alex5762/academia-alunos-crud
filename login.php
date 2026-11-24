@@ -51,6 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $origemHash
             );
 
+            $destinoAposLogin = null;
             try {
                 // Consulta o bloqueio somente depois de obter a admissão exclusiva.
                 \\FitControl\\Security\\LoginAttemptRateLimiter::cleanupExpired($pdo);
@@ -112,7 +113,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $_SESSION['usuario_ultimo_acesso'] = $instanteAutenticacao;
                         $_SESSION['token'] = bin2hex(random_bytes(32));
 
-                        redirecionar((int) $usuario['deve_trocar_senha'] === 1 ? 'trocar-senha.php' : 'index.php');
+                        $destinoAposLogin = (int) $usuario['deve_trocar_senha'] === 1
+                            ? 'trocar-senha.php'
+                            : 'index.php';
                     }
                 }
             } finally {
@@ -121,6 +124,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $emailHash,
                     $origemHash
                 );
+            }
+
+            if ($destinoAposLogin !== null) {
+                redirecionar($destinoAposLogin);
             }
 
         } catch (Throwable $falha) {
