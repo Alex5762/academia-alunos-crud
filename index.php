@@ -4,24 +4,40 @@ require_once __DIR__ . '/conexao.php';
 
 $usuario = exigirAutenticacao($pdo);
 exigirPermissao($usuario, 'students.view');
+$contexto = obterContextoListaAlunos($_GET);
+$busca = $contexto['busca'];
+$status = $contexto['status'];
 
-// Pesquisa opcional pelo nome; os valores são enviados como parâmetro.
-$busca = $_GET['busca'] ?? '';
-if (!is_string($busca)) {
-    $busca = '';
-}
-$busca = trim($busca);
-
+$condicoes = [];
+$parametros = [];
 if ($busca !== '') {
-    $consulta = $pdo->prepare('SELECT * FROM alunos WHERE nome LIKE :busca ORDER BY id DESC');
-    $consulta->execute(['busca' => "%{$busca}%"]);
-} else {
-    $consulta = $pdo->query('SELECT * FROM alunos ORDER BY id DESC');
+    $condicoes[] = '(nome LIKE :nome OR email LIKE :email OR telefone LIKE :telefone)';
+    $termo = '%' . $busca . '%';
+    $parametros = ['nome' => $termo, 'email' => $termo, 'telefone' => $termo];
 }
-$alunos = $consulta->fetchAll();
+if ($status === 'ativos') {
+    $condicoes[] = 'ativo = 1';
+} elseif ($status === 'inativos') {
+    $condicoes[] = 'ativo = 0';
+}
+$sql = 'SELECT id, nome, telefone, email, plano, ativo FROM alunos';
+if ($condicoes !== []) {
+    $sql .= ' WHERE ' . implode(' AND ', $condicoes);
+}
+$sql .= ' ORDER BY id DESC';
+$consulta = $pdo->prepare($sql);
+$consulta->execute($parametros);
+$alunos = $consulta->fetchAll(PDO::FETCH_ASSOC);
+
+$totais = $pdo->query(
+    'SELECT COUNT(*) AS total,
+            COALESCE(SUM(ativo = 1), 0) AS ativos,
+            COALESCE(SUM(ativo = 0), 0) AS inativos
+     FROM alunos'
+)->fetch(PDO::FETCH_ASSOC);
 
 $mensagem = $_SESSION['mensagem'] ?? '';
-unset($_SESSION['mensagem']); // Mostra a mensagem apenas uma vez.
+unset($_SESSION['mensagem']);
 ?>
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -34,64 +50,96 @@ unset($_SESSION['mensagem']); // Mostra a mensagem apenas uma vez.
     <?= renderizarMonitorSessao() ?>
 </head>
 <body>
-<main>
+<main id="alunos">
     <h1>Cadastro de alunos</h1>
     <nav class="auth-nav" aria-label="Conta">
         <span>Olá, <?= escapar($usuario['nome']) ?></span>
         <a href="alterar-senha.php">Alterar senha</a>
-        <?php if (usuarioTemPermissao($usuario, 'students.create')) { ?><a href="cadastro.php">Cadastrar aluno</a><?php } ?>
-        <?php if (usuarioTemPermissao($usuario, 'users.manage')) { ?><a href="usuarios.php">Gerenciar funcionários</a><?php } ?>
+        <?php if (usuarioTemPermissao($usuario, 'students.create')) { ?>
+            <a href="<?= escapar(urlCadastroAluno(null, $contexto)) ?>">Cadastrar aluno</a>
+        <?php } ?>
+        <?php if (usuarioTemPermissao($usuario, 'users.manage')) { ?>
+            <a href="usuarios.php">Gerenciar funcionários</a>
+        <?php } ?>
         <form action="logout.php" method="post" class="logout-form">
             <input type="hidden" name="token" value="<?= escapar($_SESSION['token']) ?>">
             <button type="submit">Sair</button>
         </form>
     </nav>
 
-    <form action="index.php" method="get" class="busca">
-        <label for="busca">Pesquisar pelo nome:</label>
-        <input type="search" id="busca" name="busca" value="<?= escapar($busca) ?>">
-        <button type="submit">Pesquisar</button>
-        <?php if ($busca !== '') { ?>
-            <a href="index.php">Limpar pesquisa</a>
-        <?php } ?>
-    </form>
+    <section class="student-summary" aria-label="Resumo de alunos">
+        <p><strong>Alunos ativos:</strong> <?= escapar($totais['ativos']) ?></p>
+        <p><strong>Alunos inativos:</strong> <?= escapar($totais['inativos']) ?></p>
+        <p><strong>Total cadastrado:</strong> <?= escapar($totais['total']) ?></p>
+    </section>
 
     <?php if ($mensagem !== '') { ?>
         <p class="mensagem" role="status"><?= escapar($mensagem) ?></p>
     <?php } ?>
 
-    <?php if (count($alunos) === 0) { ?>
-        <p>Nenhum aluno cadastrado.</p>
+    <form action="index.php" method="get" class="busca" aria-label="Pesquisar e filtrar alunos">
+        <label for="busca">Pesquisar por nome, e-mail ou telefone:</label>
+        <input type="search" id="busca" name="busca" value="<?= escapar($busca) ?>">
+        <label for="status">Situação</label>
+        <select id="status" name="status">
+            <option value="ativos" <?= $status === 'ativos' ? 'selected' : '' ?>>Ativos</option>
+            <option value="inativos" <?= $status === 'inativos' ? 'selected' : '' ?>>Inativos</option>
+            <option value="todos" <?= $status === 'todos' ? 'selected' : '' ?>>Todos</option>
+        </select>
+        <button type="submit">Aplicar filtros</button>
+        <?php if ($busca !== '' || $status !== 'ativos') { ?>
+            <a href="index.php">Limpar filtros</a>
+        <?php } ?>
+    </form>
+
+    <?php if ($alunos === []) { ?>
+        <p role="status">Nenhum aluno encontrado com os filtros atuais.</p>
     <?php } else { ?>
         <div class="tabela">
-        <table>
-            <caption>Alunos cadastrados</caption>
-            <thead>
-                <tr>
-                    <th scope="col">ID</th>
-                    <th scope="col">Nome</th>
-                    <th scope="col">Telefone</th>
-                    <th scope="col">E-mail</th>
-                    <th scope="col">Plano</th>
-                    <th scope="col">Ações</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php foreach ($alunos as $aluno) { ?>
+            <table>
+                <caption>Alunos encontrados: <?= count($alunos) ?></caption>
+                <thead>
                     <tr>
-                        <td><?= escapar($aluno['id']) ?></td>
-                        <td><?= escapar($aluno['nome']) ?></td>
-                        <td><?= escapar($aluno['telefone']) ?></td>
-                        <td><?= escapar($aluno['email']) ?></td>
-                        <td><?= escapar($aluno['plano']) ?></td>
-                        <td>
-                            <?php if (usuarioTemPermissao($usuario, 'students.update')) { ?><a href="cadastro.php?id=<?= escapar($aluno['id']) ?>">Editar</a><?php } ?>
-                            <?php if (usuarioTemPermissao($usuario, 'students.delete')) { ?><a href="excluir.php?id=<?= escapar($aluno['id']) ?>">Excluir</a><?php } ?>
-                        </td>
+                        <th scope="col">ID</th>
+                        <th scope="col">Nome</th>
+                        <th scope="col">Telefone</th>
+                        <th scope="col">E-mail</th>
+                        <th scope="col">Plano</th>
+                        <th scope="col">Situação</th>
+                        <th scope="col">Ações</th>
                     </tr>
-                <?php } ?>
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    <?php foreach ($alunos as $aluno) { ?>
+                        <tr>
+                            <td><?= escapar($aluno['id']) ?></td>
+                            <td><?= escapar($aluno['nome']) ?></td>
+                            <td><?= escapar($aluno['telefone']) ?></td>
+                            <td><?= escapar($aluno['email']) ?></td>
+                            <td><?= escapar($aluno['plano']) ?></td>
+                            <td><?= (int) $aluno['ativo'] === 1 ? 'Ativo' : 'Inativo' ?></td>
+                            <td>
+                                <a href="<?= escapar(urlDetalhesAluno((int) $aluno['id'], $contexto)) ?>">Detalhes</a>
+                                <?php if (usuarioTemPermissao($usuario, 'students.update')) { ?>
+                                    <a href="<?= escapar(urlCadastroAluno((int) $aluno['id'], $contexto)) ?>">Editar</a>
+                                <?php } ?>
+                                <?php if (usuarioTemPermissao($usuario, 'students.status')) { ?>
+                                    <form action="alterar-status-aluno.php" method="post" class="inline-form">
+                                        <input type="hidden" name="token" value="<?= escapar($_SESSION['token']) ?>">
+                                        <input type="hidden" name="id" value="<?= escapar($aluno['id']) ?>">
+                                        <input type="hidden" name="busca" value="<?= escapar($busca) ?>">
+                                        <input type="hidden" name="status" value="<?= escapar($status) ?>">
+                                        <input type="hidden" name="acao" value="<?= (int) $aluno['ativo'] === 1 ? 'inativar' : 'reativar' ?>">
+                                        <button type="submit" class="<?= (int) $aluno['ativo'] === 1 ? 'perigo' : '' ?>">
+                                            <?= (int) $aluno['ativo'] === 1 ? 'Inativar' : 'Reativar' ?>
+                                        </button>
+                                    </form>
+                                <?php } ?>
+                            </td>
+                        </tr>
+                    <?php } ?>
+                </tbody>
+            </table>
         </div>
     <?php } ?>
 </main>
