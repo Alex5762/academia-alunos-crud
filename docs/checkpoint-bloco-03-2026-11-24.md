@@ -207,3 +207,13 @@ A antiga PR #1 permanece Draft e não deve ser mesclada em massa.
 - A revisão dos endpoints de plano, revisão e retificação confirmou POST, autenticação, RBAC, CSRF, validação dos campos e revalidação transacional no serviço. A saída dinâmica inspecionada é escapada.
 - A CI `45490231780` continua sendo a validação aprovada do commit `9763709`. A execução `45491822251` foi iniciada para `3df28fb`; ainda não valida o commit posterior `aaecda0`.
 - HEAD antes desta atualização documental: `aaecda07727ecb50ad928ebc26135a9722eb36a2`. Aguardar a CI do HEAD final após esta atualização.
+
+
+### Resultado da CI do checkpoint — 2026-11-24
+
+- Run `45491951646`, associado exatamente ao commit `07e96f0b8e12e5271171eca9b4544906302e50d9`, concluiu com sucesso: **12/12 jobs aprovados**.
+- A aprovação inclui PHP quality, verificação estrutural do CSS, migrations 005/006 em MySQL 8.0 e MariaDB 10.11, testes de domínio/persistência/concorrência nos dois motores, integrações HTTP e proteção Apache.
+- A revisão estática dos serviços transacionais e dos endpoints de planos, matrículas, revisão e retificação não identificou blocker adicional nesta passada.
+- Grupos de banco/migrations, domínio/catálogo e transações/auditoria estão aprovados na revisão estática. Interfaces/endpoints também passaram na revisão estática; a inspeção visual em navegador/dispositivo continua pendente.
+- **A revisão linha a linha do diff completo dos 39 arquivos ainda não está encerrada.** Não retirar a PR do Draft com base somente na CI ou nesta passada.
+- HEAD validado: `07e96f0b8e12e5271171eca9b4544906302e50d9`. Se novos commits forem adicionados, exigir nova CI verde no novo HEAD.
