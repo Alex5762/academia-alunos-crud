@@ -1,38 +1,53 @@
 # Estado da fundação de autenticação e segurança — 2026-11-24
 
-## Estado confirmado
+## Estado do repositório
 
-- PR #2: aberta, marcada pronta para revisão após CI completa e revisão de escopo; sem merge.
-- Branch: `feat/foundation-auth-security`.
-- HEAD do checkpoint validado: `fd8f8adef73e6ccd727c0469beae29a46f9c679f`.
-- `main`: permanece em `e1f4c8084dc6dec8c772a699855562944d50e89e`.
-- Proteção de branch: ainda desativada (`protected: false`); falta permissão administrativa para configurá-la pela conexão atual.
+- Repositório: `Alex5762/academia-alunos-crud`.
+- PR #2: aberta e pronta para revisão; não mesclada.
+- Branch da PR: `feat/foundation-auth-security`.
+- HEAD anterior à correção de sessões: `4e9d3b8074e4d665967d4382d130f6e6d0e4469e`.
+- `main`: `e1f4c8084dc6dec8c772a699855562944d50e89e`, sem alterações.
+- Proteção da `main`: ativa e confirmada por API (`protected: true`).
+- Regras: PR obrigatória; cinco checks obrigatórios; branch atualizada; bypass, force-push e exclusão bloqueados.
 - Nenhuma migration foi aplicada ao ambiente local do usuário.
 
-## Segurança de sessão
+## CI anterior à correção
 
-A migration inicial inclui `usuarios.sessao_versao`. O login grava a versão na sessão; cada alteração de status incrementa a versão dentro da transação; toda requisição autenticada compara a versão da sessão com a versão persistida. Isso impede que cookies emitidos antes da desativação voltem a funcionar depois da reativação. Um novo login cria uma sessão com a versão atual.
+No HEAD `4e9d3b8074e4d665967d4382d130f6e6d0e4469e`, os dois runs mais recentes estavam verdes:
+- Run #45392512469 (pull_request): 5/5 jobs aprovados.
+- Run #45392500487 (push): 5/5 jobs aprovados.
 
-## Testes de conta via HTTP
+Os cinco checks configurados na proteção da `main`:
+1. `PHP quality and unit tests`
+2. `Foundation database (MySQL 8.0)`
+3. `Foundation database (MariaDB 10.11)`
+4. `Foundation HTTP integration (MySQL 8.0)`
+5. `Apache webroot protection`
 
-Há duas baterias:
-- `tests/foundation-http.sh`: fluxo CRUD protegido e cenários básicos de autenticação, CSRF, RBAC, perfil, status, revogação e auditoria.
-- `tests/foundation-account-http.sh`: fluxo dedicado de criação de conta, senha temporária, troca obrigatória, negação por perfil, CSRF inválido, alteração de perfil, autodesativação, desativação, reativação, login/logout e verificação da cadeia de auditoria.
+Essas aprovações são anteriores às alterações descritas abaixo. Uma nova CI é necessária para validar o novo HEAD.
 
-O workflow foi atualizado para executar explicitamente as duas baterias. O teste de sessão preservada usa um segundo cookie autenticado que não é acessado durante a desativação e só é testado após a reativação, comprovando a revogação por versão persistida.
+## Revisão técnica da PR #2 — 2026-11-24
 
-## CI
+### Bloqueador encontrado
 
-Após adicionar `tests/foundation-account-http.sh` ao workflow, o checkpoint `fd8f8adef73e6ccd727c0469beae29a46f9c679f` foi validado integralmente:
-- Run #45392052117, evento pull_request: cinco jobs aprovados.
-- Run #45392039299, evento push: cinco jobs aprovados.
-- No job HTTP da PR, o passo `Verify account administration HTTP endpoints and audit integrity` foi executado e aprovado, além do fluxo `foundation-http.sh`.
-- Checks obrigatórios observados: `PHP quality and unit tests`; `Foundation database (MySQL 8.0)`; `Foundation database (MariaDB 10.11)`; `Foundation HTTP integration (MySQL 8.0)`; `Apache webroot protection`.
+A revisão identificou que a troca obrigatória (`trocar-senha.php`) e a troca voluntária (`alterar-senha.php`) atualizavam o hash, mas não incrementavam `usuarios.sessao_versao`. Assim, sessões paralelas poderiam continuar válidas depois da troca de senha.
 
-Revisão do PR #2 no mesmo checkpoint:
-- 54 arquivos alterados; 4.715 adições e 73 remoções.
-- Nenhum comentário de revisão ou review pendente retornado pelo GitHub.
-- GitHub reportou `mergeable: true`; isso não substitui a revisão nem autoriza merge.
+### Correção preparada nesta etapa
+
+- Fazer a leitura da conta com `FOR UPDATE` dentro da transação.
+- Confirmar que a versão persistida ainda corresponde à versão da sessão que solicitou a troca.
+- Incrementar `sessao_versao` na mesma transação que altera o hash da senha.
+- Atualizar a versão da sessão atual depois de regenerar o identificador, preservando a sessão que concluiu a troca.
+- Invalidar sessões paralelas antigas, que passam a falhar na próxima validação de sessão.
+- Expandir `tests/foundation-http.sh`: abrir cookies independentes antes da troca obrigatória e voluntária; comprovar revogação usando `renovar-sessao.php` (HTTP 401); comprovar que a sessão autora permanece válida.
+- Atualizar README para descrever o comportamento.
+
+**Status de validação:** alterações preparadas; CI ainda precisa executar no novo commit. Não considerar o bloqueador fechado até os cinco checks passarem.
+
+### Outros pontos identificados, ainda pendentes
+
+1. **Auditoria de falhas de login e cobertura do rate limit:** o login incrementa `login_tentativas`, mas as falhas não geram evento na cadeia de auditoria. Faltam testes HTTP dedicados para o limite de cinco falhas, janela e bloqueio.
+2. **Criação administrativa de contas:** `salvar-usuario.php` valida `users.manage` antes da transação, mas não revalida o administrador sob lock dentro da transação. Avaliar centralização no serviço de administração e teste de concorrência com revogação de privilégio.
 
 ## Escopo da PR #2
 
@@ -40,10 +55,11 @@ Inclui autenticação, sessões, troca de senha, RBAC, rate limit, administraç�
 
 Ficam fora: matrículas, frequência, financeiro, grade, dashboard completo, relatórios e migration 010.
 
-## Próximos passos
+## Próxima sequência
 
-1. CI do checkpoint `fd8f8ade` concluída com sucesso nos eventos push e pull_request.
-2. Escopo revisado: a PR mantém a fundação, sem matrículas, frequência, financeiro, grade, dashboard, relatórios ou migration 010.
-3. PR #2 pode ficar pronta para revisão; não fazer merge nesta etapa.
-4. Configurar proteção da `main` nas Settings do GitHub: exigir PR, os cinco checks acima, bloquear force-push e exclusão, sem exigir aprovação de terceiro no repositório individual. A conexão GitHub atual não possui permissão administrativa para aplicar essas regras; `main.protected` permanece `false`.
-5. Fazer merge somente após autorização explícita do usuário e após a proteção da `main` estar ativa.
+1. Confirmar o novo HEAD da branch e revisar o diff dos arquivos alterados.
+2. Acompanhar a CI nova e confirmar os cinco checks.
+3. Fechar ou corrigir eventuais falhas da correção de revogação de sessões.
+4. Tratar os dois pontos pendentes da revisão (rate limit/auditoria e revalidação de criação de contas).
+5. Atualizar este documento e o parecer de revisão a cada etapa.
+6. Não fazer merge sem autorização explícita do usuário.

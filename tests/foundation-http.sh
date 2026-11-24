@@ -32,8 +32,10 @@ db_value() {
 }
 login_and_change_password() {
     local jar="$1" email="$2" password="$3" new_password="$4" prefix="$5"
+    local token stale_jar stale_token stale_status
+    stale_jar="$TMP_DIR/$prefix-stale-first-access.cookies"
+
     curl -fsS -c "$jar" -b "$jar" "$BASE_URL/login.php" -o "$TMP_DIR/$prefix-login.html"
-    local token
     token="$(get_token "$TMP_DIR/$prefix-login.html")"
     curl -fsS -L -c "$jar" -b "$jar" "$BASE_URL/login.php" \
         --data-urlencode "token=$token" \
@@ -41,6 +43,17 @@ login_and_change_password() {
         --data-urlencode "senha=$password" \
         -o "$TMP_DIR/$prefix-first-access.html"
     grep -Fq 'Crie sua senha pessoal' "$TMP_DIR/$prefix-first-access.html" || fail "$prefix não foi direcionado à troca obrigatória de senha."
+
+    # Abre uma segunda sessão independente ainda com a senha temporária.
+    curl -fsS -c "$stale_jar" -b "$stale_jar" "$BASE_URL/login.php" -o "$TMP_DIR/$prefix-stale-login.html"
+    stale_token="$(get_token "$TMP_DIR/$prefix-stale-login.html")"
+    curl -fsS -L -c "$stale_jar" -b "$stale_jar" "$BASE_URL/login.php" \
+        --data-urlencode "token=$stale_token" \
+        --data-urlencode "email=$email" \
+        --data-urlencode "senha=$password" \
+        -o "$TMP_DIR/$prefix-stale-first-access.html"
+    grep -Fq 'Crie sua senha pessoal' "$TMP_DIR/$prefix-stale-first-access.html" || fail "$prefix segunda sessão não chegou à troca obrigatória."
+
     token="$(get_token "$TMP_DIR/$prefix-first-access.html")"
     curl -fsS -L -c "$jar" -b "$jar" "$BASE_URL/trocar-senha.php" \
         --data-urlencode "token=$token" \
@@ -49,6 +62,13 @@ login_and_change_password() {
         --data-urlencode "confirmacao=$new_password" \
         -o "$TMP_DIR/$prefix-dashboard.html"
     grep -Fq 'Cadastro de alunos' "$TMP_DIR/$prefix-dashboard.html" || fail "$prefix não chegou ao CRUD após trocar a senha."
+
+    # O endpoint de renovação distingue revogação real do redirecionamento de troca obrigatória.
+    stale_token="$(get_token "$TMP_DIR/$prefix-stale-first-access.html")"
+    stale_status="$(curl -sS -o "$TMP_DIR/$prefix-stale-renewal.json" -w '%{http_code}' \
+        -b "$stale_jar" -c "$stale_jar" "$BASE_URL/renovar-sessao.php" \
+        --data-urlencode "token=$stale_token")"
+    [[ "$stale_status" == "401" ]] || fail "$prefix segunda sessão deveria ser revogada após troca obrigatória; renovar-sessao.php retornou $stale_status."
 }
 
 php -S 127.0.0.1:8080 -t . >"$SERVER_LOG" 2>&1 &
@@ -64,7 +84,35 @@ CADASTRO_ANON_CODE="$(curl -sS -o /dev/null -w '%{http_code}' "$BASE_URL/cadastr
 [[ "$CADASTRO_ANON_CODE" == "303" ]] || fail "Cadastro anônimo deveria redirecionar para login; recebeu $CADASTRO_ANON_CODE."
 
 login_and_change_password "$ADMIN_JAR" "provision-ci@example.test" "$ADMIN_PASSWORD" "SenhaAdminNova-2026!" "admin"
-TOKEN="$(get_token "$TMP_DIR/admin-dashboard.html")"
+
+# Troca voluntária também revoga outra sessão e preserva a sessão que fez a alteração.
+ADMIN_VOLUNTARY_STALE_JAR="$TMP_DIR/admin-voluntary-stale.cookies"
+curl -fsS -c "$ADMIN_VOLUNTARY_STALE_JAR" -b "$ADMIN_VOLUNTARY_STALE_JAR" "$BASE_URL/login.php" -o "$TMP_DIR/admin-voluntary-stale-login.html"
+TOKEN="$(get_token "$TMP_DIR/admin-voluntary-stale-login.html")"
+curl -fsS -L -c "$ADMIN_VOLUNTARY_STALE_JAR" -b "$ADMIN_VOLUNTARY_STALE_JAR" "$BASE_URL/login.php" \
+    --data-urlencode "token=$TOKEN" \
+    --data-urlencode "email=provision-ci@example.test" \
+    --data-urlencode "senha=SenhaAdminNova-2026!" \
+    -o "$TMP_DIR/admin-voluntary-stale-home.html"
+grep -Fq 'Cadastro de alunos' "$TMP_DIR/admin-voluntary-stale-home.html" || fail "Sessão paralela do Administrador não autenticou antes da troca voluntária."
+curl -fsS -b "$ADMIN_VOLUNTARY_STALE_JAR" -c "$ADMIN_VOLUNTARY_STALE_JAR" "$BASE_URL/alterar-senha.php" -o "$TMP_DIR/admin-voluntary-stale-change.html"
+ADMIN_VOLUNTARY_STALE_TOKEN="$(get_token "$TMP_DIR/admin-voluntary-stale-change.html")"
+curl -fsS -b "$ADMIN_JAR" -c "$ADMIN_JAR" "$BASE_URL/alterar-senha.php" -o "$TMP_DIR/admin-change-password.html"
+TOKEN="$(get_token "$TMP_DIR/admin-change-password.html")"
+curl -fsS -L -b "$ADMIN_JAR" -c "$ADMIN_JAR" "$BASE_URL/alterar-senha.php" \
+    --data-urlencode "token=$TOKEN" \
+    --data-urlencode "senha_atual=SenhaAdminNova-2026!" \
+    --data-urlencode "nova_senha=SenhaAdminVoluntaria-2026!" \
+    --data-urlencode "confirmacao=SenhaAdminVoluntaria-2026!" \
+    -o "$TMP_DIR/admin-after-voluntary-change.html"
+grep -Fq 'Senha alterada com sucesso.' "$TMP_DIR/admin-after-voluntary-change.html" || fail "Troca voluntária de senha não foi concluída."
+ADMIN_VOLUNTARY_STALE_STATUS="$(curl -sS -o "$TMP_DIR/admin-voluntary-stale-renewal.json" -w '%{http_code}' \
+    -b "$ADMIN_VOLUNTARY_STALE_JAR" -c "$ADMIN_VOLUNTARY_STALE_JAR" "$BASE_URL/renovar-sessao.php" \
+    --data-urlencode "token=$ADMIN_VOLUNTARY_STALE_TOKEN")"
+[[ "$ADMIN_VOLUNTARY_STALE_STATUS" == "401" ]] || fail "Sessão paralela do Administrador deveria ser revogada após troca voluntária; recebeu $ADMIN_VOLUNTARY_STALE_STATUS."
+ADMIN_CURRENT_SESSION_STATUS="$(curl -sS -o "$TMP_DIR/admin-current-session.html" -w '%{http_code}' -b "$ADMIN_JAR" -c "$ADMIN_JAR" "$BASE_URL/index.php")"
+[[ "$ADMIN_CURRENT_SESSION_STATUS" == "200" ]] || fail "A sessão que trocou a senha voluntariamente deveria continuar válida; recebeu $ADMIN_CURRENT_SESSION_STATUS."
+TOKEN="$(get_token "$TMP_DIR/admin-current-session.html")"
 
 INVALID_CSRF_CODE="$(curl -sS -o "$TMP_DIR/csrf.html" -w '%{http_code}' -b "$ADMIN_JAR" -c "$ADMIN_JAR" \
     "$BASE_URL/salvar.php" --data-urlencode "token=token-invalido" --data-urlencode "id=" \
@@ -193,7 +241,7 @@ STATUS_AUDIT_COUNT="$(db_value "SELECT COUNT(*) FROM auditoria WHERE usuario_id 
 OPERATOR_LOGOUT_AUDIT="$(db_value "SELECT COUNT(*) FROM auditoria WHERE usuario_id = $OPERATOR_ID AND acao = 'logout'")"
 [[ "$OPERATOR_LOGOUT_AUDIT" == "1" ]] || fail "Logout do funcionário não foi auditado."
 
-TOKEN="$(get_token "$TMP_DIR/admin-dashboard.html")"
+TOKEN="$(get_token "$TMP_DIR/admin-current-session.html")"
 ADMIN_CONFIRM_CODE="$(curl -sS -o "$TMP_DIR/admin-confirm.html" -w '%{http_code}' -b "$ADMIN_JAR" -c "$ADMIN_JAR" "$BASE_URL/excluir.php?id=$STUDENT_ID")"
 [[ "$ADMIN_CONFIRM_CODE" == "200" ]] || fail "Administrador deveria acessar a confirmação de exclusão; recebeu $ADMIN_CONFIRM_CODE."
 curl -fsS -L -b "$ADMIN_JAR" -c "$ADMIN_JAR" "$BASE_URL/excluir.php" \

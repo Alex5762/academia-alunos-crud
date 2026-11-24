@@ -28,16 +28,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         try {
             $pdo->beginTransaction();
             $buscar = $pdo->prepare(
-                'SELECT senha_hash FROM usuarios
+                'SELECT senha_hash, sessao_versao FROM usuarios
                  WHERE id = :id AND ativo = 1 AND deve_trocar_senha = 0
                  LIMIT 1 FOR UPDATE'
             );
             $buscar->execute(['id' => $usuario['id']]);
             $conta = $buscar->fetch();
 
-            if (!$conta) {
+            if (
+                !$conta
+                || (int) $conta['sessao_versao'] !== (int) ($_SESSION['usuario_sessao_versao'] ?? -1)
+            ) {
                 $pdo->rollBack();
-                invalidarSessaoAutenticada();
+                invalidarSessaoAutenticada(true);
                 redirecionar('login.php');
             }
             if (!password_verify($senhaAtual, $conta['senha_hash'])) {
@@ -49,10 +52,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } else {
                 $hash = \FitControl\Security\PasswordPolicy::hash($novaSenha);
                 $atualizar = $pdo->prepare(
-                    'UPDATE usuarios SET senha_hash = :hash
-                     WHERE id = :id AND ativo = 1 AND deve_trocar_senha = 0'
+                    'UPDATE usuarios
+                     SET senha_hash = :hash,
+                         sessao_versao = sessao_versao + 1
+                     WHERE id = :id
+                       AND ativo = 1
+                       AND deve_trocar_senha = 0
+                       AND sessao_versao = :sessao_versao'
                 );
-                $atualizar->execute(['hash' => $hash, 'id' => $usuario['id']]);
+                $atualizar->execute([
+                    'hash' => $hash,
+                    'id' => $usuario['id'],
+                    'sessao_versao' => $conta['sessao_versao']
+                ]);
                 if ($atualizar->rowCount() !== 1) {
                     throw new RuntimeException('A senha não pôde ser atualizada.');
                 }
@@ -60,9 +72,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $pdo->commit();
 
                 if (!session_regenerate_id(true)) {
-                    invalidarSessaoAutenticada();
+                    invalidarSessaoAutenticada(true);
                     redirecionar('login.php');
                 }
+                // A sessão atual acompanha a nova versão; cookies de outras sessões deixam de valer.
+                $_SESSION['usuario_sessao_versao'] = (int) $conta['sessao_versao'] + 1;
                 $_SESSION['token'] = bin2hex(random_bytes(32));
                 $_SESSION['usuario_ultimo_acesso'] = time();
                 $_SESSION['mensagem'] = 'Senha alterada com sucesso.';

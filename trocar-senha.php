@@ -40,30 +40,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $erro = 'A confirmação não corresponde à nova senha.';
     } else {
         try {
+            // O lock impede duas sessões de concluir simultaneamente o primeiro acesso.
+            $pdo->beginTransaction();
             $buscar = $pdo->prepare(
-                'SELECT senha_hash, deve_trocar_senha
-                 FROM usuarios WHERE id = :id AND ativo = 1 LIMIT 1'
+                'SELECT senha_hash, deve_trocar_senha, sessao_versao
+                 FROM usuarios WHERE id = :id AND ativo = 1 LIMIT 1 FOR UPDATE'
             );
             $buscar->execute(['id' => $usuario['id']]);
             $conta = $buscar->fetch();
 
-            if (!$conta || (int) $conta['deve_trocar_senha'] !== 1 ||
-                !password_verify($senhaAtual, $conta['senha_hash'])) {
+            if (
+                !$conta
+                || (int) $conta['deve_trocar_senha'] !== 1
+                || (int) $conta['sessao_versao'] !== (int) ($_SESSION['usuario_sessao_versao'] ?? -1)
+            ) {
+                $pdo->rollBack();
+                invalidarSessaoAutenticada(true);
+                redirecionar('login.php');
+            } elseif (!password_verify($senhaAtual, $conta['senha_hash'])) {
+                $pdo->rollBack();
                 $erro = 'A senha atual está incorreta.';
             } elseif (password_verify($novaSenha, $conta['senha_hash'])) {
+                $pdo->rollBack();
                 $erro = 'Escolha uma senha diferente da senha temporária.';
             } else {
                 $novoHash = \FitControl\Security\PasswordPolicy::hash($novaSenha);
 
-                $pdo->beginTransaction();
                 $atualizar = $pdo->prepare(
                     'UPDATE usuarios
-                     SET senha_hash = :senha_hash, deve_trocar_senha = 0
-                     WHERE id = :id AND ativo = 1 AND deve_trocar_senha = 1'
+                     SET senha_hash = :senha_hash,
+                         deve_trocar_senha = 0,
+                         sessao_versao = sessao_versao + 1
+                     WHERE id = :id
+                       AND ativo = 1
+                       AND deve_trocar_senha = 1
+                       AND sessao_versao = :sessao_versao'
                 );
                 $atualizar->execute([
                     'senha_hash' => $novoHash,
-                    'id' => $usuario['id']
+                    'id' => $usuario['id'],
+                    'sessao_versao' => $conta['sessao_versao']
                 ]);
 
                 if ($atualizar->rowCount() !== 1) {
@@ -80,9 +96,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $pdo->commit();
 
                 if (!session_regenerate_id(true)) {
-                    throw new RuntimeException('Não foi possível renovar a sessão.');
+                    invalidarSessaoAutenticada(true);
+                    redirecionar('login.php');
                 }
 
+                // A sessão que concluiu a troca adota a nova versão; as demais ficam revogadas.
+                $_SESSION['usuario_sessao_versao'] = (int) $conta['sessao_versao'] + 1;
                 $_SESSION['token'] = bin2hex(random_bytes(32));
                 redirecionar('index.php');
             }

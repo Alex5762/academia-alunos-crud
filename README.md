@@ -4,7 +4,7 @@ Projeto acadêmico de Desenvolvimento Web. Esta versão preserva o CRUD original
 
 ## Funcionalidades desta etapa
 
-- Login e logout com sessão protegida, token CSRF, expiração e revogação persistente por versão da conta; sessões anteriores não voltam a funcionar após reativação.
+- Login e logout com sessão protegida, token CSRF, expiração e revogação persistente por versão da conta; sessões anteriores não voltam a funcionar após reativação ou troca de senha.
 - Primeiro acesso com troca obrigatória de senha.
 - Perfis Administrador, Gestor e Operador, com autorização verificada no servidor.
 - Cadastro e administração de contas individuais.
@@ -48,7 +48,7 @@ PHP 8.2+, PDO, MySQL 8.0 ou MariaDB 10.11, HTML, CSS e JavaScript.
 
 ## Testes
 
-A CI valida sintaxe PHP, política de senha, RBAC, configuração de banco, migrations e integridade transacional em MySQL 8.0 e MariaDB 10.11. A integração HTTP cobre autenticação, CSRF, RBAC e operações do CRUD protegido.
+A CI valida sintaxe PHP, política de senha, RBAC, configuração de banco, migrations e integridade transacional em MySQL 8.0 e MariaDB 10.11. A integração HTTP cobre autenticação, CSRF, RBAC, operações do CRUD protegido e revogação de sessões paralelas após troca obrigatória e voluntária de senha.
 
 ## Escopo futuro
 
