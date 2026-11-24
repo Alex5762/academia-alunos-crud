@@ -1,5 +1,5 @@
 <?php
-// Copie este arquivo para database.local.php e ajuste os dados do XAMPP.
+// Copie este arquivo para config/database.local.php e ajuste os dados do XAMPP.
 // database.local.php é ignorado pelo Git e não deve ser versionado.
 return [
     'host' => '127.0.0.1',
