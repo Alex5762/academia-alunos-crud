@@ -235,6 +235,36 @@ try {
         static fn (): DateTimeImmutable => $clock
     );
 
+    assertLegacyReviewRejected(
+        fn () => $service->decide(
+            $studentIds[0],
+            $reviewIds[0],
+            $actorId,
+            'VINCULO_CONFIRMADO',
+            'Contrato físico, pasta 2025/12, folha 18',
+            str_repeat('x', 65536),
+            legacyLocalDate('2025-12-01 00:00:00'),
+            legacyLocalDate('2026-01-01 00:00:00')
+        ),
+        'Observações acima do limite TEXT devem ser rejeitadas antes da transação.',
+        InvalidArgumentException::class
+    );
+
+    assertLegacyReviewRejected(
+        fn () => $service->decide(
+            $studentIds[0],
+            $reviewIds[0],
+            $actorId,
+            'VINCULO_CONFIRMADO',
+            'Contrato físico, pasta 2025/12, folha 18',
+            "\\xB1",
+            legacyLocalDate('2025-12-01 00:00:00'),
+            legacyLocalDate('2026-01-01 00:00:00')
+        ),
+        'Observações com UTF-8 inválido devem ser rejeitadas antes da transação.',
+        InvalidArgumentException::class
+    );
+
     // Confirmação: intervalos exatos, texto original preservado, sem valores inferidos.
     $legacyEnrollmentId = $service->decide(
         $studentIds[0],
