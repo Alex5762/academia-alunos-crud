@@ -213,3 +213,48 @@ O comentário em `config/database.local.example.php` foi corrigido para instruir
 A preparação técnica e operacional está documentada, mas **não há autorização de merge registrada**. A PR #2 permanece aberta, a `main` permanece intacta e nenhuma migration foi executada no banco local do usuário.
 
 Não mesclar até: CI verde no HEAD atual; regras de proteção da `main` conferidas; revisão formal obtida caso exigida; backup do banco de destino confirmado; autorização explícita do responsável.
+
+## Resultado da CI e revisão operacional — 2026-11-24
+
+Este registro atualiza o checkpoint anterior e passa a ser a referência atual para a decisão de integração.
+
+### Snapshot confirmado
+
+- PR #2: aberta, não mesclada, não draft.
+- Branch: `feat/foundation-auth-security`.
+- HEAD validado: `501f49cea8ecd405b0a22057c50ab482ec56fe62`.
+- Base `main`: `e1f4c8084dc6dec8c772a699855562944d50e89e`.
+- Comparação: 71 commits à frente, 0 atrás.
+- Diff: 58 arquivos, 5.853 adições e 73 deleções.
+- Estado reportado pelo GitHub: `mergeable=true`, `mergeable_state=clean`.
+- Revisões formais, comentários de revisão e threads inline: nenhum registrado na consulta.
+
+### CI final — 10/10
+
+No mesmo HEAD `501f49cea8ecd405b0a22057c50ab482ec56fe62`:
+
+- Pull request #45457276790: sucesso, 5/5 jobs.
+- Push #45457261651: sucesso, 5/5 jobs.
+
+Jobs aprovados nos dois eventos:
+1. PHP quality and unit tests.
+2. Foundation database (MySQL 8.0).
+3. Foundation database (MariaDB 10.11).
+4. Foundation HTTP integration (MySQL 8.0).
+5. Apache webroot protection.
+
+A CI confirma a implementação da fundação, incluindo rate limit concorrente HTTP com 12 requisições, auditoria sem PII e compatibilidade dos named locks nos dois bancos.
+
+### Portões ainda pendentes
+
+- A API de branch protection retornou 403 para a integração. Conferir manualmente na interface do GitHub se a `main` exige PR, quais checks e revisões são obrigatórios, e se bypass, force-push e exclusão estão bloqueados.
+- Se houver exigência de aprovação independente, solicitar e obter a revisão de outro colaborador. Não há avaliação formal registrada até agora.
+- Confirmar backup íntegro e verificável do banco de destino.
+- Identificar o ambiente de destino e a janela de manutenção.
+- Obter autorização explícita para executar o merge.
+
+### Documentação operacional
+
+O checklist `docs/pre-merge-checklist-bloco-01-2026-11-24.md` contém a sequência detalhada de backup, configuração, migrations 001/002/003/007/008, marcador histórico, inicialização da cadeia, provisionamento CLI, smoke tests e recuperação.
+
+Nenhuma migration foi executada; nenhum dado foi alterado; nenhum merge foi realizado. A `main` permanece no SHA informado acima.
