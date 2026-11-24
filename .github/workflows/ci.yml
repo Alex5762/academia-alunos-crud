@@ -111,6 +111,14 @@ jobs:
           DB_USER: root
           DB_PASSWORD: root
         run: php tests/database-user-account-administration.php
+      - name: Test concurrent account creation authorization revocation
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_NAME: academia_alunos
+          DB_USER: root
+          DB_PASSWORD: root
+        run: php tests/database-user-account-creation-race.php
       - name: Test initial administrator provisioning
         env:
           DB_HOST: 127.0.0.1
