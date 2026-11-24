@@ -29,7 +29,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         strlen($email) > 150 ||
         filter_var($email, FILTER_VALIDATE_EMAIL) === false ||
         $senha === '' ||
-        strlen($senha) > \\FitControl\\Security\\PasswordPolicy::MAX_BYTES
+        strlen($senha) > \FitControl\Security\PasswordPolicy::MAX_BYTES
     ) {
         $erro = 'E-mail ou senha inválidos.';
     } else {
