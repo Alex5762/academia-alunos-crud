@@ -50,7 +50,7 @@ try {
         strtr(base64_encode(random_bytes(24)), '+/', '-_'),
         '='
     );
-    $senhaHash = \\FitControl\\Security\\PasswordPolicy::hash($senhaTemporaria);
+    $senhaHash = \FitControl\Security\PasswordPolicy::hash($senhaTemporaria);
 
     $pdo->beginTransaction();
 
