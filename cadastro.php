@@ -1,10 +1,12 @@
 <?php
 require_once __DIR__ . '/funcoes.php';
 require_once __DIR__ . '/conexao.php';
+$usuario = exigirAutenticacao($pdo);
 
 // Sem ID: formulário novo. Com ID: formulário de edição.
 $aluno = ['id' => '', 'nome' => '', 'telefone' => '', 'email' => '', 'plano' => 'Mensal'];
 $editando = isset($_GET['id']);
+exigirPermissao($usuario, $editando ? 'students.update' : 'students.create');
 
 if ($editando) {
     $id = validarId($_GET['id']);
@@ -33,6 +35,8 @@ $titulo = $editando ? 'Editar aluno' : 'Cadastrar aluno';
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= escapar($titulo) ?></title>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="auth.css">
+    <?= renderizarMonitorSessao() ?>
     <script src="script.js" defer></script>
 </head>
 <body>

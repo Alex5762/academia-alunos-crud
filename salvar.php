@@ -9,6 +9,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 validarToken();
 require_once __DIR__ . '/conexao.php';
+$usuario = exigirAutenticacao($pdo);
 
 // Aceita somente textos nos campos esperados.
 $dados = [];
@@ -26,6 +27,8 @@ if ($id === false) {
     http_response_code(400);
     exit('ID inválido. Volte à lista.');
 }
+
+exigirPermissao($usuario, $id === null ? 'students.create' : 'students.update');
 
 if ($id !== null) {
     buscarAluno($pdo, $id); // Confere se o aluno ainda existe.
@@ -66,6 +69,8 @@ try {
         'plano' => $dados['plano']
     ];
 
+    $pdo->beginTransaction();
+
     if ($id === null) {
         $sql = 'INSERT INTO alunos (nome, telefone, email, plano)
                 VALUES (:nome, :telefone, :email, :plano)';
@@ -79,7 +84,19 @@ try {
 
     $comando = $pdo->prepare($sql);
     $comando->execute($parametros);
-} catch (PDOException $erro) {
+    $alunoIdAudit = $id ?? (int) $pdo->lastInsertId();
+    registrarAuditoria(
+        $pdo,
+        (int) $usuario['id'],
+        $id === null ? 'aluno_criado' : 'aluno_editado',
+        'alunos',
+        $alunoIdAudit
+    );
+    $pdo->commit();
+} catch (Throwable $erro) {
+    if ($pdo->inTransaction()) {
+        $pdo->rollBack();
+    }
     error_log($erro->getMessage());
     http_response_code(500);
     exit('Não foi possível salvar. Consulte o registro de erros do Apache.');
