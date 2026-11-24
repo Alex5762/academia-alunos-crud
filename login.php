@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/funcoes.php';
 require_once __DIR__ . '/conexao.php';
+require_once __DIR__ . '/src/Security/PasswordPolicy.php';
 
 if (usuarioAtual($pdo) !== null) {
     redirecionar('index.php');
@@ -28,7 +29,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         strlen($email) > 150 ||
         filter_var($email, FILTER_VALIDATE_EMAIL) === false ||
         $senha === '' ||
-        strlen($senha) > 4096
+        strlen($senha) > \\FitControl\\Security\\PasswordPolicy::MAX_BYTES
     ) {
         $erro = 'E-mail ou senha inválidos.';
     } else {
@@ -220,7 +221,7 @@ $emailPreenchido = isset($_POST['email']) && is_string($_POST['email']) ? $_POST
                 id="senha"
                 name="senha"
                 autocomplete="current-password"
-                maxlength="4096"
+                maxlength="72"
                 required
             >
 
