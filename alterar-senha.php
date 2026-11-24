@@ -16,11 +16,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit('Dados inválidos.');
     }
 
-    $erroPolitica = \\FitControl\\Security\\PasswordPolicy::validationError($novaSenha);
+    $erroPolitica = \FitControl\Security\PasswordPolicy::validationError($novaSenha);
 
     if (strlen($senhaAtual) > 4096 || strlen($novaSenha) > 4096 || strlen($confirmacao) > 4096) {
         $erro = 'Não foi possível validar os dados informados.';
-    } elseif (( $erroPolitica = \FitControl\Security\PasswordPolicy::validationError($novaSenha)) !== null) {
+    } elseif ($erroPolitica !== null) {
         $erro = $erroPolitica;
     } elseif (!hash_equals($novaSenha, $confirmacao)) {
         $erro = 'A confirmação não corresponde à nova senha.';
