@@ -20,6 +20,9 @@ INVALID_EMAIL="migration-015-invalid-status@example.test"
 ACTIVE_EMAIL="migration-015-active@example.test"
 INACTIVE_EMAIL="migration-015-inactive@example.test"
 REJECTED_INSERT_EMAIL="migration-015-rejected-insert@example.test"
+INVALID_ID=""
+ACTIVE_ID=""
+INACTIVE_ID=""
 
 constraint_count() {
     db_value "
@@ -33,7 +36,11 @@ constraint_count() {
 }
 
 cleanup() {
-    db_value "DELETE FROM alunos WHERE email IN ('$INVALID_EMAIL', '$ACTIVE_EMAIL', '$INACTIVE_EMAIL', '$REJECTED_INSERT_EMAIL')" >/dev/null 2>&1 || true
+    for fixture_id in "$INVALID_ID" "$ACTIVE_ID" "$INACTIVE_ID"; do
+        if [[ "$fixture_id" =~ ^[0-9]+$ ]]; then
+            db_value "DELETE FROM alunos WHERE id = $fixture_id" >/dev/null 2>&1 || true
+        fi
+    done
 }
 
 for email in "$INVALID_EMAIL" "$ACTIVE_EMAIL" "$INACTIVE_EMAIL" "$REJECTED_INSERT_EMAIL"; do
@@ -55,6 +62,11 @@ if [[ "$before" == "0" ]]; then
         INSERT INTO alunos (nome, telefone, email, plano, ativo)
         VALUES ('Status legado inválido', '(21) 90000-0150', '$INVALID_EMAIL', 'Mensal', 2)
     "
+    INVALID_ID="$(db_value "SELECT id FROM alunos WHERE email = '$INVALID_EMAIL' LIMIT 1")"
+    [[ "$INVALID_ID" =~ ^[0-9]+$ ]] || {
+        echo "FALHA: não foi possível obter o ID da fixture inválida." >&2
+        exit 1
+    }
 
     echo "2/5 - Confirmando que a migration recusa dados inválidos sem corrigi-los..."
     if migration_output="$(mysql_cli < database/migrations/015_student_status_constraint.sql 2>&1)"; then
@@ -75,7 +87,8 @@ if [[ "$before" == "0" ]]; then
     }
 
     echo "3/5 - Removendo somente a fixture e aplicando a migration..."
-    db_value "DELETE FROM alunos WHERE email = '$INVALID_EMAIL'" >/dev/null
+    db_value "DELETE FROM alunos WHERE id = $INVALID_ID" >/dev/null
+    INVALID_ID=""
     mysql_cli < database/migrations/015_student_status_constraint.sql
 elif [[ "$before" == "1" ]]; then
     echo "Migration 015 já aplicada; validando a constraint existente..."
@@ -96,6 +109,12 @@ mysql_cli -e "
     ('Aluno ativo protegido', '(21) 90000-0151', '$ACTIVE_EMAIL', 'Mensal', 1),
     ('Aluno inativo protegido', '(21) 90000-0152', '$INACTIVE_EMAIL', 'Mensal', 0)
 "
+ACTIVE_ID="$(db_value "SELECT id FROM alunos WHERE email = '$ACTIVE_EMAIL' LIMIT 1")"
+INACTIVE_ID="$(db_value "SELECT id FROM alunos WHERE email = '$INACTIVE_EMAIL' LIMIT 1")"
+[[ "$ACTIVE_ID" =~ ^[0-9]+$ && "$INACTIVE_ID" =~ ^[0-9]+$ ]] || {
+    echo "FALHA: não foi possível obter os IDs das fixtures válidas." >&2
+    exit 1
+}
 valid_statuses="$(db_value "
     SELECT CONCAT(
         (SELECT ativo FROM alunos WHERE email = '$ACTIVE_EMAIL' LIMIT 1),
