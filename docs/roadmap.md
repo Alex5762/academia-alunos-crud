@@ -1,10 +1,20 @@
 # Roadmap do FitControl
 
-## Estado de continuidade — 23/11/2026
+## Estado de continuidade — 24/11/2026
 
 **A validação manual no XAMPP e em aparelho físico está temporariamente indisponível. Essa pendência foi aceita e não bloqueia a continuidade do desenvolvimento na branch.** Não executar migrations no banco local, não inserir dados reais e não declarar validação local concluída.
 
 ### Evidências automatizadas disponíveis
+
+### Revisão de segurança — SEC-01 a SEC-04
+
+- **SEC-01 — Política de senhas:** documentação e testes de política centralizada já existentes; cobertura automatizada executada na CI.
+- **SEC-02 — Configuração do banco:** configuração segura e teste de defaults já existentes; validação automatizada executada na CI.
+- **SEC-03 — Exposição do webroot:** regras Apache, documentação de `AllowOverride All` restrito à aplicação e teste com Apache 2.4 real. CI #1695 aprovada, incluindo caminhos codificados e tentativa de travessia. Inspeção no XAMPP local permanece pendente.
+- **SEC-04 — Sessões e cabeçalhos HTTP:** testes de cabeçalhos, cookies, modo estrito, cenários HTTP/HTTPS simulados e rotação de sessão/CSRF. CI #1699 aprovada nos sete jobs funcionais. A correção `session_cache_limiter('')` preserva o `Cache-Control: no-store, private, max-age=0` explícito. HTTPS real, proxy TLS, navegador e XAMPP locais não foram validados.
+- **Limites:** as verificações automatizadas não constituem auditoria independente nem autorização para uso público. MFA, recuperação de senha, HSTS/CSP planejados com cautela, gestão operacional de segredos, backups/restauração, monitoramento e privacidade continuam fora da conclusão dessas quatro revisões.
+
+**Próxima revisão sugerida:** inventariar scripts, estilos, fontes e recursos externos para avaliar uma CSP em modo `Report-Only`. Não aplicar uma política bloqueante nem adicionar `unsafe-inline` por conveniência antes de mapear dependências e testar os fluxos existentes.
 
 - Blocos 01–06 possuem implementação relevante e cobertura automatizada na branch.
 - Bloco 03: migrations de planos/matrículas e preservação de legado aprovadas em MySQL 8.0 e MariaDB 10.11.
