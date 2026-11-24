@@ -412,4 +412,81 @@ ANON_DETAILS_CODE="$(curl -sS -o "$TMP_DIR/anon-student-details.html" -w '%{http
 LEGACY_DELETE_CODE="$(curl -sS -o "$TMP_DIR/legacy-delete.html" -w '%{http_code}' -b "$ADMIN_JAR" -c "$ADMIN_JAR" "$BASE_URL/excluir.php?id=$STUDENT_ID")"
 [[ "$LEGACY_DELETE_CODE" == "410" ]] || fail "Exclusão física deveria permanecer aposentada; recebeu $LEGACY_DELETE_CODE."
 
+if [[ "\${FITCONTROL_BLOCK_03:-0}" == "1" ]]; then
+    echo "Bloco 03 HTTP - validando catálogo, contratação, cancelamento e revisão..."
+
+    ANON_PLANS_CODE="$(curl -sS -o "$TMP_DIR/anon-plans.html" -w '%{http_code}' "$BASE_URL/planos.php")"
+    [[ "$ANON_PLANS_CODE" == "303" ]] || fail "Catálogo de planos deveria exigir autenticação; recebeu $ANON_PLANS_CODE."
+
+    curl -fsS -b "$ADMIN_JAR" -c "$ADMIN_JAR" "$BASE_URL/planos.php" -o "$TMP_DIR/block03-plans.html"
+    grep -Fq 'Catálogo cadastrado' "$TMP_DIR/block03-plans.html" || fail "Catálogo de planos não abriu para Administrador."
+    TOKEN="$(get_token "$TMP_DIR/block03-plans.html")"
+
+    curl -fsS -L -b "$ADMIN_JAR" -c "$ADMIN_JAR" "$BASE_URL/salvar-plano.php" \
+        --data-urlencode "token=$TOKEN" \
+        --data-urlencode "nome=Plano HTTP Bloco 03" \
+        --data-urlencode "descricao=Fixture automatizada de catálogo" \
+        --data-urlencode "duracao_valor=1" \
+        --data-urlencode "duracao_unidade=MES" \
+        --data-urlencode "valor_atual=149,90" \
+        -o "$TMP_DIR/block03-plan-created.html"
+    grep -Fq 'Rascunho de plano criado com sucesso.' "$TMP_DIR/block03-plan-created.html" || fail "Criação de rascunho de plano não foi concluída."
+    PLAN_ID="$(db_value "SELECT id FROM planos WHERE nome = 'Plano HTTP Bloco 03' ORDER BY id DESC LIMIT 1")"
+    [[ "$PLAN_ID" =~ ^[1-9][0-9]*$ ]] || fail "ID do plano criado não foi encontrado."
+
+    TOKEN="$(get_token "$TMP_DIR/block03-plan-created.html")"
+    curl -fsS -L -b "$ADMIN_JAR" -c "$ADMIN_JAR" "$BASE_URL/gerenciar-plano.php" \
+        --data-urlencode "token=$TOKEN" \
+        --data-urlencode "id=$PLAN_ID" \
+        --data-urlencode "acao=ativar" \
+        -o "$TMP_DIR/block03-plan-activated.html"
+    grep -Fq 'Plano ativado e disponível para novas matrículas.' "$TMP_DIR/block03-plan-activated.html" || fail "Ativação do plano não foi concluída."
+    PLAN_STATE="$(db_value "SELECT situacao FROM planos WHERE id = $PLAN_ID")"
+    [[ "$PLAN_STATE" == "ATIVO" ]] || fail "O plano não ficou ativo."
+
+    BLOCK03_EMAIL="block03-http-$(date +%s)-$@example.test"
+    db_exec "INSERT INTO alunos (nome, telefone, email, plano, ativo) VALUES ('Aluno HTTP Bloco 03', '21990003003', '$BLOCK03_EMAIL', 'Legado sem vínculo', 1)"
+    BLOCK03_STUDENT_ID="$(db_value "SELECT id FROM alunos WHERE email = '$BLOCK03_EMAIL'")"
+    [[ "$BLOCK03_STUDENT_ID" =~ ^[1-9][0-9]*$ ]] || fail "Aluno de teste do Bloco 03 não foi criado."
+
+    curl -fsS -b "$ADMIN_JAR" -c "$ADMIN_JAR" "$BASE_URL/planos.php?nova_matricula=1&aluno_id=$BLOCK03_STUDENT_ID" -o "$TMP_DIR/block03-enrollment-form.html"
+    grep -Fq 'Confirmar matrícula' "$TMP_DIR/block03-enrollment-form.html" || fail "Formulário de contratação não abriu."
+    TOKEN="$(get_token "$TMP_DIR/block03-enrollment-form.html")"
+    curl -fsS -L -b "$ADMIN_JAR" -c "$ADMIN_JAR" "$BASE_URL/planos.php?nova_matricula=1" \
+        --data-urlencode "token=$TOKEN" \
+        --data-urlencode "acao=criar_matricula" \
+        --data-urlencode "aluno_id=$BLOCK03_STUDENT_ID" \
+        --data-urlencode "plano_id=$PLAN_ID" \
+        --data-urlencode "data_inicio=2027-01-10" \
+        --data-urlencode "hora_inicio=09:00" \
+        -o "$TMP_DIR/block03-enrollment-created.html"
+    grep -Fq 'Matrícula #' "$TMP_DIR/block03-enrollment-created.html" || fail "Contratação não retornou a confirmação da matrícula."
+
+    ENROLLMENT_ID="$(db_value "SELECT id FROM matriculas WHERE aluno_id = $BLOCK03_STUDENT_ID ORDER BY id DESC LIMIT 1")"
+    [[ "$ENROLLMENT_ID" =~ ^[1-9][0-9]*$ ]] || fail "Matrícula criada não foi encontrada no banco."
+    SNAPSHOT_COUNT="$(db_value "SELECT COUNT(*) FROM matriculas WHERE id = $ENROLLMENT_ID AND plano_nome_contratado = 'Plano HTTP Bloco 03' AND valor_contratado = 149.90 AND duracao_contratada_valor = 1 AND duracao_contratada_unidade = 'MES'")"
+    [[ "$SNAPSHOT_COUNT" == "1" ]] || fail "Snapshot da contratação não preservou nome, preço e duração."
+    ENROLLMENT_AUDIT="$(db_value "SELECT COUNT(*) FROM auditoria WHERE acao = 'matricula_criada' AND entidade = 'matriculas' AND entidade_id = $ENROLLMENT_ID")"
+    [[ "$ENROLLMENT_AUDIT" == "1" ]] || fail "Criação de matrícula não foi auditada exatamente uma vez."
+    CHARGE_TABLE_COUNT="$(db_value "SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'cobrancas'")"
+    [[ "$CHARGE_TABLE_COUNT" == "0" ]] || fail "O Bloco 03 não deve criar nem depender da tabela financeira cobrancas."
+
+    TOKEN="$(get_token "$TMP_DIR/block03-enrollment-created.html")"
+    curl -fsS -L -b "$ADMIN_JAR" -c "$ADMIN_JAR" "$BASE_URL/cancelar-matricula.php" \
+        --data-urlencode "token=$TOKEN" \
+        --data-urlencode "student_id=$BLOCK03_STUDENT_ID" \
+        --data-urlencode "enrollment_id=$ENROLLMENT_ID" \
+        --data-urlencode "motivo_cancelamento=Cancelamento de fixture HTTP" \
+        -o "$TMP_DIR/block03-enrollment-cancelled.html"
+    grep -Fq 'Matrícula cancelada com sucesso.' "$TMP_DIR/block03-enrollment-cancelled.html" || fail "Cancelamento da matrícula agendada não foi concluído."
+    CANCELLED_AT="$(db_value "SELECT COUNT(*) FROM matriculas WHERE id = $ENROLLMENT_ID AND cancelada_em IS NOT NULL")"
+    [[ "$CANCELLED_AT" == "1" ]] || fail "Cancelamento não foi persistido."
+    CANCEL_AUDIT="$(db_value "SELECT COUNT(*) FROM auditoria WHERE acao = 'matricula_cancelada' AND entidade = 'matriculas' AND entidade_id = $ENROLLMENT_ID")"
+    [[ "$CANCEL_AUDIT" == "1" ]] || fail "Cancelamento não foi auditado exatamente uma vez."
+
+    curl -fsS -b "$ADMIN_JAR" -c "$ADMIN_JAR" "$BASE_URL/revisoes-legado.php" -o "$TMP_DIR/block03-legacy-review.html"
+    grep -Fq 'Revisão de vínculos legados' "$TMP_DIR/block03-legacy-review.html" || fail "Fila de revisão de legados não abriu."
+    echo "Bloco 03 HTTP: catálogo, contratação, snapshot, cancelamento e revisão: OK"
+fi
+
 echo "Integração HTTP: autenticação, RBAC, CRUD, status de alunos, detalhes e auditoria: OK"
