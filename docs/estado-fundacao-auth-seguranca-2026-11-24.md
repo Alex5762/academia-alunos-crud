@@ -66,3 +66,24 @@ Ficam fora: matrículas, frequência, financeiro, grade, dashboard completo, rel
 4. Reexecutar e confirmar os cinco checks após cada alteração.
 5. Atualizar este documento e o parecer de revisão a cada etapa.
 6. Não fazer merge sem autorização explícita do usuário.
+
+
+## Etapa 2 — rate limit e auditoria de falhas de login
+
+**Implementação commitada; CI do novo HEAD pendente.**
+
+- Criado `src/Security/LoginAttemptRateLimiter.php` para centralizar consulta, bloqueio, registro e limpeza de tentativas.
+- Política: cinco falhas em janela de 15 minutos; bloqueio por 15 minutos. O contador permanece limitado a cinco mesmo sob requisições concorrentes.
+- A tabela mantém hashes SHA-256 do e-mail normalizado e IP de origem. Registros sem atividade por mais de um dia são removidos.
+- Cada falha que passa pelo bloqueio registra `login_falhou` na cadeia append-only, sem e-mail, IP ou hashes de identificação. Contador e auditoria usam a mesma transação.
+- Tentativas bloqueadas não geram eventos repetidos. Login válido limpa o contador da combinação.
+- `tests/foundation-http.sh` cobre falhas 1–5, bloqueio, tentativa durante bloqueio, expiração/reinício e limpeza após login válido.
+- Novo `tests/database-login-rate-limit.php` cobre concorrência com quatro processos, contador limitado, auditoria sem PII, expiração, limpeza e integridade da cadeia.
+- CI adicionada para executar o teste concorrente no MySQL 8.0 e MariaDB 10.11.
+
+### Próximos passos
+
+1. Confirmar resultado dos cinco checks no novo HEAD.
+2. Corrigir qualquer incompatibilidade identificada pela CI.
+3. Tratar o Achado 3: revalidar autorização administrativa dentro da transação de criação de contas.
+4. Não fazer merge sem autorização explícita.
