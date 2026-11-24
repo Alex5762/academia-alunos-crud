@@ -444,6 +444,9 @@ jobs:
       - name: Test secure database configuration defaults
         run: php tests/database-configuration.php
 
+      - name: Test Apache webroot protection rules
+        run: bash tests/webroot-protection.sh
+
       - name: Test role-based access control matrix
         run: php tests/access-control.php
 
@@ -475,6 +478,15 @@ jobs:
           test -f tests/database-configuration.php
           test -f config/.htaccess
           test -f config/database.local.example.php
+          test -f .htaccess
+          test -f database/.htaccess
+          test -f scripts/.htaccess
+          test -f src/.htaccess
+          test -f tests/.htaccess
+          test -f docs/.htaccess
+          test -f .github/.htaccess
+          test -f tests/webroot-protection.sh
+          test -f docs/seguranca-exposicao-webroot.md
           test -f banco.sql
           test -f style.css
           test -f tests/integration-crud.sh

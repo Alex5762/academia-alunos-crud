@@ -100,11 +100,16 @@ Cada aluno possui nome, telefone, e-mail, plano (Mensal, Trimestral, Semestral o
 
 ```text
 academia-alunos-crud/
-├── .github/workflows/ci.yml
+├── .htaccess
+├── .github/
+│   ├── .htaccess
+│   └── workflows/ci.yml
 ├── config/
 │   ├── .htaccess
 │   └── database.local.example.php
-├── database/migrations/
+├── database/
+│   ├── .htaccess
+│   └── migrations/
 │   ├── 001_authentication_audit.sql
 │   ├── 002_force_password_change.sql
 │   ├── 003_login_rate_limit.sql
@@ -120,6 +125,7 @@ academia-alunos-crud/
 │   ├── 013_financeiro_valores_positivos.sql
 │   └── 014_grade_fixa_aulas.sql
 ├── docs/
+│   ├── .htaccess
 │   ├── decisoes/
 │   ├── bloco-01-autenticacao.md
 │   ├── bloco-02-gestao-alunos.md
@@ -131,10 +137,12 @@ academia-alunos-crud/
 │   ├── roadmap.md
 │   └── screenshots/
 ├── scripts/
+│   ├── .htaccess
 │   ├── inicializar-integridade-auditoria.php
 │   ├── provisionar-usuario.php
 │   └── ferramentas de checkpoint e diagnóstico
 ├── src/
+│   ├── .htaccess
 │   ├── Domain/Attendance/AttendanceCheckinService.php
 │   ├── Domain/Classes/ClassCatalogService.php
 │   ├── Domain/Classes/ClassScheduleService.php
@@ -148,6 +156,8 @@ academia-alunos-crud/
 │   ├── Infrastructure/DatabaseConfig.php
 │   └── Security/
 ├── tests/
+│   ├── .htaccess
+│   ├── webroot-protection.sh
 │   ├── browser-compatibility.mjs
 │   ├── report-period.php
 │   ├── database-reports.php
@@ -239,7 +249,7 @@ Os testes de integração cobrem:
 
 A captura visual em Chromium verifica a presença dos registros de demonstração, ausência de rolagem horizontal inesperada no desktop/mobile, rolagem interna da tabela no mobile, navegação mobile por teclado, aplicação e persistência do tema escuro, ausência de erros JavaScript e exibição dos avisos de expiração de sessão. O teste `tests/browser-compatibility.mjs` repete verificações essenciais em Chromium, Firefox e WebKit, em larguras desktop, mobile e mobile estreito, incluindo overflow, rolagem interna, navegação por teclado, foco visível, validação nativa dos campos obrigatórios e persistência do tema.
 
-Para conferir os resultados, consulte a aba **Actions** do GitHub. Uma execução verde confirma apenas os cenários incluídos no workflow; não substitui inspeção visual humana em dispositivos e navegadores reais nem uma revisão independente de segurança.
+Para conferir os resultados, consulte a aba **Actions** do GitHub. A CI também usa Apache 2.4 para verificar que migrations, scripts, código interno, testes, documentação e metadados Git não são servidos diretamente. Uma execução verde confirma apenas os cenários incluídos no workflow; não substitui inspeção manual no XAMPP, inspeção visual humana em dispositivos e navegadores reais nem uma revisão independente de segurança.
 
 ## Documentação
 
@@ -249,6 +259,7 @@ Para conferir os resultados, consulte a aba **Actions** do GitHub. Uma execuçã
 - [Planejamento do Bloco 01 — autenticação e auditoria](docs/bloco-01-autenticacao.md)
 - [SEC-01 — Política de senhas](docs/seguranca-politica-senhas.md)
 - [SEC-02 — Configuração do banco e credenciais padrão](docs/seguranca-configuracao-banco.md)
+- [SEC-03 — Proteção dos diretórios internos no webroot](docs/seguranca-exposicao-webroot.md)
 - [Planejamento do Bloco 02 — gestão de alunos](docs/bloco-02-gestao-alunos.md)
 - [Pesquisa, implementação e estado do Bloco 03 — planos e matrículas](docs/bloco-03-planos-matriculas.md)
 - [Bloco 04 — frequência e check-in](docs/bloco-04-frequencia-checkin.md)
