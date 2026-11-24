@@ -920,3 +920,216 @@ th { background: #edf1f6; }
     .legacy-rectification-current-period dl {
         grid-template-columns: 1fr;
     }
+
+
+/* Tokens e componentes compartilhados das telas do Bloco 03 */
+:root {
+    color-scheme: light;
+    font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif;
+    color: #172033;
+    background: #f4f6fb;
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    --ink: #172033;
+    --muted: #6b7486;
+    --muted-light: #98a1b2;
+    --line: #e7eaf1;
+    --surface: #ffffff;
+    --canvas: #f4f6fb;
+    --blue: #315fe8;
+    --blue-dark: #254dc9;
+    --blue-soft: #eef3ff;
+    --teal: #16a392;
+    --green-soft: #eaf8f3;
+    --danger: #b42332;
+    --shadow: 0 12px 32px rgba(28, 43, 76, 0.055);
+}
+
+
+.eyebrow {
+    display: block;
+    color: #8994aa;
+    font-size: 0.63rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+}
+
+.page-heading h1 {
+    margin: 7px 0 5px;
+    color: var(--ink);
+    font-size: clamp(1.75rem, 2.8vw, 2.25rem);
+    font-weight: 780;
+    letter-spacing: -0.055em;
+    line-height: 1.15;
+}
+
+.page-heading p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.88rem;
+}
+
+.button {
+    display: inline-flex;
+    min-height: 43px;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    padding: 0 16px;
+    border: 1px solid transparent;
+    border-radius: 9px;
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.8rem;
+    font-weight: 750;
+    white-space: nowrap;
+    transition: transform 160ms ease, background 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+}
+
+.button svg {
+    width: 17px;
+    height: 17px;
+}
+
+.button:hover {
+    transform: translateY(-1px);
+}
+
+.button-primary {
+    color: #fff;
+    background: var(--blue);
+    box-shadow: 0 6px 14px rgba(49, 95, 232, 0.17);
+}
+
+.button-primary:hover {
+    color: #fff;
+    background: var(--blue-dark);
+    box-shadow: 0 8px 18px rgba(49, 95, 232, 0.22);
+}
+
+.button-secondary {
+    color: #fff;
+    background: #243b70;
+    box-shadow: 0 6px 14px rgba(24, 43, 83, 0.14);
+}
+
+.button-secondary:hover {
+    color: #fff;
+    background: #1b2f5e;
+}
+
+.flash-message {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: -8px 0 22px;
+    padding: 12px 15px;
+    color: #176c55;
+    background: #eaf8f2;
+    border: 1px solid #cceede;
+    border-radius: 10px;
+    font-size: 0.82rem;
+    font-weight: 650;
+}
+
+.flash-check {
+    display: grid;
+    width: 21px;
+    height: 21px;
+    flex: 0 0 auto;
+    place-items: center;
+    color: #fff;
+    background: #20a779;
+    border-radius: 50%;
+    font-size: 0.75rem;
+
+.button-search {
+    min-height: 39px;
+    padding: 0 13px;
+    color: #fff;
+    background: var(--blue);
+    border-radius: 8px;
+    font-size: 0.73rem;
+}
+
+.button-search:hover {
+    background: var(--blue-dark);
+}
+
+.settings-page {
+    width: min(100%, 720px);
+    margin: 0 auto;
+}
+
+.settings-back {
+    display: inline-flex;
+    margin-bottom: 36px;
+    color: var(--blue-dark);
+    font-size: 0.84rem;
+    font-weight: 700;
+}
+
+.settings-page h1 {
+    margin: 7px 0 5px;
+    color: var(--ink);
+    font-size: clamp(1.8rem, 5vw, 2.3rem);
+    letter-spacing: -0.045em;
+}
+
+.settings-intro {
+    margin: 0 0 26px;
+    color: var(--muted);
+    font-size: 0.9rem;
+}
+
+.settings-card {
+    padding: clamp(20px, 4vw, 28px);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    box-shadow: var(--shadow);
+}
+
+.settings-card-heading {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    margin-bottom: 22px;
+}
+
+.settings-icon {
+    display: grid;
+    width: 42px;
+    height: 42px;
+    place-items: center;
+    color: var(--blue);
+    background: var(--blue-soft);
+    border-radius: 12px;
+    font-size: 1.35rem;
+}
+
+.settings-card h2 {
+    margin: 0;
+    color: var(--ink);
+    font-size: 1rem;
+}
+
+.settings-card-heading p {
+
+.field-hint {
+    color: var(--muted);
+    font-size: .7rem;
+    font-weight: 500;
+}
+.field-hint {
+    display: block;
+    margin-top: 6px;
+    line-height: 1.45;
+}
+
+.button-danger {
+    color: #a02d3a;
+    background: #fff1f1;
+    border-color: #f0d1d5;
+}
+.button-danger:hover {
