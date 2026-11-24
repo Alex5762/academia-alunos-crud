@@ -18,6 +18,8 @@ for migration in \
     001_authentication_audit.sql \
     002_force_password_change.sql \
     003_login_rate_limit.sql \
+    004_student_status.sql \
+    015_student_status_constraint.sql \
     007_administrative_roles.sql; do
     mysql_cli < "database/migrations/$migration"
 done
