@@ -367,6 +367,10 @@ curl -fsS -L -b "$ADMIN_JAR" -c "$ADMIN_JAR" "$BASE_URL/alterar-status-aluno.php
 grep -Fq 'Aluno inativado com sucesso.' "$TMP_DIR/student-inactivated.html" || fail "Inativação do aluno não foi concluída."
 REMAINING="$(db_value "SELECT COUNT(*) FROM alunos WHERE id = $STUDENT_ID AND ativo = 0")"
 [[ "$REMAINING" == "1" ]] || fail "O aluno foi removido ou não ficou inativo."
+curl -fsS -b "$ADMIN_JAR" -c "$ADMIN_JAR" "$BASE_URL/index.php?status=inativos&busca=foundation-http" -o "$TMP_DIR/student-filter-inactive.html"
+grep -Fq 'Aluno Foundation HTTP' "$TMP_DIR/student-filter-inactive.html" || fail "Filtro de inativos e pesquisa não localizaram o aluno."
+curl -fsS -b "$ADMIN_JAR" -c "$ADMIN_JAR" "$BASE_URL/index.php?status=ativos&busca=foundation-http" -o "$TMP_DIR/student-filter-active.html"
+if grep -Fq 'Aluno Foundation HTTP' "$TMP_DIR/student-filter-active.html"; then fail "Aluno inativo apareceu no filtro de ativos."; fi
 AUDIT_INACTIVE="$(db_value "SELECT COUNT(*) FROM auditoria WHERE usuario_id = $ADMIN_ID AND acao = 'aluno_inativado' AND entidade='alunos' AND entidade_id=$STUDENT_ID")"
 [[ "$AUDIT_INACTIVE" == "1" ]] || fail "Inativação não produziu exatamente um evento de auditoria."
 
