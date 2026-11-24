@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/funcoes.php';
 require_once __DIR__ . '/conexao.php';
+require_once __DIR__ . '/src/Security/PasswordPolicy.php';
 
 $usuario = usuarioAtual($pdo);
 if ($usuario === null) {
@@ -32,8 +33,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit('Dados inválidos.');
     }
 
-    if (strlen($novaSenha) < 12 || strlen($novaSenha) > 4096) {
-        $erro = 'A nova senha deve ter pelo menos 12 caracteres.';
+    $erroPolitica = \\FitControl\\Security\\PasswordPolicy::validationError($novaSenha);
+    if ($erroPolitica !== null) {
+        $erro = $erroPolitica;
     } elseif (!hash_equals($novaSenha, $confirmacao)) {
         $erro = 'A confirmação não corresponde à nova senha.';
     } else {
@@ -51,10 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } elseif (password_verify($novaSenha, $conta['senha_hash'])) {
                 $erro = 'Escolha uma senha diferente da senha temporária.';
             } else {
-                $novoHash = password_hash($novaSenha, PASSWORD_DEFAULT);
-                if ($novoHash === false) {
-                    throw new RuntimeException('Não foi possível proteger a nova senha.');
-                }
+                $novoHash = \\FitControl\\Security\\PasswordPolicy::hash($novaSenha);
 
                 $pdo->beginTransaction();
                 $atualizar = $pdo->prepare(
@@ -125,12 +124,12 @@ $token = escapar($_SESSION['token']);
             <label for="senha-atual">Senha temporária</label>
             <input type="password" id="senha-atual" name="senha_atual" autocomplete="current-password" required maxlength="4096">
             <label for="nova-senha">Nova senha</label>
-            <input type="password" id="nova-senha" name="nova_senha" autocomplete="new-password" minlength="12" maxlength="4096" required>
+            <input type="password" id="nova-senha" name="nova_senha" autocomplete="new-password" minlength="12" maxlength="72" required>
             <label for="confirmacao">Confirme a nova senha</label>
-            <input type="password" id="confirmacao" name="confirmacao" autocomplete="new-password" minlength="12" maxlength="4096" required>
+            <input type="password" id="confirmacao" name="confirmacao" autocomplete="new-password" minlength="12" maxlength="72" required>
             <button class="button button-primary login-submit" type="submit">Salvar nova senha</button>
         </form>
-        <p class="login-footnote">Use pelo menos 12 caracteres e não reutilize a senha temporária.</p>
+        <p class="login-footnote">Use pelo menos 12 caracteres e até 72 bytes UTF-8. Não reutilize a senha temporária.</p>
     </section>
 </main>
 </body>
