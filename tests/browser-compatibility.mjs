@@ -39,14 +39,18 @@ const requiredCspDirectives = [
 ];
 
 async function collectMissingCspDirectives(response, engineName, pageName) {
-  // headers() omite cabeçalhos de segurança em alguns motores/versões.
-  // allHeaders() inclui explicitamente Content-Security-Policy-Report-Only.
-  const headers = await response.allHeaders();
-  const policy = headers["content-security-policy-report-only"] ?? "";
+  // headersArray() preserva os nomes recebidos; normalize explicitamente
+  // porque WebKit pode expor a capitalização original do cabeçalho.
+  const headers = await response.headersArray();
+  const cspHeader = headers.find(
+    (header) => header.name.toLowerCase() === "content-security-policy-report-only",
+  );
+  const policy = cspHeader?.value ?? "";
   const missing = requiredCspDirectives.filter((directive) => !policy.includes(directive));
   if (missing.length > 0) {
+    const receivedNames = headers.map((header) => header.name).join(", ") || "(nenhum)";
     return engineName + ": CSP Report-Only ausente/incompleta em " + pageName +
-      ": " + missing.join(", ");
+      "; cabeçalhos recebidos: " + receivedNames + "; diretivas ausentes: " + missing.join(", ");
   }
   return null;
 }
