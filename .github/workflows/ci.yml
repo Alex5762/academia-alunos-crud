@@ -33,6 +33,9 @@ jobs:
         run: |
           set -euo pipefail
           while IFS= read -r -d '' file; do php -l "$file"; done < <(find . -type f -name '*.php' -not -path './.git/*' -print0)
+      - name: Validate CSS block structure
+        run: |
+          php -r '$css = file_get_contents("style.css"); if ($css === false || substr_count($css, "{") !== substr_count($css, "}")) { fwrite(STDERR, "CSS contém blocos não balanceados.\n"); exit(1); }'
       - name: Validate pure configuration, password policy and RBAC
         run: |
           php tests/database-configuration.php
