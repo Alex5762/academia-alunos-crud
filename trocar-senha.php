@@ -33,7 +33,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit('Dados inválidos.');
     }
 
-    $erroPolitica = \\FitControl\\Security\\PasswordPolicy::validationError($novaSenha);
+    $erroPolitica = \FitControl\Security\PasswordPolicy::validationError($novaSenha);
     if ($erroPolitica !== null) {
         $erro = $erroPolitica;
     } elseif (!hash_equals($novaSenha, $confirmacao)) {
@@ -53,7 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } elseif (password_verify($novaSenha, $conta['senha_hash'])) {
                 $erro = 'Escolha uma senha diferente da senha temporária.';
             } else {
-                $novoHash = \\FitControl\\Security\\PasswordPolicy::hash($novaSenha);
+                $novoHash = \FitControl\Security\PasswordPolicy::hash($novaSenha);
 
                 $pdo->beginTransaction();
                 $atualizar = $pdo->prepare(
