@@ -36,12 +36,12 @@ Os seguintes itens foram implementados e cobertos pelos testes da branch:
 
 ## 3. CI — estado real por HEAD
 
-HEAD atual validado: `501f49cea8ecd405b0a22057c50ab482ec56fe62`.
+HEAD validado: `501f49cea8ecd405b0a22057c50ab482ec56fe62`.
 
 - Run pull_request #45457276790: sucesso, 5/5 jobs.
 - Run push #45457261651: sucesso, 5/5 jobs.
 - Jobs aprovados nos dois eventos: PHP quality and unit tests; Foundation database (MySQL 8.0); Foundation database (MariaDB 10.11); Foundation HTTP integration (MySQL 8.0); Apache webroot protection.
-- Conclusão: 10/10 checks aprovados no mesmo HEAD, incluindo teste HTTP concorrente do rate limit e matriz MySQL/MariaDB.
+- Resultado: 10/10 checks aprovados no mesmo HEAD, incluindo o teste HTTP concorrente de login e a matriz MySQL/MariaDB.
 
 Links:
 - [CI pull_request aprovada](https://github.com/Alex5762/academia-alunos-crud/actions/runs/45457276790)
@@ -164,3 +164,15 @@ No HEAD `501f49cea8ecd405b0a22057c50ab482ec56fe62`, ambos os eventos finalizaram
 O estado consultado da PR #2 foi `open`, `merged=false`, `mergeable=true`, `mergeable_state=clean`, com base `e1f4c8084dc6dec8c772a699855562944d50e89e`. A branch está 71 commits à frente e 0 atrás. Não havia avaliações formais, comentários de revisão ou threads inline registrados.
 
 A proteção atual da `main` não pôde ser confirmada pela API nesta sessão (403). Backup do banco, ambiente de destino, aprovação humana caso exigida e autorização explícita continuam pendentes. Nenhum merge ou migration foi executado.
+
+
+## 10. Confirmação da CI final — 2026-11-24
+
+No HEAD `501f49cea8ecd405b0a22057c50ab482ec56fe62`, ambos os eventos terminaram com sucesso:
+
+- Pull request #45457276790 — 5/5 jobs.
+- Push #45457261651 — 5/5 jobs.
+
+A PR #2 foi consultada novamente: `open`, `merged=false`, `mergeable=true`, `mergeable_state=clean`, base `e1f4c8084dc6dec8c772a699855562944d50e89e`. Comparação: 71 commits à frente, 0 atrás. Não havia avaliações formais, comentários de revisão ou threads inline.
+
+A API de proteção da `main` retornou 403 para a integração; confirmar as regras manualmente. Backup do banco, ambiente de destino, revisão independente caso exigida e autorização explícita continuam pendentes. Nenhum merge ou migration foi executado.
