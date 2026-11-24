@@ -100,3 +100,16 @@ O desenho preserva a política de cinco falhas em 15 minutos e bloqueio por 15 m
 Foi adicionada cobertura HTTP com oito workers e 12 sessões/cookies independentes disparando simultaneamente para o mesmo e-mail/IP. As asserções esperam contador igual a cinco, bloqueio ativo e exatamente cinco eventos de falha auditados sem PII.
 
 **Ponto de validação:** ainda é necessário confirmar a CI completa no novo HEAD, principalmente o teste HTTP concorrente em MySQL 8.0 e a compatibilidade dos named locks em MariaDB 10.11. Até os cinco jobs passarem, esta observação não deve ser marcada como validada e a PR não deve ser mesclada.
+
+
+## Validação final da observação adicional — 2026-11-24
+
+**Resolvida e validada em CI no commit c63c2d008416224d24c59bc79ec70906ca392c5e.**
+
+- Run #45425206298 (push) e run #45425223992 (pull_request): ambos concluídos com sucesso, 5/5 jobs.
+- Os cinco jobs passaram em ambos os eventos, incluindo MySQL 8.0, MariaDB 10.11 e integração HTTP MySQL.
+- O teste HTTP concorrente usa 12 sessões independentes, dispara as requisições em paralelo com oito workers e confirma exatamente cinco falhas persistidas/auditadas e bloqueio ativo.
+- O namespace PHP inicialmente escapado incorretamente foi corrigido antes desta execução verde.
+- GET_LOCK/RELEASE_LOCK serializa o ciclo de tentativa por combinação e-mail/origem, mantendo a política de falhas, resposta genérica e auditoria sem PII.
+
+A observação complementar está resolvida. Os achados 1, 2 e 3 originais continuam resolvidos e validados. A PR #2 permanece aberta, sem merge, aguardando revisão final e autorização explícita.
