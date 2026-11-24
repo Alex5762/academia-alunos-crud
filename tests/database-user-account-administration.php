@@ -334,15 +334,32 @@ assertUserAdministration(
         === UserAccountAdministrationService::UPDATED,
     'O administrador deve conseguir alterar o perfil de outra conta.'
 );
+$sessionVersionBefore = (int) $pdo->query(
+    "SELECT sessao_versao FROM usuarios WHERE id = {$operator}"
+)->fetchColumn();
 assertUserAdministration(
     $service->changeStatus($activeAdminId, $operator, 'desativar')
         === UserAccountAdministrationService::DEACTIVATED,
     'O administrador deve conseguir desativar outra conta.'
 );
+$sessionVersionAfterDeactivation = (int) $pdo->query(
+    "SELECT sessao_versao FROM usuarios WHERE id = {$operator}"
+)->fetchColumn();
+assertUserAdministration(
+    $sessionVersionAfterDeactivation === $sessionVersionBefore + 1,
+    'A desativação deve incrementar a versão de sessão e revogar cookies emitidos anteriormente.'
+);
 assertUserAdministration(
     $service->changeStatus($activeAdminId, $operator, 'reativar')
         === UserAccountAdministrationService::REACTIVATED,
     'O administrador deve conseguir reativar uma conta.'
+);
+$sessionVersionAfterReactivation = (int) $pdo->query(
+    "SELECT sessao_versao FROM usuarios WHERE id = {$operator}"
+)->fetchColumn();
+assertUserAdministration(
+    $sessionVersionAfterReactivation === $sessionVersionAfterDeactivation + 1,
+    'A reativação deve manter uma nova geração de sessão; o usuário precisará autenticar novamente.'
 );
 
 $finalIntegrity = AuditIntegrityChain::verify($pdo);

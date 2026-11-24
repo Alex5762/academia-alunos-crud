@@ -4,7 +4,7 @@ Projeto acadêmico de Desenvolvimento Web. Esta versão preserva o CRUD original
 
 ## Funcionalidades desta etapa
 
-- Login e logout com sessão protegida, token CSRF e expiração.
+- Login e logout com sessão protegida, token CSRF, expiração e revogação persistente por versão da conta; sessões anteriores não voltam a funcionar após reativação.
 - Primeiro acesso com troca obrigatória de senha.
 - Perfis Administrador, Gestor e Operador, com autorização verificada no servidor.
 - Cadastro e administração de contas individuais.

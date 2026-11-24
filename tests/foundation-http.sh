@@ -91,8 +91,95 @@ OPERATOR_PASSWORD="$(sed -n 's/.*<code id="temporary-password">\([^<]*\)<\/code>
 [[ "${#OPERATOR_PASSWORD}" -eq 32 ]] || fail "Senha temporária do operador não encontrada."
 
 login_and_change_password "$OPERATOR_JAR" "operator-http@example.test" "$OPERATOR_PASSWORD" "SenhaOperadorNova-2026!" "operator"
+OPERATOR_ID="$(db_value "SELECT id FROM usuarios WHERE email = 'operator-http@example.test' LIMIT 1")"
+ADMIN_ID="$(db_value "SELECT id FROM usuarios WHERE email = 'provision-ci@example.test' LIMIT 1")"
+[[ "$OPERATOR_ID" =~ ^[0-9]+$ && "$ADMIN_ID" =~ ^[0-9]+$ ]] || fail "Não foi possível identificar as contas de teste."
+
+# Perfis sem users.manage não acessam a gestão de contas.
+OPERATOR_USERS_CODE="$(curl -sS -o "$TMP_DIR/operator-users.html" -w '%{http_code}' -b "$OPERATOR_JAR" -c "$OPERATOR_JAR" "$BASE_URL/usuarios.php")"
+[[ "$OPERATOR_USERS_CODE" == "403" ]] || fail "Operador deveria receber 403 na gestão de funcionários; recebeu $OPERATOR_USERS_CODE."
 OPERATOR_DELETE_CODE="$(curl -sS -o "$TMP_DIR/operator-delete.html" -w '%{http_code}' -b "$OPERATOR_JAR" -c "$OPERATOR_JAR" "$BASE_URL/excluir.php?id=$STUDENT_ID")"
 [[ "$OPERATOR_DELETE_CODE" == "403" ]] || fail "Operador deveria receber 403 na exclusão; recebeu $OPERATOR_DELETE_CODE."
+
+# Alteração de status sem CSRF não pode produzir efeito.
+STATUS_CSRF_CODE="$(curl -sS -o "$TMP_DIR/status-invalid-csrf.html" -w '%{http_code}' -b "$ADMIN_JAR" -c "$ADMIN_JAR" -X POST "$BASE_URL/alterar-status-usuario.php" \
+    --data-urlencode "id=$OPERATOR_ID" --data-urlencode "acao=desativar")"
+[[ "$STATUS_CSRF_CODE" == "403" ]] || fail "Alteração de status sem CSRF deveria retornar 403; recebeu $STATUS_CSRF_CODE."
+OPERATOR_STILL_ACTIVE="$(db_value "SELECT ativo FROM usuarios WHERE id = $OPERATOR_ID")"
+[[ "$OPERATOR_STILL_ACTIVE" == "1" ]] || fail "Requisição sem CSRF alterou o status da conta."
+
+# O administrador promove e depois rebaixa o operador; cada mudança é persistida.
+TOKEN="$(get_token "$TMP_DIR/users.html")"
+curl -fsS -L -b "$ADMIN_JAR" -c "$ADMIN_JAR" "$BASE_URL/alterar-perfil-usuario.php" \
+    --data-urlencode "token=$TOKEN" --data-urlencode "id=$OPERATOR_ID" \
+    --data-urlencode "perfil=GESTOR" -o "$TMP_DIR/operator-promoted.html"
+grep -Fq 'Perfil do funcionário atualizado com sucesso.' "$TMP_DIR/operator-promoted.html" || fail "Alteração de perfil para Gestor não foi concluída."
+OPERATOR_ROLE="$(db_value "SELECT perfil FROM usuarios WHERE id = $OPERATOR_ID")"
+[[ "$OPERATOR_ROLE" == "GESTOR" ]] || fail "O endpoint não persistiu o perfil Gestor."
+OPERATOR_USERS_CODE="$(curl -sS -o "$TMP_DIR/manager-users.html" -w '%{http_code}' -b "$OPERATOR_JAR" -c "$OPERATOR_JAR" "$BASE_URL/usuarios.php")"
+[[ "$OPERATOR_USERS_CODE" == "403" ]] || fail "Gestor não deveria acessar a gestão de funcionários; recebeu $OPERATOR_USERS_CODE."
+
+TOKEN="$(get_token "$TMP_DIR/operator-promoted.html")"
+curl -fsS -L -b "$ADMIN_JAR" -c "$ADMIN_JAR" "$BASE_URL/alterar-perfil-usuario.php" \
+    --data-urlencode "token=$TOKEN" --data-urlencode "id=$OPERATOR_ID" \
+    --data-urlencode "perfil=OPERADOR" -o "$TMP_DIR/operator-demoted.html"
+grep -Fq 'Perfil do funcionário atualizado com sucesso.' "$TMP_DIR/operator-demoted.html" || fail "Retorno ao perfil Operador não foi concluído."
+OPERATOR_ROLE="$(db_value "SELECT perfil FROM usuarios WHERE id = $OPERATOR_ID")"
+[[ "$OPERATOR_ROLE" == "OPERADOR" ]] || fail "O endpoint não restaurou o perfil Operador."
+
+# O último administrador não pode desativar a própria conta.
+TOKEN="$(get_token "$TMP_DIR/operator-demoted.html")"
+curl -fsS -L -b "$ADMIN_JAR" -c "$ADMIN_JAR" "$BASE_URL/alterar-status-usuario.php" \
+    --data-urlencode "token=$TOKEN" --data-urlencode "id=$ADMIN_ID" \
+    --data-urlencode "acao=desativar" -o "$TMP_DIR/admin-self-deactivation.html"
+grep -Fq 'Você não pode desativar sua própria conta.' "$TMP_DIR/admin-self-deactivation.html" || fail "O endpoint não bloqueou autodesativação do Administrador."
+ADMIN_STILL_ACTIVE="$(db_value "SELECT ativo FROM usuarios WHERE id = $ADMIN_ID")"
+[[ "$ADMIN_STILL_ACTIVE" == "1" ]] || fail "O Administrador conseguiu desativar a própria conta."
+
+# Desativação revoga a sessão existente.
+TOKEN="$(get_token "$TMP_DIR/operator-demoted.html")"
+curl -fsS -L -b "$ADMIN_JAR" -c "$ADMIN_JAR" "$BASE_URL/alterar-status-usuario.php" \
+    --data-urlencode "token=$TOKEN" --data-urlencode "id=$OPERATOR_ID" \
+    --data-urlencode "acao=desativar" -o "$TMP_DIR/operator-deactivated.html"
+grep -Fq 'Conta desativada.' "$TMP_DIR/operator-deactivated.html" || fail "O endpoint não desativou a conta do funcionário."
+OPERATOR_DISABLED="$(db_value "SELECT ativo FROM usuarios WHERE id = $OPERATOR_ID")"
+[[ "$OPERATOR_DISABLED" == "0" ]] || fail "A conta do funcionário continua ativa após desativação."
+OPERATOR_REVOKED_CODE="$(curl -sS -o "$TMP_DIR/operator-session-revoked.html" -w '%{http_code}' -b "$OPERATOR_JAR" -c "$OPERATOR_JAR" "$BASE_URL/index.php")"
+[[ "$OPERATOR_REVOKED_CODE" == "303" ]] || fail "A sessão do funcionário desativado deveria ser revogada; recebeu $OPERATOR_REVOKED_CODE."
+
+# Reativar não restaura os cookies antigos: a versão persistente já foi incrementada.
+TOKEN="$(get_token "$TMP_DIR/operator-deactivated.html")"
+curl -fsS -L -b "$ADMIN_JAR" -c "$ADMIN_JAR" "$BASE_URL/alterar-status-usuario.php" \
+    --data-urlencode "token=$TOKEN" --data-urlencode "id=$OPERATOR_ID" \
+    --data-urlencode "acao=reativar" -o "$TMP_DIR/operator-reactivated.html"
+grep -Fq 'Conta reativada com sucesso.' "$TMP_DIR/operator-reactivated.html" || fail "O endpoint não reativou a conta."
+OPERATOR_ACTIVE="$(db_value "SELECT ativo FROM usuarios WHERE id = $OPERATOR_ID")"
+[[ "$OPERATOR_ACTIVE" == "1" ]] || fail "A conta não foi reativada."
+STALE_AFTER_REACTIVATION_CODE="$(curl -sS -o "$TMP_DIR/operator-stale-after-reactivation.html" -w '%{http_code}' -b "$OPERATOR_JAR" -c "$OPERATOR_JAR" "$BASE_URL/index.php")"
+[[ "$STALE_AFTER_REACTIVATION_CODE" == "303" ]] || fail "A sessão antiga voltou a funcionar após reativação; esperava 303 e recebeu $STALE_AFTER_REACTIVATION_CODE."
+
+# Uma sessão nova, autenticada depois da reativação, deve funcionar.
+rm -f "$OPERATOR_JAR"
+curl -fsS -c "$OPERATOR_JAR" -b "$OPERATOR_JAR" "$BASE_URL/login.php" -o "$TMP_DIR/operator-relogin.html"
+OPERATOR_LOGIN_TOKEN="$(get_token "$TMP_DIR/operator-relogin.html")"
+curl -fsS -L -c "$OPERATOR_JAR" -b "$OPERATOR_JAR" "$BASE_URL/login.php" \
+    --data-urlencode "token=$OPERATOR_LOGIN_TOKEN" --data-urlencode "email=operator-http@example.test" \
+    --data-urlencode "senha=SenhaOperadorNova-2026!" -o "$TMP_DIR/operator-relogin-success.html"
+grep -Fq 'Cadastro de alunos' "$TMP_DIR/operator-relogin-success.html" || fail "O funcionário não conseguiu iniciar uma sessão nova após reativação."
+
+# Logout encerra a sessão e registra o evento.
+OPERATOR_LOGOUT_TOKEN="$(get_token "$TMP_DIR/operator-relogin-success.html")"
+curl -fsS -L -c "$OPERATOR_JAR" -b "$OPERATOR_JAR" "$BASE_URL/logout.php" \
+    --data-urlencode "token=$OPERATOR_LOGOUT_TOKEN" -o "$TMP_DIR/operator-logout.html"
+OPERATOR_AFTER_LOGOUT="$(curl -sS -o /dev/null -w '%{http_code}' -b "$OPERATOR_JAR" -c "$OPERATOR_JAR" "$BASE_URL/index.php")"
+[[ "$OPERATOR_AFTER_LOGOUT" == "303" ]] || fail "Logout não encerrou a sessão; /index.php retornou $OPERATOR_AFTER_LOGOUT."
+
+PROFILE_AUDIT_COUNT="$(db_value "SELECT COUNT(*) FROM auditoria WHERE usuario_id = $ADMIN_ID AND entidade = 'usuarios' AND entidade_id = $OPERATOR_ID AND acao = 'usuario_perfil_alterado'")"
+[[ "$PROFILE_AUDIT_COUNT" == "2" ]] || fail "Promoção e rebaixamento não produziram dois eventos de auditoria."
+STATUS_AUDIT_COUNT="$(db_value "SELECT COUNT(*) FROM auditoria WHERE usuario_id = $ADMIN_ID AND entidade = 'usuarios' AND entidade_id = $OPERATOR_ID AND acao IN ('usuario_desativado','usuario_reativado')")"
+[[ "$STATUS_AUDIT_COUNT" == "2" ]] || fail "Desativação e reativação não produziram dois eventos de auditoria."
+OPERATOR_LOGOUT_AUDIT="$(db_value "SELECT COUNT(*) FROM auditoria WHERE usuario_id = $OPERATOR_ID AND acao = 'logout'")"
+[[ "$OPERATOR_LOGOUT_AUDIT" == "1" ]] || fail "Logout do funcionário não foi auditado."
 
 TOKEN="$(get_token "$TMP_DIR/admin-dashboard.html")"
 ADMIN_CONFIRM_CODE="$(curl -sS -o "$TMP_DIR/admin-confirm.html" -w '%{http_code}' -b "$ADMIN_JAR" -c "$ADMIN_JAR" "$BASE_URL/excluir.php?id=$STUDENT_ID")"

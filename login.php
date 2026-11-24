@@ -64,7 +64,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $erro = 'E-mail ou senha inválidos.';
             } else {
                 $consulta = $pdo->prepare(
-                    'SELECT id, nome, email, senha_hash, ativo, deve_trocar_senha
+                    'SELECT id, nome, email, senha_hash, ativo, deve_trocar_senha, sessao_versao
                      FROM usuarios
                      WHERE email = :email
                      LIMIT 1'
@@ -140,6 +140,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $_SESSION = [];
                     $instanteAutenticacao = time();
                     $_SESSION['usuario_id'] = (int) $usuario['id'];
+                    $_SESSION['usuario_sessao_versao'] = (int) $usuario['sessao_versao'];
                     $_SESSION['usuario_autenticado_em'] = $instanteAutenticacao;
                     $_SESSION['usuario_ultimo_acesso'] = $instanteAutenticacao;
                     $_SESSION['token'] = bin2hex(random_bytes(32));

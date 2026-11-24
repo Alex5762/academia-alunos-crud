@@ -225,8 +225,19 @@ function usuarioAtual(PDO $pdo): ?array {
         return null;
     }
 
+    $sessaoVersao = filter_var(
+        $_SESSION['usuario_sessao_versao'] ?? null,
+        FILTER_VALIDATE_INT,
+        ['options' => ['min_range' => 0]]
+    );
+
+    if ($sessaoVersao === false || $sessaoVersao === null) {
+        invalidarSessaoAutenticada(true);
+        return null;
+    }
+
     $consulta = $pdo->prepare(
-        'SELECT id, nome, email, deve_trocar_senha, perfil
+        'SELECT id, nome, email, deve_trocar_senha, perfil, sessao_versao
          FROM usuarios
          WHERE id = :id AND ativo = 1
          LIMIT 1'
@@ -236,6 +247,13 @@ function usuarioAtual(PDO $pdo): ?array {
 
     if (!$usuario) {
         invalidarSessaoAutenticada();
+        return null;
+    }
+
+    // A versão muda quando o acesso é revogado. Mesmo após reativação,
+    // cookies de sessões anteriores continuam inválidos.
+    if ((int) $usuario['sessao_versao'] !== $sessaoVersao) {
+        invalidarSessaoAutenticada(true);
         return null;
     }
 

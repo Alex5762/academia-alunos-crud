@@ -162,7 +162,8 @@ final class UserAccountAdministrationService
             $expectedStatus = $isActive ? 1 : 0;
             $update = $this->pdo->prepare(
                 'UPDATE usuarios
-                 SET ativo = :new_status
+                 SET ativo = :new_status,
+                     sessao_versao = sessao_versao + 1
                  WHERE id = :target_id AND ativo = :expected_status'
             );
             $update->execute([
