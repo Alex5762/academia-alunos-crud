@@ -111,3 +111,12 @@ Essa sequência continua candidata até revisão dos patches e da `main`. A PR #
 ## 8. Próxima ação
 
 A Ação 4 — grafo inicial de dependências — está concluída. A próxima etapa é a Ação 5: confirmar os limites da primeira PR limpa, preparar a CI incremental e revisar as regras de proteção da `main`. Ainda não criar branch nem alterar a `main` até aprovarmos esse escopo.
+
+
+## Decisão de integração aprovada — primeira PR (24/11/2026)
+
+A primeira integração será a fundação de autenticação e segurança, mantendo o CRUD original. O fluxo é: schema legado → migrations 001/002/003/007 → evento marcador do baseline → migration 008 → inicialização/verificação do baseline → provisionamento CLI do primeiro Administrador → autenticação e sessões → RBAC aplicado nas rotas CRUD → auditoria transacional das mutações.
+
+A exclusão física existente fica temporariamente restrita ao Administrador e será aposentada quando a integração de inativação auditada de alunos entrar. Não entram nesta PR matrículas, frequência, financeiro, grade, dashboard completo, relatórios ou migration 010.
+
+A CI desta fundação terá jobs próprios para qualidade PHP, compatibilidade MySQL 8.0/MariaDB 10.11, integração HTTP da fundação com CRUD protegido e proteção Apache do webroot. Os testes de módulos futuros serão anexados nas PRs correspondentes, sem perder a regressão dos módulos já integrados.
