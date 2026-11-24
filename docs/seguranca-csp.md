@@ -2,7 +2,7 @@
 
 ## Objetivo e limite
 
-Introduzir uma política inicial de Content Security Policy (CSP) sem bloquear recursos nem alterar o modo de execução do projeto. O cabeçalho usado é `Content-Security-Policy-Report-Only`: o navegador observa violações, mas não bloqueia os recursos por essa política. Esta etapa é um exercício de compatibilidade e defesa em profundidade para o projeto acadêmico/local; não é uma auditoria independente nem preparação de produção.
+Introduzir uma política inicial de Content Security Policy (CSP) sem bloquear recursos nem alterar o modo de execução do projeto. O cabeçalho usado é `Content-Security-Policy-Report-Only`: o navegador observa violações, mas não bloqueia os recursos por essa política. Esta etapa é um exercício de compatibilidade e defesa em profundidade para o projeto acadêmico/local; não é uma auditoria independente nem preparação de produção. A política é deliberadamente observacional: não bloqueia recursos e não deve ser interpretada como enforcement.
 
 ## Inventário da interface
 
