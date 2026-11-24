@@ -48,6 +48,9 @@ $historico->execute([
 ]);
 $eventos = $historico->fetchAll(PDO::FETCH_ASSOC);
 
+$mensagem = $_SESSION['mensagem'] ?? '';
+unset($_SESSION['mensagem']);
+
 $rotulosEventos = [
     'aluno_criado' => 'Aluno cadastrado',
     'aluno_editado' => 'Cadastro editado',
@@ -72,6 +75,10 @@ $tituloStatus = $alunoAtivo ? 'Ativo' : 'Inativo';
 <main>
     <h1>Detalhes do aluno</h1>
     <p><a href="<?= escapar(urlListaAlunos($contextoLista)) ?>">Voltar à lista</a></p>
+
+    <?php if ($mensagem !== '') { ?>
+        <p class="mensagem" role="status"><?= escapar($mensagem) ?></p>
+    <?php } ?>
 
     <section aria-labelledby="dados-aluno-titulo">
         <h2 id="dados-aluno-titulo"><?= escapar($aluno['nome']) ?></h2>
