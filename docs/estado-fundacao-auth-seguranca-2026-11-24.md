@@ -134,3 +134,27 @@ A revisão do diff completo da PR #2 confirmou que os três achados originais pe
 - A cobertura HTTP atual valida cinco falhas sequenciais, bloqueio e expiração; não há teste de integração concorrente no endpoint de login.
 
 **Status:** observação adicional pendente de decisão/correção antes do merge. Não altera os três achados originais já validados. A descrição da PR #2 foi sincronizada para deixar explícita essa pendência. Nenhuma alteração foi feita na `main`; nenhum merge foi realizado.
+
+
+## Correção da admissão concorrente no login — 2026-11-24
+
+**Implementação preparada; CI do novo HEAD pendente.**
+
+A observação adicional da revisão final foi tratada com serialização por chave no banco:
+
+- LoginAttemptRateLimiter::acquireAttemptLock() adquire um named lock de MySQL/MariaDB derivado de SHA-256 dos hashes de e-mail e origem.
+- O nome do lock tem 64 caracteres, sem e-mail, IP ou identificadores em texto puro.
+- login.php mantém o lock durante a consulta de bloqueio, verificação da credencial e gravação da falha/auditoria ou limpeza após login válido.
+- O lock é liberado em finally antes do redirecionamento de sucesso; falhas/exceções também passam pela liberação.
+- A verificação de senha continua ocorrendo antes de contar a falha. Portanto, credenciais válidas não consomem uma das cinco falhas; tentativas bloqueadas não geram novos eventos de auditoria.
+- O teste HTTP usa oito workers do servidor embutido e dispara 12 requisições com sessões independentes para a mesma combinação e-mail/IP. Espera exatamente cinco falhas persistidas, bloqueio ativo e cinco eventos login_falhou; todas as respostas permanecem genéricas.
+- A suíte já existente mantém a validação sequencial, expiração, reinício da janela e limpeza após login válido.
+- Compatibilidade esperada: named locks GET_LOCK/RELEASE_LOCK disponíveis no MySQL 8.0 e MariaDB 10.11; a CI dos dois bancos precisa confirmar a implementação.
+
+Commits desta correção:
+- 6a1c22e — adicionar locks nomeados ao rate limiter.
+- e0922fb — serializar o ciclo HTTP do login.
+- 97121b6 — liberar o lock antes do redirecionamento.
+- afb6771 — adicionar teste HTTP concorrente com múltiplas sessões.
+
+**Validação ainda não concluída:** aguardar os cinco jobs da CI no HEAD que inclui todos os commits acima. Se algum job falhar, corrigir antes de fechar o bloco. main permanece intacta; PR #2 continua sem merge.
