@@ -6,7 +6,7 @@
 
 ### Evidências automatizadas disponíveis
 
-### Revisão de segurança — SEC-01 a SEC-04
+### Revisão de segurança — SEC-01 a SEC-05
 
 - **SEC-01 — Política de senhas:** documentação e testes de política centralizada já existentes; cobertura automatizada executada na CI.
 - **SEC-02 — Configuração do banco:** configuração segura e teste de defaults já existentes; validação automatizada executada na CI.
@@ -14,9 +14,9 @@
 - **SEC-04 — Sessões e cabeçalhos HTTP:** testes de cabeçalhos, cookies, modo estrito, cenários HTTP/HTTPS simulados e rotação de sessão/CSRF. CI #1699 aprovada nos sete jobs funcionais. A correção `session_cache_limiter('')` preserva o `Cache-Control: no-store, private, max-age=0` explícito. HTTPS real, proxy TLS, navegador e XAMPP locais não foram validados.
 - **Limites:** as verificações automatizadas não constituem auditoria independente nem autorização para uso público. MFA, recuperação de senha, HSTS/CSP planejados com cautela, gestão operacional de segredos, backups/restauração, monitoramento e privacidade continuam fora da conclusão dessas quatro revisões.
 
-- **SEC-05 — CSP em modo Report-Only:** inventário concluído; a política inicial restringe scripts/estilos a `'self'`, bloqueia atributos inline com `style-src-attr 'none'` e não habilita `unsafe-inline`/ `unsafe-eval`. Os dois atributos de estilo dinâmico foram substituídos por elementos `<progress>`. A validação automatizada em Chromium, Firefox e WebKit está incluída em `tests/browser-compatibility.mjs`; aguarda CI no novo HEAD. Não há coletor remoto de relatórios: o Playwright observa o evento `securitypolicyviolation` durante a navegação de teste.
+- **SEC-05 — CSP em modo Report-Only:** inventário concluído; scripts/estilos limitados a `'self'`, atributos inline negados por `script-src-attr 'none'` e `style-src-attr 'none'`, sem `unsafe-inline`/`unsafe-eval`. As duas barras dinâmicas usam `<progress>`. **CI #1707 aprovada** no commit `3fc68f0377e71ed84bf41bdbabb548cee5fd25b2`: sete jobs funcionais, integração HTTP, captura visual, Chromium, Firefox e WebKit aprovados; a suíte exige cabeçalho completo e zero eventos de violação CSP. Não há coletor remoto. Inspeção manual no navegador instalado/XAMPP continua pendente; manter Report-Only até revisão manual e aprovação específica para qualquer enforcement.
  
- **Próximo passo:** confirmar zero violações e ausência de regressão visual na CI; manter a política em Report-Only até revisão manual em navegador real. Não converter para enforcement nem habilitar HSTS/HTTPS de produção nesta etapa.
+ **Próximo passo:** realizar inspeção manual em navegador instalado e XAMPP quando o ambiente estiver disponível, exercitando login, dashboard, grade de aulas, tema, frequência, financeiro, relatórios e CSV. Manter a política em Report-Only até essa revisão e aprovação explícita. Não converter para enforcement nem habilitar HSTS/HTTPS de produção nesta etapa.
 
 - Blocos 01–06 possuem implementação relevante e cobertura automatizada na branch.
 - Bloco 03: migrations de planos/matrículas e preservação de legado aprovadas em MySQL 8.0 e MariaDB 10.11.

@@ -35,7 +35,9 @@ Princípios:
 
 ## Estado desta revisão
 
-A política e os testes estão publicados na branch de desenvolvimento. A execução automatizada no novo HEAD ainda precisa concluir para confirmar compatibilidade e zero violações; não tratar a SEC-05 como aprovada antes desse resultado.
+**Validação automatizada concluída na CI #1707**, no commit `3fc68f0377e71ed84bf41bdbabb548cee5fd25b2`: os sete jobs funcionais passaram. Os logs confirmam cabeçalho CSP completo, ausência de violações reportadas e compatibilidade em Chromium, Firefox e WebKit. A integração HTTP e a captura visual automatizada também passaram.
+
+A aprovação fecha os critérios automatizados desta revisão, mas não transforma a política em enforcement nem substitui inspeção manual. A validação em navegador instalado, aparelho físico e XAMPP permanece pendente.
 
 ## Como a política é observada
 
