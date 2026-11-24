@@ -16,8 +16,8 @@ require_once __DIR__ . '/../../Security/AuditIntegrityChain.php';
 /**
  * Centraliza alterações administrativas de contas.
  *
- * Todas as operações que alteram perfil/status bloqueiam as contas em ordem
- * crescente de ID e revalidam o administrador dentro da mesma transação.
+ * Todas as operações administrativas que criam ou alteram contas bloqueiam
+ * as contas em ordem crescente de ID e revalidam o administrador na transação.
  * Assim, uma requisição autorizada antes de aguardar um lock não mantém
  * privilégios revogados por uma alteração concorrente.
  */
@@ -37,6 +37,75 @@ final class UserAccountAdministrationService
 
     public function __construct(private readonly PDO $pdo)
     {
+    }
+
+    /**
+     * Cria uma conta individual e registra a auditoria na mesma transação.
+     *
+     * O administrador é revalidado depois de obter o mesmo lock global usado
+     * por alterações de perfil/status. Se perdeu o privilégio enquanto a
+     * requisição aguardava o lock, nenhuma conta é criada.
+     *
+     * @return int|string ID da conta criada ou UNAUTHORIZED.
+     */
+    public function createAccount(
+        int $actorId,
+        string $name,
+        string $email,
+        string $passwordHash
+    ): int|string {
+        $name = trim($name);
+        $email = strtolower(trim($email));
+
+        $nameLength = preg_match_all('/./us', $name);
+        if (
+            $actorId < 1
+            || $nameLength === false
+            || $nameLength < 1
+            || $nameLength > 100
+            || strlen($email) > 150
+            || filter_var($email, FILTER_VALIDATE_EMAIL) === false
+            || $passwordHash === ''
+            || strlen($passwordHash) > 255
+        ) {
+            throw new InvalidArgumentException('Dados de criação de conta inválidos.');
+        }
+
+        return $this->withLockedAccounts(function (array $accounts) use (
+            $actorId,
+            $name,
+            $email,
+            $passwordHash
+        ): int|string {
+            if (!$this->isActiveAdministrator($accounts[$actorId] ?? null)) {
+                return self::UNAUTHORIZED;
+            }
+
+            $insert = $this->pdo->prepare(
+                "INSERT INTO usuarios (nome, email, senha_hash, ativo, perfil, deve_trocar_senha)
+                 VALUES (:name, :email, :password_hash, 1, 'OPERADOR', 1)"
+            );
+            $insert->execute([
+                'name' => $name,
+                'email' => $email,
+                'password_hash' => $passwordHash,
+            ]);
+
+            $newUserId = (int) $this->pdo->lastInsertId();
+            if ($newUserId < 1) {
+                throw new RuntimeException('Não foi possível identificar a conta criada.');
+            }
+
+            AuditIntegrityChain::append(
+                $this->pdo,
+                $actorId,
+                'usuario_criado',
+                'usuarios',
+                $newUserId
+            );
+
+            return $newUserId;
+        });
     }
 
     /**
@@ -195,9 +264,9 @@ final class UserAccountAdministrationService
      * frequentes e precisam compartilhar a mesma ordem de bloqueio para
      * serializar alterações concorrentes sobre o conjunto de administradores.
      *
-     * @param callable(array<int, array{id: int|string, ativo: int|string, perfil: string, deve_trocar_senha: int|string}>): string $operation
+     * @param callable(array<int, array{id: int|string, ativo: int|string, perfil: string, deve_trocar_senha: int|string}>): mixed $operation
      */
-    private function withLockedAccounts(callable $operation): string
+    private function withLockedAccounts(callable $operation): mixed
     {
         if ($this->pdo->inTransaction()) {
             throw new RuntimeException('A administração de contas exige controle exclusivo da transação.');
