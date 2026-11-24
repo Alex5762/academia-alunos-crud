@@ -65,12 +65,22 @@ SQL
 assert_equals "OPERADOR" "$(mysql_cmd -e "SELECT perfil FROM usuarios WHERE email = 'rbac-new@example.test'")" "novas contas devem receber o perfil de menor privilégio"
 assert_equals "1" "$(mysql_cmd -e "SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'usuarios_perfis_eventos'")" "histórico especializado de perfis deve existir"
 
+echo "Gravando marcador histórico antes dos triggers append-only..."
+mysql_cmd <<'SQL'
+INSERT INTO auditoria (usuario_id, acao, entidade, entidade_id)
+VALUES (NULL, 'evento_legado_baseline', 'sistema', NULL);
+SQL
+
 echo "Aplicando migration 008 (cadeia de integridade da auditoria)..."
 "${MYSQL_BIN}" --host="${MYSQL_HOST}" --port="${MYSQL_PORT}" --user="${MYSQL_USER}" --database="${MYSQL_DATABASE}" < "${migration_dir}/008_audit_integrity_chain.sql"
 
 assert_equals "1" "$(mysql_cmd -e "SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'auditoria_integridade_estado'")" "estado da cadeia de auditoria deve existir"
 assert_equals "1" "$(mysql_cmd -e "SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'auditoria_integridade_eventos'")" "eventos encadeados devem existir"
 assert_equals "4" "$(mysql_cmd -e "SELECT COUNT(*) FROM information_schema.TRIGGERS WHERE TRIGGER_SCHEMA = DATABASE() AND TRIGGER_NAME IN ('trg_auditoria_no_update', 'trg_auditoria_no_delete', 'trg_auditoria_integridade_no_update', 'trg_auditoria_integridade_no_delete')")" "gatilhos append-only devem existir"
+
+export DB_HOST="$MYSQL_HOST" DB_PORT="$MYSQL_PORT" DB_NAME="$MYSQL_DATABASE" DB_USER="$MYSQL_USER" DB_PASSWORD="${DB_PASSWORD:-root}"
+echo "Inicializando cadeia de auditoria..."
+php scripts/inicializar-integridade-auditoria.php
 
 
 
