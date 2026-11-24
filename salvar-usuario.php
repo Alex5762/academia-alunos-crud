@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/funcoes.php';
 require_once __DIR__ . '/conexao.php';
+require_once __DIR__ . '/src/Security/PasswordPolicy.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
@@ -40,11 +41,7 @@ try {
         strtr(base64_encode(random_bytes(24)), '+/', '-_'),
         '='
     );
-    $senhaHash = password_hash($senhaTemporaria, PASSWORD_DEFAULT);
-
-    if ($senhaHash === false) {
-        throw new RuntimeException('Não foi possível proteger a senha temporária.');
-    }
+    $senhaHash = \\FitControl\\Security\\PasswordPolicy::hash($senhaTemporaria);
 
     $pdo->beginTransaction();
 
