@@ -45,7 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             // Serializa o ciclo completo para esta combinação e impede que
             // requisições simultâneas atravessem o mesmo estado desbloqueado.
-            \\FitControl\\Security\\LoginAttemptRateLimiter::acquireAttemptLock(
+            \FitControl\Security\LoginAttemptRateLimiter::acquireAttemptLock(
                 $pdo,
                 $emailHash,
                 $origemHash
@@ -54,8 +54,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $destinoAposLogin = null;
             try {
                 // Consulta o bloqueio somente depois de obter a admissão exclusiva.
-                \\FitControl\\Security\\LoginAttemptRateLimiter::cleanupExpired($pdo);
-                $bloqueado = \\FitControl\\Security\\LoginAttemptRateLimiter::isBlocked(
+                \FitControl\Security\LoginAttemptRateLimiter::cleanupExpired($pdo);
+                $bloqueado = \FitControl\Security\LoginAttemptRateLimiter::isBlocked(
                     $pdo,
                     $emailHash,
                     $origemHash
@@ -79,7 +79,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                     if (!$credenciaisValidas) {
                         // Contador e evento de auditoria são gravados atomicamente.
-                        \\FitControl\\Security\\LoginAttemptRateLimiter::recordFailure(
+                        \FitControl\Security\LoginAttemptRateLimiter::recordFailure(
                             $pdo,
                             $emailHash,
                             $origemHash
@@ -98,7 +98,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             'usuarios',
                             (int) $usuario['id']
                         );
-                        \\FitControl\\Security\\LoginAttemptRateLimiter::clear(
+                        \FitControl\Security\LoginAttemptRateLimiter::clear(
                             $pdo,
                             $emailHash,
                             $origemHash
@@ -119,7 +119,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     }
                 }
             } finally {
-                \\FitControl\\Security\\LoginAttemptRateLimiter::releaseAttemptLock(
+                \FitControl\Security\LoginAttemptRateLimiter::releaseAttemptLock(
                     $pdo,
                     $emailHash,
                     $origemHash
