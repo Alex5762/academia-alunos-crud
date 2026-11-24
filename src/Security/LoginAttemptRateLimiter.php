@@ -33,6 +33,46 @@ final class LoginAttemptRateLimiter
         }
     }
 
+    /**
+     * Serializa todo o ciclo de uma tentativa HTTP para a mesma combinação
+     * e-mail/origem. O lock é por conexão e não depende da transação SQL.
+     *
+     * O nome tem exatamente 64 caracteres, limite compatível com MySQL 8
+     * e MariaDB 10.11, e não contém os identificadores originais.
+     */
+    public static function acquireAttemptLock(PDO $pdo, string $emailHash, string $originHash): void
+    {
+        self::assertHash($emailHash);
+        self::assertHash($originHash);
+
+        $lockName = hash('sha256', "fitcontrol-login-rate-limit\\0{$emailHash}\\0{$originHash}");
+        $lock = $pdo->prepare('SELECT GET_LOCK(:lock_name, :timeout_seconds)');
+        $lock->bindValue(':lock_name', $lockName, PDO::PARAM_STR);
+        $lock->bindValue(':timeout_seconds', 10, PDO::PARAM_INT);
+        $lock->execute();
+
+        if ((int) $lock->fetchColumn() !== 1) {
+            throw new RuntimeException('Não foi possível adquirir o lock do rate limit de login.');
+        }
+    }
+
+    /**
+     * Libera o lock nomeado na mesma conexão PDO que o adquiriu.
+     */
+    public static function releaseAttemptLock(PDO $pdo, string $emailHash, string $originHash): void
+    {
+        self::assertHash($emailHash);
+        self::assertHash($originHash);
+
+        $lockName = hash('sha256', "fitcontrol-login-rate-limit\\0{$emailHash}\\0{$originHash}");
+        $unlock = $pdo->prepare('SELECT RELEASE_LOCK(:lock_name)');
+        $unlock->execute(['lock_name' => $lockName]);
+
+        if ((int) $unlock->fetchColumn() !== 1) {
+            throw new RuntimeException('Não foi possível liberar o lock do rate limit de login.');
+        }
+    }
+
     public static function cleanupExpired(PDO $pdo): void
     {
         $pdo->exec(
