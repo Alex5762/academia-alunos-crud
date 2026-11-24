@@ -101,6 +101,9 @@ Cada aluno possui nome, telefone, e-mail, plano (Mensal, Trimestral, Semestral o
 ```text
 academia-alunos-crud/
 ├── .github/workflows/ci.yml
+├── config/
+│   ├── .htaccess
+│   └── database.local.example.php
 ├── database/migrations/
 │   ├── 001_authentication_audit.sql
 │   ├── 002_force_password_change.sql
@@ -142,6 +145,7 @@ academia-alunos-crud/
 │   ├── Domain/Reports/EnrollmentReportQuery.php
 │   ├── Domain/Reports/FrequencyReportQuery.php
 │   ├── Domain/Reports/FinanceReportQuery.php
+│   ├── Infrastructure/DatabaseConfig.php
 │   └── Security/
 ├── tests/
 │   ├── browser-compatibility.mjs
@@ -177,7 +181,7 @@ academia-alunos-crud/
 2. Inicie Apache e MySQL no painel do XAMPP.
 3. Acesse o phpMyAdmin em [http://localhost/phpmyadmin/](http://localhost/phpmyadmin/).
 4. Importe o arquivo \`banco.sql\`. Ele cria o banco \`academia_alunos\` e a tabela \`alunos\`.
-5. Confira as configurações de conexão em \`conexao.php\`, caso seu XAMPP utilize host, porta, usuário ou senha diferentes.
+5. Copie `config/database.local.example.php` para `config/database.local.php` e confira host, porta, banco, usuário e senha da sua instalação. Esse arquivo local é ignorado pelo Git.
 6. No banco \`academia_alunos\`, execute pelo phpMyAdmin (aba SQL), nesta ordem:
    - \`database/migrations/001_authentication_audit.sql\`
    - \`database/migrations/002_force_password_change.sql\`
@@ -189,20 +193,13 @@ academia-alunos-crud/
 10. No CMD, na raiz do projeto, execute `C:\\xampp\\php\\php.exe scripts\\provisionar-usuario.php`. Informe nome e e-mail e copie a senha temporária exibida: ela aparece uma única vez e não deve ser colocada no repositório.
 11. Acesse `http://localhost/academia-alunos-crud/login.php`, entre com o e-mail e a senha temporária e defina sua senha pessoal no primeiro acesso.
 
-### Configuração do banco por variáveis de ambiente
+### Configuração do banco
 
-O projeto mantém os padrões comuns do XAMPP (host `127.0.0.1`, porta `3306`, banco `academia_alunos`, usuário `root` e senha vazia), mas permite substituir esses valores por variáveis de ambiente:
+Para desenvolvimento local com XAMPP, copie `config/database.local.example.php` para `config/database.local.php`. O exemplo usa `root` sem senha apenas para instalação local; ajuste os valores à sua máquina. O arquivo real é ignorado pelo Git, protegido contra acesso HTTP direto e não deve ser incluído em implantação.
 
-| Variável | Padrão local |
-|---|---|
-| `DB_HOST` | `127.0.0.1` |
-| `DB_PORT` | `3306` |
-| `DB_NAME` | `academia_alunos` |
-| `DB_USER` | `root` |
-| `DB_PASSWORD` | vazio |
+Em qualquer ambiente não local, defina explicitamente `APP_ENV=production` e as cinco variáveis `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER` e `DB_PASSWORD`. Todas são obrigatórias e não podem estar vazias. Sem arquivo local ou variáveis completas, a conexão falha de forma segura; a aplicação não assume mais usuário `root` nem senha vazia.
 
-Não coloque credenciais reais no repositório. Em ambientes compartilhados, configure os valores no ambiente de execução ou nos secrets do provedor.
-
+As variáveis de ambiente têm precedência sobre o arquivo local. Definir `APP_ENV=production` impede que `config/database.local.php` seja carregado. Use um usuário dedicado ao aplicativo, com privilégios mínimos, e mantenha senhas apenas no ambiente ou no gerenciador de secrets do provedor. Consulte [SEC-02 — Configuração do banco e credenciais padrão](docs/seguranca-configuracao-banco.md).
 ## Frequência e check-in
 
 A página `checkins.php` permite registrar entradas manualmente e consultar o histórico por período e aluno. O servidor aceita check-in apenas para aluno ativo com exatamente uma matrícula vigente, registra o instante em UTC e a data civil no fuso `America/Sao_Paulo`, e impede mais de uma entrada por aluno no mesmo dia. Cada registro identifica a matrícula e o funcionário responsável e gera evento na cadeia de auditoria. QR Code, catraca, registro retroativo e edição/exclusão de presenças não fazem parte deste bloco.
@@ -250,6 +247,8 @@ Para conferir os resultados, consulte a aba **Actions** do GitHub. Uma execuçã
 - [Checklist de validação manual pendente — celular real, navegadores e acessibilidade](docs/checklist-validacao-manual.md)
 - [Roadmap e critérios de evolução por blocos](docs/roadmap.md)
 - [Planejamento do Bloco 01 — autenticação e auditoria](docs/bloco-01-autenticacao.md)
+- [SEC-01 — Política de senhas](docs/seguranca-politica-senhas.md)
+- [SEC-02 — Configuração do banco e credenciais padrão](docs/seguranca-configuracao-banco.md)
 - [Planejamento do Bloco 02 — gestão de alunos](docs/bloco-02-gestao-alunos.md)
 - [Pesquisa, implementação e estado do Bloco 03 — planos e matrículas](docs/bloco-03-planos-matriculas.md)
 - [Bloco 04 — frequência e check-in](docs/bloco-04-frequencia-checkin.md)

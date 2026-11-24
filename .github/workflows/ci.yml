@@ -441,6 +441,9 @@ jobs:
       - name: Test centralized password policy and bcrypt byte limit
         run: php tests/password-policy.php
 
+      - name: Test secure database configuration defaults
+        run: php tests/database-configuration.php
+
       - name: Test role-based access control matrix
         run: php tests/access-control.php
 
@@ -468,6 +471,10 @@ jobs:
           test -f salvar.php
           test -f excluir.php
           test -f conexao.php
+          test -f src/Infrastructure/DatabaseConfig.php
+          test -f tests/database-configuration.php
+          test -f config/.htaccess
+          test -f config/database.local.example.php
           test -f banco.sql
           test -f style.css
           test -f tests/integration-crud.sh
