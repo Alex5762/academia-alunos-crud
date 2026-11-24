@@ -6,6 +6,7 @@
 - PR #2: aberta e pronta para revisão; não mesclada.
 - Branch da PR: `feat/foundation-auth-security`.
 - HEAD anterior à correção de sessões: `4e9d3b8074e4d665967d4382d130f6e6d0e4469e`.
+- HEAD da correção e fixture HTTP: `6282bb03b8dcb5d3f1b0af8f4f71fb1595de9373`.
 - Correção de revogação de sessões commitada em `0b201b2f30b2ab928f3cf45300e2875a5c69a0b9`.
 - A primeira execução de CI identificou dependência entre as baterias HTTP: a primeira troca voluntariamente a senha do Administrador compartilhado; a segunda ainda tentava usar a senha anterior. O fixture da segunda bateria foi alinhado para usar a senha resultante.
 - `main`: `e1f4c8084dc6dec8c772a699855562944d50e89e`, sem alterações.
@@ -44,7 +45,7 @@ A revisão identificou que a troca obrigatória (`trocar-senha.php`) e a troca v
 - Expandir `tests/foundation-http.sh`: abrir cookies independentes antes da troca obrigatória e voluntária; comprovar revogação usando `renovar-sessao.php` (HTTP 401); comprovar que a sessão autora permanece válida.
 - Atualizar README para descrever o comportamento.
 
-**Status de validação:** correção de código commitada em `0b201b2`; a CI inicial encontrou apenas uma dependência de fixture entre as duas baterias HTTP (senha do administrador compartilhado). O fixture foi alinhado em commit subsequente; aguardar nova CI antes de fechar o bloqueador.
+**Status de validação:** correção implementada e coberta. A primeira CI identificou dependência de fixture entre as duas baterias HTTP (senha do administrador compartilhado); o fixture foi alinhado em `6282bb0`. No HEAD `6282bb03b8dcb5d3f1b0af8f4f71fb1595de9373`, os runs #45399787132 (push) e #45399800406 (pull_request) concluíram com sucesso, 5/5 jobs cada. A bateria `foundation-http.sh` e a bateria `foundation-account-http.sh` passaram no job HTTP dos dois eventos.
 
 ### Outros pontos identificados, ainda pendentes
 
@@ -59,9 +60,9 @@ Ficam fora: matrículas, frequência, financeiro, grade, dashboard completo, rel
 
 ## Próxima sequência
 
-1. Confirmar o novo HEAD da branch e revisar o diff dos arquivos alterados.
-2. Acompanhar a CI nova e confirmar os cinco checks.
-3. Fechar ou corrigir eventuais falhas da correção de revogação de sessões.
-4. Tratar os dois pontos pendentes da revisão (rate limit/auditoria e revalidação de criação de contas).
+1. Correção de revogação de sessões validada no HEAD `6282bb0`; runs push #45399787132 e pull_request #45399800406 verdes (5/5 cada).
+2. Próxima etapa: tratar auditoria de falhas de login e testes de rate limit.
+3. Depois, tratar revalidação de autorização na criação administrativa de contas.
+4. Reexecutar e confirmar os cinco checks após cada alteração.
 5. Atualizar este documento e o parecer de revisão a cada etapa.
 6. Não fazer merge sem autorização explícita do usuário.
