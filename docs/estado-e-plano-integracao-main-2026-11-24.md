@@ -200,7 +200,7 @@ Até lá: não executar migrations no banco local do usuário, não inserir dado
 - [x] **Ação 2:** criar testes de banco/concorrência e validar a CI completa, incluindo testes HTTP de status e CSRF.
 - [x] **Ação 3:** inventariar os 189 arquivos da PR #1 por domínio, migration, teste, documentação e arquivo compartilhado. Registro: `docs/inventario-pr-1-integracao-main-2026-11-24.md`.
 - [x] **Ação 4:** construir o grafo inicial de dependências e a matriz arquivo → bloco → PR candidata. Registro: `docs/grafo-dependencias-integracao-main-2026-11-24.md`.
-- [ ] **Ação 5:** confirmar os limites do primeiro conjunto de integração e revisar o procedimento de proteção da `main`.
+- [x] **Ação 5:** escopo da primeira PR e CI incremental aprovados; proteção da `main` especificada para configurar após a primeira CI limpa publicar os checks obrigatórios.
 - [ ] **Ação 6:** criar a primeira branch limpa a partir da `main` e preparar a primeira PR pequena.
 - [ ] **Ação 7:** repetir o ciclo de validação, PR e autorização para cada bloco.
 - [ ] **Ação 8:** fazer a validação prática local no final, quando o ambiente estiver disponível.
@@ -218,3 +218,43 @@ Ao retomar o trabalho:
 5. Atualizar este documento sempre que uma decisão, estado de branch, CI ou etapa de integração mudar.
 
 Este documento é o registro de continuidade do plano; o estado vivo do GitHub prevalece sobre qualquer SHA ou status antigo aqui anotado.
+
+
+## 9. Decisão aprovada — Ação 5 (24/11/2026)
+
+O escopo da primeira PR limpa foi aprovado: **fundação de autenticação e segurança, preservando e protegendo o CRUD original que já está na `main`**. A exclusão física temporária será exclusiva do Administrador.
+
+### Limites funcionais
+
+- Preservar a interface e o schema original de alunos; não importar o dashboard completo nem módulos futuros.
+- Exigir autenticação em listagem, cadastro, edição, gravação e confirmação de exclusão.
+- Aplicar RBAC no servidor: consulta exige `students.view`; criação, `students.create`; edição, `students.update`.
+- A exclusão física legada permanece provisoriamente disponível só para Administrador (`students.delete`), com confirmação por GET sem efeitos colaterais e exclusão efetiva exclusivamente por POST + CSRF. A entrega posterior de inativação auditada aposentará a exclusão física.
+- Registrar criação, edição e exclusão de aluno na auditoria dentro da mesma transação da alteração de dados.
+- Incluir login/logout, troca obrigatória de senha, alteração voluntária de senha, gestão de contas, sessões seguras, CSRF, rate limit, provisionamento CLI, integridade da auditoria e proteção do webroot.
+- Preservar a proteção de último administrador, revalidação de autorização dentro da transação e bloqueios de autodesativação/autorrebaixamento, acompanhados de testes MySQL e MariaDB.
+
+### Migrations e bootstrap
+
+A primeira PR transportará somente as migrations `001`, `002`, `003`, `007` e `008`, sem renumerar arquivos existentes. A sequência executável é: schema legado (`banco.sql`), `001`, `002`, `003`, `007`, inserção do evento marcador de baseline antes dos triggers, `008`, inicialização/verificação do baseline pelo CLI e provisionamento da primeira conta Administrador pelo CLI.
+
+As migrations `004`, `005`, `006`, `009`, `010) e as demais ficam fora desta PR. A migration `010` continua reservada à PR de alunos/planos/matrículas, pois a criação de matrícula atual cria uma cobrança na mesma transação.
+
+### CI incremental aprovada
+
+A nova CI da primeira PR deverá conter verificações explícitas e sem condicionais que ignorem arquivos ausentes:
+
+1. Qualidade PHP: sintaxe de todos os arquivos PHP presentes, testes puros de configuração de banco, política de senha e RBAC.
+2. Banco MySQL 8.0 e MariaDB 10.11: schema original, migrations da fundação, baseline, provisionamento e testes transacionais/concorrentes de contas.
+3. Integração HTTP da fundação + CRUD: login, sessão, troca de senha, autorização por rota, CSRF, CRUD protegido, exclusão administrativa, auditoria e gestão de contas.
+4. Proteção do webroot Apache: arquivos internos, migrations, scripts, testes e configurações não podem ser servidos por HTTP.
+
+Os testes globais atuais não serão copiados cegamente. O teste HTTP monolítico será dividido por escopo, mantendo para a fundação apenas os cenários que estão implementados nessa PR. As verificações de frequência, financeiro, grade, relatórios, CSV e capturas visuais completas serão anexadas às PRs correspondentes. Cada nova PR também continuará executando a regressão de tudo que já tiver entrado na `main`.
+
+### Proteção da main
+
+A branch `main` permanece sem proteção neste momento. A política aprovada é: exigir PR, exigir todos os checks funcionais obrigatórios da CI, bloquear force-push e exclusão, sem exigir aprovação de terceiro (repositório individual). Os nomes de checks serão copiados literalmente do primeiro run da CI limpa antes da configuração. Não configurar regras incompletas ou apontando para checks que ainda não existem.
+
+### Execução autorizada
+
+A Ação 5 está concluída. A Ação 6 está autorizada: criar uma branch nova a partir do HEAD atualizado de `main`, implementar apenas o escopo acima, validar a CI e abrir PR própria em Draft. A PR #1 e sua branch de origem permanecem intactas como referência. Não fazer merge sem autorização explícita posterior.
