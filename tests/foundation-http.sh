@@ -260,7 +260,7 @@ ADMIN_ID="$(db_value "SELECT id FROM usuarios WHERE email = 'provision-ci@exampl
 OPERATOR_USERS_CODE="$(curl -sS -o "$TMP_DIR/operator-users.html" -w '%{http_code}' -b "$OPERATOR_JAR" -c "$OPERATOR_JAR" "$BASE_URL/usuarios.php")"
 [[ "$OPERATOR_USERS_CODE" == "403" ]] || fail "Operador deveria receber 403 na gestão de funcionários; recebeu $OPERATOR_USERS_CODE."
 OPERATOR_DELETE_CODE="$(curl -sS -o "$TMP_DIR/operator-delete.html" -w '%{http_code}' -b "$OPERATOR_JAR" -c "$OPERATOR_JAR" "$BASE_URL/excluir.php?id=$STUDENT_ID")"
-[[ "$OPERATOR_DELETE_CODE" == "403" ]] || fail "Operador deveria receber 403 na exclusão; recebeu $OPERATOR_DELETE_CODE."
+[[ "$OPERATOR_DELETE_CODE" == "410" ]] || fail "O endpoint legado de exclusão deveria estar aposentado com 410; recebeu $OPERATOR_DELETE_CODE."
 
 # Alteração de status sem CSRF não pode produzir efeito.
 STATUS_CSRF_CODE="$(curl -sS -o "$TMP_DIR/status-invalid-csrf.html" -w '%{http_code}' -b "$ADMIN_JAR" -c "$ADMIN_JAR" -X POST "$BASE_URL/alterar-status-usuario.php" \
@@ -355,14 +355,40 @@ OPERATOR_LOGOUT_AUDIT="$(db_value "SELECT COUNT(*) FROM auditoria WHERE usuario_
 [[ "$OPERATOR_LOGOUT_AUDIT" == "1" ]] || fail "Logout do funcionário não foi auditado."
 
 TOKEN="$(get_token "$TMP_DIR/admin-current-session.html")"
-ADMIN_CONFIRM_CODE="$(curl -sS -o "$TMP_DIR/admin-confirm.html" -w '%{http_code}' -b "$ADMIN_JAR" -c "$ADMIN_JAR" "$BASE_URL/excluir.php?id=$STUDENT_ID")"
-[[ "$ADMIN_CONFIRM_CODE" == "200" ]] || fail "Administrador deveria acessar a confirmação de exclusão; recebeu $ADMIN_CONFIRM_CODE."
-curl -fsS -L -b "$ADMIN_JAR" -c "$ADMIN_JAR" "$BASE_URL/excluir.php" \
-    --data-urlencode "token=$TOKEN" --data-urlencode "id=$STUDENT_ID" -o "$TMP_DIR/student-deleted.html"
-grep -Fq 'Aluno excluído com sucesso!' "$TMP_DIR/student-deleted.html" || fail "Exclusão administrativa não foi concluída."
-REMAINING="$(db_value "SELECT COUNT(*) FROM alunos WHERE id = $STUDENT_ID")"
-[[ "$REMAINING" == "0" ]] || fail "Registro do aluno não foi removido após exclusão autorizada."
-AUDIT_COUNT="$(db_value "SELECT COUNT(*) FROM auditoria WHERE acao IN ('aluno_criado','aluno_excluido') AND entidade='alunos' AND entidade_id=$STUDENT_ID")"
-[[ "$AUDIT_COUNT" == "2" ]] || fail "Criação e exclusão não produziram os dois eventos de auditoria esperados."
+STATUS_GET_CODE="$(curl -sS -o "$TMP_DIR/student-status-get.html" -w '%{http_code}' -b "$ADMIN_JAR" -c "$ADMIN_JAR" "$BASE_URL/alterar-status-aluno.php?id=$STUDENT_ID")"
+[[ "$STATUS_GET_CODE" == "405" ]] || fail "GET no endpoint de status do aluno deveria retornar 405; recebeu $STATUS_GET_CODE."
+STATUS_CSRF_CODE="$(curl -sS -o "$TMP_DIR/student-status-csrf.html" -w '%{http_code}' -b "$ADMIN_JAR" -c "$ADMIN_JAR" -X POST "$BASE_URL/alterar-status-aluno.php" \
+    --data-urlencode "token=token-invalido" --data-urlencode "id=$STUDENT_ID" --data-urlencode "acao=inativar")"
+[[ "$STATUS_CSRF_CODE" == "403" ]] || fail "Status do aluno sem CSRF deveria retornar 403; recebeu $STATUS_CSRF_CODE."
 
-echo "Integração HTTP: login, troca de senha, sessão, CSRF, RBAC, CRUD e auditoria: OK"
+curl -fsS -L -b "$ADMIN_JAR" -c "$ADMIN_JAR" "$BASE_URL/alterar-status-aluno.php" \
+    --data-urlencode "token=$TOKEN" --data-urlencode "id=$STUDENT_ID" --data-urlencode "acao=inativar" \
+    --data-urlencode "busca=Aluno Foundation HTTP" --data-urlencode "status=ativos" -o "$TMP_DIR/student-inactivated.html"
+grep -Fq 'Aluno inativado com sucesso.' "$TMP_DIR/student-inactivated.html" || fail "Inativação do aluno não foi concluída."
+REMAINING="$(db_value "SELECT COUNT(*) FROM alunos WHERE id = $STUDENT_ID AND ativo = 0")"
+[[ "$REMAINING" == "1" ]] || fail "O aluno foi removido ou não ficou inativo."
+AUDIT_INACTIVE="$(db_value "SELECT COUNT(*) FROM auditoria WHERE usuario_id = $ADMIN_ID AND acao = 'aluno_inativado' AND entidade='alunos' AND entidade_id=$STUDENT_ID")"
+[[ "$AUDIT_INACTIVE" == "1" ]] || fail "Inativação não produziu exatamente um evento de auditoria."
+
+curl -fsS -b "$ADMIN_JAR" -c "$ADMIN_JAR" "$BASE_URL/detalhes-aluno.php?id=$STUDENT_ID&busca=Aluno+Foundation+HTTP&status=inativos" -o "$TMP_DIR/student-details.html"
+grep -Fq 'Detalhes do aluno' "$TMP_DIR/student-details.html" || fail "Página de detalhes não abriu."
+grep -Fq 'Aluno inativado' "$TMP_DIR/student-details.html" || fail "Histórico não mostrou a inativação."
+
+TOKEN="$(get_token "$TMP_DIR/student-details.html")"
+curl -fsS -L -b "$ADMIN_JAR" -c "$ADMIN_JAR" "$BASE_URL/alterar-status-aluno.php" \
+    --data-urlencode "token=$TOKEN" --data-urlencode "id=$STUDENT_ID" --data-urlencode "acao=reativar" \
+    --data-urlencode "retorno=detalhes" --data-urlencode "busca=Aluno Foundation HTTP" --data-urlencode "status=inativos" \
+    -o "$TMP_DIR/student-reactivated.html"
+grep -Fq 'Aluno reativado com sucesso.' "$TMP_DIR/student-reactivated.html" || fail "Reativação do aluno não foi concluída."
+REMAINING="$(db_value "SELECT COUNT(*) FROM alunos WHERE id = $STUDENT_ID AND ativo = 1")"
+[[ "$REMAINING" == "1" ]] || fail "O aluno não foi reativado."
+AUDIT_REACTIVATED="$(db_value "SELECT COUNT(*) FROM auditoria WHERE usuario_id = $ADMIN_ID AND acao = 'aluno_reativado' AND entidade='alunos' AND entidade_id=$STUDENT_ID")"
+[[ "$AUDIT_REACTIVATED" == "1" ]] || fail "Reativação não produziu exatamente um evento de auditoria."
+
+ANON_DETAILS_CODE="$(curl -sS -o "$TMP_DIR/anon-student-details.html" -w '%{http_code}' "$BASE_URL/detalhes-aluno.php?id=$STUDENT_ID")"
+[[ "$ANON_DETAILS_CODE" == "303" ]] || fail "Detalhes do aluno deveriam exigir autenticação; recebeu $ANON_DETAILS_CODE."
+
+LEGACY_DELETE_CODE="$(curl -sS -o "$TMP_DIR/legacy-delete.html" -w '%{http_code}' -b "$ADMIN_JAR" -c "$ADMIN_JAR" "$BASE_URL/excluir.php?id=$STUDENT_ID")"
+[[ "$LEGACY_DELETE_CODE" == "410" ]] || fail "Exclusão física deveria permanecer aposentada; recebeu $LEGACY_DELETE_CODE."
+
+echo "Integração HTTP: autenticação, RBAC, CRUD, status de alunos, detalhes e auditoria: OK"
