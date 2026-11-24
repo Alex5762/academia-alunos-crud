@@ -6,6 +6,7 @@ Projeto acadêmico de Desenvolvimento Web. Esta versão preserva o CRUD original
 
 - Login e logout com sessão protegida, token CSRF, expiração e revogação persistente por versão da conta; sessões anteriores não voltam a funcionar após reativação ou troca de senha.
 - Primeiro acesso com troca obrigatória de senha.
+- Alteração voluntária de senha pelo painel, com revogação das sessões paralelas.
 - Perfis Administrador, Gestor e Operador, com autorização verificada no servidor.
 - Cadastro e administração de contas individuais.
 - Limitação persistente de tentativas de login.
