@@ -2,10 +2,12 @@
 require_once __DIR__ . '/funcoes.php';
 require_once __DIR__ . '/conexao.php';
 $usuario = exigirAutenticacao($pdo);
+$contextoLista = obterContextoListaAlunos($_GET);
 
 // Sem ID: formulário novo. Com ID: formulário de edição.
 $aluno = ['id' => '', 'nome' => '', 'telefone' => '', 'email' => '', 'plano' => 'Mensal'];
 $editando = isset($_GET['id']);
+
 exigirPermissao($usuario, $editando ? 'students.update' : 'students.create');
 
 if ($editando) {
@@ -35,14 +37,13 @@ $titulo = $editando ? 'Editar aluno' : 'Cadastrar aluno';
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= escapar($titulo) ?></title>
     <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="auth.css">
     <?= renderizarMonitorSessao() ?>
     <script src="script.js" defer></script>
 </head>
 <body>
 <main>
     <h1><?= escapar($titulo) ?></h1>
-    <p><a href="index.php">Voltar à lista</a></p>
+    <p><a href="<?= escapar(urlListaAlunos($contextoLista)) ?>">Voltar à lista</a></p>
 
     <?php if (count($erros) > 0) { ?>
         <ul class="erros" role="alert">
@@ -57,17 +58,25 @@ $titulo = $editando ? 'Editar aluno' : 'Cadastrar aluno';
     <form action="salvar.php" method="post" id="form-aluno">
         <input type="hidden" name="token" value="<?= escapar($_SESSION['token']) ?>">
         <input type="hidden" name="id" value="<?= escapar($aluno['id']) ?>">
+        <input type="hidden" name="busca" value="<?= escapar($contextoLista['busca']) ?>">
+        <input type="hidden" name="status" value="<?= escapar($contextoLista['status']) ?>">
 
         <label for="nome">Nome completo:</label>
         <input type="text" id="nome" name="nome" maxlength="100" required
+               autocomplete="name" autocapitalize="words"
                value="<?= escapar($aluno['nome']) ?>">
 
         <label for="telefone">Telefone:</label>
         <input type="tel" id="telefone" name="telefone" maxlength="20" required
+               autocomplete="tel" inputmode="tel"
+               placeholder="(21) 99999-9999"
+               aria-describedby="ajuda-telefone"
                value="<?= escapar($aluno['telefone']) ?>">
+        <small id="ajuda-telefone">Informe o DDD e o número, com ou sem formatação.</small>
 
         <label for="email">E-mail:</label>
         <input type="email" id="email" name="email" maxlength="150" required
+               autocomplete="email" inputmode="email"
                value="<?= escapar($aluno['email']) ?>">
 
         <label for="plano">Plano:</label>

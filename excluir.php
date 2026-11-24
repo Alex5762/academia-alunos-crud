@@ -1,73 +1,7 @@
 <?php
-require_once __DIR__ . '/funcoes.php';
-
-$metodo = $_SERVER['REQUEST_METHOD'];
-if ($metodo !== 'GET' && $metodo !== 'POST') {
-    http_response_code(405);
-    header('Allow: GET, POST');
-    exit('Método não permitido.');
-}
-
-require_once __DIR__ . '/conexao.php';
-$usuario = exigirAutenticacao($pdo);
-exigirPermissao($usuario, 'students.delete');
-
-if ($metodo === 'POST') {
-    validarToken();
-}
-$valorId = $metodo === 'POST' ? ($_POST['id'] ?? '') : ($_GET['id'] ?? '');
-$id = validarId($valorId);
-
-if ($id === false) {
-    http_response_code(400);
-    exit('ID inválido. Volte à lista.');
-}
-
-$aluno = buscarAluno($pdo, $id);
-
-if ($metodo === 'POST') {
-    try {
-        $pdo->beginTransaction();
-        $comando = $pdo->prepare('DELETE FROM alunos WHERE id = :id');
-        $comando->execute(['id' => $id]);
-        if ($comando->rowCount() !== 1) {
-            throw new RuntimeException('O aluno não pôde ser excluído.');
-        }
-        registrarAuditoria($pdo, (int) $usuario['id'], 'aluno_excluido', 'alunos', (int) $id);
-        $pdo->commit();
-    } catch (Throwable $erro) {
-        if ($pdo->inTransaction()) {
-            $pdo->rollBack();
-        }
-        error_log($erro->getMessage());
-        http_response_code(500);
-        exit('Não foi possível excluir. Consulte o registro de erros do Apache.');
-    }
-
-    $_SESSION['mensagem'] = 'Aluno excluído com sucesso!';
-    redirecionar('index.php');
-}
-?>
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Excluir aluno</title>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
-<main>
-    <h1>Excluir aluno</h1>
-    <p>Deseja excluir <strong><?= escapar($aluno['nome']) ?></strong>?</p>
-    <p>Esta operação remove o cadastro do banco de dados.</p>
-
-    <form action="excluir.php" method="post">
-        <input type="hidden" name="token" value="<?= escapar($_SESSION['token']) ?>">
-        <input type="hidden" name="id" value="<?= escapar($aluno['id']) ?>">
-        <button type="submit" class="perigo">Confirmar exclusão</button>
-        <a href="index.php">Cancelar e voltar</a>
-    </form>
-</main>
-</body>
-</html>
+// A exclusão física foi aposentada no Bloco 02.
+// O cadastro deve ser inativado para preservar histórico e auditoria.
+http_response_code(410);
+header('Content-Type: text/plain; charset=UTF-8');
+header('Cache-Control: no-store');
+exit('A exclusão física de alunos foi desativada. Use a ação de inativar no painel.');

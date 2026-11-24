@@ -10,6 +10,12 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 validarToken();
 require_once __DIR__ . '/conexao.php';
 $usuario = exigirAutenticacao($pdo);
+$idRecebidoParaPermissao = $_POST['id'] ?? '';
+exigirPermissao(
+    $usuario,
+    $idRecebidoParaPermissao === '' ? 'students.create' : 'students.update'
+);
+$contextoLista = obterContextoListaAlunos($_POST);
 
 // Aceita somente textos nos campos esperados.
 $dados = [];
@@ -28,8 +34,6 @@ if ($id === false) {
     exit('ID inválido. Volte à lista.');
 }
 
-exigirPermissao($usuario, $id === null ? 'students.create' : 'students.update');
-
 if ($id !== null) {
     buscarAluno($pdo, $id); // Confere se o aluno ainda existe.
 }
@@ -40,9 +44,17 @@ if ($tamanhoNome === false || $tamanhoNome < 1 || $tamanhoNome > 100) {
     $erros[] = 'Informe um nome com 1 a 100 caracteres.';
 }
 
-$tamanhoTelefone = preg_match_all('/./us', $dados['telefone']);
-if ($tamanhoTelefone === false || $tamanhoTelefone < 1 || $tamanhoTelefone > 20) {
-    $erros[] = 'Informe um telefone com até 20 caracteres.';
+// Aceita números brasileiros com DDD, com ou sem +55 e caracteres de formatação.
+$telefoneTemFormatoValido = preg_match('/^\+?[0-9\s().-]+$/u', $dados['telefone']) === 1;
+$digitosTelefone = preg_replace('/\D+/', '', $dados['telefone']);
+$quantidadeDigitosTelefone = strlen($digitosTelefone);
+if (
+    !$telefoneTemFormatoValido ||
+    $quantidadeDigitosTelefone < 10 ||
+    $quantidadeDigitosTelefone > 13 ||
+    strlen($dados['telefone']) > 20
+) {
+    $erros[] = 'Informe um telefone com DDD e 10 a 13 dígitos, usando apenas números e caracteres de formatação.';
 }
 
 if (!filter_var($dados['email'], FILTER_VALIDATE_EMAIL) || strlen($dados['email']) > 150) {
@@ -57,7 +69,7 @@ if (!in_array($dados['plano'], $planosPermitidos, true)) {
 if (count($erros) > 0) {
     $_SESSION['erros'] = $erros;
     $_SESSION['dados'] = $dados;
-    $destino = $id === null ? 'cadastro.php' : 'cadastro.php?id=' . $id;
+    $destino = urlCadastroAluno($id === null ? null : (int) $id, $contextoLista);
     redirecionar($destino);
 }
 
@@ -68,8 +80,6 @@ try {
         'email' => $dados['email'],
         'plano' => $dados['plano']
     ];
-
-    $pdo->beginTransaction();
 
     if ($id === null) {
         $sql = 'INSERT INTO alunos (nome, telefone, email, plano)
@@ -82,15 +92,17 @@ try {
         $mensagem = 'Aluno atualizado com sucesso!';
     }
 
+    $pdo->beginTransaction();
     $comando = $pdo->prepare($sql);
     $comando->execute($parametros);
-    $alunoIdAudit = $id ?? (int) $pdo->lastInsertId();
+
+    $alunoIdAuditoria = $id === null ? (int) $pdo->lastInsertId() : (int) $id;
     registrarAuditoria(
         $pdo,
         (int) $usuario['id'],
         $id === null ? 'aluno_criado' : 'aluno_editado',
         'alunos',
-        $alunoIdAudit
+        $alunoIdAuditoria
     );
     $pdo->commit();
 } catch (Throwable $erro) {
@@ -104,5 +116,5 @@ try {
 
 unset($_SESSION['erros'], $_SESSION['dados']);
 $_SESSION['mensagem'] = $mensagem;
-// Volta à lista: atualizar a página não repete o INSERT ou o UPDATE.
-redirecionar('index.php');
+// Volta à mesma pesquisa e ao mesmo filtro sem repetir o INSERT/UPDATE.
+redirecionar(urlListaAlunos($contextoLista));
