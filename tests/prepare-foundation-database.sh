@@ -19,7 +19,6 @@ for migration in \
     002_force_password_change.sql \
     003_login_rate_limit.sql \
     004_student_status.sql \
-    015_student_status_constraint.sql \
     007_administrative_roles.sql; do
     mysql_cli < "database/migrations/$migration"
 done
@@ -27,4 +26,5 @@ done
 # O marcador precisa existir antes dos triggers append-only da migration 008.
 mysql_cli "$DB_NAME" -e "INSERT INTO auditoria (usuario_id, acao, entidade, entidade_id) VALUES (NULL, 'evento_legado_baseline', 'sistema', NULL)"
 mysql_cli < database/migrations/008_audit_integrity_chain.sql
+mysql_cli < database/migrations/015_student_status_constraint.sql
 php scripts/inicializar-integridade-auditoria.php
