@@ -535,6 +535,15 @@ if [[ "\${FITCONTROL_BLOCK_03:-0}" == "1" ]]; then
     [[ "$OPERATOR_LEGACY_DECISION_CODE" == "403" ]] || fail "Operador deveria receber 403 ao decidir revisão legada; recebeu $OPERATOR_LEGACY_DECISION_CODE."
     OPERATOR_LEGACY_RECTIFY_CODE="$(curl -sS -o "$TMP_DIR/block03-operator-legacy-rectify.html" -w '%{http_code}' -b "$BLOCK03_OPERATOR_JAR" -c "$BLOCK03_OPERATOR_JAR" "$BASE_URL/retificar-vigencia-legado.php?review_id=1")"
     [[ "$OPERATOR_LEGACY_RECTIFY_CODE" == "403" ]] || fail "Operador deveria receber 403 ao abrir retificação legada; recebeu $OPERATOR_LEGACY_RECTIFY_CODE."
+    OPERATOR_SAVE_RECTIFY_CODE="$(curl -sS -o "$TMP_DIR/block03-operator-save-rectify.html" -w '%{http_code}' -b "$BLOCK03_OPERATOR_JAR" -c "$BLOCK03_OPERATOR_JAR" "$BASE_URL/salvar-retificacao-legado.php" \
+        --data-urlencode "token=$OPERATOR_PLAN_TOKEN" \
+        --data-urlencode "review_id=1" \
+        --data-urlencode "enrollment_id=1" \
+        --data-urlencode "fonte_referencia=Tentativa indevida" \
+        --data-urlencode "observacoes=Tentativa sem permissão" \
+        --data-urlencode "inicio_em=2026-01-01T09:00" \
+        --data-urlencode "fim_exclusivo_em=2026-02-01T09:00")"
+    [[ "$OPERATOR_SAVE_RECTIFY_CODE" == "403" ]] || fail "Operador deveria receber 403 ao enviar retificação legada; recebeu $OPERATOR_SAVE_RECTIFY_CODE."
 
     OPERATOR_ENROLL_START_TOKEN="$(get_token "$TMP_DIR/block03-operator-plans.html")"
     curl -fsS -L -b "$BLOCK03_OPERATOR_JAR" -c "$BLOCK03_OPERATOR_JAR" "$BASE_URL/planos.php?nova_matricula=1" \
