@@ -248,3 +248,21 @@ Esta seção atualiza a decisão de integração. As seções anteriores são sn
 - Não liberar o ambiente até que provisionamento, integridade da auditoria e smoke tests estejam aprovados.
 
 **Estado:** integração de código concluída; execução operacional do banco e validação local continuam pendentes. Nenhuma migration, alteração de dados ou provisionamento foi realizado neste checkpoint.
+
+
+### 13.3 Gate adicional — revisão dos perfis após a migration 007
+
+A migration `007_administrative_roles.sql` adiciona o perfil `ADMINISTRADOR` com esse valor inicial para todas as contas que já existirem na tabela `usuarios`. Em seguida, altera o padrão para que novas contas sejam `OPERADOR`.
+
+Antes de liberar o sistema após as migrations:
+
+- [ ] Listar todas as contas existentes em `usuarios` (id, nome, e-mail, ativo e perfil).
+- [ ] Confirmar individualmente quais pessoas realmente devem manter `ADMINISTRADOR`.
+- [ ] Rebaixar contas que não devam ter privilégios administrativos, usando a interface/serviço autorizado da aplicação e preservando a auditoria de alteração de perfil.
+- [ ] Confirmar que existe pelo menos um Administrador legítimo e ativo.
+- [ ] Validar por teste que Gestor e Operador não conseguem executar ações exclusivas de Administrador.
+- [ ] Registrar quem revisou os perfis, quando a revisão ocorreu e o resultado.
+
+**Regra de liberação:** não disponibilizar o sistema a usuários reais enquanto a revisão dos perfis herdados não estiver concluída. O provisionamento do primeiro Administrador por CLI não substitui a revisão de contas preexistentes.
+
+Esta verificação é especialmente importante em banco já existente. Em uma instalação nova sem contas preexistentes, registrar explicitamente que a lista estava vazia antes do provisionamento inicial.
