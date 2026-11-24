@@ -114,13 +114,15 @@ A antiga PR #1 permanece Draft e não deve ser mesclada em massa.
 - `6d68ee4` — ocultar ações de revisão sem permissão.
 - `10b5c3b` — validar tamanho e UTF-8 das observações legadas.
 - `66f827a` — testes de limite e UTF-8 das observações.
+- `400e1be` — ocultar o formulário de nova matrícula quando o usuário acessa manualmente a URL sem `enrollments.create`.
 
 ### CI e estado da PR
 
 - A execução `45484910188`, no commit `baf976e`, concluiu com 12/12 jobs aprovados.
 - Após os ajustes de interface e observações, a execução `45485885670` foi criada para o commit `66f827a` e está pendente/iniciando. Não considerar as últimas alterações validadas até todos os 12 jobs concluírem com sucesso.
 - PR #9 continua aberta em Draft, base `main`, sem merge.
-- Último commit conhecido: `66f827a1f4a06db6343065ed1d16b79e1af7180f`.
+- Último commit conhecido: `400e1bacea73469c118cc99b72a744efcb117d53`.
+- A execução `45485962808` foi iniciada para o checkpoint `5c61d27`, anterior ao último ajuste de permissão; não a considerar validação final do commit atual. Aguardar nova execução associada ao HEAD atualizado.
 
 ### Próximos passos
 
