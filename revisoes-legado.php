@@ -225,6 +225,7 @@ if ($estruturaDisponivel) {
     <meta name="description" content="Revise vínculos legados de alunos com evidências e histórico auditável.">
     <title>Revisão de vínculos | FitControl</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="auth.css">
     <?= renderizarMonitorSessao() ?>
     <script src="theme.js"></script>
 </head>
