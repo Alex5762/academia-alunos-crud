@@ -188,6 +188,12 @@ curl -sS -o "$TMP_DIR/change-wrong-current.html" -c "$CHANGE_JAR" -b "$CHANGE_JA
     --data-urlencode "nova_senha=$FITCONTROL_UPDATED_PASSWORD" --data-urlencode "confirmacao=$FITCONTROL_UPDATED_PASSWORD"
 assert_contains "$TMP_DIR/change-wrong-current.html" "A senha atual está incorreta."
 
+FITCONTROL_LONG_UPDATE_PASSWORD="$(printf '%073d' 0)"
+curl -sS -o "$TMP_DIR/change-overlong-password.html" -c "$CHANGE_JAR" -b "$CHANGE_JAR" -X POST "$BASE_URL/alterar-senha.php" \
+    --data-urlencode "token=$CHANGE_TOKEN" --data-urlencode "senha_atual=$FITCONTROL_NEW_PASSWORD" \
+    --data-urlencode "nova_senha=$FITCONTROL_LONG_UPDATE_PASSWORD" --data-urlencode "confirmacao=$FITCONTROL_LONG_UPDATE_PASSWORD"
+assert_contains "$TMP_DIR/change-overlong-password.html" "não pode ultrapassar 72 bytes"
+
 curl -sS -o "$TMP_DIR/change-short-password.html" -c "$CHANGE_JAR" -b "$CHANGE_JAR" -X POST "$BASE_URL/alterar-senha.php" \
     --data-urlencode "token=$CHANGE_TOKEN" --data-urlencode "senha_atual=$FITCONTROL_NEW_PASSWORD" \
     --data-urlencode "nova_senha=curta" --data-urlencode "confirmacao=curta"
