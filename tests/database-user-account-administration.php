@@ -90,6 +90,23 @@ function runUserAdministrationWorker(array $arguments): never
         throw new InvalidArgumentException('Argumentos inválidos para worker de concorrência.');
     }
 
+    $pdo = userAdministrationConnection();
+    if ($mode === 'create') {
+        $preflight = $pdo->prepare(
+            'SELECT ativo, perfil, deve_trocar_senha FROM usuarios WHERE id = :id'
+        );
+        $preflight->execute(['id' => $actorId]);
+        $actor = $preflight->fetch();
+        if (
+            !$actor
+            || (int) $actor['ativo'] !== 1
+            || (int) $actor['deve_trocar_senha'] !== 0
+            || !\\FitControl\\Security\\AccessControl::allows((string) $actor['perfil'], 'users.manage')
+        ) {
+            throw new RuntimeException('A pré-autorização da criação deveria estar válida.');
+        }
+    }
+
     $readyFile = $barrierDirectory . DIRECTORY_SEPARATOR . $mode . '.ready';
     $releaseFile = $barrierDirectory . DIRECTORY_SEPARATOR . 'release';
     file_put_contents($readyFile, 'ready');
