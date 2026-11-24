@@ -85,6 +85,13 @@ HTTP_CODE="$(curl -sS -o "$TMP_DIR/bad-login.html" -w '%{http_code}' -c "$COOKIE
 [[ "$HTTP_CODE" == "200" ]] || fail "Login inválido deveria retornar a tela com HTTP 200."
 assert_contains "$TMP_DIR/bad-login.html" "E-mail ou senha inválidos."
 
+LONG_LOGIN_PASSWORD="$(printf '%073d' 0)"
+curl -sS -o "$TMP_DIR/overlong-login.html" -c "$COOKIE_JAR" -b "$COOKIE_JAR" -X POST "$BASE_URL/login.php" \
+    --data-urlencode "token=$LOGIN_TOKEN" \
+    --data-urlencode "email=provision-ci@example.test" \
+    --data-urlencode "senha=$LONG_LOGIN_PASSWORD"
+assert_contains "$TMP_DIR/overlong-login.html" "E-mail ou senha inválidos."
+
 echo "1.0/10 - Limitando tentativas repetidas de login..."
 RATE_EMAIL="rate-limit-ci@example.test"
 RATE_HASH="$(printf '%s' "$RATE_EMAIL" | sha256sum | awk '{print $1}')"
@@ -129,6 +136,13 @@ CLEARED_RATE_LIMIT="$(db_value "SELECT COUNT(*) FROM login_tentativas WHERE emai
 
 echo "1.1/10 - Exigindo troca da senha temporária no primeiro acesso..."
 PASSWORD_TOKEN="$(get_token "$TMP_DIR/login-success.html")"
+FITCONTROL_LONG_PASSWORD="$(printf '%073d' 0)"
+curl -sS -o "$TMP_DIR/first-password-overlong.html" -c "$COOKIE_JAR" -b "$COOKIE_JAR" -X POST "$BASE_URL/trocar-senha.php" \
+    --data-urlencode "token=$PASSWORD_TOKEN" \
+    --data-urlencode "senha_atual=$FITCONTROL_TEST_PASSWORD" \
+    --data-urlencode "nova_senha=$FITCONTROL_LONG_PASSWORD" \
+    --data-urlencode "confirmacao=$FITCONTROL_LONG_PASSWORD"
+assert_contains "$TMP_DIR/first-password-overlong.html" "não pode ultrapassar 72 bytes"
 FITCONTROL_NEW_PASSWORD="SenhaNova-FitControl-2026!"
 curl -fsS -L -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/trocar-senha.php" \
     --data-urlencode "token=$PASSWORD_TOKEN" \
