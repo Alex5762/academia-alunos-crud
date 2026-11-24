@@ -1,0 +1,296 @@
+# Roadmap do FitControl
+
+## Estado de continuidade — 24/11/2026
+
+**A validação manual no XAMPP e em aparelho físico está temporariamente indisponível. Essa pendência foi aceita e não bloqueia a continuidade do desenvolvimento na branch.** Não executar migrations no banco local, não inserir dados reais e não declarar validação local concluída.
+
+### Evidências automatizadas disponíveis
+
+### Revisão de segurança — SEC-01 a SEC-05
+
+- **SEC-01 — Política de senhas:** documentação e testes de política centralizada já existentes; cobertura automatizada executada na CI.
+- **SEC-02 — Configuração do banco:** configuração segura e teste de defaults já existentes; validação automatizada executada na CI.
+- **SEC-03 — Exposição do webroot:** regras Apache, documentação de `AllowOverride All` restrito à aplicação e teste com Apache 2.4 real. CI #1695 aprovada, incluindo caminhos codificados e tentativa de travessia. Inspeção no XAMPP local permanece pendente.
+- **SEC-04 — Sessões e cabeçalhos HTTP:** testes de cabeçalhos, cookies, modo estrito, cenários HTTP/HTTPS simulados e rotação de sessão/CSRF. CI #1699 aprovada nos sete jobs funcionais. A correção `session_cache_limiter('')` preserva o `Cache-Control: no-store, private, max-age=0` explícito. HTTPS real, proxy TLS, navegador e XAMPP locais não foram validados.
+- **Limites:** as verificações automatizadas não constituem auditoria independente nem autorização para uso público. CSP foi introduzida apenas em Report-Only; enforcement não foi aprovado. MFA, recuperação de senha, HSTS/HTTPS de produção, gestão operacional de segredos, backups/restauração, monitoramento e privacidade continuam pendentes.
+
+- **SEC-05 — CSP em modo Report-Only:** inventário concluído; scripts/estilos limitados a `'self'`, atributos inline negados por `script-src-attr 'none'` e `style-src-attr 'none'`, sem `unsafe-inline`/`unsafe-eval`. As duas barras dinâmicas usam `<progress>`. **CI #1707 aprovada** no commit `3fc68f0377e71ed84bf41bdbabb548cee5fd25b2`: sete jobs funcionais, integração HTTP, captura visual, Chromium, Firefox e WebKit aprovados; a suíte exige cabeçalho completo e zero eventos de violação CSP. Não há coletor remoto. Inspeção manual no navegador instalado/XAMPP continua pendente; manter Report-Only até revisão manual e aprovação específica para qualquer enforcement.
+- **Revisão consolidada de segurança (24/11/2026):** registrada em `docs/revisao-seguranca-consolidada.md`. Não foram identificados bypasses diretos de RBAC/CSRF ou SQL injection evidente nos fluxos inspecionados; ficaram registrados limites de rate limiting, timing do login, invariantes explícitas de administrador, promoção de contas legadas na migration 007, fronteira de confiança dos triggers MySQL e dependência de checkpoints externos. PR #1 segue Draft; sem alteração na `main`.
+- **Administração de contas e concorrência (24/11/2026):** serviço transacional compartilhado criado em `src/Domain/Users/UserAccountAdministrationService.php`. As operações de perfil/status bloqueiam as contas em ordem de ID, revalidam o administrador dentro da transação, preservam o último administrador ativo e mantêm histórico/auditoria atômicos. Testes concorrentes passaram em MySQL 8.0 e MariaDB 10.11; testes HTTP de CSRF, autodesativação, desativação/reativação e auditoria passaram na CI #1716. Detalhes em `docs/seguranca-administracao-contas-concorrencia.md`.
+ 
+ **Próximo passo:** realizar inspeção manual em navegador instalado e XAMPP quando o ambiente estiver disponível, exercitando login, dashboard, grade de aulas, tema, frequência, financeiro, relatórios e CSV. Manter a política em Report-Only até essa revisão e aprovação explícita. Não converter para enforcement nem habilitar HSTS/HTTPS de produção nesta etapa.
+
+- Blocos 01–06 possuem implementação relevante e cobertura automatizada na branch.
+- Bloco 03: migrations de planos/matrículas e preservação de legado aprovadas em MySQL 8.0 e MariaDB 10.11.
+- Bloco 04: regras de check-in, duplicidade diária, auditoria, integração HTTP e compatibilidade visual aprovadas em MySQL 8.0 e MariaDB 10.11.
+- Bloco 05: F-01 a F-08 validados pelas CIs financeiras #1332, #1361, #1362, #1385 e #1397; integração HTTP/Playwright e bloqueio do perfil OPERADOR aprovados na CI #1420.
+- Bloco 06: CI #1512 aprovada; sete jobs funcionais concluídos com sucesso, incluindo migration/compatibilidade MySQL 8.0 e MariaDB 10.11, CRUD HTTP e Playwright em Chromium, Firefox e WebKit. O job de publicação de screenshots foi ignorado pela condição do workflow.
+- PR #1 permanece aberta em Draft. A `main` não foi alterada; não fazer merge sem revisão e aprovação explícita.
+- A CI executa em bancos efêmeros e navegadores automatizados. Ela não substitui backup, inspeção de versão/engine, aplicação local de migrations, smoke test no XAMPP ou inspeção física.
+
+### Pendências adiadas — não bloqueiam o próximo bloco
+
+1. Aplicar as migrations 005–014 em uma cópia local descartável, somente após confirmar versão, InnoDB, backup restaurável e estado prévio do schema.
+2. Executar o smoke test manual descrito em `docs/guia-migrations-xampp.md`, usando exclusivamente alunos, planos, matrículas e pagamentos fictícios.
+3. Inspecionar em aparelho físico/navegador instalado os fluxos e capturas responsivas dos Blocos 00–06.
+4. Registrar os resultados locais e reconciliar o estado da PR #1 antes de qualquer decisão de sair de Draft ou integrar à `main`.
+
+Enquanto o acesso ao XAMPP/dispositivo não estiver disponível, continuar com especificação, implementação, testes automatizados, migrations testadas na CI, revisão de segurança e documentação dos blocos seguintes.
+
+### Blocos implementados e validações pendentes
+
+- **Bloco 06 — Grade fixa de aulas:** implementação e validação automatizada aprovadas na CI #1512; validação manual no XAMPP/dispositivo permanece pendente.
+- **Bloco 07 — Relatórios e experiência:** implementação automatizada concluída. Consultas OP/MT/FR/FN, cartões VG-01 a VG-06, exportação/download dos quatro CSV, primeira bateria de acessibilidade e matriz Chromium/Firefox/WebKit aprovados nas CIs #1595, #45245709878, #45247639018, #45249934923, #45252564979 e #45256688269. Permanecem pendentes abertura manual no Excel/LibreOffice e inspeção física/local; nenhuma migration/schema foi adicionada.
+- **Bloco 08 — Preparação para produção:** etapa futura, não iniciar como se fosse apenas deploy; depende de revisão independente e plano operacional/de segurança.
+
+**Próximo passo:** manter o Bloco 07 fechado quanto à implementação e à CI; executar a validação manual dos CSV no Excel/LibreOffice e a inspeção local em XAMPP/dispositivo quando o ambiente estiver disponível. A avaliação de índice para FN-01 a FN-03 depende de medição com volume representativo; não criar índice preventivo com base apenas nas fixtures da CI. A validação manual do Bloco 06 permanece adiada e não deve ser declarada concluída. A validação local dos Blocos 03–05 permanece registrada como adiada, não como concluída.
+
+---
+
+
+## Objetivo
+
+Evoluir o CRUD acadêmico de alunos para um painel de gestão de academia, mantendo entregas pequenas, testáveis e documentadas. O roadmap é uma direção de trabalho, não uma promessa de que todos os módulos serão implementados. O escopo de cada bloco será confirmado antes de começar.
+
+## Ponto de partida
+
+**Estado atual:** aplicação acadêmica/local em PHP com PDO e MySQL, executada com XAMPP.
+
+Já existe:
+- Dashboard com indicadores básicos, distribuição por plano e listagem pesquisável.
+- Cadastro, consulta, edição e exclusão de alunos, com validação no servidor e consultas preparadas.
+- Proteção CSRF e verificação de método HTTP nas operações de escrita.
+- Layout responsivo e preferência de tema claro/escuro persistida no navegador.
+- Contas individuais, login/logout, proteção centralizada de rotas e gestão básica de funcionários.
+- Troca obrigatória de senha temporária, desativação/reativação de contas e auditoria.
+- Limitação persistente de tentativas de login.
+- Sessões com 30 minutos de inatividade, duração absoluta de 8 horas, aviso antecipado e renovação autenticada durante interação.
+- CI com MySQL, testes HTTP de integração, Playwright e capturas automatizadas.
+
+Limites conhecidos:
+- O RBAC possui três perfis (Administrador, Gestor e Operador), com permissões documentadas em `docs/matriz-permissoes.md`.
+- Não há recuperação de senha por e-mail nem MFA.
+- O campo `alunos.plano` permanece preservado como texto legado; catálogo, matrículas e revisão dos vínculos estão implementados e validados por CI. A aplicação das migrations 005/006 no XAMPP local continua pendente.
+- Frequência/check-in (Bloco 04) e financeiro (Bloco 05) estão implementados na branch e validados por CI em MySQL 8.0 e MariaDB 10.11; a validação local/manual continua pendente.
+- O Bloco 06 (grade semanal fixa) está implementado e aprovado na CI #1512; a validação local/XAMPP permanece pendente. O Bloco 07 está concluído em implementação e validação automatizada nas CIs #1595, #45245709878, #45247639018, #45249934923, #45252564979 e #45256688269; Excel/LibreOffice e validação local continuam pendentes.
+- A preparação para produção (Bloco 08) continua pendente e exige revisão de segurança, privilégios SQL, backups/restauração, HTTPS, monitoramento e privacidade.
+- A aplicação permanece acadêmica/local; não está preparada para uso público ou dados reais.
+
+## Regras de execução
+
+1. **Um bloco por vez.** Não começar o próximo módulo enquanto os critérios de aceite do bloco atual não forem verificados.
+2. **Escopo fechado.** Cada bloco define o que entra, o que fica de fora e quais decisões precisam ser tomadas.
+3. **Preservar a base existente.** Manter PHP, PDO e MySQL enquanto atenderem ao projeto. Não reescrever a aplicação nem introduzir camadas, frameworks ou serviços sem necessidade demonstrada.
+4. **Banco com cuidado.** Mudanças de estrutura devem ter plano de migração, preservação dos dados existentes e instruções para o ambiente local.
+5. **Segurança desde o início.** Validar no servidor, usar consultas preparadas, proteger operações de escrita, controlar acesso e evitar credenciais ou dados pessoais reais no repositório.
+6. **Testes proporcionais.** Executar verificações de sintaxe, testes de integração e regressão dos fluxos afetados. Capturas automatizadas ajudam na revisão, mas não substituem inspeção visual humana.
+7. **Documentação acompanha o código.** Atualizar README, instruções locais, decisões técnicas e relatório de testes no mesmo bloco.
+8. **Integração controlada.** Trabalhar na branch de desenvolvimento e em PRs com escopo claro. Não fazer merge em `main` sem revisão e aprovação explícita.
+
+## Integridade e recuperação da auditoria
+
+**Implementado na branch `feat/dashboard-portfolio`; ainda aguardando integração revisada com `main`.**
+
+- A migration 008 cria o estado da integridade e os mecanismos append-only da cadeia de auditoria.
+- `AuditIntegrityChain` mantém hashes encadeados SHA-256 dos eventos posteriores ao marco histórico.
+- `AuditIntegrityCheckpoint` exporta checkpoints HMAC externos, verifica assinaturas e presença do marco na cadeia, e compara checkpoints da mesma linhagem.
+- `AuditRecoveryDiagnostic` executa diagnóstico somente leitura e distingue `consistent_through_checkpoint`, `possible_older_restore`, `chain_divergence`, `chain_invalid` e `insufficient_evidence`.
+- O relatório v2 inclui o estado restaurado, checkpoints correspondentes, posteriores, divergentes ou rejeitados, resumo das evidências e uma janela potencial de perda delimitada por IDs quando existe checkpoint assinado posterior.
+- A contagem exata de eventos potencialmente perdidos permanece explicitamente desconhecida: lacunas de identificadores e ausência de inventário completo impedem inferir quantidade pela diferença entre IDs. O diagnóstico não restaura backups, não repara cadeias e não altera auditoria.
+- O CLI exige uma chave HMAC com pelo menos 64 caracteres hexadecimais, equivalente a 32 bytes de entropia; checkpoints e relatórios devem ficar fora da raiz do projeto.
+
+**Validação:** as CIs #1163/#1164 aprovaram os testes da cadeia e dos checkpoints; as execuções #1193, #1216 e #1221 mantiveram os jobs de compatibilidade e diagnóstico aprovados em MySQL 8.0 e MariaDB 10.11.
+
+**Pendências:** inspecionar o relatório em cenário controlado e reconciliar a revisão da PR sem merge automático.
+
+## Blocos planejados
+
+### Bloco 00 — Consolidar a base atual
+
+**Objetivo:** deixar o estado presente coerente, testado e documentado antes de ampliar o sistema.
+
+Entregas:
+- Conferir README, estrutura e relatório de testes.
+- Registrar o resultado real da CI e os limites da automação.
+- Revisar as capturas desktop/mobile e os temas.
+- Resolver pendências visuais ou documentá-las com clareza.
+- Atualizar a descrição da PR para refletir o estado real.
+
+**Estado:** base funcional, autenticação, gestão de funcionários, auditoria, política de sessão e alteração voluntária de senha implementadas. A CI foi ampliada para verificar Chromium, Firefox e WebKit, viewports desktop/mobile estreito, overflow, rolagem interna, teclado, foco visível e validação nativa de campos obrigatórios. Os workflows de push #245 e PR #244 passaram, e os logs confirmam aprovação nos três motores. Permanece pendente apenas a inspeção humana em dispositivo físico e a avaliação de percepção visual/uso real, incluindo gesto de toque e tecnologias assistivas.
+
+### Bloco 01 — Autenticação e proteção do painel
+
+**Estado: implementado e validado pela CI em 20/11/2026.**
+
+Entregas:
+- Login/logout com senha armazenada por hash e mensagens genéricas.
+- Sessões protegidas, CSRF e proteção centralizada das páginas e endpoints administrativos.
+- Contas individuais, provisionamento seguro, troca obrigatória da senha temporária e gestão de funcionários.
+- Desativação/reativação sem apagar histórico; bloqueio de autodesativação e da desativação da última conta ativa.
+- Alteração voluntária de senha após o primeiro acesso, com verificação da senha atual e auditoria.
+- Auditoria de login/logout, operações de alunos e operações de contas.
+- Limitação de tentativas de login: cinco falhas por combinação de e-mail/origem em 15 minutos geram bloqueio temporário de 15 minutos.
+- Expiração por 30 minutos de inatividade ou 8 horas absolutas, aviso antecipado e renovação autenticada durante interação.
+
+**Decisão funcional:** o RBAC foi implementado pela migration 007 com os perfis Administrador, Gestor e Operador. A matriz e os testes de permissões ficam em `docs/matriz-permissoes.md` e `tests/access-control.php`.
+
+**Pendências que não impedem a continuidade acadêmica/local, mas impedem considerar o sistema pronto para produção:** MFA, recuperação de senha por e-mail, revisão independente de segurança, HTTPS de produção, backups, monitoramento e revisão de privacidade.
+
+**Estado: implementação, regressão automatizada, revisão das capturas, matriz multibrowser e estados vazios aprovados.** As CI [#359](https://github.com/Alex5762/academia-alunos-crud/actions/runs/44876515363), [#375](https://github.com/Alex5762/academia-alunos-crud/actions/runs/44877943853), [#387](https://github.com/Alex5762/academia-alunos-crud/actions/runs/44880764637) e [#395](https://github.com/Alex5762/academia-alunos-crud/actions/runs/44882082854) passaram. A #395 confirmou nos logs Chromium, Firefox e WebKit para estados vazios da listagem, perfil vazio/preenchido, histórico, foco, teclado e responsividade. As quatro capturas desktop/mobile do perfil nos temas claro/escuro estão versionadas e revisadas. Falta somente inspeção em aparelho físico/navegador instalado. A PR #1 permanece aberta em Draft e não foi integrada à `main`.
+
+**Estado: implementação, regressão automatizada, revisão visual das capturas e matriz multibrowser aprovadas.** As CI [#359](https://github.com/Alex5762/academia-alunos-crud/actions/runs/44876515363), [#373](https://github.com/Alex5762/academia-alunos-crud/actions/runs/44877723150), [#375](https://github.com/Alex5762/academia-alunos-crud/actions/runs/44877943853) e [#387](https://github.com/Alex5762/academia-alunos-crud/actions/runs/44880764637) passaram. Os logs da CI #387 confirmam Chromium, Firefox e WebKit, incluindo perfil vazio/preenchido, foco visível, teclado, links de contato e overflow mobile em 390px/320px. As quatro capturas do perfil estão versionadas para desktop/mobile nos temas claro/escuro. Falta inspeção em aparelho físico/navegador instalado. A PR #1 permanece aberta em Draft e não foi integrada à `main`.
+
+Objetivo: evoluir o cadastro básico para gestão do ciclo de vida dos alunos, preservando registros e permitindo consulta, pesquisa, filtros e histórico operacional.
+
+Decisões fechadas:
+- Adicionar alunos.ativo, com padrão 1; todos os registros existentes serão considerados ativos.
+- Substituir a exclusão física pela inativação/reativação lógica.
+- Alterações de status serão feitas por POST autenticado, com CSRF, transação e auditoria.
+- Pesquisa por nome, e-mail e telefone; filtro Ativos/Inativos/Todos, com Ativos como padrão.
+- Alunos inativos continuarão consultáveis e editáveis.
+- Dashboard contará ativos/inativos separadamente; distribuição de planos considerará somente ativos.
+- Detalhes do aluno terão histórico simples dos eventos registrados na auditoria.
+- Não haverá UNIQUE novo para telefone ou e-mail nesta etapa.
+- Exclusão física excepcional, histórico campo a campo, planos/matrículas e financeiro ficam fora do escopo.
+
+Etapas:
+1. [Aprovada] Migração 004 e camada de dados, com teste de preservação de registros legados.
+2. [Aprovada pela CI #359] Endpoint transacional de ativação/inativação, auditoria e aposentadoria do fluxo de exclusão física.
+3. [Aprovada pela CI #359] Situação, filtros e pesquisa, com contexto preservado na edição, retorno e alteração de status.
+4. [Aprovada pela CI #359] Indicadores de ativos/inativos e distribuição de planos somente para ativos.
+5. [Aprovada pelas CI #359/#373/#375] Detalhes do aluno e histórico simples de auditoria; testes HTTP e capturas Playwright desktop/mobile nos temas claro e escuro.
+6. [Quase concluída] Regressão PHP/MySQL, Playwright, Chromium/Firefox/WebKit, estados vazios, documentação e revisão das capturas aprovadas; falta inspeção em aparelho físico/navegador instalado.
+
+O encerramento formal depende da inspeção em aparelho físico/navegador instalado e da aprovação explícita para integrar a PR #1 em `main`. Não fazer merge automaticamente.
+
+### Bloco 03 — Planos e matrículas
+
+**Estado: implementação funcional avançada e migrations 005/006 aprovadas pela CI #1221 em MySQL 8.0 e MariaDB 10.11. Ainda não concluído para uso local: aplicação no XAMPP após backup e inspeção física permanecem pendentes.**
+
+Documento de referência: [Especificação, estado de implementação e pendências do Bloco 03](bloco-03-planos-matriculas.md).
+
+**Objetivo:** deixar de tratar o plano como texto livre e representar separadamente o catálogo de planos e os vínculos contratuais dos alunos.
+
+Escopo candidato:
+- Catálogo de planos com duração, valor e situação.
+- Matrículas com condições contratadas, período e histórico.
+- Renovação sem sobrescrever matrículas anteriores.
+- Consulta de vencimentos e histórico no perfil do aluno.
+- Migração preservadora dos valores atuais de `alunos.plano`.
+
+**Implementado e coberto pela CI na branch:** catálogo de planos; contratação com snapshot das condições; histórico e cancelamento de matrículas; fila e decisão auditada de revisão de legados; retificação auditada de vigência com preservação dos intervalos anterior/novo e idempotência. A validação HTTP usa fixtures em banco efêmero, não migrations reais.
+
+**Próximas entregas obrigatórias:** migrations 005/006, testes de carga/reexecução/preservação, confirmação do ambiente XAMPP, execução local após backup e inspeção física. A PR #1 continua Draft; não integrar automaticamente.
+
+**Regras aprovadas:**
+- Um aluno pode ter várias matrículas no histórico, mas não pode ter períodos sobrepostos em matrículas não canceladas.
+- Na renovação contínua antecipada, a nova matrícula começa exatamente no limite exclusivo da matrícula vigente, preservando todos os dias/horários contratados; o início não pode ser retroativo se esse limite já passou.
+- Durações mensais incluem integralmente o último dia calculado e terminam à 00:00 local do dia seguinte; datas inexistentes são ajustadas ao último dia válido, preservando a referência original nas renovações contínuas.
+- Durações em dias/semanas preservam a hora local de início e somam dias de calendário, sem converter para segundos fixos.
+- O cancelamento é permitido somente para matrículas `AGENDADA` ou `ATIVA`: a primeira pode ser cancelada antes do início; a segunda encerra imediatamente no instante da confirmação. Matrículas `VENCIDA` não podem ser canceladas e `CANCELADA` não aceita repetição. A operação registra instante e funcionário responsável; o motivo é opcional. Correções administrativas de registros vencidos são operações separadas e auditadas.
+- Uma nova matrícula pode começar exatamente no mesmo instante do cancelamento anterior ou depois, nunca antes, desde que não haja sobreposição com o período efetivamente utilizado.
+- A revisão de cada legado deve resultar em uma das três conclusões auditadas: vínculo confirmado (`VINCULO_CONFIRMADO`), ausência comprovada de matrícula vigente (`LEGADO_SEM_VIGENCIA`) ou impossibilidade de confirmar (`PENDENTE_REVISAO`). `VINCULO_CONFIRMADO` só libera novas matrículas quando o intervalo efetivo exato estiver comprovado e registrado para a verificação de sobreposição; preço, duração original ou correspondência com o catálogo podem permanecer desconhecidos. `LEGADO_SEM_VIGENCIA` libera novas matrículas com evidência confiável; `PENDENTE_REVISAO` mantém o bloqueio. A revisão registra funcionário, instante, conclusão e referência da fonte, sem inventar dados ou sobrescrever o texto original.
+- O funcionário pode escolher início hoje ou em data futura válida, inclusive criando intervalo entre contratos. A data escolhida não pode ser passada nem sobrepor qualquer matrícula não cancelada do mesmo aluno. A renovação contínua automática permanece como padrão quando não se escolhe outro início.
+- Um plano incompleto pode ser salvo como rascunho, mas só pode ser ativado e disponibilizado para novas matrículas quando todos os campos obrigatórios estiverem preenchidos e o preço for maior que zero. Planos em rascunho/inativos não podem ser contratados; nenhum preço é inventado.
+- Plano sem matrícula vinculada pode ser excluído; plano com histórico não pode ser apagado e deve ser desativado. O catálogo distingue `RASCUNHO`, `ATIVO` e `INATIVO`; planos inativos continuam consultáveis no histórico, mas não recebem novas matrículas.
+
+**Situação e diretriz temporal aprovadas:** `AGENDADA`, `ATIVA` e `VENCIDA` serão calculadas em tempo de consulta; `CANCELADA` deriva de `cancelada_em` e do evento de auditoria; somente matrículas `AGENDADA` ou `ATIVA` podem receber cancelamento, e uma `VENCIDA` mantém seu encerramento natural. Uma correção de registro vencido é separada e auditada. Os estados da revisão de legados (`VINCULO_CONFIRMADO`, `LEGADO_SEM_VIGENCIA`, `PENDENTE_REVISAO`) permanecem separados das situações da matrícula. Os períodos usam intervalos semiabertos `[início, fim exclusivo)`, e cancelamento antes ou exatamente no início gera intervalo efetivo vazio. **Durações mensais:** o último dia calculado pela referência original é integralmente incluído; o limite exclusivo ocorre às 00:00 locais do dia seguinte, mesmo com início intradiário. Exemplo: 10/01 às 15:00 + 1 mês inclui 10/02 inteiro e termina em 11/02 às 00:00. Início em 31/01 + 1 mês inclui 28/02 (ou 29/02 em ano bissexto), terminando em 01/03. Duração de dois meses a partir de 31/01 inclui 28/02 e 31/03, terminando em 01/04 às 00:00. Renovações contínuas preservam a referência original. **Durações em dias/semanas:** preservam a hora local e somam dias de calendário; 10/01 às 15:00 + 1 dia termina em 11/01 às 15:00; + 1 semana termina em 17/01 às 15:00. A renovação contínua começa exatamente no limite exclusivo anterior e não pode retroagir se esse limite já estiver no passado. Limites intradiários e cancelamentos são exibidos com data e hora exatas.
+
+**Fuso e persistência aprovados:** `America/Sao_Paulo` será o fuso oficial da academia. Os instantes `inicio_em`, `fim_exclusivo_em` e `cancelada_em` serão armazenados em UTC nos campos `DATETIME`, com conversão explícita na aplicação: entradas e cálculos de calendário no fuso local, conversão para UTC antes da gravação e conversão de UTC para o fuso local na leitura/apresentação. O MySQL não converte automaticamente valores `DATETIME` por fuso; essa diferença em relação a `TIMESTAMP` está descrita na [documentação oficial de tipos temporais](https://dev.mysql.com/doc/refman/8.0/en/datetime.html).
+
+A implementação deverá proteger a regra de não sobreposição contra solicitações concorrentes bloqueando a linha-pai do aluno com `SELECT ... FOR UPDATE`; criação/exclusão de matrícula também bloqueará a linha do plano. A ordem de locks deve ser consistente. O cálculo de calendário ficará centralizado em função testável, sem usar soma de meses suscetível a overflow. A renovação contínua começa exatamente no limite exclusivo anterior e não pode ser criada retroativamente quando esse limite já passou.
+
+**Horário de início aprovado:** quando for informada apenas uma data futura, o início será às 00:00 no fuso da academia; para hoje, o padrão será o instante atual, permitindo escolher horário posterior, nunca anterior. A renovação contínua começa automaticamente no limite exclusivo anterior.
+
+**Migração e auditoria aprovadas:** cada aluno do conjunto inicial terá um único registro de revisão legado, identificado por FK com restrição `UNIQUE`. Decisões humanas terão histórico próprio append-only e evento geral na auditoria, gravados na mesma transação. A carga DML será transacional; o DDL será verificado após execução, pois MySQL/MariaDB podem confirmar DDL implicitamente. As migrations serão arquivos SQL numerados e executados explicitamente na ordem documentada no README/CI; não haverá runner genérico nem tabela de checksums nesta versão de portfólio. A proposta de sequência é `005_plans_enrollments_schema.sql` para DDL e `006_import_legacy_review.sql` para a carga inicial. Alunos criados depois da carga inicial seguem o fluxo normal.
+
+**Fora do escopo aprovado:** trancamento, suspensão e congelamento.
+
+**Revisão técnica:** corrigidos os exemplos de fim de fevereiro; definidos estados distintos para rascunho/ativo/inativo; especificado histórico append-only das revisões; simplificada a estratégia de migrations para arquivos SQL numerados; recomendada proteção contra sobreposição concorrente com bloqueio da linha-pai do aluno. Fuso `America/Sao_Paulo`, persistência UTC dos instantes contratuais em `DATETIME`, cancelamento antes do início e inclusão integral do último dia de calendário nas durações mensais — inclusive para inícios intradiários — também estão aprovados. Os metadados administrativos seguem a convenção atual de `criado_em`/`atualizado_em` e não participam dos cálculos de vigência. Antes das migrations, confirmar a versão do MySQL/MariaDB e o uso de InnoDB na tabela `alunos`; depois implementar e testar os fluxos e as migrations numeradas.
+
+Não iniciar migrations ou implementação até revisar as decisões restantes e confirmar os critérios de aceite.
+
+**Dependência:** Bloco 02. A inspeção física do Bloco 02 continua pendente; este planejamento não o encerra e não autoriza merge da PR #1 em `main`.
+
+### Bloco 04 — Frequência e check-in
+
+**Estado: implementação concluída e CI #1221 aprovada** em MySQL 8.0 e MariaDB 10.11, incluindo migrations, regras de elegibilidade, duplicidade diária, rollback da auditoria, integração HTTP e compatibilidade visual. Permanecem pendentes a aplicação local no XAMPP e a inspeção manual em dispositivo físico. A especificação e os critérios estão em [Bloco 04 — Frequência e check-in](bloco-04-frequencia-checkin.md).
+
+**Objetivo:** registrar entradas e consultar a frequência dos alunos.
+
+Escopo aprovado:
+- Check-in manual, com instante fornecido pelo servidor.
+- Apenas aluno ativo com exatamente uma matrícula vigente pode registrar presença.
+- No máximo um check-in por aluno por dia civil em `America/Sao_Paulo`.
+- Histórico filtrável por aluno e período.
+- Indicadores básicos do dia e do mês.
+- Auditoria transacional e permissões RBAC específicas.
+- QR Code, catraca, registro retroativo, edição/exclusão e financeiro ficam fora do escopo.
+
+A migration 009 cria a estrutura de check-ins vinculada a alunos, matrículas e funcionários. A CI #1221 validou o fluxo nos dois motores e a página em Chromium, Firefox e WebKit, com viewports desktop e mobile. A aplicação no XAMPP continua dependendo de backup, inspeção da versão/engine e execução manual controlada.
+
+### Bloco 05 — Financeiro
+
+**Estado: F-01 a F-08 implementados e validados pela CI em MySQL 8.0 e MariaDB 10.11; validação local/manual adiada.** A revisão final e o smoke test automatizado/HTTP estão documentados em [Bloco 05 — Financeiro](bloco-05-financeiro.md) e [Revisão financeira F-01 a F-08](revisao-financeira-2026-11-22.md). Não tratar a CI como validação do XAMPP nem como autorização para uso em produção.
+
+Decisões confirmadas:
+- Cada matrícula nova criada pelo sistema gera automaticamente uma única cobrança pelo valor total do plano.
+- Plano de 3 meses por R$ 300 gera uma cobrança de R$ 300; para cobrança mensal, a academia contrata um plano de 1 mês.
+- O vencimento padrão é a data local de início da matrícula.
+- Pagamentos parciais são permitidos; não se aceita valor acima do saldo.
+- Cancelar a matrícula não apaga nem cancela automaticamente a cobrança. Cobrança sem pagamentos pode ser cancelada separadamente, após o cancelamento contratual e com motivo; cobrança com pagamentos exige fluxo futuro de estorno.
+- Preço e duração são configuráveis no catálogo; snapshots de matrículas/cobranças preservam o contrato. Não há override pontual de preço neste primeiro corte.
+- Matrículas legadas não recebem cobranças retroativas.
+
+Entregas implementadas e validadas pela CI:
+- Migration 010 cria cobranças e pagamentos; migrations 011–013 adicionam idempotência, proteção append-only e constraints positivas.
+- Criação automática da cobrança dentro da transação de matrícula e auditoria.
+- Serviço de pagamentos parciais, cancelamento condicionado, fingerprint/idempotência e proteção de saldo sob concorrência.
+- Painel financeiro com saldo cobrável e saldo em revisão, histórico individual sem N+1, datas retroativas justificadas e formatação monetária sem `float`.
+- RBAC `finance.*`: Administrador e Gestor; Operador sem acesso. Teste HTTP direto confirma 403 para Operador na CI #1420.
+- F-01 a F-08: CIs #1332, #1361, #1362, #1385 e #1397 aprovadas em MySQL 8.0 e MariaDB 10.11.
+- CI #1420 validou integração HTTP/Playwright e regressão geral após as mudanças financeiras.
+
+**Pendente e adiado:** aplicar migrations 010–013 no XAMPP após backup/inspeção e executar o smoke test local de `docs/guia-migrations-xampp.md`. Essa validação manual não bloqueia o início do Bloco 06, mas o Bloco 05 não deve ser descrito como validado no ambiente local nem pronto para produção.
+
+**Fora do escopo inicial:** gateways, cartão, Pix/boleto integrado, débito recorrente, parcelamento automático, estorno/devolução e multi-tenancy.
+
+### Bloco 06 — Aulas e agenda
+
+**Estado: implementação e validação automatizada aprovadas na CI #1512.** Documento: [Bloco 06 — Grade fixa de aulas](bloco-06-aulas-agenda.md).
+
+A migration 014, serviços de domínio, consulta filtrada, grade semanal, gestão de modalidades/instrutores e CRUD de horários estão implementados. A suíte HTTP valida criação, edição, conflitos, snapshot concorrente, inativação, CSRF, RBAC, histórico e auditoria. Playwright validou cadastro, edição, inativação, acessibilidade e responsividade em Chromium, Firefox e WebKit. A CI #1512 passou nos sete jobs funcionais; o job de publicação de screenshots foi ignorado pela condição do workflow.
+
+**Pendente e adiado:** aplicação controlada das migrations 005–014 no XAMPP após backup, inspeção da versão/engine e verificação do schema; smoke test manual e inspeção em dispositivo físico. Não declarar validação local concluída.
+
+O MVP cobre cadastro de modalidades, instrutores independentes com vínculo opcional a funcionário, horários recorrentes por dia da semana e consulta da grade. Não haverá reservas, controle de vagas, lista de espera, presença por aula, QR Code, catraca ou portal do aluno nesta etapa.
+
+**Decisões confirmadas:** o modelo inicial é de participação livre em horários fixos; o aluno consulta a grade e comparece, sem reserva. O check-in geral do Bloco 04 permanece independente. Instrutores têm cadastro profissional independente e vínculo opcional a `usuarios`, sem concessão de acesso. A arquitetura será web-first: painel responsivo acessado pelo navegador, sem aplicativo nativo. Presença por aula, sessões datadas e integrações físicas ficam como possíveis evoluções futuras.
+
+**Escopo deliberadamente reduzido:** não há fila de espera, reservas, controle de vagas, sessões datadas ou presença por aula no MVP. O check-in geral do Bloco 04 permanece separado e não será interpretado como participação em uma aula.
+
+A migration 014 cria modalidades, instrutores e horários semanais recorrentes. `ClassCatalogService` e `ClassScheduleService` implementam operações transacionais com auditoria atômica e proteção contra sobreposição concorrente. `ClassScheduleQuery` centraliza consultas; `aulas.php`, `gestao-aulas.php` e `gerenciar-horarios.php` oferecem consulta e gestão com CSRF/RBAC. A CI #1512 aprovou testes de banco, HTTP e Playwright nos três navegadores. A validação local/XAMPP continua pendente.
+
+### Bloco 07 — Relatórios e experiência
+
+**Estado atualizado após as CIs #1595, #45245709878, #45247639018, #45249934923, #45252564979 e #45256688269:** `ReportPeriod`, OP-01 a OP-06, MT-01 a MT-05, FR-01 a FR-05 e FN-01 a FN-06 estão implementados, integrados a `relatorios.php` e validados em MySQL 8.0/MariaDB 10.11. VG-01 a VG-06 e o filtro de período estão integrados à Visão geral; os quatro CSV agregados foram testados por integração e Playwright; a primeira bateria de acessibilidade e a matriz Chromium/Firefox/WebKit para relatórios passaram. Permanecem pendentes somente a abertura manual em Excel/LibreOffice e a inspeção local/física. Documentos: [proposta do Bloco 07](bloco-07-relatorios-experiencia.md), [catálogo 07.1](bloco-07-catalogo-indicadores.md), [contratos 07.2](bloco-07.2-contratos-consulta.md) e [revisão técnica](revisao-tecnica-bloco-07.md).
+
+A nomenclatura **“Recebido no período”** e FN-01 a FN-03 foram aprovados para a soma, contagem e distribuição por forma dos pagamentos filtrados pela `data_pagamento` inclusiva; pagamentos retroativos seguem a data declarada e o conjunto agrupado deve reconciliar com os totais. A legenda esclarece que são pagamentos registrados pela data informada, não liquidação bancária, faturamento, lucro ou recebimento líquido. A revisão também padronizou a janela inclusiva de sete dias e a omissão integral de seções sem permissão.
+
+OP-01 a OP-03 foram aprovados como fotografia cadastral atual sob `students.view`, em uma única consulta agregada e sem dependência do filtro de datas. OP-04 a OP-06 também foram aprovados sob `enrollments.view`: OP-04 usa as quatro situações canônicas de matrícula; OP-05 conta inícios próximos de matrículas agendadas; OP-06 conta términos próximos de matrículas ativas. Ambos usam janelas cumulativas de 7/30 dias de calendário, um `asOf` único e limite final inclusivo. OP-06/7 dias compartilha a fonte de VG-06. Intervalos contratuais inválidos interrompem a leitura sem publicar métricas parciais. MT-01 a MT-04 contam inícios efetivos e excluem cancelamentos antes ou exatamente no início; MT-05 conta o evento de cancelamento mesmo nesses casos. MT-02/MT-03/MT-04 usam a mesma coorte de MT-01, com reconciliação por snapshot e origem. A migration 015 adiciona `CHECK (ativo IN (0, 1))` para garantir a reconciliação entre total, ativos e inativos; é uma proteção de integridade cadastral, não uma implementação do Bloco 07. A revisão recomenda preservar os seis cartões da Visão geral, separar cobranças de matrículas canceladas em revisão e simplificar a arquitetura reutilizando permissões e padrões já existentes. **Decisões aprovadas:** FR-01 a FR-03 contam entradas, alunos distintos e evolução diária; FR-04 usa média por ocorrência do calendário, sem presumir dias de funcionamento; FR-05 calcula a média de dias com entrada por aluno frequentador (`FR-01 / FR-02`), com resultado não aplicável quando não há frequentadores. FN-01 a FN-03 compartilham o mesmo conjunto de pagamentos, e seus grupos por forma reconciliam com os totais; FN-04 a FN-06 definem vencimentos e saldos em revisão/cobráveis. **Contrato comum aprovado:** período padrão do primeiro dia do mês até hoje em `America/Sao_Paulo`; ambos os parâmetros `de`/`ate` ausentes usam o padrão, apenas um ausente é erro; datas futuras podem ser selecionadas explicitamente; o limite é 365 dias civis inclusivos; filtros validados persistem entre relatórios e CSV. Reutilizar RBAC existente e autorizar cada seção antes da consulta; o Operador não pode executar nem receber dados financeiros. **Escopo CSV aprovado:** exportação somente de agregados por relatório, mesmos filtros e permissões da tela, sem PII; escaping correto e neutralização tab-prefix de campos textuais não confiáveis para leitura em planilhas, com testes no Excel/LibreOffice quando disponíveis e sem alegação de proteção universal. PDF, XLSX e exportação nominal ficam fora do MVP. Consultas, tela de relatórios, cartões e exportação CSV estão implementados na branch. Endpoint, escaping, neutralização e RBAC passaram na CI #45247639018; a cobertura Playwright posterior para downloads e conteúdo dos quatro arquivos foi aprovada na CI #45249934923, e a matriz cross-browser de relatórios passou na CI #45256688269. Nenhuma migration ou alteração de schema foi criada pelo Bloco 07. **Critérios de apresentação aprovados em 23/11/2026:** seis cartões VG-01 a VG-06 em dois grupos; preservar pesquisa/lista e atalho de cadastro; distribuição por plano permanece secundária e usa alunos ativos como denominador; relatórios priorizam tabelas, frequência usa barras diárias com equivalente tabular e financeiro usa resumo/tabela por forma; estados vazios/zero/não aplicável/erro/permissão distintos; foco e contraste WCAG, alvos 24 × 24, reflow 320 CSS px, temas claro/escuro e redução de movimento. A implementação automatizada foi concluída: `ReportPeriod` e OP/MT/FR/FN na CI #1595; VG-01 a VG-06 na CI #45245709878; CSV e downloads dos quatro arquivos nas CIs #45247639018 e #45249934923; primeira bateria de acessibilidade na CI #45252564979; matriz cross-browser de relatórios na CI #45256688269. Nenhuma migration/schema foi criada para o Bloco 07. Permanecem validação manual no Excel/LibreOffice e inspeção local/física; o teste de não mutação por snapshot também fica registrado como cobertura adicional desejável, não como requisito já comprovado.
+
+**Fora do escopo:** presença por modalidade/aula, histórico não reconstruível, dados pessoais em exportações, PDF/XLSX, BI, previsões, metas, churn e comparações percentuais sem base temporal confiável.
+
+### Bloco 08 — Preparação para produção
+
+**Objetivo:** avaliar o que seria necessário antes de qualquer implantação real.
+
+Possíveis entregas:
+- Revisão independente de segurança.
+- HTTPS e gestão de segredos.
+- Backups e teste de restauração.
+- Monitoramento e logs.
+- Revisão de privacidade/LGPD.
+- Estratégia de hospedagem, atualização e recuperação.
+
+**Regra:** o projeto não deve receber dados reais nem ser exposto publicamente antes desta etapa e de uma avaliação específica.

@@ -1,0 +1,861 @@
+name: CI - Academia Alunos CRUD
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+# A branch da PR recebe validação pelo evento pull_request/synchronize.
+# Evita uma segunda execução idêntica pelo evento push e cancela runs antigos
+# da mesma PR quando um commit mais recente chega.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  database-compatibility:
+    name: Database compatibility (${{ matrix.database-name }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - database-name: MySQL 8.0
+            database-image: mysql:8.0
+          - database-name: MariaDB 10.11
+            database-image: mariadb:10.11
+
+    services:
+      database:
+        image: ${{ matrix.database-image }}
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: academia_alunos
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: pdo_mysql
+          coverage: none
+
+      - name: Install MySQL-compatible client
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes default-mysql-client
+
+      - name: Import current schema and migrations
+        env:
+          MYSQL_PWD: root
+        run: |
+          set -euo pipefail
+          mysql --host=127.0.0.1 --port=3306 --user=root < banco.sql
+          mysql --host=127.0.0.1 --port=3306 --user=root < database/migrations/001_authentication_audit.sql
+          mysql --host=127.0.0.1 --port=3306 --user=root < database/migrations/002_force_password_change.sql
+          mysql --host=127.0.0.1 --port=3306 --user=root < database/migrations/003_login_rate_limit.sql
+          mysql --host=127.0.0.1 --port=3306 --user=root < database/migrations/004_student_status.sql
+          mysql --host=127.0.0.1 --port=3306 --user=root < database/migrations/015_student_status_constraint.sql
+          mysql --host=127.0.0.1 --port=3306 --user=root < database/migrations/007_administrative_roles.sql
+          mysql --host=127.0.0.1 --port=3306 --user=root academia_alunos -e "INSERT INTO auditoria (usuario_id, acao, entidade, entidade_id) VALUES (NULL, 'evento_legado_baseline', 'teste', NULL)"
+          mysql --host=127.0.0.1 --port=3306 --user=root < database/migrations/008_audit_integrity_chain.sql
+
+      - name: Initialize audit integrity baseline
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_NAME: academia_alunos
+          DB_USER: root
+          DB_PASSWORD: root
+        run: php scripts/inicializar-integridade-auditoria.php
+
+      - name: Validate enrollment concurrency with parent row lock
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_NAME: academia_alunos
+          DB_USER: root
+          DB_PASSWORD: root
+        run: php tests/database-enrollment-concurrency.php
+
+      - name: Validate plan lock, enrollment race and transaction rollback
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_NAME: academia_alunos
+          DB_USER: root
+          DB_PASSWORD: root
+        run: php tests/database-plan-lock-concurrency.php
+
+      - name: Validate inverse legacy rectification and review concurrency
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_NAME: academia_alunos
+          DB_USER: root
+          DB_PASSWORD: root
+        run: php tests/database-legacy-rectification-decision-concurrency.php
+
+      - name: Validate legacy review and rectification concurrency
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_NAME: academia_alunos
+          DB_USER: root
+          DB_PASSWORD: root
+        run: php tests/database-legacy-review-rectification-concurrency.php
+
+      - name: Validate transactional legacy enrollment rectification
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_NAME: academia_alunos
+          DB_USER: root
+          DB_PASSWORD: root
+        run: php tests/database-legacy-enrollment-rectification.php
+
+      - name: Validate transactional legacy review decisions
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_NAME: academia_alunos
+          DB_USER: root
+          DB_PASSWORD: root
+        run: php tests/database-legacy-review-decision.php
+
+      - name: Validate transactional plan management
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_NAME: academia_alunos
+          DB_USER: root
+          DB_PASSWORD: root
+        run: php tests/database-plan-management.php
+
+      - name: Validate transactional enrollment creation
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_NAME: academia_alunos
+          DB_USER: root
+          DB_PASSWORD: root
+        run: php tests/database-enrollment-creation.php
+
+      - name: Validate transactional enrollment cancellation
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_NAME: academia_alunos
+          DB_USER: root
+          DB_PASSWORD: root
+        run: php tests/database-enrollment-cancellation.php
+
+      - name: Validate InnoDB, DATETIME and timezone contract
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_NAME: academia_alunos
+          DB_USER: root
+          DB_PASSWORD: root
+        run: php tests/database-temporal-compatibility.php
+
+      - name: Validate signed audit checkpoints and read-only recovery diagnosis
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_NAME: academia_alunos
+          DB_USER: root
+          DB_PASSWORD: root
+        run: php tests/database-audit-checkpoint.php
+
+      - name: Validate user administration permissions and concurrent last-administrator changes
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_NAME: academia_alunos
+          DB_USER: root
+          DB_PASSWORD: root
+        run: php tests/database-user-account-administration.php
+
+  block-03-migrations:
+    name: Block 03 migrations (${{ matrix.database-name }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - database-name: MySQL 8.0
+            database-image: mysql:8.0
+          - database-name: MariaDB 10.11
+            database-image: mariadb:10.11
+
+    services:
+      database:
+        image: ${{ matrix.database-image }}
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: academia_alunos
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install MySQL-compatible client
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes default-mysql-client
+
+      - name: Apply and verify migrations 005/006
+        env:
+          MYSQL_PWD: root
+          MYSQL_HOST: 127.0.0.1
+          MYSQL_PORT: 3306
+          MYSQL_USER: root
+          MYSQL_DATABASE: academia_alunos
+        run: bash tests/migration-block-03.sh
+
+
+  block-04-attendance:
+    name: Block 04 attendance (${{ matrix.database-name }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - database-name: MySQL 8.0
+            database-image: mysql:8.0
+          - database-name: MariaDB 10.11
+            database-image: mariadb:10.11
+
+    services:
+      database:
+        image: ${{ matrix.database-image }}
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: academia_alunos
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: pdo_mysql
+          coverage: none
+
+      - name: Install MySQL-compatible client
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes default-mysql-client
+
+      - name: Apply migrations 001–015 and initialize audit chain
+        env:
+          MYSQL_PWD: root
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_NAME: academia_alunos
+          DB_USER: root
+          DB_PASSWORD: root
+        run: |
+          set -euo pipefail
+          mysql --host=127.0.0.1 --port=3306 --user=root < banco.sql
+          for migration in 001_authentication_audit.sql 002_force_password_change.sql 003_login_rate_limit.sql 004_student_status.sql; do
+            mysql --host=127.0.0.1 --port=3306 --user=root < "database/migrations/$migration"
+          done
+          mysql --host=127.0.0.1 --port=3306 --user=root < database/migrations/015_student_status_constraint.sql
+          mysql --host=127.0.0.1 --port=3306 --user=root academia_alunos -e "INSERT INTO alunos (nome, telefone, email, plano, ativo) VALUES ('Aluno legado CI', '21999990000', 'attendance-legacy@example.test', 'Legado', 1)"
+          mysql --host=127.0.0.1 --port=3306 --user=root < database/migrations/005_plans_enrollments_schema.sql
+          mysql --host=127.0.0.1 --port=3306 --user=root < database/migrations/006_import_legacy_review.sql
+          mysql --host=127.0.0.1 --port=3306 --user=root < database/migrations/007_administrative_roles.sql
+          mysql --host=127.0.0.1 --port=3306 --user=root academia_alunos -e "INSERT INTO auditoria (usuario_id, acao, entidade, entidade_id) VALUES (NULL, 'evento_legado_baseline', 'teste', NULL)"
+          mysql --host=127.0.0.1 --port=3306 --user=root < database/migrations/008_audit_integrity_chain.sql
+          mysql --host=127.0.0.1 --port=3306 --user=root < database/migrations/009_attendance_checkins.sql
+          mysql --host=127.0.0.1 --port=3306 --user=root < database/migrations/010_financeiro.sql
+          mysql --host=127.0.0.1 --port=3306 --user=root < database/migrations/011_pagamento_idempotencia.sql
+          mysql --host=127.0.0.1 --port=3306 --user=root < database/migrations/012_pagamentos_append_only.sql
+          mysql --host=127.0.0.1 --port=3306 --user=root < database/migrations/013_financeiro_valores_positivos.sql
+          mysql --host=127.0.0.1 --port=3306 --user=root < database/migrations/014_grade_fixa_aulas.sql
+          php scripts/inicializar-integridade-auditoria.php
+
+      - name: Validate operational and enrollment reports
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_NAME: academia_alunos
+          DB_USER: root
+          DB_PASSWORD: root
+        run: php tests/database-reports.php
+
+      - name: Validate frequency reports FR-01 to FR-05
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_NAME: academia_alunos
+          DB_USER: root
+          DB_PASSWORD: root
+        run: php tests/database-frequency-reports.php
+
+      - name: Validate manual check-in, eligibility and daily uniqueness
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_NAME: academia_alunos
+          DB_USER: root
+          DB_PASSWORD: root
+        run: php tests/database-attendance-checkin.php
+
+      - name: Validate automatic charges, financial ledger and report indicators FN-01 to FN-06
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_NAME: academia_alunos
+          DB_USER: root
+          DB_PASSWORD: root
+        run: php tests/database-finance.php
+
+      - name: Validate fixed weekly class schedule schema
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_NAME: academia_alunos
+          DB_USER: root
+          DB_PASSWORD: root
+        run: php tests/database-class-schedule-migration.php
+
+      - name: Validate class catalog and schedule domain services
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_NAME: academia_alunos
+          DB_USER: root
+          DB_PASSWORD: root
+        run: php tests/database-class-schedule-services.php
+
+      - name: Validate concurrent class schedule writes
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_NAME: academia_alunos
+          DB_USER: root
+          DB_PASSWORD: root
+        run: php tests/database-class-schedule-concurrency.php
+
+      - name: Validate weekly class schedule queries and filters
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_NAME: academia_alunos
+          DB_USER: root
+          DB_PASSWORD: root
+        run: php tests/database-class-schedule-query.php
+
+
+  php-and-mysql:
+    name: PHP, CRUD integration and visual capture
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: academia_alunos
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: pdo_mysql
+          coverage: none
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+
+      - name: Install Playwright client
+        run: npm install --no-save --no-package-lock playwright@1.65.1
+
+      - name: Pull pinned Playwright runtime
+        timeout-minutes: 15
+        run: docker pull mcr.microsoft.com/playwright:v1.65.1-noble
+
+      - name: Check PHP syntax
+        shell: bash
+        run: |
+          set -e
+          while IFS= read -r -d '' file; do
+            echo "Checking $file"
+            php -l "$file"
+          done < <(find . -type f -name '*.php' -not -path './vendor/*' -print0)
+
+      - name: Test enrollment calendar calculations
+        run: php tests/enrollment-period-calculator.php
+
+      - name: Test enrollment interval rules
+        run: php tests/enrollment-interval.php
+
+      - name: Test enrollment status and cancellation eligibility
+        run: php tests/enrollment-status.php
+
+      - name: Test UTC audit timestamp formatting in academy timezone
+        run: php tests/utc-academy-time-format.php
+
+      - name: Test report period validation
+        run: php tests/report-period.php
+
+      - name: Test centralized password policy and bcrypt byte limit
+        run: php tests/password-policy.php
+
+      - name: Test secure database configuration defaults
+        run: php tests/database-configuration.php
+
+      - name: Test Apache webroot protection rules
+        run: bash tests/webroot-protection.sh
+
+      - name: Test role-based access control matrix
+        run: php tests/access-control.php
+
+      - name: Test finance dashboard review classification
+        run: php tests/finance-dashboard-status.php
+
+      - name: Test exact financial money formatting
+        run: php tests/finance-money-format.php
+
+      - name: Test CSV formula neutralization, UTF-8 and escaping
+        run: php tests/report-csv-exporter.php
+
+      - name: Check required project files
+        run: |
+          test -f index.php
+          test -f gerenciar-plano.php
+          test -f salvar-plano.php
+          test -f planos.php
+          test -f revisoes-legado.php
+          test -f salvar-revisao-legado.php
+          test -f retificar-vigencia-legado.php
+          test -f salvar-retificacao-legado.php
+          test -f cancelar-matricula.php
+          test -f cadastro.php
+          test -f salvar.php
+          test -f excluir.php
+          test -f conexao.php
+          test -f src/Infrastructure/DatabaseConfig.php
+          test -f tests/database-configuration.php
+          test -f config/.htaccess
+          test -f config/database.local.example.php
+          test -f .htaccess
+          test -f database/.htaccess
+          test -f scripts/.htaccess
+          test -f src/.htaccess
+          test -f tests/.htaccess
+          test -f docs/.htaccess
+          test -f .github/.htaccess
+          test -f tests/webroot-protection.sh
+          test -f docs/seguranca-exposicao-webroot.md
+          test -f banco.sql
+          test -f style.css
+          test -f tests/integration-crud.sh
+          test -f tests/migration-student-status.sh
+          test -f src/Domain/Enrollment/EnrollmentPeriodCalculator.php
+          test -f tests/enrollment-period-calculator.php
+          test -f src/Domain/Enrollment/EnrollmentInterval.php
+          test -f tests/enrollment-interval.php
+          test -f src/Domain/Enrollment/EnrollmentStatus.php
+          test -f tests/enrollment-status.php
+          test -f tests/utc-academy-time-format.php
+          test -f src/Domain/Reports/ReportPeriod.php
+          test -f src/Domain/Reports/OperationalReportQuery.php
+          test -f src/Domain/Reports/EnrollmentReportQuery.php
+          test -f src/Domain/Reports/FrequencyReportQuery.php
+          test -f src/Domain/Reports/FinanceReportQuery.php
+          test -f src/Domain/Reports/FinanceReportQuery.php
+          test -f relatorios.php
+          test -f exportar-relatorio.php
+          test -f src/Domain/Reports/ReportCsvExporter.php
+          test -f tests/report-csv-exporter.php
+          test -f tests/report-period.php
+          test -f tests/database-reports.php
+          test -f tests/database-frequency-reports.php
+          test -f src/Security/AccessControl.php
+          test -f tests/access-control.php
+          test -f database/migrations/007_administrative_roles.sql
+          test -f src/Domain/Enrollment/EnrollmentCancellationService.php
+          test -f src/Domain/Enrollment/EnrollmentCreationService.php
+          test -f src/Domain/Enrollment/PlanManagementService.php
+          test -f tests/database-plan-management.php
+          test -f src/Domain/Enrollment/LegacyReviewDecisionService.php
+          test -f src/Domain/Enrollment/LegacyEnrollmentRectificationService.php
+          test -f tests/database-legacy-enrollment-rectification.php
+          test -f tests/database-legacy-review-rectification-concurrency.php
+          test -f tests/database-legacy-rectification-decision-concurrency.php
+          test -f tests/database-legacy-review-decision.php
+          test -f tests/database-enrollment-creation.php
+          test -f tests/database-enrollment-cancellation.php
+          test -f tests/database-plan-lock-concurrency.php
+          test -f database/migrations/004_student_status.sql
+          test -f database/migrations/015_student_status_constraint.sql
+          test -f tests/migration-student-status-constraint.sh
+          test -f database/migrations/005_plans_enrollments_schema.sql
+          test -f database/migrations/006_import_legacy_review.sql
+          test -f tests/migration-block-03.sh
+          test -f tests/capture-screenshots.mjs
+          test -f tests/browser-compatibility.mjs
+          test -f theme.js
+          test -f configuracoes.php
+          test -f login.php
+          test -f logout.php
+          test -f trocar-senha.php
+          test -f alterar-senha.php
+          test -f database/migrations/002_force_password_change.sql
+          test -f database/migrations/003_login_rate_limit.sql
+          test -f database/migrations/004_student_status.sql
+          test -f tests/migration-student-status.sh
+          test -f tests/migration-student-status-constraint.sh
+          test -f database/migrations/015_student_status_constraint.sql
+          test -f database/migrations/001_authentication_audit.sql
+          test -f scripts/provisionar-usuario.php
+          test -f usuarios.php
+          test -f sessao.js
+          test -f renovar-sessao.php
+          test -f salvar-usuario.php
+          test -f alterar-status-usuario.php
+          test -f alterar-perfil-usuario.php
+          test -f alterar-status-aluno.php
+          test -f docs/matriz-permissoes.md
+          test -f auditoria.php
+          test -f checkins.php
+          test -f registrar-checkin.php
+          test -f src/Domain/Attendance/AttendanceCheckinService.php
+          test -f src/Domain/Classes/ClassCatalogService.php
+          test -f src/Domain/Classes/ClassScheduleService.php
+          test -f src/Domain/Classes/ClassScheduleQuery.php
+          test -f aulas.php
+          test -f gestao-aulas.php
+          test -f gerenciar-horarios.php
+          test -f tests/database-class-schedule-query.php
+          test -f tests/database-class-schedule-services.php
+          test -f tests/database-class-schedule-concurrency.php
+          test -f docs/bloco-06-aulas-agenda.md
+          test -f database/migrations/010_financeiro.sql
+          test -f database/migrations/011_pagamento_idempotencia.sql
+          test -f database/migrations/012_pagamentos_append_only.sql
+          test -f database/migrations/013_financeiro_valores_positivos.sql
+          test -f database/migrations/014_grade_fixa_aulas.sql
+          test -f tests/database-class-schedule-migration.php
+          test -f tests/database-class-schedule-services.php
+          test -f src/Domain/Finance/FinanceService.php
+          test -f tests/database-finance.php
+          test -f tests/finance-dashboard-status.php
+          test -f src/Domain/Finance/FinanceDashboardStatus.php
+          test -f tests/finance-money-format.php
+          test -f src/Domain/Finance/FinanceMoneyFormatter.php
+          test -f src/Domain/Finance/FinancePaymentHistoryQuery.php
+          test -f financeiro.php
+          test -f database/migrations/009_attendance_checkins.sql
+          test -f tests/database-attendance-checkin.php
+          test -f docs/registro-retomada-2026-11-22.md
+          test -f docs/decisoes/ADR-001-politica-de-historico-git.md
+          test -f docs/bloco-04-frequencia-checkin.md
+          test -f detalhes-auditoria.php
+          test -f src/Security/AuditIntegrityChain.php
+          test -f database/migrations/008_audit_integrity_chain.sql
+          test -f scripts/inicializar-integridade-auditoria.php
+          test -f scripts/verificar-integridade-auditoria.php
+          test -f scripts/registrar-eventos-demo.php
+          test -f src/Security/AuditIntegrityCheckpoint.php
+          test -f src/Security/AuditRecoveryDiagnostic.php
+          test -f scripts/diagnosticar-recuperacao-auditoria.php
+          test -f scripts/exportar-checkpoint-auditoria.php
+          test -f scripts/verificar-checkpoint-auditoria.php
+          test -f scripts/comparar-checkpoints-auditoria.php
+          test -f scripts/listar-checkpoints-auditoria.php
+          test -f scripts/windows/instalar-checkpoint-auditoria.ps1
+          test -f scripts/windows/executar-checkpoint-auditoria.ps1
+          test -f tests/database-audit-checkpoint.php
+          test -f tests/database-audit-integrity.php
+          test -f detalhes-aluno.php
+          test -f tests/assert-user-provisioned.php
+          test -f tests/provision-user.sh
+
+      - name: Import database schema
+        env:
+          MYSQL_PWD: root
+        run: mysql --host=127.0.0.1 --port=3306 --user=root < banco.sql
+
+      - name: Validate authentication and audit migration
+        env:
+          MYSQL_PWD: root
+        run: mysql --host=127.0.0.1 --port=3306 --user=root < database/migrations/001_authentication_audit.sql
+
+      - name: Validate forced password change migration
+        env:
+          MYSQL_PWD: root
+        run: mysql --host=127.0.0.1 --port=3306 --user=root < database/migrations/002_force_password_change.sql
+
+      - name: Validate login rate-limit migration
+        env:
+          MYSQL_PWD: root
+        run: mysql --host=127.0.0.1 --port=3306 --user=root < database/migrations/003_login_rate_limit.sql
+
+      - name: Validate role-based access control migration
+        env:
+          MYSQL_PWD: root
+        run: mysql --host=127.0.0.1 --port=3306 --user=root < database/migrations/007_administrative_roles.sql
+
+      - name: Seed one pre-migration audit event for baseline coverage
+        env:
+          MYSQL_PWD: root
+        run: mysql --host=127.0.0.1 --port=3306 --user=root academia_alunos -e "INSERT INTO auditoria (usuario_id, acao, entidade, entidade_id) VALUES (NULL, 'evento_legado_baseline', 'teste', NULL)"
+
+      - name: Validate audit integrity chain migration
+        env:
+          MYSQL_PWD: root
+        run: mysql --host=127.0.0.1 --port=3306 --user=root < database/migrations/008_audit_integrity_chain.sql
+
+      - name: Initialize legacy audit baseline
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_NAME: academia_alunos
+          DB_USER: root
+          DB_PASSWORD: root
+          MYSQL_PWD: root
+        run: php scripts/inicializar-integridade-auditoria.php
+
+      - name: Validate student status migration and legacy data preservation
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_NAME: academia_alunos
+          DB_USER: root
+          DB_PASSWORD: root
+          MYSQL_PWD: root
+        run: bash tests/migration-student-status.sh
+
+      - name: Validate binary student status constraint
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_NAME: academia_alunos
+          DB_USER: root
+          DB_PASSWORD: root
+          MYSQL_PWD: root
+        run: bash tests/migration-student-status-constraint.sh
+
+      - name: Test secure CLI user provisioning
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_NAME: academia_alunos
+          DB_USER: root
+          DB_PASSWORD: root
+          MYSQL_PWD: root
+        run: bash tests/provision-user.sh
+
+      - name: Test audit hash chain, append-only protection and concurrency
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_NAME: academia_alunos
+          DB_USER: root
+          DB_PASSWORD: root
+          MYSQL_PWD: root
+        run: php tests/database-audit-integrity.php
+
+      - name: Test signed checkpoints and read-only recovery diagnosis
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_NAME: academia_alunos
+          DB_USER: root
+          DB_PASSWORD: root
+        run: php tests/database-audit-checkpoint.php
+
+      - name: Run CRUD integration tests and capture screenshots
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_NAME: academia_alunos
+          DB_USER: root
+          DB_PASSWORD: root
+          MYSQL_PWD: root
+          BASE_URL: http://127.0.0.1:8080
+        run: |
+          set -e
+          php -S 127.0.0.1:8080 -t . > /tmp/academia-php-server.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill "$SERVER_PID" 2>/dev/null || true' EXIT
+
+          for attempt in $(seq 1 20); do
+            if curl --silent --fail http://127.0.0.1:8080/cadastro.php >/dev/null; then
+              break
+            fi
+            sleep 1
+          done
+
+          curl --fail --silent http://127.0.0.1:8080/cadastro.php >/dev/null
+          bash tests/integration-crud.sh
+
+          echo "Installing plans, enrollments and attendance schema for browser checks..."
+          mysql --host=127.0.0.1 --port=3306 --user=root academia_alunos -e "DELETE FROM alunos"
+          mysql --host=127.0.0.1 --port=3306 --user=root < database/migrations/005_plans_enrollments_schema.sql
+          mysql --host=127.0.0.1 --port=3306 --user=root < database/migrations/006_import_legacy_review.sql
+          mysql --host=127.0.0.1 --port=3306 --user=root < database/migrations/009_attendance_checkins.sql
+          mysql --host=127.0.0.1 --port=3306 --user=root < database/migrations/010_financeiro.sql
+          mysql --host=127.0.0.1 --port=3306 --user=root < database/migrations/011_pagamento_idempotencia.sql
+          mysql --host=127.0.0.1 --port=3306 --user=root < database/migrations/012_pagamentos_append_only.sql
+          mysql --host=127.0.0.1 --port=3306 --user=root < database/migrations/013_financeiro_valores_positivos.sql
+          mysql --host=127.0.0.1 --port=3306 --user=root < database/migrations/014_grade_fixa_aulas.sql
+
+          echo "Preparing fictional records for visual capture..."
+          mysql --host=127.0.0.1 --port=3306 --user=root academia_alunos <<'SQL'
+          DELETE FROM alunos;
+          INSERT INTO alunos (nome, telefone, email, plano) VALUES
+            ('Ana Beatriz Costa', '(21) 90000-0001', 'ana.costa@example.test', 'Mensal'),
+            ('Bruno Martins', '(21) 90000-0002', 'bruno.martins@example.test', 'Mensal'),
+            ('Camila Oliveira', '(21) 90000-0003', 'camila.oliveira@example.test', 'Mensal'),
+            ('Diego Ferreira', '(21) 90000-0004', 'diego.ferreira@example.test', 'Trimestral'),
+            ('Elisa Santos', '(21) 90000-0005', 'elisa.santos@example.test', 'Trimestral'),
+            ('Felipe Almeida', '(21) 90000-0006', 'felipe.almeida@example.test', 'Semestral'),
+            ('Gabriela Lima', '(21) 90000-0007', 'gabriela.lima@example.test', 'Semestral'),
+            ('Henrique Rocha', '(21) 90000-0008', 'henrique.rocha@example.test', 'Anual');
+
+          SQL
+
+          mysql --host=127.0.0.1 --port=3306 --user=root academia_alunos <<'SQL'
+          INSERT INTO modalidades (nome, descricao)
+          VALUES ('Modalidade Playwright', 'Fixture para testes visuais do Bloco 06')
+          ON DUPLICATE KEY UPDATE descricao = VALUES(descricao);
+          INSERT INTO instrutores (nome)
+          VALUES ('Instrutor Playwright')
+          ON DUPLICATE KEY UPDATE nome = VALUES(nome);
+          SQL
+
+          php scripts/registrar-eventos-demo.php
+
+          export FITCONTROL_TEST_PASSWORD="$(cat "$RUNNER_TEMP/fitcontrol-test-password")"
+          bash tests/integration-class-schedule.sh
+          rm -f "$RUNNER_TEMP/fitcontrol-test-password"
+          docker run --rm --init --ipc=host --network host \
+            --volume "$GITHUB_WORKSPACE:/workspace" \
+            --workdir /workspace \
+            --env BASE_URL \
+            --env FITCONTROL_TEST_PASSWORD \
+            --env PLAYWRIGHT_BROWSERS_PATH=/ms-playwright \
+            mcr.microsoft.com/playwright:v1.65.1-noble \
+            bash -lc 'node tests/capture-screenshots.mjs && node tests/browser-compatibility.mjs'
+
+      - name: Upload screenshots
+        uses: actions/upload-artifact@v4
+        with:
+          name: fitcontrol-screenshots
+          path: docs/screenshots/*.png
+          if-no-files-found: error
+          retention-days: 14
+
+  publish-visual-assets:
+    name: Publish screenshots to repository
+    needs: php-and-mysql
+    if: github.event_name == 'push' && github.ref == 'refs/heads/feat/dashboard-portfolio'
+    runs-on: ubuntu-latest
+    concurrency:
+      group: fitcontrol-screenshot-publish-${{ github.ref }}
+      cancel-in-progress: false
+    permissions:
+      contents: write
+      actions: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download generated screenshots
+        uses: actions/download-artifact@v4
+        with:
+          name: fitcontrol-screenshots
+          path: docs/screenshots
+
+      - name: Commit screenshots when changed
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          # Preserva o artefato enquanto sincroniza o checkout com o HEAD atual.
+          mkdir -p "$RUNNER_TEMP/fitcontrol-screenshots"
+          cp docs/screenshots/*.png "$RUNNER_TEMP/fitcontrol-screenshots/"
+
+          for attempt in 1 2 3; do
+            git fetch origin "+refs/heads/$GITHUB_REF_NAME:refs/remotes/origin/$GITHUB_REF_NAME"
+            remote_sha="$(git rev-parse "origin/$GITHUB_REF_NAME")"
+
+            # Não publicar capturas de um commit antigo sobre uma versão mais nova.
+            if [[ "$remote_sha" != "$GITHUB_SHA" ]]; then
+              echo "A branch avançou desde esta execução; as capturas antigas serão descartadas."
+              exit 0
+            fi
+
+            git reset --hard "origin/$GITHUB_REF_NAME"
+            cp "$RUNNER_TEMP/fitcontrol-screenshots/"*.png docs/screenshots/
+            git add docs/screenshots/*.png
+
+            if git diff --cached --quiet; then
+              echo "Screenshots are already up to date."
+              exit 0
+            fi
+
+            git commit -m "chore: atualiza screenshots do FitControl [skip ci]"
+            if git push origin "HEAD:$GITHUB_REF_NAME"; then
+              exit 0
+            fi
+
+            echo "A branch mudou durante a publicação (tentativa $attempt); verificando novamente."
+          done
+
+          echo "Não foi possível publicar as capturas após três tentativas." >&2
+          exit 1

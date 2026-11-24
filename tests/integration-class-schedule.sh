@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+BASE_URL="${BASE_URL:-http://127.0.0.1:8080}"
+: "${FITCONTROL_TEST_PASSWORD:?Senha de teste do administrador não disponibilizada}"
+JAR="$(mktemp)"; OPERATOR_JAR="$(mktemp)"; TMP="$(mktemp -d)"
+trap 'rm -f "$JAR" "$OPERATOR_JAR"; rm -rf "$TMP"' EXIT
+fail(){ echo "FALHA: $1" >&2; exit 1; }
+get_token(){ grep -oE 'name="token" value="[^"]+"' "$1" | head -n1 | sed -E 's/.*value="([^"]+)"/\1/'; }
+db(){ SQL_QUERY="$1" php -r '$p=new PDO("mysql:host=".getenv("DB_HOST").";port=".getenv("DB_PORT").";dbname=".getenv("DB_NAME"),getenv("DB_USER"),getenv("DB_PASSWORD"),[PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION]); echo $p->query(getenv("SQL_QUERY"))->fetchColumn();'; }
+exec_sql(){ SQL_STATEMENT="$1" php -r '$p=new PDO("mysql:host=".getenv("DB_HOST").";port=".getenv("DB_PORT").";dbname=".getenv("DB_NAME"),getenv("DB_USER"),getenv("DB_PASSWORD"),[PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION]); $p->exec(getenv("SQL_STATEMENT"));'; }
+echo "Bloco 06 HTTP: login do administrador..."
+curl -fsS -c "$JAR" -b "$JAR" "$BASE_URL/login.php" -o "$TMP/login"
+TOKEN="$(get_token "$TMP/login")"
+curl -fsS -L -c "$JAR" -b "$JAR" "$BASE_URL/login.php" --data-urlencode "token=$TOKEN" --data-urlencode "email=provision-ci@example.test" --data-urlencode "senha=$FITCONTROL_TEST_PASSWORD" -o "$TMP/dashboard"
+grep -Fq "Visão geral" "$TMP/dashboard" || fail "Login do administrador falhou."
+SUFFIX="$(date +%s%N)"; A="HTTP modalidade A $SUFFIX"; B="HTTP modalidade B $SUFFIX"; I="HTTP instrutor $SUFFIX"
+exec_sql "INSERT INTO modalidades(nome) VALUES ('$A'),('$B')"; AID="$(db "SELECT id FROM modalidades WHERE nome='$A'")"; BID="$(db "SELECT id FROM modalidades WHERE nome='$B'")"
+exec_sql "INSERT INTO instrutores(nome) VALUES ('$I')"; IID="$(db "SELECT id FROM instrutores WHERE nome='$I'")"; ACTOR="$(db "SELECT id FROM usuarios WHERE email='provision-ci@example.test'")"
+curl -fsS -c "$JAR" -b "$JAR" "$BASE_URL/gerenciar-horarios.php" -o "$TMP/form"; TOKEN="$(get_token "$TMP/form")"
+HTTP="$(curl -sS -o "$TMP/csrf" -w '%{http_code}' -c "$JAR" -b "$JAR" "$BASE_URL/gerenciar-horarios.php" --data-urlencode token=invalid --data-urlencode acao=criar_horario --data-urlencode modalidade_id="$AID" --data-urlencode instrutor_id="$IID" --data-urlencode dia_semana=1 --data-urlencode hora_inicio=08:00 --data-urlencode hora_fim=09:00)"; [[ "$HTTP" == 403 ]] || fail "CSRF deveria retornar 403; recebeu $HTTP."
+HTTP="$(curl -sS -o "$TMP/create-a" -w '%{http_code}' -c "$JAR" -b "$JAR" "$BASE_URL/gerenciar-horarios.php" --data-urlencode "token=$TOKEN" --data-urlencode acao=criar_horario --data-urlencode modalidade_id="$AID" --data-urlencode instrutor_id="$IID" --data-urlencode dia_semana=1 --data-urlencode hora_inicio=08:00 --data-urlencode hora_fim=09:00)"; [[ "$HTTP" == 303 ]] || fail "Criação A deveria retornar 303; recebeu $HTTP."
+SIDA="$(db "SELECT id FROM horarios_aula WHERE modalidade_id=$AID AND dia_semana=1 AND hora_inicio='08:00:00'")"
+curl -fsS -c "$JAR" -b "$JAR" "$BASE_URL/gerenciar-horarios.php" -o "$TMP/form"; TOKEN="$(get_token "$TMP/form")"
+HTTP="$(curl -sS -o "$TMP/create-b" -w '%{http_code}' -c "$JAR" -b "$JAR" "$BASE_URL/gerenciar-horarios.php" --data-urlencode "token=$TOKEN" --data-urlencode acao=criar_horario --data-urlencode modalidade_id="$BID" --data-urlencode instrutor_id="$IID" --data-urlencode dia_semana=1 --data-urlencode hora_inicio=09:00 --data-urlencode hora_fim=10:00)"; [[ "$HTTP" == 303 ]] || fail "Horários adjacentes deveriam ser permitidos; recebeu $HTTP."
+SIDB="$(db "SELECT id FROM horarios_aula WHERE modalidade_id=$BID AND dia_semana=1 AND hora_inicio='09:00:00'")"
+curl -fsS -c "$JAR" -b "$JAR" "$BASE_URL/gerenciar-horarios.php" -o "$TMP/form"; TOKEN="$(get_token "$TMP/form")"
+HTTP="$(curl -sS -o "$TMP/overlap" -w '%{http_code}' -c "$JAR" -b "$JAR" "$BASE_URL/gerenciar-horarios.php" --data-urlencode "token=$TOKEN" --data-urlencode acao=criar_horario --data-urlencode modalidade_id="$AID" --data-urlencode instrutor_id="$IID" --data-urlencode dia_semana=1 --data-urlencode hora_inicio=08:30 --data-urlencode hora_fim=09:30)"; [[ "$HTTP" == 422 ]] || fail "Sobreposição deveria retornar 422; recebeu $HTTP."
+grep -Fq "O instrutor já possui uma aula que conflita" "$TMP/overlap" || fail "Mensagem de conflito ausente."
+curl -fsS -c "$JAR" -b "$JAR" "$BASE_URL/gerenciar-horarios.php" -o "$TMP/stale"; TOKEN="$(get_token "$TMP/stale")"; exec_sql "UPDATE horarios_aula SET hora_fim='08:45:00' WHERE id=$SIDA"
+HTTP="$(curl -sS -o "$TMP/stale-rejected" -w '%{http_code}' -c "$JAR" -b "$JAR" "$BASE_URL/gerenciar-horarios.php" --data-urlencode "token=$TOKEN" --data-urlencode acao=editar_horario --data-urlencode id="$SIDA" --data-urlencode modalidade_id="$AID" --data-urlencode instrutor_id="$IID" --data-urlencode dia_semana=1 --data-urlencode hora_inicio=08:00 --data-urlencode hora_fim=08:30 --data-urlencode original_modalidade_id="$AID" --data-urlencode original_instrutor_id="$IID" --data-urlencode original_dia_semana=1 --data-urlencode original_hora_inicio=08:00:00 --data-urlencode original_hora_fim=09:00:00)"; [[ "$HTTP" == 422 ]] || fail "Snapshot obsoleto deveria retornar 422; recebeu $HTTP."
+grep -Fq "O horário foi alterado desde que o formulário foi aberto" "$TMP/stale-rejected" || fail "Mensagem de snapshot obsoleto ausente."
+curl -fsS -c "$JAR" -b "$JAR" "$BASE_URL/gerenciar-horarios.php" -o "$TMP/form"; TOKEN="$(get_token "$TMP/form")"
+HTTP="$(curl -sS -o "$TMP/update-a" -w '%{http_code}' -c "$JAR" -b "$JAR" "$BASE_URL/gerenciar-horarios.php" --data-urlencode "token=$TOKEN" --data-urlencode acao=editar_horario --data-urlencode id="$SIDA" --data-urlencode modalidade_id="$AID" --data-urlencode instrutor_id="$IID" --data-urlencode dia_semana=1 --data-urlencode hora_inicio=08:00 --data-urlencode hora_fim=08:50 --data-urlencode original_modalidade_id="$AID" --data-urlencode original_instrutor_id="$IID" --data-urlencode original_dia_semana=1 --data-urlencode original_hora_inicio=08:00:00 --data-urlencode original_hora_fim=08:45:00)"; [[ "$HTTP" == 303 ]] || fail "Edição válida A deveria retornar 303; recebeu $HTTP."
+curl -fsS -c "$JAR" -b "$JAR" "$BASE_URL/gerenciar-horarios.php" -o "$TMP/form"; TOKEN="$(get_token "$TMP/form")"
+HTTP="$(curl -sS -o "$TMP/conflict-edit" -w '%{http_code}' -c "$JAR" -b "$JAR" "$BASE_URL/gerenciar-horarios.php" --data-urlencode "token=$TOKEN" --data-urlencode acao=editar_horario --data-urlencode id="$SIDB" --data-urlencode modalidade_id="$BID" --data-urlencode instrutor_id="$IID" --data-urlencode dia_semana=1 --data-urlencode hora_inicio=08:30 --data-urlencode hora_fim=09:30 --data-urlencode original_modalidade_id="$BID" --data-urlencode original_instrutor_id="$IID" --data-urlencode original_dia_semana=1 --data-urlencode original_hora_inicio=09:00:00 --data-urlencode original_hora_fim=10:00:00)"; [[ "$HTTP" == 422 ]] || fail "Edição conflitante deveria retornar 422; recebeu $HTTP."
+curl -fsS -c "$JAR" -b "$JAR" "$BASE_URL/gerenciar-horarios.php" -o "$TMP/form"; TOKEN="$(get_token "$TMP/form")"
+HTTP="$(curl -sS -o "$TMP/update-b" -w '%{http_code}' -c "$JAR" -b "$JAR" "$BASE_URL/gerenciar-horarios.php" --data-urlencode "token=$TOKEN" --data-urlencode acao=editar_horario --data-urlencode id="$SIDB" --data-urlencode modalidade_id="$BID" --data-urlencode instrutor_id="$IID" --data-urlencode dia_semana=2 --data-urlencode hora_inicio=09:00 --data-urlencode hora_fim=10:00 --data-urlencode original_modalidade_id="$BID" --data-urlencode original_instrutor_id="$IID" --data-urlencode original_dia_semana=1 --data-urlencode original_hora_inicio=09:00:00 --data-urlencode original_hora_fim=10:00:00)"; [[ "$HTTP" == 303 ]] || fail "Edição válida B deveria retornar 303; recebeu $HTTP."
+for ID in "$SIDA" "$SIDB"; do curl -fsS -c "$JAR" -b "$JAR" "$BASE_URL/gerenciar-horarios.php" -o "$TMP/form"; TOKEN="$(get_token "$TMP/form")"; HTTP="$(curl -sS -o "$TMP/deactivate" -w '%{http_code}' -c "$JAR" -b "$JAR" "$BASE_URL/gerenciar-horarios.php" --data-urlencode "token=$TOKEN" --data-urlencode acao=inativar_horario --data-urlencode id="$ID")"; [[ "$HTTP" == 303 ]] || fail "Inativação deveria retornar 303; recebeu $HTTP."; done
+[[ "$(db "SELECT COUNT(*) FROM auditoria WHERE usuario_id=$ACTOR AND entidade='horarios_aula' AND entidade_id IN ($SIDA,$SIDB) AND acao IN ('horario_aula_criado','horario_aula_editado','horario_aula_inativado')")" == 6 ]] || fail "Eventos de auditoria esperados não foram encontrados."
+[[ "$(db "SELECT COUNT(*) FROM horarios_aula WHERE id IN ($SIDA,$SIDB) AND ativo=0")" == 2 ]] || fail "Horários não foram preservados como inativos."
+curl -fsS -c "$OPERATOR_JAR" -b "$OPERATOR_JAR" "$BASE_URL/login.php" -o "$TMP/operator-login"
+OPERATOR_TOKEN="$(get_token "$TMP/operator-login")"
+curl -fsS -L -c "$OPERATOR_JAR" -b "$OPERATOR_JAR" "$BASE_URL/login.php" \
+    --data-urlencode "token=$OPERATOR_TOKEN" \
+    --data-urlencode "email=funcionario-ci@example.test" \
+    --data-urlencode "senha=SenhaNova-Funcionario-2026!" \
+    -o "$TMP/operator-dashboard"
+grep -Fq "Visão geral" "$TMP/operator-dashboard" || fail "Login do Operador falhou."
+OPERATOR_HTTP="$(curl -sS -o "$TMP/operator-denied" -w '%{http_code}' -c "$OPERATOR_JAR" -b "$OPERATOR_JAR" "$BASE_URL/gerenciar-horarios.php")"
+[[ "$OPERATOR_HTTP" == 403 ]] || fail "Operador deveria receber 403 na gestão de horários; recebeu $OPERATOR_HTTP."
+
+echo "Bloco 06 HTTP: CRUD, conflitos, snapshot, CSRF e auditoria aprovados."

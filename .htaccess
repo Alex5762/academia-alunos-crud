@@ -1,0 +1,13 @@
+# Não exponha metadados ocultos do repositório (.git, .github e arquivos dot).
+<IfModule mod_alias.c>
+    RedirectMatch 404 (^|/)\.
+</IfModule>
+
+# O schema inicial deve ser importado pelo administrador, não baixado via HTTP.
+<Files "banco.sql">
+    Require all denied
+</Files>
+
+<FilesMatch "^\..*">
+    Require all denied
+</FilesMatch>

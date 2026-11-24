@@ -1,0 +1,2 @@
+# Arquivos de configuração nunca devem ser servidos diretamente.
+Require all denied

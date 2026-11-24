@@ -7,6 +7,7 @@ Thumbs.db
 .env
 .env.*
 !.env.example
+/config/database.local.php
 
 # Dependências e caches
 /vendor/
