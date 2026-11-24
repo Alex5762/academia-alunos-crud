@@ -35,6 +35,14 @@ $cleanup = $pdo->prepare(
 );
 $cleanup->execute(['email_hash' => $emailHash, 'origem_hash' => $originHash]);
 
+$auditBefore = $pdo->prepare(
+    "SELECT COUNT(*) FROM auditoria
+     WHERE acao = 'login_falhou' AND entidade = 'autenticacao'
+       AND usuario_id IS NULL AND entidade_id IS NULL"
+);
+$auditBefore->execute();
+$auditCountBefore = (int) $auditBefore->fetchColumn();
+
 $processes = [];
 for ($index = 0; $index < 4; $index++) {
     $descriptors = [
@@ -82,7 +90,10 @@ $auditCount = $pdo->prepare(
        AND usuario_id IS NULL AND entidade_id IS NULL"
 );
 $auditCount->execute();
-assertLoginRateLimit((int) $auditCount->fetchColumn() === 20, 'Cada falha concorrente deveria produzir evento sem PII.');
+assertLoginRateLimit(
+    (int) $auditCount->fetchColumn() - $auditCountBefore === 20,
+    'Cada falha concorrente deveria produzir exatamente um evento sem PII.'
+);
 
 $expire = $pdo->prepare(
     'UPDATE login_tentativas
