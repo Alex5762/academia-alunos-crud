@@ -197,3 +197,13 @@ A antiga PR #1 permanece Draft e não deve ser mesclada em massa.
 - Revisão estática ainda não encerrada: continuar diff completo, com foco em testes de concorrência, endpoints e experiência visual.
 - Pendentes fora da CI: inspeção visual em navegador/dispositivo físico e, quando houver computador, backup verificável, inspeção de schema/engine real, aplicação controlada no XAMPP e smoke tests.
 - Não retirar a PR do Draft nem mesclar sem revisão completa e autorização explícita.
+
+
+### Complemento da revisão de interfaces e testes — 2026-11-24
+
+- Commit `5c7d9bb`: a busca de vínculos legados agora valida UTF-8 e limita a 120 caracteres Unicode, sem cortar uma sequência multibyte no meio como ocorria com `substr` baseado em bytes.
+- Commit `3df28fb`: removidos os últimos blocos vazios encontrados na varredura dos 19 testes PHP. A varredura posterior não encontrou mais blocos `if` vazios.
+- Commit `aaecda0`: texto de ajuda da revisão esclarece que, na primeira confirmação, dados opcionais não comprovados ficam nulos; na reconfirmação, snapshots já registrados são preservados.
+- A revisão dos endpoints de plano, revisão e retificação confirmou POST, autenticação, RBAC, CSRF, validação dos campos e revalidação transacional no serviço. A saída dinâmica inspecionada é escapada.
+- A CI `45490231780` continua sendo a validação aprovada do commit `9763709`. A execução `45491822251` foi iniciada para `3df28fb`; ainda não valida o commit posterior `aaecda0`.
+- HEAD antes desta atualização documental: `aaecda07727ecb50ad928ebc26135a9722eb36a2`. Aguardar a CI do HEAD final após esta atualização.
