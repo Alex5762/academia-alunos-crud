@@ -90,6 +90,7 @@ for (const engine of engines) {
 
     const cspHeaderFailures = [];
     const cspHeaderChecks = [];
+    let cspDocumentResponses = 0;
     page.on("pageerror", (error) => pageErrors.push(error.message));
     page.on("response", (response) => {
       if (!response.request().isNavigationRequest()) return;
@@ -99,7 +100,16 @@ for (const engine of engines) {
       } catch {
         return;
       }
-      if (responseUrl.origin !== new URL(baseUrl).origin || response.status() >= 400) return;
+
+      // A CSP é validada no documento final. Respostas 3xx são etapas de
+      // navegação e não devem ser tratadas como a página HTML de destino.
+      if (
+        responseUrl.origin !== new URL(baseUrl).origin ||
+        response.status() < 200 ||
+        response.status() >= 300
+      ) return;
+
+      cspDocumentResponses += 1;
       cspHeaderChecks.push(
         collectMissingCspDirectives(response, engine.name, responseUrl.pathname)
           .then((failure) => {
@@ -497,6 +507,10 @@ for (const engine of engines) {
     await Promise.all(cspHeaderChecks);
     const cspViolations = await page.evaluate(
       () => window.__fitcontrolCspViolations ?? [],
+    );
+    ensure(
+      cspDocumentResponses > 0,
+      engine.name + ": nenhuma resposta final de documento foi validada para CSP.",
     );
     ensure(
       cspHeaderFailures.length === 0,
