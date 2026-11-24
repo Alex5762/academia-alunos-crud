@@ -30,17 +30,17 @@ PHP 8.2+, PDO, MySQL 8.0 ou MariaDB 10.11, HTML, CSS e JavaScript.
    - `database/migrations/002_force_password_change.sql`
    - `database/migrations/003_login_rate_limit.sql`
    - `database/migrations/004_student_status.sql`
-   - `database/migrations/015_student_status_constraint.sql` (MySQL 8.0.16+ ou MariaDB 10.11)
    - `database/migrations/007_administrative_roles.sql`
 6. Antes da migration 008, grave o marcador histórico:
    `INSERT INTO auditoria (usuario_id, acao, entidade, entidade_id) VALUES (NULL, 'evento_legado_baseline', 'sistema', NULL);`
 7. Execute `database/migrations/008_audit_integrity_chain.sql`.
-8. Inicialize e verifique a cadeia:
+8. Execute `database/migrations/015_student_status_constraint.sql` (MySQL 8.0.16+ ou MariaDB 10.11).
+9. Inicialize e verifique a cadeia:
    `php scripts/inicializar-integridade-auditoria.php`
-9. Provisione o primeiro Administrador:
+10. Provisione o primeiro Administrador:
    `php scripts/provisionar-usuario.php`
    Informe nome e e-mail quando solicitado e copie a senha temporária exibida. Ela será solicitada somente no primeiro login.
-10. Acesse `http://localhost/academia-alunos-crud/`.
+11. Acesse `http://localhost/academia-alunos-crud/`.
 
 A migration 004 adiciona `alunos.ativo` e preserva os registros existentes como ativos. A migration 015 adiciona uma constraint CHECK que só aceita `0` ou `1`. Execute ambas uma única vez, após backup e inspeção do banco, e confirme a compatibilidade da versão MySQL (8.0.16+) ou MariaDB (10.11).
 
