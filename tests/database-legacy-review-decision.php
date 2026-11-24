@@ -257,7 +257,7 @@ try {
             $actorId,
             'VINCULO_CONFIRMADO',
             'Contrato físico, pasta 2025/12, folha 18',
-            "\\xB1",
+            chr(0xB1),
             legacyLocalDate('2025-12-01 00:00:00'),
             legacyLocalDate('2026-01-01 00:00:00')
         ),
