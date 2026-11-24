@@ -80,7 +80,7 @@ $existingTables = $pdo->prepare(
     'SELECT COUNT(*)
      FROM information_schema.TABLES
      WHERE TABLE_SCHEMA = DATABASE()
-       AND TABLE_NAME IN (\'planos\', \'matriculas\', \'revisoes_legado\', \'cobrancas\')'
+       AND TABLE_NAME IN (\'planos\', \'matriculas\', \'revisoes_legado\')'
 );
 $existingTables->execute();
 
@@ -133,30 +133,6 @@ try {
                 ON UPDATE CASCADE ON DELETE RESTRICT,
             CONSTRAINT fk_create_test_plan
                 FOREIGN KEY (plano_id) REFERENCES planos (id)
-                ON UPDATE CASCADE ON DELETE RESTRICT
-        ) ENGINE=InnoDB"
-    );
-
-    $pdo->exec(
-        "CREATE TABLE cobrancas (
-            id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
-            matricula_id BIGINT UNSIGNED NOT NULL,
-            valor_total DECIMAL(10,2) NOT NULL,
-            data_vencimento DATE NOT NULL,
-            criado_por INT UNSIGNED NOT NULL,
-            criado_em_utc DATETIME NOT NULL,
-            cancelada_em_utc DATETIME NULL,
-            cancelada_por INT UNSIGNED NULL,
-            motivo_cancelamento VARCHAR(255) NULL,
-            UNIQUE KEY uq_create_test_charge_enrollment (matricula_id),
-            CONSTRAINT fk_create_test_charge_enrollment
-                FOREIGN KEY (matricula_id) REFERENCES matriculas (id)
-                ON UPDATE CASCADE ON DELETE RESTRICT,
-            CONSTRAINT fk_create_test_charge_actor
-                FOREIGN KEY (criado_por) REFERENCES usuarios (id)
-                ON UPDATE CASCADE ON DELETE RESTRICT,
-            CONSTRAINT fk_create_test_charge_cancel_actor
-                FOREIGN KEY (cancelada_por) REFERENCES usuarios (id)
                 ON UPDATE CASCADE ON DELETE RESTRICT
         ) ENGINE=InnoDB"
     );
@@ -342,28 +318,6 @@ try {
     $audit->execute(['user_id' => $actorId, 'enrollment_id' => $monthlyId]);
     assertCreation((int) $audit->fetchColumn() === 1, 'Criação precisa gerar exatamente uma auditoria.');
 
-    $chargeQuery = $pdo->prepare(
-        'SELECT id, valor_total, data_vencimento, criado_por, criado_em_utc
-         FROM cobrancas WHERE matricula_id = :matricula_id'
-    );
-    $chargeQuery->execute(['matricula_id' => $monthlyId]);
-    $monthlyCharge = $chargeQuery->fetch();
-    assertCreation(is_array($monthlyCharge), 'Matrícula nova precisa gerar cobrança.');
-    assertCreation($monthlyCharge['valor_total'] === '149.90', 'Cobrança deve copiar o valor total do plano.');
-    assertCreation($monthlyCharge['data_vencimento'] === '2026-01-10', 'Vencimento padrão deve ser a data local de início.');
-    assertCreation((int) $monthlyCharge['criado_por'] === $actorId, 'Cobrança deve registrar o funcionário responsável.');
-    assertCreation($monthlyCharge['criado_em_utc'] === creationUtc('2026-01-10 08:00:00'), 'Criação da cobrança deve ser persistida em UTC.');
-    $chargeCount = $pdo->prepare('SELECT COUNT(*) FROM cobrancas WHERE matricula_id = :matricula_id');
-    $chargeCount->execute(['matricula_id' => $monthlyId]);
-    assertCreation((int) $chargeCount->fetchColumn() === 1, 'Deve existir uma cobrança por matrícula.');
-    $chargeAudit = $pdo->prepare(
-        "SELECT COUNT(*) FROM auditoria
-         WHERE usuario_id = :user_id AND acao = 'cobranca_criada'
-           AND entidade = 'cobrancas' AND entidade_id = :charge_id"
-    );
-    $chargeAudit->execute(['user_id' => $actorId, 'charge_id' => $monthlyCharge['id']]);
-    assertCreation((int) $chargeAudit->fetchColumn() === 1, 'Criação da cobrança precisa ser auditada.');
-
     // Plano inativo/rascunho e aluno inativo não permitem contratação.
     assertCreationRejected(
         fn () => $service->create($studentIds[0], $planIds[1], $actorId, creationLocalDate('2026-03-10 00:00:00')),
@@ -449,10 +403,6 @@ try {
     $countBeforeFailure = (int) $pdo->query(
         'SELECT COUNT(*) FROM matriculas WHERE aluno_id = ' . $studentIds[8]
     )->fetchColumn();
-    $chargesBeforeFailure = (int) $pdo->query(
-        'SELECT COUNT(*) FROM cobrancas c INNER JOIN matriculas m ON m.id = c.matricula_id WHERE m.aluno_id = ' . $studentIds[8]
-    )->fetchColumn();
-
     assertCreationRejected(
         fn () => $service->create(
             $studentIds[8],
@@ -469,21 +419,12 @@ try {
     )->fetchColumn();
 
     assertCreation($countAfterFailure === $countBeforeFailure, 'Rollback precisa desfazer a nova matrícula.');
-    $chargesAfterFailure = (int) $pdo->query(
-        'SELECT COUNT(*) FROM cobrancas c INNER JOIN matriculas m ON m.id = c.matricula_id WHERE m.aluno_id = ' . $studentIds[8]
-    )->fetchColumn();
-    assertCreation($chargesAfterFailure === $chargesBeforeFailure, 'Rollback precisa desfazer também a cobrança.');
-
     printf(
-        "Criação transacional de matrícula e cobrança: OK; snapshot, vencimento, auditoria e rollback validados.\n"
+        "Criação transacional de matrícula: OK; snapshot, vigência, auditoria e rollback validados.\n"
     );
 } finally {
     if ($enrollmentIds !== []) {
         $placeholders = implode(',', array_fill(0, count($enrollmentIds), '?'));
-$deleteCharges = $pdo->prepare(
-            "DELETE FROM cobrancas WHERE matricula_id IN ({$placeholders})"
-        );
-        $deleteCharges->execute($enrollmentIds);
     $deleteEnrollments = $pdo->prepare(
             "DELETE FROM matriculas WHERE id IN ({$placeholders})"
         );
@@ -506,7 +447,6 @@ $deleteCharges = $pdo->prepare(
     if ($actorId !== null) {
 }
 
-    $pdo->exec('DROP TABLE IF EXISTS cobrancas');
     $pdo->exec('DROP TABLE IF EXISTS revisoes_legado');
     $pdo->exec('DROP TABLE IF EXISTS matriculas');
     $pdo->exec('DROP TABLE IF EXISTS planos');
