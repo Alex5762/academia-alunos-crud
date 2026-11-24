@@ -71,8 +71,17 @@ if (!is_string($filtro) || !in_array($filtro, $filtrosPermitidos, true)) {
 
 $buscaRecebida = $_GET['busca'] ?? '';
 $busca = is_string($buscaRecebida) ? trim($buscaRecebida) : '';
-if (strlen($busca) > 120) {
-    $busca = substr($busca, 0, 120);
+if (preg_match('//u', $busca) !== 1) {
+    $busca = '';
+} else {
+    $comprimentoBusca = preg_match_all('/./us', $busca);
+
+    if ($comprimentoBusca === false) {
+        $busca = '';
+    } elseif ($comprimentoBusca > 120) {
+        preg_match('/^.{0,120}/us', $busca, $buscaLimitada);
+        $busca = $buscaLimitada[0] ?? '';
+    }
 }
 
 $reviewIdRecebido = $_GET['review_id'] ?? null;
