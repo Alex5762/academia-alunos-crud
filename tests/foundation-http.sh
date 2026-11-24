@@ -70,6 +70,15 @@ login_and_change_password() {
         -o "$TMP_DIR/$prefix-dashboard.html"
     grep -Fq 'Cadastro de alunos' "$TMP_DIR/$prefix-dashboard.html" || fail "$prefix não chegou ao CRUD após trocar a senha."
 
+    grep -Fq 'href="alterar-senha.php"' "$TMP_DIR/$prefix-dashboard.html" \
+        || fail "$prefix painel não oferece acesso à alteração voluntária de senha."
+    curl -fsS -b "$jar" -c "$jar" "$BASE_URL/alterar-senha.php" \
+        -o "$TMP_DIR/$prefix-voluntary-change.html"
+    grep -Fq '<h1 id="password-title">Alterar senha</h1>' "$TMP_DIR/$prefix-voluntary-change.html" \
+        || fail "$prefix não conseguiu abrir a tela de alteração voluntária de senha."
+    grep -Fq 'href="index.php"' "$TMP_DIR/$prefix-voluntary-change.html" \
+        || fail "$prefix tela de alteração de senha não oferece retorno ao painel."
+
     # O endpoint de renovação distingue revogação real do redirecionamento de troca obrigatória.
     stale_token="$(get_token "$TMP_DIR/$prefix-stale-first-access.html")"
     stale_status="$(curl -sS -o "$TMP_DIR/$prefix-stale-renewal.json" -w '%{http_code}' \
