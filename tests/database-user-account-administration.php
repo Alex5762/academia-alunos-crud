@@ -6,6 +6,11 @@ if (PHP_SAPI !== 'cli') {
     exit('Recurso não encontrado.');
 }
 
+if (getenv('CI') !== 'true') {
+    fwrite(STDERR, "Este teste cria fixtures persistentes de auditoria e só pode rodar no banco efêmero da CI.\n");
+    exit(2);
+}
+
 require_once __DIR__ . '/../src/Domain/Users/UserAccountAdministrationService.php';
 require_once __DIR__ . '/../src/Security/AuditIntegrityChain.php';
 
@@ -245,7 +250,8 @@ assertUserAdministration(
 
 $activeAdministratorCount = (int) $pdo->query(
     "SELECT COUNT(*) FROM usuarios
-     WHERE ativo = 1 AND perfil = 'ADMINISTRADOR'"
+     WHERE id IN ({$adminA}, {$adminB})
+       AND ativo = 1 AND perfil = 'ADMINISTRADOR'"
 )->fetchColumn();
 assertUserAdministration(
     $activeAdministratorCount === 1,
@@ -287,6 +293,39 @@ assertUserAdministration(
     'A requisição com ator revogado não pode alterar a conta de destino.'
 );
 
+// A invariável deve valer também fora do cenário concorrente.
+$lastAdminProfileResult = $service->changeProfile($activeAdminId = (int) $pdo->query(
+    "SELECT id FROM usuarios
+     WHERE id IN ({$adminA}, {$adminB})
+       AND ativo = 1 AND perfil = 'ADMINISTRADOR'
+     LIMIT 1"
+)->fetchColumn(), $operator, 'GESTOR');
+assertUserAdministration(
+    $lastAdminProfileResult === UserAccountAdministrationService::UPDATED,
+    'A conta OPERADOR de fixture deve poder receber perfil de Gestor.'
+);
+assertUserAdministration(
+    $service->changeProfile($activeAdminId, $activeAdminId === $adminA ? $adminB : $adminA, 'GESTOR')
+        === UserAccountAdministrationService::LAST_ADMINISTRATOR,
+    'Não deve ser possível rebaixar o último administrador ativo.'
+);
+assertUserAdministration(
+    $service->changeStatus($activeAdminId, $activeAdminId, 'reativar')
+        === UserAccountAdministrationService::ALREADY_ACTIVE,
+    'Reativar uma conta já ativa deve ser operação idempotente.'
+);
+$otherAdminId = $activeAdminId === $adminA ? $adminB : $adminA;
+assertUserAdministration(
+    $service->changeStatus($activeAdminId, $otherAdminId, 'desativar')
+        === UserAccountAdministrationService::LAST_ADMINISTRATOR,
+    'Não deve ser possível desativar o último administrador ativo.'
+);
+assertUserAdministration(
+    $service->changeProfile($operator, $activeAdminId, 'GESTOR')
+        === UserAccountAdministrationService::UNAUTHORIZED,
+    'Uma conta sem users.manage não pode alterar perfis.'
+);
+
 // Regressões das rotas administrativas e dos caminhos de sucesso.
 $activeAdminId = (int) $pdo->query(
     "SELECT id FROM usuarios
@@ -307,7 +346,7 @@ assertUserAdministration(
     'O administrador não pode desativar a própria conta.'
 );
 assertUserAdministration(
-    $service->changeProfile($activeAdminId, $operator, 'GESTOR')
+    $service->changeProfile($activeAdminId, $operator, 'OPERADOR')
         === UserAccountAdministrationService::UPDATED,
     'O administrador deve conseguir alterar o perfil de outra conta.'
 );
