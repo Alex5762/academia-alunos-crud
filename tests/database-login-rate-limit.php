@@ -61,7 +61,7 @@ foreach ($processes as [$process, $stdout, $stderr]) {
 
 $find = $pdo->prepare(
     'SELECT tentativas, bloqueado_ate FROM login_tentativas
-     WHERE email_hash = :email_hash AND origem_hash = :origem_hash'
+     WHERE email_hash = :email_hash AND origem_hash = :origin_hash'
 );
 $find->execute(['email_hash' => $emailHash, 'origin_hash' => $originHash]);
 $attempt = $find->fetch(PDO::FETCH_ASSOC);
@@ -112,7 +112,7 @@ $markStale = $pdo->prepare(
     'UPDATE login_tentativas SET atualizado_em = DATE_SUB(NOW(), INTERVAL 2 DAY)
      WHERE email_hash = :email_hash AND origem_hash = :origin_hash'
 );
-$markStale->execute(['email_hash' => $staleEmailHash, 'origem_hash' => $staleOriginHash]);
+$markStale->execute(['email_hash' => $staleEmailHash, 'origin_hash' => $staleOriginHash]);
 LoginAttemptRateLimiter::cleanupExpired($pdo);
 $staleCheck = $pdo->prepare(
     'SELECT COUNT(*) FROM login_tentativas WHERE email_hash = :email_hash AND origem_hash = :origin_hash'
