@@ -8,9 +8,9 @@ PR: [#2 — integrar fundação de autenticação e segurança](https://github.c
 
 - Base: `main`, SHA `e1f4c8084dc6dec8c772a699855562944d50e89e`.
 - Branch: `feat/foundation-auth-security`.
-- HEAD antes desta consolidação final: `addfb0c05ab2601e44cf6663c02a7afa5f223b2d`.
-- Comparação: 70 commits à frente, 0 atrás.
-- Diff: 58 arquivos, 5.855 adições e 73 deleções.
+- HEAD validado: `501f49cea8ecd405b0a22057c50ab482ec56fe62`.
+- Comparação: 71 commits à frente, 0 atrás.
+- Diff: 58 arquivos, 5.853 adições e 73 deleções.
 - PR #2: aberta, não draft, reportada como mergeable, não mesclada.
 - Revisões formais e threads inline: nenhuma registrada na última consulta.
 - `main` permanece no SHA acima; nenhuma migration ou alteração de banco foi executada nesta preparação.
@@ -36,29 +36,25 @@ Os seguintes itens foram implementados e cobertos pelos testes da branch:
 
 ## 3. CI — estado real por HEAD
 
-Última validação integral concluída antes das atualizações documentais finais:
+HEAD atual validado: `501f49cea8ecd405b0a22057c50ab482ec56fe62`.
 
-- HEAD `caa7f969151b0519e1683f68261315633cfdee35`.
-- Run pull_request #45432715149: sucesso, 5/5 jobs.
-- Jobs: PHP quality and unit tests; Foundation database (MySQL 8.0); Foundation database (MariaDB 10.11); Foundation HTTP integration (MySQL 8.0); Apache webroot protection.
-
-HEAD documental `addfb0c05ab2601e44cf6663c02a7afa5f223b2d`:
-
-- Run pull_request #45457124106: em andamento na última consulta.
-- Run push #45457111043: em andamento na última consulta.
-- Não declarar a CI do HEAD atual verde até a conclusão dos cinco jobs em `pull_request`.
+- Run pull_request #45457276790: sucesso, 5/5 jobs.
+- Run push #45457261651: sucesso, 5/5 jobs.
+- Jobs aprovados nos dois eventos: PHP quality and unit tests; Foundation database (MySQL 8.0); Foundation database (MariaDB 10.11); Foundation HTTP integration (MySQL 8.0); Apache webroot protection.
+- Conclusão: 10/10 checks aprovados no mesmo HEAD, incluindo teste HTTP concorrente do rate limit e matriz MySQL/MariaDB.
 
 Links:
-- [CI pull_request do HEAD documental](https://github.com/Alex5762/academia-alunos-crud/actions/runs/45457124106)
-- [CI pull_request anterior aprovada](https://github.com/Alex5762/academia-alunos-crud/actions/runs/45432715149)
+- [CI pull_request aprovada](https://github.com/Alex5762/academia-alunos-crud/actions/runs/45457276790)
+- [CI push aprovada](https://github.com/Alex5762/academia-alunos-crud/actions/runs/45457261651)
 
 ## 4. Portões antes do merge
 
-- [x] Base e branch comparadas: 68 à frente, 0 atrás.
-- [x] HEAD da PR conferido no início da consolidação: `addfb0c05ab2601e44cf6663c02a7afa5f223b2d`.
-- [ ] Cinco jobs da CI aprovados no HEAD documental final (verificar execução `pull_request` mais recente).
-- [ ] Regras de proteção da `main` conferidas na interface do GitHub. A API de proteção retornou 403 para a integração; não foi possível confirmar o estado atual por API.
-- [ ] Confirmar se a proteção exige revisão independente e, se exigir, obter a aprovação de outro colaborador. Não há avaliações formais registradas até agora.
+- [x] Base e branch comparadas: 71 à frente, 0 atrás.
+- [x] HEAD da PR conferido: `501f49cea8ecd405b0a22057c50ab482ec56fe62`.
+- [x] Cinco jobs obrigatórios aprovados no evento `pull_request` (#45457276790), 5/5.
+- [x] Cinco jobs complementares aprovados no evento `push` (#45457261651), 5/5.
+- [ ] Regras de proteção da `main` conferidas na interface do GitHub. A API de proteção retornou 403 para a integração; confirmar branch protection/rulesets, checks obrigatórios, política de revisão e restrições de bypass/force-push/exclusão.
+- [ ] Confirmar se a proteção exige revisão independente e, se exigir, obter aprovação de outro colaborador. Não há avaliações formais registradas; não há reviewer solicitado.
 - [ ] Confirmar backup íntegro do banco de destino e registrar onde está guardado.
 - [ ] Confirmar o ambiente de destino (local/XAMPP ou outro) e janela de manutenção.
 - [ ] Autorização explícita do responsável para executar o merge.
@@ -69,7 +65,7 @@ Links:
 
 - Método recomendado: merge commit, para preservar o histórico incremental usado na revisão por blocos.
 - Antes de mesclar, consultar novamente PR, base, HEAD e CI.
-- Usar o HEAD esperado `6fb629e4a57483eae1c66f423a0d873bae44cf06` como referência deste checkpoint. Se a branch avançar, repetir revisão e CI no novo HEAD.
+- Usar o HEAD esperado `501f49cea8ecd405b0a22057c50ab482ec56fe62` como referência deste checkpoint. Se a branch avançar, repetir revisão e CI no novo HEAD.
 - Não usar squash ou rebase automaticamente.
 - Depois do merge, confirmar o SHA resultante e que a branch `main` recebeu exatamente a PR #2.
 
@@ -156,3 +152,15 @@ Depois:
 **Preparação operacional documentada; merge ainda não autorizado nem executado.**
 
 A PR #2 continua aberta. A `main` continua no SHA `e1f4c8084dc6dec8c772a699855562944d50e89e`. Nenhuma migration, alteração de dados ou operação de merge foi realizada nesta preparação.
+
+
+## 10. Confirmação CI — 2026-11-24
+
+No HEAD `501f49cea8ecd405b0a22057c50ab482ec56fe62`, ambos os eventos finalizaram com sucesso:
+
+- Pull request #45457276790 — 5/5 jobs.
+- Push #45457261651 — 5/5 jobs.
+
+O estado consultado da PR #2 foi `open`, `merged=false`, `mergeable=true`, `mergeable_state=clean`, com base `e1f4c8084dc6dec8c772a699855562944d50e89e`. A branch está 71 commits à frente e 0 atrás. Não havia avaliações formais, comentários de revisão ou threads inline registrados.
+
+A proteção atual da `main` não pôde ser confirmada pela API nesta sessão (403). Backup do banco, ambiente de destino, aprovação humana caso exigida e autorização explícita continuam pendentes. Nenhum merge ou migration foi executado.
