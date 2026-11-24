@@ -278,3 +278,36 @@ Este registro supersede os snapshots operacionais anteriores desta documentaçã
 **Pendências fora da CI:** conferir proteção da branch e política de revisão; obter aprovação independente caso exigida; confirmar backup íntegro e ambiente de destino; definir janela de manutenção; receber autorização explícita para o merge.
 
 **Não houve merge, alteração da `main`, migration ou alteração de dados.** A conclusão dos checks não substitui os portões operacionais nem a autorização do responsável.
+
+## Checkpoint atualizado — HEAD 2bafa933 — 2026-11-24
+
+Este registro atualiza os snapshots anteriores e é a referência mais recente desta documentação.
+
+### Repositório e PR
+
+- PR #2: aberta, não draft, não mesclada; GitHub reporta `mergeable=true`.
+- Branch: `feat/foundation-auth-security`.
+- HEAD validado: `2bafa933f237035e7d5fd105c5cb4715b024aaf2`.
+- Base `main`: `e1f4c8084dc6dec8c772a699855562944d50e89e`.
+- Comparação: 75 commits à frente, 0 atrás.
+- Diff: 58 arquivos, 5.938 adições e 73 deleções.
+- `main` está protegida (`protected: true`).
+- Não há avaliações formais, comentários de revisão ou threads inline registradas.
+
+### CI no HEAD validado — 10/10
+
+- Pull request #45461133988: sucesso, 5/5 jobs.
+- Push #45461117533: sucesso, 5/5 jobs.
+- Jobs aprovados em ambos: PHP quality and unit tests; Foundation database (MySQL 8.0); Foundation database (MariaDB 10.11); Foundation HTTP integration (MySQL 8.0); Apache webroot protection.
+- O job HTTP concluiu o provisionamento inicial, autenticação/RBAC/CRUD/auditoria e administração de contas com sucesso.
+- Os jobs de banco confirmaram os testes concorrentes de rate limit, auditoria e administração em MySQL 8.0 e MariaDB 10.11.
+
+### Proteção e pendências operacionais
+
+A branch `main` está marcada como protegida, mas a API de detalhes da proteção retorna 403 para a integração. Conferir manualmente na interface do GitHub os checks obrigatórios, exigência de aprovação independente, bypass e restrições de force-push/exclusão.
+
+Ainda faltam: confirmar backup íntegro do banco de destino; identificar ambiente e janela de manutenção; obter aprovação independente se a proteção exigir; autorização explícita para executar o merge.
+
+O checklist `docs/pre-merge-checklist-bloco-01-2026-11-24.md` contém o runbook detalhado de backup, migrations, marcador histórico, inicialização da cadeia, provisionamento CLI, smoke test e recuperação.
+
+**Estado:** validação técnica e CI concluídas neste HEAD; integração ainda não autorizada. Nenhuma migration ou alteração de dados foi executada. A `main` permanece no SHA acima.
