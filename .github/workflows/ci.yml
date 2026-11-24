@@ -1,0 +1,187 @@
+name: CI - Foundation authentication and security
+
+on:
+  push:
+    branches:
+      - main
+      - feat/foundation-auth-security
+  pull_request:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  php-quality:
+    name: PHP quality and unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: pdo_mysql
+          coverage: none
+      - name: Lint all PHP files
+        run: |
+          set -euo pipefail
+          while IFS= read -r -d '' file; do php -l "$file"; done < <(find . -type f -name '*.php' -not -path './.git/*' -print0)
+      - name: Validate pure configuration, password policy and RBAC
+        run: |
+          php tests/database-configuration.php
+          php tests/password-policy.php
+          php tests/access-control.php
+
+  foundation-database:
+    name: Foundation database (${{ matrix.database-name }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - database-name: MySQL 8.0
+            image: mysql:8.0
+          - database-name: MariaDB 10.11
+            image: mariadb:10.11
+    services:
+      database:
+        image: ${{ matrix.image }}
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: academia_alunos
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: pdo_mysql
+          coverage: none
+      - name: Install MySQL client
+        run: sudo apt-get update && sudo apt-get install --yes default-mysql-client
+      - name: Prepare foundation schema
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_NAME: academia_alunos
+          DB_USER: root
+          DB_PASSWORD: root
+        run: bash tests/prepare-foundation-database.sh
+      - name: Test database configuration and domain policies
+        run: |
+          php tests/database-configuration.php
+          php tests/password-policy.php
+          php tests/access-control.php
+      - name: Test audit integrity, rollback and concurrency
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_NAME: academia_alunos
+          DB_USER: root
+          DB_PASSWORD: root
+        run: php tests/database-audit-integrity.php
+      - name: Test concurrent account administration
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_NAME: academia_alunos
+          DB_USER: root
+          DB_PASSWORD: root
+        run: php tests/database-user-account-administration.php
+      - name: Test initial administrator provisioning
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_NAME: academia_alunos
+          DB_USER: root
+          DB_PASSWORD: root
+        run: bash tests/provision-user.sh
+
+  foundation-http:
+    name: Foundation HTTP integration (MySQL 8.0)
+    runs-on: ubuntu-latest
+    services:
+      database:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: academia_alunos
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: pdo_mysql
+          coverage: none
+      - name: Install MySQL client
+        run: sudo apt-get update && sudo apt-get install --yes default-mysql-client
+      - name: Prepare foundation schema
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_NAME: academia_alunos
+          DB_USER: root
+          DB_PASSWORD: root
+        run: bash tests/prepare-foundation-database.sh
+      - name: Provision first administrator
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_NAME: academia_alunos
+          DB_USER: root
+          DB_PASSWORD: root
+        run: bash tests/provision-user.sh
+      - name: Start PHP server and verify authentication, RBAC, CRUD and audit
+        env:
+          APP_ENV: production
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_NAME: academia_alunos
+          DB_USER: root
+          DB_PASSWORD: root
+        run: |
+          php -S 127.0.0.1:8080 -t . >/tmp/fitcontrol-php-server.log 2>&1 &
+          echo $! >/tmp/fitcontrol-php-server.pid
+          bash tests/foundation-http.sh
+      - name: Stop PHP server
+        if: always()
+        run: |
+          if [ -f /tmp/fitcontrol-php-server.pid ]; then kill "$(cat /tmp/fitcontrol-php-server.pid)" || true; fi
+
+  webroot-protection:
+    name: Apache webroot protection
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          coverage: none
+      - name: Test Apache access rules
+        run: bash tests/webroot-protection.sh
