@@ -71,6 +71,15 @@ final class EnrollmentCancellationService
             $normalizedReason = null;
         }
 
+        if ($normalizedReason !== null) {
+            $reasonLength = preg_match_all('/./us', $normalizedReason);
+            if ($reasonLength === false || $reasonLength > 255) {
+                throw new InvalidArgumentException(
+                    'O motivo do cancelamento precisa ser UTF-8 válido e ter no máximo 255 caracteres.'
+                );
+            }
+        }
+
         $this->pdo->beginTransaction();
 
         try {
