@@ -8,11 +8,13 @@ if ($metodo !== 'GET' && $metodo !== 'POST') {
     exit('Método não permitido.');
 }
 
+require_once __DIR__ . '/conexao.php';
+$usuario = exigirAutenticacao($pdo);
+exigirPermissao($usuario, 'students.delete');
+
 if ($metodo === 'POST') {
     validarToken();
 }
-
-require_once __DIR__ . '/conexao.php';
 $valorId = $metodo === 'POST' ? ($_POST['id'] ?? '') : ($_GET['id'] ?? '');
 $id = validarId($valorId);
 
@@ -25,9 +27,18 @@ $aluno = buscarAluno($pdo, $id);
 
 if ($metodo === 'POST') {
     try {
+        $pdo->beginTransaction();
         $comando = $pdo->prepare('DELETE FROM alunos WHERE id = :id');
         $comando->execute(['id' => $id]);
-    } catch (PDOException $erro) {
+        if ($comando->rowCount() !== 1) {
+            throw new RuntimeException('O aluno não pôde ser excluído.');
+        }
+        registrarAuditoria($pdo, (int) $usuario['id'], 'aluno_excluido', 'alunos', (int) $id);
+        $pdo->commit();
+    } catch (Throwable $erro) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
         error_log($erro->getMessage());
         http_response_code(500);
         exit('Não foi possível excluir. Consulte o registro de erros do Apache.');

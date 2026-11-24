@@ -2,6 +2,9 @@
 require_once __DIR__ . '/funcoes.php';
 require_once __DIR__ . '/conexao.php';
 
+$usuario = exigirAutenticacao($pdo);
+exigirPermissao($usuario, 'students.view');
+
 // Pesquisa opcional pelo nome; os valores são enviados como parâmetro.
 $busca = $_GET['busca'] ?? '';
 if (!is_string($busca)) {
@@ -31,7 +34,15 @@ unset($_SESSION['mensagem']); // Mostra a mensagem apenas uma vez.
 <body>
 <main>
     <h1>Cadastro de alunos</h1>
-    <p><a href="cadastro.php">Cadastrar aluno</a></p>
+    <nav class="auth-nav" aria-label="Conta">
+        <span>Olá, <?= escapar($usuario['nome']) ?></span>
+        <?php if (usuarioTemPermissao($usuario, 'students.create')) { ?><a href="cadastro.php">Cadastrar aluno</a><?php } ?>
+        <?php if (usuarioTemPermissao($usuario, 'users.manage')) { ?><a href="usuarios.php">Gerenciar funcionários</a><?php } ?>
+        <form action="logout.php" method="post" class="logout-form">
+            <input type="hidden" name="token" value="<?= escapar($_SESSION['token']) ?>">
+            <button type="submit">Sair</button>
+        </form>
+    </nav>
 
     <form action="index.php" method="get" class="busca">
         <label for="busca">Pesquisar pelo nome:</label>
@@ -71,8 +82,8 @@ unset($_SESSION['mensagem']); // Mostra a mensagem apenas uma vez.
                         <td><?= escapar($aluno['email']) ?></td>
                         <td><?= escapar($aluno['plano']) ?></td>
                         <td>
-                            <a href="cadastro.php?id=<?= escapar($aluno['id']) ?>">Editar</a>
-                            <a href="excluir.php?id=<?= escapar($aluno['id']) ?>">Excluir</a>
+                            <?php if (usuarioTemPermissao($usuario, 'students.update')) { ?><a href="cadastro.php?id=<?= escapar($aluno['id']) ?>">Editar</a><?php } ?>
+                            <?php if (usuarioTemPermissao($usuario, 'students.delete')) { ?><a href="excluir.php?id=<?= escapar($aluno['id']) ?>">Excluir</a><?php } ?>
                         </td>
                     </tr>
                 <?php } ?>
