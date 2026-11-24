@@ -78,7 +78,7 @@ login_and_change_password() {
     [[ "$stale_status" == "401" ]] || fail "$prefix segunda sessão deveria ser revogada após troca obrigatória; renovar-sessao.php retornou $stale_status."
 }
 
-php -S 127.0.0.1:8080 -t . >"$SERVER_LOG" 2>&1 &
+PHP_CLI_SERVER_WORKERS=8 php -S 127.0.0.1:8080 -t . >"$SERVER_LOG" 2>&1 &
 SERVER_PID=$!
 for attempt in $(seq 1 30); do
     if curl -sS "$BASE_URL/login.php" -o /dev/null; then break; fi
@@ -107,6 +107,50 @@ ADMIN_FAILURE_AUDIT="$(db_value "SELECT COUNT(*) FROM auditoria WHERE acao='logi
 login_and_change_password "$ADMIN_JAR" "provision-ci@example.test" "$ADMIN_PASSWORD" "SenhaAdminNova-2026!" "admin"
 ADMIN_COUNTER_AFTER_SUCCESS="$(db_value "SELECT COUNT(*) FROM login_tentativas WHERE email_hash = SHA2('provision-ci@example.test', 256) AND origem_hash = SHA2('127.0.0.1', 256)")"
 [[ "$ADMIN_COUNTER_AFTER_SUCCESS" == "0" ]] || fail "Login válido não limpou o contador."
+
+# Rajada HTTP concorrente: sessões distintas disputam a mesma combinação e-mail/IP.
+# O servidor embutido usa workers para que as requisições realmente se sobreponham.
+CONCURRENT_EMAIL="rate-limit-concurrent-http@example.test"
+CONCURRENT_REQUESTS=12
+CONCURRENT_AUDIT_BEFORE="$(db_value "SELECT COUNT(*) FROM auditoria WHERE acao='login_falhou' AND entidade='autenticacao' AND usuario_id IS NULL AND entidade_id IS NULL")"
+CONCURRENT_PIDS=()
+for attempt in $(seq 1 "$CONCURRENT_REQUESTS"); do
+    concurrent_jar="$TMP_DIR/concurrent-$attempt.cookies"
+    concurrent_page="$TMP_DIR/concurrent-$attempt-login.html"
+    concurrent_response="$TMP_DIR/concurrent-$attempt-response.html"
+    concurrent_status="$TMP_DIR/concurrent-$attempt-status.txt"
+
+    curl -fsS -c "$concurrent_jar" -b "$concurrent_jar" "$BASE_URL/login.php" -o "$concurrent_page"
+    concurrent_token="$(get_token "$concurrent_page")"
+
+    (
+        curl -sS -o "$concurrent_response" -w '%{http_code}' \
+            -b "$concurrent_jar" -c "$concurrent_jar" "$BASE_URL/login.php" \
+            --data-urlencode "token=$concurrent_token" \
+            --data-urlencode "email=$CONCURRENT_EMAIL" \
+            --data-urlencode "senha=SenhaIncorreta-2026!" > "$concurrent_status"
+    ) &
+    CONCURRENT_PIDS+=("$!")
+done
+
+for concurrent_pid in "${CONCURRENT_PIDS[@]}"; do
+    wait "$concurrent_pid" || fail "Uma requisição HTTP concorrente de login falhou."
+done
+
+for attempt in $(seq 1 "$CONCURRENT_REQUESTS"); do
+    concurrent_status="$(cat "$TMP_DIR/concurrent-$attempt-status.txt")"
+    [[ "$concurrent_status" == "200" ]] || fail "Requisição concorrente $attempt retornou HTTP $concurrent_status."
+    grep -Fq 'E-mail ou senha inválidos.' "$TMP_DIR/concurrent-$attempt-response.html" \
+        || fail "Requisição concorrente $attempt não manteve resposta genérica."
+done
+
+CONCURRENT_COUNTER="$(db_value "SELECT tentativas FROM login_tentativas WHERE email_hash = SHA2('$CONCURRENT_EMAIL', 256) AND origem_hash = SHA2('127.0.0.1', 256)")"
+CONCURRENT_BLOCKED="$(db_value "SELECT (bloqueado_ate > NOW()) FROM login_tentativas WHERE email_hash = SHA2('$CONCURRENT_EMAIL', 256) AND origem_hash = SHA2('127.0.0.1', 256)")"
+CONCURRENT_AUDIT_AFTER="$(db_value "SELECT COUNT(*) FROM auditoria WHERE acao='login_falhou' AND entidade='autenticacao' AND usuario_id IS NULL AND entidade_id IS NULL")"
+[[ "$CONCURRENT_COUNTER" == "5" && "$CONCURRENT_BLOCKED" == "1" ]] \
+    || fail "Rajada concorrente deveria admitir cinco falhas e bloquear o restante; contador=$CONCURRENT_COUNTER bloqueado=$CONCURRENT_BLOCKED."
+[[ "$((CONCURRENT_AUDIT_AFTER - CONCURRENT_AUDIT_BEFORE))" == "5" ]] \
+    || fail "Rajada concorrente deveria gerar exatamente cinco eventos de falha auditados."
 
 # Cinco falhas em 15 minutos ativam o bloqueio por 15 minutos.
 RATE_LIMIT_JAR="$TMP_DIR/rate-limit.cookies"
