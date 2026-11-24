@@ -311,3 +311,25 @@ Ainda faltam: confirmar backup íntegro do banco de destino; identificar ambient
 O checklist `docs/pre-merge-checklist-bloco-01-2026-11-24.md` contém o runbook detalhado de backup, migrations, marcador histórico, inicialização da cadeia, provisionamento CLI, smoke test e recuperação.
 
 **Estado:** validação técnica e CI concluídas neste HEAD; integração ainda não autorizada. Nenhuma migration ou alteração de dados foi executada. A `main` permanece no SHA acima.
+
+
+## Checkpoint técnico mais recente — HEAD a4564ffb — 2026-11-24
+
+Este checkpoint atualiza os registros anteriores:
+
+- PR #2: aberta, não draft, não mesclada; `mergeable=true`.
+- HEAD: `a4564ffb272f916144d75fe1c149c60f1625bc68`.
+- Base `main`: `e1f4c8084dc6dec8c772a699855562944d50e89e`.
+- Comparação: 77 commits à frente, 0 atrás.
+- Diff: 58 arquivos, 5.984 adições e 73 deleções.
+- `main` está protegida (`protected: true`).
+- CI pull_request #45461486756: sucesso, 5/5 jobs.
+- CI push #45461470680: sucesso, 5/5 jobs.
+- Os cinco jobs passaram nos dois eventos: PHP quality and unit tests; Foundation database (MySQL 8.0); Foundation database (MariaDB 10.11); Foundation HTTP integration (MySQL 8.0); Apache webroot protection.
+- Não há avaliações formais, comentários de revisão ou threads inline registradas.
+
+A API confirma que `main` está protegida, mas não expõe os detalhes da proteção nesta sessão (403). Conferir manualmente checks obrigatórios, exigência de aprovação independente, bypass e restrições de force-push/exclusão.
+
+Continuam pendentes: backup íntegro do banco de destino; identificação do ambiente e janela de manutenção; aprovação independente caso exigida; autorização explícita para merge.
+
+**Estado:** revisão técnica e CI aprovadas no HEAD acima. A PR continua aberta e não mesclada; nenhuma migration ou alteração de dados foi executada. A `main` permanece no SHA informado.
