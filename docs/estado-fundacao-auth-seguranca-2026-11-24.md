@@ -62,8 +62,8 @@ Ficam fora: matrículas, frequência, financeiro, grade, dashboard completo, rel
 
 1. Achado 1 — revogação de sessões paralelas após troca de senha: resolvido e validado em CI.
 2. Achado 2 — auditoria de falhas de login e rate limit: resolvido e validado em CI no commit `d52fe3bb0937b2cbaf26313dbfcfd03f31bdd3f8`.
-3. Próxima etapa: tratar o Achado 3 — revalidação da autorização dentro da transação de criação de contas.
-4. Reexecutar e confirmar os cinco checks após a correção do Achado 3.
+3. Achado 3 — criação administrativa: implementação em `UserAccountAdministrationService::createAccount()`, com revalidação de autorização sob lock e teste concorrente; CI do novo HEAD pendente.
+4. Confirmar os cinco checks após a correção do Achado 3.
 5. Não fazer merge sem autorização explícita do usuário.
 
 
@@ -97,3 +97,17 @@ Ficam fora: matrículas, frequência, financeiro, grade, dashboard completo, rel
 - O workflow executa somente uma vez o teste concorrente por job. A asserção compara o delta de eventos `login_falhou` criados pelo teste; a cadeia geral continua append-only.
 - `main` permanece em `e1f4c8084dc6dec8c772a699855562944d50e89e`; PR #2 permanece aberta e não mesclada.
 - Achado 3 é o único dos três achados da revisão técnica ainda pendente.
+
+
+## Etapa 3 — revalidação da autorização na criação de contas — 2026-11-24
+
+**Implementação commitada; CI do novo HEAD pendente.**
+
+- Criado `UserAccountAdministrationService::createAccount()`.
+- A criação usa a mesma transação e o mesmo lock global `SELECT ... FOR UPDATE` compartilhado pelas alterações de perfil/status.
+- Dentro da transação, o serviço revalida que o ator existe, está ativo, não precisa trocar senha e ainda possui a permissão `users.manage`.
+- A inserção da conta e o evento `usuario_criado` na cadeia append-only ocorrem na mesma transação.
+- `salvar-usuario.php` mantém a checagem antecipada para rejeição rápida, mas delega a criação efetiva ao serviço; se o ator perder a permissão antes de obter o lock, a resposta é HTTP 403 e nenhuma conta é criada.
+- `tests/database-user-account-administration.php` cobre o cenário concorrente: pré-autorização válida, criação aguardando lock, revogação do perfil, negação posterior da criação e ausência de registro persistido. Também verifica o caminho autorizado e a auditoria.
+- A bateria é executada no MySQL 8.0 e MariaDB 10.11 pelo job de administração de contas.
+- Não houve alteração na `main` nem merge da PR #2.
