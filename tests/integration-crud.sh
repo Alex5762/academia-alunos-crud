@@ -438,6 +438,48 @@ assert_contains "$TMP_DIR/user-role-operator-final.html" "Perfil do funcionário
 FINAL_OPERATOR_ROLE="$(db_value "SELECT perfil FROM usuarios WHERE id = $NOVO_USUARIO_ID")"
 [[ "$FINAL_OPERATOR_ROLE" == "OPERADOR" ]] || fail "O fixture deveria retornar ao perfil Operador antes do teste de RBAC."
 
+echo "1.2.3.1/10 - Validando CSRF, autodesativação, desativação e reativação de funcionários..."
+STATUS_TOKEN="$(get_token "$TMP_DIR/user-role-operator-final.html")"
+STATUS_CSRF_HTTP="$(curl -sS -o "$TMP_DIR/user-status-no-csrf.html" -w '%{http_code}' -c "$COOKIE_JAR" -b "$COOKIE_JAR" \
+    "$BASE_URL/alterar-status-usuario.php" \
+    --data-urlencode "id=$NOVO_USUARIO_ID" \
+    --data-urlencode "acao=desativar")"
+[[ "$STATUS_CSRF_HTTP" == "403" ]] || fail "Alteração de status sem CSRF deveria retornar 403; retornou $STATUS_CSRF_HTTP."
+
+STATUS_TOKEN="$(get_token "$TMP_DIR/user-role-operator-final.html")"
+curl -fsS -L -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/alterar-status-usuario.php" \
+    --data-urlencode "token=$STATUS_TOKEN" \
+    --data-urlencode "id=$USUARIO_ID" \
+    --data-urlencode "acao=desativar" \
+    -o "$TMP_DIR/self-deactivation-status.html"
+assert_contains "$TMP_DIR/self-deactivation-status.html" "Você não pode desativar sua própria conta."
+SELF_ADMIN_ACTIVE="$(db_value "SELECT ativo FROM usuarios WHERE id = $USUARIO_ID")"
+[[ "$SELF_ADMIN_ACTIVE" == "1" ]] || fail "O administrador conseguiu desativar a própria conta."
+
+STATUS_TOKEN="$(get_token "$TMP_DIR/self-deactivation-status.html")"
+curl -fsS -L -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/alterar-status-usuario.php" \
+    --data-urlencode "token=$STATUS_TOKEN" \
+    --data-urlencode "id=$NOVO_USUARIO_ID" \
+    --data-urlencode "acao=desativar" \
+    -o "$TMP_DIR/user-deactivated.html"
+assert_contains "$TMP_DIR/user-deactivated.html" "Conta desativada."
+USER_ACTIVE_AFTER_DISABLE="$(db_value "SELECT ativo FROM usuarios WHERE id = $NOVO_USUARIO_ID")"
+[[ "$USER_ACTIVE_AFTER_DISABLE" == "0" ]] || fail "A conta deveria estar inativa após a operação."
+
+STATUS_TOKEN="$(get_token "$TMP_DIR/user-deactivated.html")"
+curl -fsS -L -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/alterar-status-usuario.php" \
+    --data-urlencode "token=$STATUS_TOKEN" \
+    --data-urlencode "id=$NOVO_USUARIO_ID" \
+    --data-urlencode "acao=reativar" \
+    -o "$TMP_DIR/user-reactivated.html"
+assert_contains "$TMP_DIR/user-reactivated.html" "Conta reativada com sucesso."
+USER_ACTIVE_AFTER_REACTIVATE="$(db_value "SELECT ativo FROM usuarios WHERE id = $NOVO_USUARIO_ID")"
+[[ "$USER_ACTIVE_AFTER_REACTIVATE" == "1" ]] || fail "A conta deveria estar ativa após a reativação."
+
+STATUS_AUDIT_DISABLE="$(db_value "SELECT COUNT(*) FROM auditoria WHERE usuario_id = $USUARIO_ID AND acao = 'usuario_desativado' AND entidade = 'usuarios' AND entidade_id = $NOVO_USUARIO_ID")"
+STATUS_AUDIT_REACTIVATE="$(db_value "SELECT COUNT(*) FROM auditoria WHERE usuario_id = $USUARIO_ID AND acao = 'usuario_reativado' AND entidade = 'usuarios' AND entidade_id = $NOVO_USUARIO_ID")"
+[[ "$STATUS_AUDIT_DISABLE" == "1" && "$STATUS_AUDIT_REACTIVATE" == "1" ]] || fail "Desativação e reativação devem gerar exatamente um evento de auditoria cada."
+
 echo "1.2.4/10 - Validando exportações agregadas e bloqueio financeiro por perfil..."
 REPORT_END="$(date +%F)"
 REPORT_START="$(date +%Y-%m-01)"
