@@ -6,6 +6,7 @@ set -Eeuo pipefail
 : "${DB_NAME:=academia_alunos}"
 : "${DB_USER:=root}"
 : "${DB_PASSWORD:=root}"
+export DB_HOST DB_PORT DB_NAME DB_USER DB_PASSWORD
 export MYSQL_PWD="$DB_PASSWORD"
 
 mysql_cli() {

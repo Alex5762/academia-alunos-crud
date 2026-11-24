@@ -155,7 +155,7 @@ jobs:
           DB_USER: root
           DB_PASSWORD: root
         run: bash tests/provision-user.sh
-      - name: Start PHP server and verify authentication, RBAC, CRUD and audit
+      - name: Verify authentication, RBAC, CRUD and audit
         env:
           APP_ENV: production
           DB_HOST: 127.0.0.1

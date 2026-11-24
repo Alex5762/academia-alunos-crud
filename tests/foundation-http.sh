@@ -24,11 +24,11 @@ get_token() {
     printf '%s' "$token"
 }
 db_value() {
-    php -r '
+    SQL_QUERY="$1" php -r '
         $dsn = sprintf("mysql:host=%s;port=%s;dbname=%s;charset=utf8mb4", getenv("DB_HOST"), getenv("DB_PORT"), getenv("DB_NAME"));
         $pdo = new PDO($dsn, getenv("DB_USER"), getenv("DB_PASSWORD"), [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
-        echo $pdo->query($argv[1])->fetchColumn();
-    ' "$1"
+        echo $pdo->query(getenv("SQL_QUERY"))->fetchColumn();
+    '
 }
 login_and_change_password() {
     local jar="$1" email="$2" password="$3" new_password="$4" prefix="$5"
