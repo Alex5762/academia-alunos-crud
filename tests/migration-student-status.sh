@@ -22,21 +22,29 @@ db_value() {
 LEGACY_EMAIL="legacy-migration-004@example.test"
 NEW_EMAIL="default-status-migration-004@example.test"
 LEGACY_ID=""
+NEW_ID=""
 
 cleanup() {
-    if [[ -n "$LEGACY_ID" ]]; then
+    if [[ "$LEGACY_ID" =~ ^[0-9]+$ ]]; then
         db_value "DELETE FROM alunos WHERE id = $LEGACY_ID" >/dev/null 2>&1 || true
     fi
-    db_value "DELETE FROM alunos WHERE email = '$NEW_EMAIL'" >/dev/null 2>&1 || true
+    if [[ "$NEW_ID" =~ ^[0-9]+$ ]]; then
+        db_value "DELETE FROM alunos WHERE id = $NEW_ID" >/dev/null 2>&1 || true
+    fi
 }
-trap cleanup EXIT
 
-echo "1/4 - Inserindo um aluno legado antes da migração 004..."
-EXISTING_FIXTURE="$(db_value "SELECT COUNT(*) FROM alunos WHERE email = '$LEGACY_EMAIL'")"
-[[ "$EXISTING_FIXTURE" == "0" ]] || {
-    echo "FALHA: fixture legado já existe antes do teste." >&2
-    exit 1
-}
+echo "1/4 - Conferindo se as duas identidades de fixture estão livres..."
+for fixture_email in "$LEGACY_EMAIL" "$NEW_EMAIL"; do
+    existing="$(db_value "SELECT COUNT(*) FROM alunos WHERE email = '$fixture_email'")"
+    [[ "$existing" == "0" ]] || {
+        echo "FALHA: fixture $fixture_email já existe antes do teste; nenhum registro será alterado." >&2
+        exit 1
+    }
+done
+
+# Só instala a limpeza depois de validar as duas identidades. A limpeza usa
+# exclusivamente os IDs capturados das linhas criadas por esta execução.
+trap cleanup EXIT
 
 mysql_cli -e "
     INSERT INTO alunos (nome, telefone, email, plano)
@@ -72,7 +80,12 @@ mysql_cli -e "
     INSERT INTO alunos (nome, telefone, email, plano)
     VALUES ('Aluno com status padrão', '(21) 90000-0042', '$NEW_EMAIL', 'Mensal')
 "
-DEFAULT_STATUS="$(db_value "SELECT ativo FROM alunos WHERE email = '$NEW_EMAIL' LIMIT 1")"
+NEW_ID="$(db_value "SELECT id FROM alunos WHERE email = '$NEW_EMAIL' LIMIT 1")"
+[[ "$NEW_ID" =~ ^[0-9]+$ ]] || {
+    echo "FALHA: não foi possível obter o ID do novo aluno fixture." >&2
+    exit 1
+}
+DEFAULT_STATUS="$(db_value "SELECT ativo FROM alunos WHERE id = $NEW_ID")"
 [[ "$DEFAULT_STATUS" == "1" ]] || {
     echo "FALHA: novo aluno não recebeu ativo = 1 por padrão." >&2
     exit 1
