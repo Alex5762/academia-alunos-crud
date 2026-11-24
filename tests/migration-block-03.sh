@@ -6,6 +6,7 @@ MYSQL_PORT="${MYSQL_PORT:-3306}"
 MYSQL_USER="${MYSQL_USER:-root}"
 MYSQL_DATABASE="${MYSQL_DATABASE:-academia_alunos}"
 MYSQL_BIN="${MYSQL_BIN:-mysql}"
+export MYSQL_PWD="${DB_PASSWORD:-root}"
 
 mysql_cmd() {
   "${MYSQL_BIN}" --host="${MYSQL_HOST}" --port="${MYSQL_PORT}" --user="${MYSQL_USER}" --database="${MYSQL_DATABASE}" --batch --skip-column-names "$@"
