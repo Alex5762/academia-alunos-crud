@@ -38,8 +38,10 @@ const requiredCspDirectives = [
   "worker-src 'none'",
 ];
 
-function collectMissingCspDirectives(response, engineName, pageName) {
-  const headers = response?.headers() ?? {};
+async function collectMissingCspDirectives(response, engineName, pageName) {
+  // headers() omite cabeçalhos de segurança em alguns motores/versões.
+  // allHeaders() inclui explicitamente Content-Security-Policy-Report-Only.
+  const headers = await response.allHeaders();
   const policy = headers["content-security-policy-report-only"] ?? "";
   const missing = requiredCspDirectives.filter((directive) => !policy.includes(directive));
   if (missing.length > 0) {
@@ -83,6 +85,7 @@ for (const engine of engines) {
     });
 
     const cspHeaderFailures = [];
+    const cspHeaderChecks = [];
     page.on("pageerror", (error) => pageErrors.push(error.message));
     page.on("response", (response) => {
       if (!response.request().isNavigationRequest()) return;
@@ -93,8 +96,18 @@ for (const engine of engines) {
         return;
       }
       if (responseUrl.origin !== new URL(baseUrl).origin || response.status() >= 400) return;
-      const failure = collectMissingCspDirectives(response, engine.name, responseUrl.pathname);
-      if (failure) cspHeaderFailures.push(failure);
+      cspHeaderChecks.push(
+        collectMissingCspDirectives(response, engine.name, responseUrl.pathname)
+          .then((failure) => {
+            if (failure) cspHeaderFailures.push(failure);
+          })
+          .catch((error) => {
+            cspHeaderFailures.push(
+              engine.name + ": não foi possível ler o cabeçalho CSP em " +
+                responseUrl.pathname + ": " + error.message,
+            );
+          }),
+      );
     });
     await page.addInitScript(() => {
       window.__fitcontrolCspViolations = [];
@@ -477,6 +490,7 @@ for (const engine of engines) {
     ensure(populatedTheme === "dark", engine.name + ": o tema escuro não persistiu ao abrir o perfil com histórico.");
 
     await page.waitForTimeout(100);
+    await Promise.all(cspHeaderChecks);
     const cspViolations = await page.evaluate(
       () => window.__fitcontrolCspViolations ?? [],
     );
