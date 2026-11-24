@@ -44,7 +44,7 @@ try {
     );
     $senhaHash = \FitControl\Security\PasswordPolicy::hash($senhaTemporaria);
 
-    $service = new \\FitControl\\Domain\\Users\\UserAccountAdministrationService($pdo);
+    $service = new \FitControl\Domain\Users\UserAccountAdministrationService($pdo);
     $novoUsuarioId = $service->createAccount(
         (int) $usuario['id'],
         $nome,
@@ -52,7 +52,7 @@ try {
         $senhaHash
     );
 
-    if ($novoUsuarioId === \\FitControl\\Domain\\Users\\UserAccountAdministrationService::UNAUTHORIZED) {
+    if ($novoUsuarioId === \FitControl\Domain\Users\UserAccountAdministrationService::UNAUTHORIZED) {
         http_response_code(403);
         header('Content-Type: text/plain; charset=UTF-8');
         exit('Sua conta não possui mais permissão para administrar funcionários.');
