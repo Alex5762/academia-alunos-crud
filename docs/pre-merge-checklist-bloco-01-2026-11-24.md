@@ -9,9 +9,9 @@ PR: [#2 — integrar fundação de autenticação e segurança](https://github.c
 Checkpoint de revisão final — 2026-11-24:
 
 - Base: `main`, SHA `e1f4c8084dc6dec8c772a699855562944d50e89e`.
-- Branch: `feat/foundation-auth-security`, HEAD de código revisado antes desta atualização documental: `2e600860dadc0d335c5b1608945f11a2a8440163`.
-- Comparação registrada na PR: 65 commits à frente, 0 atrás.
-- Diff: 58 arquivos, 5.753 adições e 73 deleções.
+- Branch: `feat/foundation-auth-security`, HEAD antes desta atualização final do checklist: `8e89c9c1051b365253589ae378a008a8d5c9ba1a`.
+- Comparação registrada na PR: 66 commits à frente, 0 atrás.
+- Diff: 58 arquivos, 5.763 adições e 73 deleções.
 - PR #2: aberta, pronta para revisão (não draft), reportada como mergeable, ainda não mesclada.
 - Revisões formais e threads inline: nenhuma registrada na consulta mais recente.
 
@@ -46,7 +46,8 @@ Os cinco jobs nas duas rodadas documentais passaram: qualidade PHP, MySQL 8.0, M
 
 - [ ] A branch continua baseada na mesma `main` e não ficou atrás dela.
 - [ ] O HEAD atual da PR foi conferido, sem commits inesperados após o checkpoint revisado.
-- [x] Os cinco jobs obrigatórios passaram no HEAD de código revisado `2e600860dadc0d335c5b1608945f11a2a8440163`, nos eventos `push` e `pull_request` (execuções #45432092051 e #45432104997; confirmar conclusão antes de fechar este checklist).
+- [x] Os cinco jobs obrigatórios passaram no evento `pull_request` no HEAD documental `8e89c9c1051b365253589ae378a008a8d5c9ba1a` (execução #45432286395, 5/5). Este é o evento que valida os checks da PR.
+- [ ] O evento `push` do mesmo HEAD (#45432279529) permanece pendente/na fila por uma execução anterior ainda ativa. É uma verificação suplementar; acompanhar, mas não confundir com o resultado verde do evento `pull_request`.
 - [x] Não há conversas de revisão, solicitações de mudança ou comentários pendentes; a PR não possui avaliações formais registradas. Isso não equivale a uma aprovação formal independente.
 - [ ] As regras atuais de proteção da `main` foram conferidas na interface do GitHub. O endpoint de proteção retornou 403 para a integração nesta sessão; o último checkpoint documentado registrava PR obrigatória, cinco checks exigidos, branch atualizada e bloqueio de bypass/force-push/exclusão.
 - [ ] O banco de destino foi identificado e seu backup foi confirmado antes de qualquer migration.
@@ -95,7 +96,7 @@ Commits da correção:
 - `f288d2707f2bfbe08ff60f5035907a4a570e186e` — README.
 - `2e600860dadc0d335c5b1608945f11a2a8440163` — teste HTTP.
 
-A CI do HEAD `2e600860dadc0d335c5b1608945f11a2a8440163` foi iniciada nos eventos `push` (#45432092051) e `pull_request` (#45432104997). Os jobs PHP, Apache e demais verificações estavam em execução/na fila na última consulta; registrar a conclusão final antes de fechar o portão.
+A CI da revisão de navegação no HEAD `2e600860dadc0d335c5b1608945f11a2a8440163` passou no evento `pull_request` (#45432104997), 5/5 jobs. A CI do HEAD documental `8e89c9c1051b365253589ae378a008a8d5c9ba1a` também passou no evento `pull_request` (#45432286395), 5/5 jobs. O evento `push` desse último HEAD (#45432279529) permanece pendente; uma execução push anterior (#45432063265) não terminou normalmente.
 
 ## 9. Estado da decisão
 
