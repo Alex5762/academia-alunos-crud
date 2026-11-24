@@ -61,6 +61,12 @@ unset($_SESSION['mensagem']);
         <?php if (usuarioTemPermissao($usuario, 'users.manage')) { ?>
             <a href="usuarios.php">Gerenciar funcionários</a>
         <?php } ?>
+        <?php if (usuarioTemPermissao($usuario, 'plans.view')) { ?>
+            <a href="planos.php">Planos e matrículas</a>
+        <?php } ?>
+        <?php if (usuarioTemPermissao($usuario, 'legacy.view')) { ?>
+            <a href="revisoes-legado.php">Revisão de vínculos antigos</a>
+        <?php } ?>
         <form action="logout.php" method="post" class="logout-form">
             <input type="hidden" name="token" value="<?= escapar($_SESSION['token']) ?>">
             <button type="submit">Sair</button>
