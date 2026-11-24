@@ -87,3 +87,16 @@ A operação de incremento é serializada pelo UPSERT e o teste de banco comprov
 **Recomendação:** tratar a admissão/consumo de tentativa como operação atômica no início do fluxo de login e adicionar teste HTTP concorrente que prove que o limite é aplicado na entrada, sem expor e-mail/IP na auditoria. Preservar resposta genérica para evitar enumeração de contas. A estratégia deve distinguir tentativas já bloqueadas das falhas efetivamente verificadas e manter a política de janela/expiração documentada.
 
 **Decisão:** pendente antes do merge. Os Achados 1, 2 e 3 da revisão original permanecem resolvidos e validados nas execuções registradas acima; esta é uma observação nova da revisão final, não uma reversão desses resultados.
+
+
+## Resultado da observação adicional — 2026-11-24
+
+**Correção implementada; validação de CI pendente.**
+
+O fluxo HTTP agora usa GET_LOCK/RELEASE_LOCK com chave SHA-256 derivada da combinação de hashes de e-mail e origem. O lock envolve a consulta do estado de bloqueio, a verificação da senha e a gravação da falha/auditoria ou limpeza em login válido. Isso serializa o ciclo por combinação e impede que requisições simultâneas atravessem o mesmo estado desbloqueado.
+
+O desenho preserva a política de cinco falhas em 15 minutos e bloqueio por 15 minutos sem consumir falhas em logins válidos. Tentativas já bloqueadas mantêm a resposta genérica e não criam eventos adicionais. O lock é liberado em finally, antes do redirecionamento de sucesso.
+
+Foi adicionada cobertura HTTP com oito workers e 12 sessões/cookies independentes disparando simultaneamente para o mesmo e-mail/IP. As asserções esperam contador igual a cinco, bloqueio ativo e exatamente cinco eventos de falha auditados sem PII.
+
+**Ponto de validação:** ainda é necessário confirmar a CI completa no novo HEAD, principalmente o teste HTTP concorrente em MySQL 8.0 e a compatibilidade dos named locks em MariaDB 10.11. Até os cinco jobs passarem, esta observação não deve ser marcada como validada e a PR não deve ser mesclada.
