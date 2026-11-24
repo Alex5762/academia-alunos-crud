@@ -90,7 +90,7 @@ curl -sS -o "$TMP_DIR/oversized-login.html" -c "$COOKIE_JAR" -b "$COOKIE_JAR" -X
     --data-urlencode "token=$LOGIN_TOKEN" \
     --data-urlencode "email=provision-ci@example.test" \
     --data-urlencode "senha=$LONG_LOGIN_PASSWORD"
-assert_contains "$TMP_DIR/overlong-login.html" "E-mail ou senha inválidos."
+assert_contains "$TMP_DIR/oversized-login.html" "E-mail ou senha inválidos."
 
 echo "1.0/10 - Limitando tentativas repetidas de login..."
 RATE_EMAIL="rate-limit-ci@example.test"
