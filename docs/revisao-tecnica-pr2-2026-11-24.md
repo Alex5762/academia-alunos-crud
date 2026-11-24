@@ -18,7 +18,7 @@ Os fluxos `trocar-senha.php` e `alterar-senha.php` atualizavam `senha_hash` sem 
 
 ## Achado 2 — auditoria de falhas de login e rate limit
 
-**Severidade: média. Implementado; aguardando CI do novo HEAD.**
+**Severidade: média. Resolvido e validado em CI.**
 
 O rate limit foi extraído para `LoginAttemptRateLimiter`. A política é de cinco falhas em uma janela de 15 minutos, com bloqueio por 15 minutos. O contador fica limitado a cinco mesmo sob concorrência; a atualização do contador e o evento de auditoria são confirmados ou revertidos juntos.
 
@@ -48,16 +48,19 @@ Cada falha de credenciais que passa pelo bloqueio gera `login_falhou` na cadeia 
 
 ## Limites da revisão
 
-A revisão consultou os arquivos e testes versionados no HEAD identificado. Não executou uma instância local de MySQL/Apache nesta sessão. A confirmação final das mudanças depende da CI executada no commit novo.
+A revisão consultou os arquivos e testes versionados no HEAD identificado. A validação de execução foi realizada pela CI remota; não foi executada uma instância local de MySQL/Apache nesta sessão.
 
 ## Decisão atual
 
-**Não aprovar merge ainda.** Fechar o achado 1 com CI verde e tratar os achados 2 e 3 antes de considerar a fundação pronta para integração.
+**Não aprovar merge ainda.** Os achados 1 e 2 estão resolvidos e validados. O Achado 3 permanece pendente e deve ser tratado antes de considerar a fundação pronta para integração.
 
 
 ## Validação do Achado 2
 
-- Implementação e testes commitados na branch `feat/foundation-auth-security`; CI ainda pendente.
-- O teste concorrente executa quatro processos com cinco falhas cada e verifica o contador final limitado a cinco, mantendo um evento de auditoria por falha.
+- Validação final no commit `d52fe3bb0937b2cbaf26313dbfcfd03f31bdd3f8`.
+- Run #45413951571 (push) e run #45413968757 (pull_request): ambos concluídos com sucesso, 5/5 jobs aprovados.
+- O workflow executa uma única vez o teste concorrente por job; a contagem de auditoria compara o delta da própria execução, sem depender de eventos anteriores.
+- O teste concorrente executa quatro processos com cinco falhas cada; verifica contador limitado a cinco, bloqueio ativo e 20 eventos auditados sem PII.
+- A integração HTTP cobre falhas 1–5, bloqueio, tentativa durante bloqueio, expiração/reinício da janela e limpeza após login válido.
 - A expiração é simulada ajustando os timestamps no banco; não exige espera real de 15 minutos.
 - A limpeza automática remove registros de rate limit sem atividade por mais de um dia. A cadeia geral de auditoria permanece append-only e não é apagada automaticamente.
