@@ -165,6 +165,15 @@ jobs:
           DB_PASSWORD: root
         run: |
           bash tests/foundation-http.sh
+      - name: Verify account administration HTTP endpoints and audit integrity
+        env:
+          APP_ENV: production
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_NAME: academia_alunos
+          DB_USER: root
+          DB_PASSWORD: root
+        run: bash tests/foundation-account-http.sh
       - name: Stop PHP server
         if: always()
         run: |
