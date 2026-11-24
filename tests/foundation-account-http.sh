@@ -2,7 +2,7 @@
 set -Eeuo pipefail
 
 BASE_URL="${BASE_URL:-http://127.0.0.1:8080}"
-ADMIN_PASSWORD="SenhaAdminNova-2026!"
+ADMIN_PASSWORD="SenhaAdminVoluntaria-2026!"
 TMP_DIR="$(mktemp -d)"
 ADMIN_JAR="$TMP_DIR/admin.cookies"
 TARGET_JAR="$TMP_DIR/target.cookies"

@@ -6,6 +6,8 @@
 - PR #2: aberta e pronta para revisão; não mesclada.
 - Branch da PR: `feat/foundation-auth-security`.
 - HEAD anterior à correção de sessões: `4e9d3b8074e4d665967d4382d130f6e6d0e4469e`.
+- Correção de revogação de sessões commitada em `0b201b2f30b2ab928f3cf45300e2875a5c69a0b9`.
+- A primeira execução de CI identificou dependência entre as baterias HTTP: a primeira troca voluntariamente a senha do Administrador compartilhado; a segunda ainda tentava usar a senha anterior. O fixture da segunda bateria foi alinhado para usar a senha resultante.
 - `main`: `e1f4c8084dc6dec8c772a699855562944d50e89e`, sem alterações.
 - Proteção da `main`: ativa e confirmada por API (`protected: true`).
 - Regras: PR obrigatória; cinco checks obrigatórios; branch atualizada; bypass, force-push e exclusão bloqueados.
@@ -42,7 +44,7 @@ A revisão identificou que a troca obrigatória (`trocar-senha.php`) e a troca v
 - Expandir `tests/foundation-http.sh`: abrir cookies independentes antes da troca obrigatória e voluntária; comprovar revogação usando `renovar-sessao.php` (HTTP 401); comprovar que a sessão autora permanece válida.
 - Atualizar README para descrever o comportamento.
 
-**Status de validação:** alterações preparadas; CI ainda precisa executar no novo commit. Não considerar o bloqueador fechado até os cinco checks passarem.
+**Status de validação:** correção de código commitada em `0b201b2`; a CI inicial encontrou apenas uma dependência de fixture entre as duas baterias HTTP (senha do administrador compartilhado). O fixture foi alinhado em commit subsequente; aguardar nova CI antes de fechar o bloqueador.
 
 ### Outros pontos identificados, ainda pendentes
 

@@ -12,9 +12,9 @@ A revisão é estática sobre o HEAD `4e9d3b8074e4d665967d4382d130f6e6d0e4469e`.
 
 Os fluxos `trocar-senha.php` e `alterar-senha.php` atualizavam `senha_hash` sem alterar `sessao_versao`. Sessões independentes com cookies já emitidos mantinham a versão persistida e continuavam autenticadas.
 
-**Correção em andamento:** incrementar `sessao_versao` transacionalmente em ambos os fluxos, conferir a versão com `FOR UPDATE`, preservar a sessão que realizou a troca e revogar as outras. A cobertura HTTP abre cookies paralelos e testa `renovar-sessao.php` após a troca.
+**Correção implementada no commit `0b201b2`:** incrementar `sessao_versao` transacionalmente em ambos os fluxos, conferir a versão com `FOR UPDATE`, preservar a sessão que realizou a troca e revogar as outras. A cobertura HTTP abre cookies paralelos e testa `renovar-sessao.php` após a troca.
 
-**Aceitação:** sessão paralela recebe HTTP 401; sessão autora permanece válida; cinco checks CI passam.
+**Aceitação:** sessão paralela recebe HTTP 401; sessão autora permanece válida; cinco checks CI passam. A primeira CI também revelou que a bateria HTTP de administração usava a senha inicial após a bateria anterior alterá-la; o fixture foi corrigido para acompanhar a senha compartilhada.
 
 ## Achado 2 — auditoria de falhas de login e rate limit
 
