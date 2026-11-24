@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/funcoes.php';
 require_once __DIR__ . '/conexao.php';
+require_once __DIR__ . '/src/Security/PasswordPolicy.php';
 $usuario = exigirAutenticacao($pdo);
 $erro = '';
 
@@ -17,8 +18,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (strlen($senhaAtual) > 4096 || strlen($novaSenha) > 4096 || strlen($confirmacao) > 4096) {
         $erro = 'Não foi possível validar os dados informados.';
-    } elseif (strlen($novaSenha) < 12) {
-        $erro = 'A nova senha deve ter pelo menos 12 caracteres.';
+    } elseif (( $erroPolitica = \\FitControl\\Security\\PasswordPolicy::validationError($novaSenha)) !== null) {
+        $erro = $erroPolitica;
     } elseif (!hash_equals($novaSenha, $confirmacao)) {
         $erro = 'A confirmação não corresponde à nova senha.';
     } else {
@@ -44,10 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $pdo->rollBack();
                 $erro = 'Escolha uma senha diferente da senha atual.';
             } else {
-                $hash = password_hash($novaSenha, PASSWORD_DEFAULT);
-                if ($hash === false) {
-                    throw new RuntimeException('Falha ao proteger a nova senha.');
-                }
+                $hash = \\FitControl\\Security\\PasswordPolicy::hash($novaSenha);
                 $atualizar = $pdo->prepare(
                     'UPDATE usuarios SET senha_hash = :hash
                      WHERE id = :id AND ativo = 1 AND deve_trocar_senha = 0'
@@ -104,12 +102,12 @@ $token = escapar($_SESSION['token']);
             <label for="senha-atual">Senha atual</label>
             <input type="password" id="senha-atual" name="senha_atual" autocomplete="current-password" maxlength="4096" required>
             <label for="nova-senha">Nova senha</label>
-            <input type="password" id="nova-senha" name="nova_senha" autocomplete="new-password" minlength="12" maxlength="4096" required>
+            <input type="password" id="nova-senha" name="nova_senha" autocomplete="new-password" minlength="12" maxlength="72" required>
             <label for="confirmacao">Confirme a nova senha</label>
-            <input type="password" id="confirmacao" name="confirmacao" autocomplete="new-password" minlength="12" maxlength="4096" required>
+            <input type="password" id="confirmacao" name="confirmacao" autocomplete="new-password" minlength="12" maxlength="72" required>
             <button class="button button-primary login-submit" type="submit">Salvar nova senha</button>
         </form>
-        <p class="login-footnote">Use pelo menos 12 caracteres e não reutilize a senha atual.</p>
+        <p class="login-footnote">Use pelo menos 12 caracteres e até 72 bytes UTF-8. Não reutilize a senha atual.</p>
     </section>
 </main>
 </body>
