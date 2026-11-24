@@ -355,7 +355,7 @@ try {
 } finally {
     // Este usuário de fixture permanece no banco descartável: a auditoria é append-only
     // e sua FK usa ON DELETE RESTRICT. Não executar estes testes em banco de aplicação.
-if (isset($enrollmentIds) && $enrollmentIds !== []) {
+    if (isset($enrollmentIds) && $enrollmentIds !== []) {
         $placeholders = implode(',', array_fill(0, count($enrollmentIds), '?'));
         $deleteMatriculas = $pdo->prepare(
             "DELETE FROM matriculas WHERE id IN ({$placeholders})"
