@@ -23,7 +23,7 @@ A política é aplicada ao criar novas credenciais e ao definir novas senhas em:
 - troca obrigatória no primeiro acesso;
 - alteração voluntária de senha.
 
-O login rejeita entradas acima de 72 bytes antes de consultar e verificar credenciais. Os hashes existentes não são regravados nem migrados automaticamente. Como o limite é inerente ao bcrypt, usuários com senhas antigas acima de 72 bytes podem autenticar com o prefixo efetivo de até 72 bytes; recomenda-se que alterem a senha após o acesso.
+A política de 72 bytes é aplicada ao definir novas senhas, não ao login. O login preserva o limite de entrada anterior (4.096 bytes) e continua passando a senha informada para `password_verify`, mantendo compatibilidade com credenciais bcrypt antigas que tenham sido criadas com entradas maiores que 72 bytes. Os hashes existentes não são regravados nem migrados automaticamente.
 
 ## Compatibilidade e evolução
 
@@ -43,8 +43,8 @@ Argon2id não foi ativado nesta etapa. A adoção exige confirmar a disponibilid
 - geração e verificação do hash;
 - rejeição de hashing acima do limite.
 
-`tests/integration-crud.sh` também verifica que login e troca obrigatória rejeitam uma entrada de 73 bytes. A CI executa o teste unitário em PHP 8.2.
+`tests/integration-crud.sh` verifica o limite histórico de entrada no login (4.096 bytes) e a rejeição de uma nova senha acima de 72 bytes no fluxo de troca obrigatória. A CI executa o teste unitário em PHP 8.2.
 
 ## Limitações
 
-Esta decisão resolve o truncamento de novas senhas e limita o tamanho efetivo aceito pelo login. Ela não substitui revisão de força de senha, MFA, proteção contra credential stuffing, revogação global de sessões nem auditoria de eventos de autenticação; esses itens pertencem a outros pontos do Bloco 08.1.
+Esta decisão evita truncamento silencioso ao criar novas senhas sem bloquear o login de contas legadas. Ela não substitui revisão de força de senha, MFA, proteção contra credential stuffing, revogação global de sessões nem auditoria de eventos de autenticação; esses itens pertencem a outros pontos do Bloco 08.1.
