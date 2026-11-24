@@ -31,6 +31,10 @@ final class PasswordPolicy
      */
     public static function validationError(string $password): ?string
     {
+        if (strlen($password) > self::MAX_BYTES) {
+            return 'A nova senha não pode ultrapassar 72 bytes. Reduza o tamanho ou use uma frase mais curta.';
+        }
+
         if (str_contains($password, "\0")) {
             return 'A senha contém um caractere não permitido.';
         }
@@ -42,10 +46,6 @@ final class PasswordPolicy
 
         if ($length < self::MIN_LENGTH) {
             return 'A nova senha deve ter pelo menos 12 caracteres.';
-        }
-
-        if (strlen($password) > self::MAX_BYTES) {
-            return 'A nova senha não pode ultrapassar 72 bytes. Reduza o tamanho ou use uma frase mais curta.';
         }
 
         return null;
