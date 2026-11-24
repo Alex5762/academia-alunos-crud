@@ -81,7 +81,7 @@ function runUserAdministrationWorker(array $arguments): never
     $barrierDirectory = (string) ($arguments[5] ?? '');
 
     if (
-        !in_array($mode, ['demote', 'deactivate'], true)
+        !in_array($mode, ['demote', 'deactivate', 'create'], true)
         || $actorId === false || $actorId < 1
         || $targetId === false || $targetId < 1
         || !preg_match('/^fitcontrol_user_admin_[a-f0-9]{8}$/D', basename($barrierDirectory))
@@ -104,6 +104,20 @@ function runUserAdministrationWorker(array $arguments): never
 
     $pdo = userAdministrationConnection();
     $service = new UserAccountAdministrationService($pdo);
+
+    if ($mode === 'create') {
+        $email = 'fitcontrol-create-race-' . $targetId . '@example.invalid';
+        $result = $service->createAccount(
+            (int) $actorId,
+            'Conta criada em corrida',
+            $email,
+            password_hash(bin2hex(random_bytes(16)), PASSWORD_DEFAULT)
+        );
+        fwrite(STDOUT, 'RESULT=' . ($result === UserAccountAdministrationService::UNAUTHORIZED
+            ? UserAccountAdministrationService::UNAUTHORIZED
+            : 'CREATED:' . $result) . PHP_EOL);
+        exit(0);
+    }
 
     $result = $mode === 'demote'
         ? $service->changeProfile((int) $actorId, (int) $targetId, 'GESTOR')
@@ -303,6 +317,98 @@ $activeAdminId = (int) $pdo->query(
      LIMIT 1"
 )->fetchColumn();
 assertUserAdministration($activeAdminId > 0, 'O teste precisa identificar o administrador preservado.');
+
+// Corrida determinística: a criação já foi iniciada enquanto o ator ainda
+// é administrador, mas fica aguardando o lock global. A revogação confirma
+// primeiro; ao obter o lock, o serviço precisa revalidar e negar a criação.
+$raceAdmin = createUserAdministrationFixture($pdo, 'Admin criação concorrente', 'ADMINISTRADOR');
+$raceEmail = 'fitcontrol-create-race-' . $raceAdmin . '@example.invalid';
+$raceBarrier = sys_get_temp_dir()
+    . DIRECTORY_SEPARATOR
+    . 'fitcontrol_user_admin_'
+    . bin2hex(random_bytes(4));
+assertUserAdministration(mkdir($raceBarrier, 0700), 'Não foi possível criar barreira da corrida de criação.');
+
+$raceProcess = null;
+$raceStdout = null;
+$raceStderr = null;
+try {
+    $pdo->beginTransaction();
+    $pdo->query('SELECT id FROM usuarios ORDER BY id FOR UPDATE')->fetchAll(PDO::FETCH_COLUMN);
+
+    $descriptors = [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']];
+    $raceProcess = proc_open(
+        [PHP_BINARY, __FILE__, '--worker', 'create', (string) $raceAdmin, (string) $raceAdmin, $raceBarrier],
+        $descriptors,
+        $racePipes,
+        dirname(__DIR__)
+    );
+    assertUserAdministration(is_resource($raceProcess), 'Não foi possível iniciar worker de criação concorrente.');
+    fclose($racePipes[0]);
+    $raceStdout = $racePipes[1];
+    $raceStderr = $racePipes[2];
+
+    $readyDeadline = hrtime(true) + 15_000_000_000;
+    while (!is_file($raceBarrier . DIRECTORY_SEPARATOR . 'create.ready')) {
+        if (hrtime(true) >= $readyDeadline) {
+            throw new RuntimeException('Worker de criação não chegou à barreira.');
+        }
+        usleep(10_000);
+    }
+
+    $demote = $pdo->prepare(
+        "UPDATE usuarios SET perfil = 'GESTOR' WHERE id = :actor_id AND perfil = 'ADMINISTRADOR'"
+    );
+    $demote->execute(['actor_id' => $raceAdmin]);
+    assertUserAdministration($demote->rowCount() === 1, 'A revogação concorrente deveria rebaixar o ator.');
+    $profileHistory = $pdo->prepare(
+        'INSERT INTO usuarios_perfis_eventos
+            (usuario_id, responsavel_id, perfil_anterior, perfil_novo)
+         VALUES (:target_id, :actor_id, :old_profile, :new_profile)'
+    );
+    $profileHistory->execute([
+        'target_id' => $raceAdmin,
+        'actor_id' => $activeAdminId,
+        'old_profile' => 'ADMINISTRADOR',
+        'new_profile' => 'GESTOR',
+    ]);
+    AuditIntegrityChain::append($pdo, $activeAdminId, 'usuario_perfil_alterado', 'usuarios', $raceAdmin);
+    $pdo->commit();
+
+    file_put_contents($raceBarrier . DIRECTORY_SEPARATOR . 'release', 'go');
+    $raceOutput = stream_get_contents($raceStdout);
+    $raceError = stream_get_contents($raceStderr);
+    fclose($raceStdout);
+    fclose($raceStderr);
+    $raceExit = proc_close($raceProcess);
+    $raceProcess = null;
+
+    assertUserAdministration($raceExit === 0, 'Worker de criação concorrente falhou: ' . trim($raceError));
+    assertUserAdministration(
+        trim($raceOutput) === 'RESULT=' . UserAccountAdministrationService::UNAUTHORIZED,
+        'A criação concorrente deveria ser negada após a revogação; resultado: ' . trim($raceOutput)
+    );
+    $createdRaceAccount = $pdo->prepare('SELECT COUNT(*) FROM usuarios WHERE email = :email');
+    $createdRaceAccount->execute(['email' => $raceEmail]);
+    assertUserAdministration(
+        (int) $createdRaceAccount->fetchColumn() === 0,
+        'A requisição que perdeu a autorização não pode deixar uma conta criada.'
+    );
+} finally {
+    if ($pdo->inTransaction()) {
+        $pdo->rollBack();
+    }
+    if (is_resource($raceProcess)) {
+        proc_terminate($raceProcess);
+        if (is_resource($raceStdout)) fclose($raceStdout);
+        if (is_resource($raceStderr)) fclose($raceStderr);
+        proc_close($raceProcess);
+    }
+    foreach (glob($raceBarrier . DIRECTORY_SEPARATOR . '*') ?: [] as $temporaryFile) {
+        @unlink($temporaryFile);
+    }
+    @rmdir($raceBarrier);
+}
 
 assertUserAdministration(
     $service->changeProfile($activeAdminId, $activeAdminId, 'GESTOR')
