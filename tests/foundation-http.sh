@@ -30,6 +30,13 @@ db_value() {
         echo $pdo->query(getenv("SQL_QUERY"))->fetchColumn();
     '
 }
+db_exec() {
+    SQL_QUERY="$1" php -r '
+        $dsn = sprintf("mysql:host=%s;port=%s;dbname=%s;charset=utf8mb4", getenv("DB_HOST"), getenv("DB_PORT"), getenv("DB_NAME"));
+        $pdo = new PDO($dsn, getenv("DB_USER"), getenv("DB_PASSWORD"), [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
+        $pdo->exec(getenv("SQL_QUERY"));
+    '
+}
 login_and_change_password() {
     local jar="$1" email="$2" password="$3" new_password="$4" prefix="$5"
     local token stale_jar stale_token stale_status
@@ -83,7 +90,60 @@ ANON_CODE="$(curl -sS -o "$TMP_DIR/anonymous.html" -w '%{http_code}' "$BASE_URL/
 CADASTRO_ANON_CODE="$(curl -sS -o /dev/null -w '%{http_code}' "$BASE_URL/cadastro.php")"
 [[ "$CADASTRO_ANON_CODE" == "303" ]] || fail "Cadastro anônimo deveria redirecionar para login; recebeu $CADASTRO_ANON_CODE."
 
+# Uma falha de credenciais é auditada sem registrar e-mail/IP; login válido limpa a combinação.
+curl -fsS -c "$ADMIN_JAR" -b "$ADMIN_JAR" "$BASE_URL/login.php" -o "$TMP_DIR/admin-failure-login.html"
+ADMIN_FAILURE_TOKEN="$(get_token "$TMP_DIR/admin-failure-login.html")"
+ADMIN_FAILURE_CODE="$(curl -sS -o "$TMP_DIR/admin-failure.html" -w '%{http_code}' -b "$ADMIN_JAR" -c "$ADMIN_JAR" "$BASE_URL/login.php" \
+    --data-urlencode "token=$ADMIN_FAILURE_TOKEN" \
+    --data-urlencode "email=provision-ci@example.test" \
+    --data-urlencode "senha=SenhaIncorreta-2026!")"
+[[ "$ADMIN_FAILURE_CODE" == "200" ]] || fail "Falha de credenciais deveria manter resposta genérica; recebeu $ADMIN_FAILURE_CODE."
+grep -Fq 'E-mail ou senha inválidos.' "$TMP_DIR/admin-failure.html" || fail "A falha de login não exibiu mensagem genérica."
+ADMIN_FAILURE_COUNTER="$(db_value "SELECT tentativas FROM login_tentativas WHERE email_hash = SHA2('provision-ci@example.test', 256) AND origem_hash = SHA2('127.0.0.1', 256)")"
+[[ "$ADMIN_FAILURE_COUNTER" == "1" ]] || fail "A falha inicial não incrementou o rate limit."
+ADMIN_FAILURE_AUDIT="$(db_value "SELECT COUNT(*) FROM auditoria WHERE acao='login_falhou' AND usuario_id IS NULL AND entidade='autenticacao' AND entidade_id IS NULL")"
+[[ "$ADMIN_FAILURE_AUDIT" == "1" ]] || fail "A falha de login não foi auditada sem associação de conta."
+
 login_and_change_password "$ADMIN_JAR" "provision-ci@example.test" "$ADMIN_PASSWORD" "SenhaAdminNova-2026!" "admin"
+ADMIN_COUNTER_AFTER_SUCCESS="$(db_value "SELECT COUNT(*) FROM login_tentativas WHERE email_hash = SHA2('provision-ci@example.test', 256) AND origem_hash = SHA2('127.0.0.1', 256)")"
+[[ "$ADMIN_COUNTER_AFTER_SUCCESS" == "0" ]] || fail "Login válido não limpou o contador."
+
+# Cinco falhas em 15 minutos ativam o bloqueio por 15 minutos.
+RATE_LIMIT_JAR="$TMP_DIR/rate-limit.cookies"
+RATE_LIMIT_EMAIL="rate-limit-http@example.test"
+curl -fsS -c "$RATE_LIMIT_JAR" -b "$RATE_LIMIT_JAR" "$BASE_URL/login.php" -o "$TMP_DIR/rate-limit-login.html"
+RATE_LIMIT_TOKEN="$(get_token "$TMP_DIR/rate-limit-login.html")"
+for attempt in 1 2 3 4 5; do
+    rate_status="$(curl -sS -o "$TMP_DIR/rate-limit-failure-$attempt.html" -w '%{http_code}' -b "$RATE_LIMIT_JAR" -c "$RATE_LIMIT_JAR" "$BASE_URL/login.php" \
+        --data-urlencode "token=$RATE_LIMIT_TOKEN" \
+        --data-urlencode "email=$RATE_LIMIT_EMAIL" \
+        --data-urlencode "senha=SenhaIncorreta-2026!")"
+    [[ "$rate_status" == "200" ]] || fail "Falha $attempt do rate limit retornou HTTP $rate_status."
+    rate_count="$(db_value "SELECT tentativas FROM login_tentativas WHERE email_hash = SHA2('$RATE_LIMIT_EMAIL', 256) AND origem_hash = SHA2('127.0.0.1', 256)")"
+    [[ "$rate_count" == "$attempt" ]] || fail "Após $attempt falhas, contador esperado $attempt; recebeu $rate_count."
+done
+RATE_BLOCKED_UNTIL="$(db_value "SELECT (bloqueado_ate > NOW()) FROM login_tentativas WHERE email_hash = SHA2('$RATE_LIMIT_EMAIL', 256) AND origem_hash = SHA2('127.0.0.1', 256)")"
+[[ "$RATE_BLOCKED_UNTIL" == "1" ]] || fail "A quinta falha não ativou o bloqueio."
+RATE_AUDIT_BASE="$(db_value "SELECT COUNT(*) FROM auditoria WHERE acao='login_falhou'")"
+RATE_BLOCKED_STATUS="$(curl -sS -o "$TMP_DIR/rate-limit-blocked.html" -w '%{http_code}' -b "$RATE_LIMIT_JAR" -c "$RATE_LIMIT_JAR" "$BASE_URL/login.php" \
+    --data-urlencode "token=$RATE_LIMIT_TOKEN" \
+    --data-urlencode "email=$RATE_LIMIT_EMAIL" \
+    --data-urlencode "senha=SenhaIncorreta-2026!")"
+[[ "$RATE_BLOCKED_STATUS" == "200" ]] || fail "Tentativa bloqueada deveria manter resposta genérica."
+RATE_COUNT_BLOCKED="$(db_value "SELECT tentativas FROM login_tentativas WHERE email_hash = SHA2('$RATE_LIMIT_EMAIL', 256) AND origem_hash = SHA2('127.0.0.1', 256)")"
+RATE_AUDIT_BLOCKED="$(db_value "SELECT COUNT(*) FROM auditoria WHERE acao='login_falhou'")"
+[[ "$RATE_COUNT_BLOCKED" == "5" && "$RATE_AUDIT_BLOCKED" == "$RATE_AUDIT_BASE" ]] || fail "Tentativa bloqueada alterou contador ou gerou evento indevido."
+
+# Simula a passagem da janela e do bloqueio sem esperar 15 minutos.
+db_exec "UPDATE login_tentativas SET janela_inicio = DATE_SUB(NOW(), INTERVAL 16 MINUTE), bloqueado_ate = DATE_SUB(NOW(), INTERVAL 1 SECOND) WHERE email_hash = SHA2('$RATE_LIMIT_EMAIL', 256) AND origem_hash = SHA2('127.0.0.1', 256)"
+RATE_AFTER_EXPIRY="$(curl -sS -o "$TMP_DIR/rate-limit-after-expiry.html" -w '%{http_code}' -b "$RATE_LIMIT_JAR" -c "$RATE_LIMIT_JAR" "$BASE_URL/login.php" \
+    --data-urlencode "token=$RATE_LIMIT_TOKEN" \
+    --data-urlencode "email=$RATE_LIMIT_EMAIL" \
+    --data-urlencode "senha=SenhaIncorreta-2026!")"
+[[ "$RATE_AFTER_EXPIRY" == "200" ]] || fail "A tentativa após expiração deveria ser processada."
+RATE_COUNT_RESET="$(db_value "SELECT tentativas FROM login_tentativas WHERE email_hash = SHA2('$RATE_LIMIT_EMAIL', 256) AND origem_hash = SHA2('127.0.0.1', 256)")"
+[[ "$RATE_COUNT_RESET" == "1" ]] || fail "A expiração não reiniciou a janela em uma tentativa."
+
 
 # Troca voluntária também revoga outra sessão e preserva a sessão que fez a alteração.
 ADMIN_VOLUNTARY_STALE_JAR="$TMP_DIR/admin-voluntary-stale.cookies"
