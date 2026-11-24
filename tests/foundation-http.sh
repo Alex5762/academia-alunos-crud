@@ -136,6 +136,18 @@ grep -Fq 'Você não pode desativar sua própria conta.' "$TMP_DIR/admin-self-de
 ADMIN_STILL_ACTIVE="$(db_value "SELECT ativo FROM usuarios WHERE id = $ADMIN_ID")"
 [[ "$ADMIN_STILL_ACTIVE" == "1" ]] || fail "O Administrador conseguiu desativar a própria conta."
 
+# Cria uma segunda sessão independente e preserva seu cookie até depois da reativação.
+# A primeira sessão será consultada enquanto a conta estiver inativa; esta não.
+OPERATOR_STALE_JAR="$TMP_DIR/operator-stale.cookies"
+curl -fsS -c "$OPERATOR_STALE_JAR" -b "$OPERATOR_STALE_JAR" "$BASE_URL/login.php" -o "$TMP_DIR/operator-stale-login.html"
+OPERATOR_STALE_TOKEN="$(get_token "$TMP_DIR/operator-stale-login.html")"
+curl -fsS -L -c "$OPERATOR_STALE_JAR" -b "$OPERATOR_STALE_JAR" "$BASE_URL/login.php" \
+    --data-urlencode "token=$OPERATOR_STALE_TOKEN" \
+    --data-urlencode "email=operator-http@example.test" \
+    --data-urlencode "senha=SenhaOperadorNova-2026!" \
+    -o "$TMP_DIR/operator-stale-session.html"
+grep -Fq 'Cadastro de alunos' "$TMP_DIR/operator-stale-session.html" || fail "A segunda sessão independente não foi autenticada."
+
 # Desativação revoga a sessão existente.
 TOKEN="$(get_token "$TMP_DIR/operator-demoted.html")"
 curl -fsS -L -b "$ADMIN_JAR" -c "$ADMIN_JAR" "$BASE_URL/alterar-status-usuario.php" \
@@ -155,8 +167,8 @@ curl -fsS -L -b "$ADMIN_JAR" -c "$ADMIN_JAR" "$BASE_URL/alterar-status-usuario.p
 grep -Fq 'Conta reativada com sucesso.' "$TMP_DIR/operator-reactivated.html" || fail "O endpoint não reativou a conta."
 OPERATOR_ACTIVE="$(db_value "SELECT ativo FROM usuarios WHERE id = $OPERATOR_ID")"
 [[ "$OPERATOR_ACTIVE" == "1" ]] || fail "A conta não foi reativada."
-STALE_AFTER_REACTIVATION_CODE="$(curl -sS -o "$TMP_DIR/operator-stale-after-reactivation.html" -w '%{http_code}' -b "$OPERATOR_JAR" -c "$OPERATOR_JAR" "$BASE_URL/index.php")"
-[[ "$STALE_AFTER_REACTIVATION_CODE" == "303" ]] || fail "A sessão antiga voltou a funcionar após reativação; esperava 303 e recebeu $STALE_AFTER_REACTIVATION_CODE."
+STALE_AFTER_REACTIVATION_CODE="$(curl -sS -o "$TMP_DIR/operator-stale-after-reactivation.html" -w '%{http_code}' -b "$OPERATOR_STALE_JAR" -c "$OPERATOR_STALE_JAR" "$BASE_URL/index.php")"
+[[ "$STALE_AFTER_REACTIVATION_CODE" == "303" ]] || fail "A segunda sessão, preservada sem uso durante a desativação, voltou a funcionar após reativação; esperava 303 e recebeu $STALE_AFTER_REACTIVATION_CODE."
 
 # Uma sessão nova, autenticada depois da reativação, deve funcionar.
 rm -f "$OPERATOR_JAR"
