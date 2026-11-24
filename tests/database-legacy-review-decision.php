@@ -316,6 +316,22 @@ try {
         'Repetição não pode duplicar evento.'
     );
 
+    // Uma repetição que tenta introduzir preço comprovado divergente não é idêntica.
+    assertLegacyReviewRejected(
+        fn () => $service->decide(
+            $studentIds[0],
+            $reviewIds[0],
+            $actorId,
+            'VINCULO_CONFIRMADO',
+            'Contrato físico, pasta 2025/12, folha 18',
+            'Vigência conferida no documento original.',
+            legacyLocalDate('2025-12-01 00:00:00'),
+            legacyLocalDate('2026-01-01 00:00:00'),
+            '99.90'
+        ),
+        'Repetição não pode introduzir preço diferente no snapshot histórico'
+    );
+
     // Se uma evidência posterior gerar dúvida, a revisão volta a PENDENTE sem
     // apagar/cancelar a matrícula provisória; uma confirmação posterior reutiliza
     // o mesmo intervalo e o mesmo registro, sem duplicar a matrícula LEGADO.
@@ -334,6 +350,23 @@ try {
     assertLegacyReview(
         (int) $pdo->query('SELECT COUNT(*) FROM matriculas WHERE aluno_id = ' . $studentIds[0] . " AND origem = 'LEGADO'")->fetchColumn() === 1,
         'Reabrir a revisão não pode apagar nem duplicar o vínculo legado.'
+    );
+
+    // A reconfirmação também não pode acrescentar silenciosamente um snapshot
+    // divergente à matrícula LEGADO já materializada.
+    assertLegacyReviewRejected(
+        fn () => $service->decide(
+            $studentIds[0],
+            $reviewIds[0],
+            $actorId,
+            'VINCULO_CONFIRMADO',
+            'Contrato físico revalidado, pasta 2025/12, folha 18',
+            'Intervalo original confirmado novamente após revisão da nova evidência.',
+            legacyLocalDate('2025-12-01 00:00:00'),
+            legacyLocalDate('2026-01-01 00:00:00'),
+            '99.90'
+        ),
+        'Reconfirmação não pode alterar snapshot histórico opcional'
     );
 
     $reconfirmedLegacyId = $service->decide(
