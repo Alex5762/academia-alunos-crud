@@ -85,8 +85,8 @@ HTTP_CODE="$(curl -sS -o "$TMP_DIR/bad-login.html" -w '%{http_code}' -c "$COOKIE
 [[ "$HTTP_CODE" == "200" ]] || fail "Login inválido deveria retornar a tela com HTTP 200."
 assert_contains "$TMP_DIR/bad-login.html" "E-mail ou senha inválidos."
 
-LONG_LOGIN_PASSWORD="$(printf '%073d' 0)"
-curl -sS -o "$TMP_DIR/overlong-login.html" -c "$COOKIE_JAR" -b "$COOKIE_JAR" -X POST "$BASE_URL/login.php" \
+LONG_LOGIN_PASSWORD="$(printf '%04097d' 0)"
+curl -sS -o "$TMP_DIR/oversized-login.html" -c "$COOKIE_JAR" -b "$COOKIE_JAR" -X POST "$BASE_URL/login.php" \
     --data-urlencode "token=$LOGIN_TOKEN" \
     --data-urlencode "email=provision-ci@example.test" \
     --data-urlencode "senha=$LONG_LOGIN_PASSWORD"
