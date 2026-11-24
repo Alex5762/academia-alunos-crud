@@ -60,17 +60,16 @@ Ficam fora: matrículas, frequência, financeiro, grade, dashboard completo, rel
 
 ## Próxima sequência
 
-1. Correção de revogação de sessões validada no HEAD `6282bb0`; runs push #45399787132 e pull_request #45399800406 verdes (5/5 cada).
-2. Próxima etapa: tratar auditoria de falhas de login e testes de rate limit.
-3. Depois, tratar revalidação de autorização na criação administrativa de contas.
-4. Reexecutar e confirmar os cinco checks após cada alteração.
-5. Atualizar este documento e o parecer de revisão a cada etapa.
-6. Não fazer merge sem autorização explícita do usuário.
+1. Achado 1 — revogação de sessões paralelas após troca de senha: resolvido e validado em CI.
+2. Achado 2 — auditoria de falhas de login e rate limit: resolvido e validado em CI no commit `d52fe3bb0937b2cbaf26313dbfcfd03f31bdd3f8`.
+3. Próxima etapa: tratar o Achado 3 — revalidação da autorização dentro da transação de criação de contas.
+4. Reexecutar e confirmar os cinco checks após a correção do Achado 3.
+5. Não fazer merge sem autorização explícita do usuário.
 
 
 ## Etapa 2 — rate limit e auditoria de falhas de login
 
-**Implementação commitada; CI do novo HEAD pendente.**
+**Implementação concluída e validada em CI.**
 
 - Criado `src/Security/LoginAttemptRateLimiter.php` para centralizar consulta, bloqueio, registro e limpeza de tentativas.
 - Política: cinco falhas em janela de 15 minutos; bloqueio por 15 minutos. O contador permanece limitado a cinco mesmo sob requisições concorrentes.
@@ -81,9 +80,20 @@ Ficam fora: matrículas, frequência, financeiro, grade, dashboard completo, rel
 - Novo `tests/database-login-rate-limit.php` cobre concorrência com quatro processos, contador limitado, auditoria sem PII, expiração, limpeza e integridade da cadeia.
 - CI adicionada para executar o teste concorrente no MySQL 8.0 e MariaDB 10.11.
 
-### Próximos passos
+### Resultado e próximos passos
 
-1. Confirmar resultado dos cinco checks no novo HEAD.
-2. Corrigir qualquer incompatibilidade identificada pela CI.
-3. Tratar o Achado 3: revalidar autorização administrativa dentro da transação de criação de contas.
+1. Runs #45413951571 (push) e #45413968757 (pull_request), no commit `d52fe3bb0937b2cbaf26313dbfcfd03f31bdd3f8`: ambos verdes, 5/5 jobs.
+2. A etapa duplicada do teste concorrente foi removida; a asserção de auditoria compara a diferença de eventos gerados pela própria bateria.
+3. Próxima etapa: tratar o Achado 3 — revalidar a autorização administrativa dentro da transação de criação de contas.
 4. Não fazer merge sem autorização explícita.
+
+
+## Validação final do Achado 2 — 2026-11-24
+
+- HEAD validado: `d52fe3bb0937b2cbaf26313dbfcfd03f31bdd3f8`.
+- Run #45413951571 (push): sucesso, 5/5 jobs.
+- Run #45413968757 (pull_request): sucesso, 5/5 jobs.
+- Jobs aprovados em ambos: PHP quality and unit tests; Foundation database (MySQL 8.0); Foundation database (MariaDB 10.11); Foundation HTTP integration (MySQL 8.0); Apache webroot protection.
+- O workflow executa somente uma vez o teste concorrente por job. A asserção compara o delta de eventos `login_falhou` criados pelo teste; a cadeia geral continua append-only.
+- `main` permanece em `e1f4c8084dc6dec8c772a699855562944d50e89e`; PR #2 permanece aberta e não mesclada.
+- Achado 3 é o único dos três achados da revisão técnica ainda pendente.
