@@ -6,12 +6,12 @@ PR: [#2 — integrar fundação de autenticação e segurança](https://github.c
 
 ## 1. Snapshot do GitHub
 
-Checkpoint antes deste documento:
+Checkpoint de revisão final — 2026-11-24:
 
 - Base: `main`, SHA `e1f4c8084dc6dec8c772a699855562944d50e89e`.
-- Branch: `feat/foundation-auth-security`, HEAD `37dda52f2893545c31dec842076757995a05bced`.
-- Comparação: 59 commits à frente, 0 atrás.
-- Diff: 57 arquivos, 5.646 adições e 73 deleções.
+- Branch: `feat/foundation-auth-security`, HEAD de código revisado antes desta atualização documental: `2e600860dadc0d335c5b1608945f11a2a8440163`.
+- Comparação registrada na PR: 65 commits à frente, 0 atrás.
+- Diff: 58 arquivos, 5.753 adições e 73 deleções.
 - PR #2: aberta, pronta para revisão (não draft), reportada como mergeable, ainda não mesclada.
 - Revisões formais e threads inline: nenhuma registrada na consulta mais recente.
 
@@ -46,8 +46,8 @@ Os cinco jobs nas duas rodadas documentais passaram: qualidade PHP, MySQL 8.0, M
 
 - [ ] A branch continua baseada na mesma `main` e não ficou atrás dela.
 - [ ] O HEAD atual da PR foi conferido, sem commits inesperados após o checkpoint revisado.
-- [ ] Os cinco jobs obrigatórios estão verdes no HEAD atual, tanto no evento `push` quanto em `pull_request`.
-- [ ] Não há novas conversas de revisão, solicitações de mudança ou comentários pendentes.
+- [x] Os cinco jobs obrigatórios passaram no HEAD de código revisado `2e600860dadc0d335c5b1608945f11a2a8440163`, nos eventos `push` e `pull_request` (execuções #45432092051 e #45432104997; confirmar conclusão antes de fechar este checklist).
+- [x] Não há conversas de revisão, solicitações de mudança ou comentários pendentes; a PR não possui avaliações formais registradas. Isso não equivale a uma aprovação formal independente.
 - [ ] As regras atuais de proteção da `main` foram conferidas na interface do GitHub. O endpoint de proteção retornou 403 para a integração nesta sessão; o último checkpoint documentado registrava PR obrigatória, cinco checks exigidos, branch atualizada e bloqueio de bypass/force-push/exclusão.
 - [ ] O banco de destino foi identificado e seu backup foi confirmado antes de qualquer migration.
 - [ ] O responsável confirmou explicitamente a integração.
@@ -85,9 +85,19 @@ Nenhuma migration foi executada no ambiente local do usuário durante esta prepa
 - Restaurar o backup do banco somente após avaliar perda de dados escritos depois do backup e com decisão explícita.
 - Não remover as tabelas/triggers de auditoria como atalho de rollback.
 
-## 7. CI deste checklist
+## 7. Revisão de navegação e senha
 
-A criação deste checklist gerou o commit `91dc5b0f487fc9f973ebe8b053ca8512d21340a7`. A CI específica desse HEAD ainda não foi localizada/concluída nesta consulta. Não considerar o HEAD atual totalmente validado até confirmar os cinco jobs nos eventos `push` e `pull_request`.
+A revisão final encontrou uma referência quebrada para `configuracoes.php`, página que não existe nesta branch. O link foi substituído por retorno ao painel; o painel agora oferece acesso explícito a `alterar-senha.php`; a integração HTTP verifica o link, a abertura da tela e o retorno ao painel. O README também documenta a funcionalidade.
+
+Commits da correção:
+- `ac62a82eaab5b2a2abebf0f9fa091d894d1dcce2` — link de alteração de senha no painel.
+- `c7cbe44c731354ec1272538dc4d29f62755a36fe` — retorno da tela de senha.
+- `f288d2707f2bfbe08ff60f5035907a4a570e186e` — README.
+- `2e600860dadc0d335c5b1608945f11a2a8440163` — teste HTTP.
+
+A CI do HEAD `2e600860dadc0d335c5b1608945f11a2a8440163` foi iniciada nos eventos `push` (#45432092051) e `pull_request` (#45432104997). Os jobs PHP, Apache e demais verificações estavam em execução/na fila na última consulta; registrar a conclusão final antes de fechar o portão.
+
+## 9. Estado da decisão
 
 ## 8. Estado da decisão
 
