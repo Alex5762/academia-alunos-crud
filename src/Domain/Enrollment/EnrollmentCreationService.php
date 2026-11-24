@@ -288,7 +288,7 @@ final class EnrollmentCreationService
             }
 
             // 7. A matrícula e sua auditoria são atômicas neste bloco.
-            \\FitControl\\Security\\AuditIntegrityChain::append(
+            \FitControl\Security\AuditIntegrityChain::append(
                 $this->pdo, $actorUserId, 'matricula_criada', 'matriculas', $enrollmentId
             );
 
