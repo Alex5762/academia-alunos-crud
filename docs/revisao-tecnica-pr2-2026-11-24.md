@@ -73,3 +73,17 @@ A revisão consultou os arquivos e testes versionados no HEAD identificado. A va
 - O teste concorrente de administração cobre pré-autorização, revogação de perfil antes da obtenção do lock, negação da criação, ausência de conta persistida, caminho autorizado e evento de auditoria.
 - Run #45417710794 (push) e run #45417736963 (pull_request), no commit `c46373aa2abf20726ff113f70f8d8780defc0cd8`: ambos concluídos com sucesso, 5/5 jobs aprovados em cada.
 - O teste de administração de contas foi executado nos bancos MySQL 8.0 e MariaDB 10.11; o fluxo HTTP de criação existente também passou.
+
+## Revisão complementar do diff completo — 2026-11-24
+
+**Observação adicional antes do merge — admissão concorrente no rate limit.**
+
+A implementação atual consulta `LoginAttemptRateLimiter::isBlocked()` em `login.php` antes de verificar a senha. Se a combinação ainda não estiver bloqueada, a requisição segue; somente depois de uma credencial inválida ela chama `recordFailure()`, que incrementa o contador e grava `login_falhou` atomicamente.
+
+A operação de incremento é serializada pelo UPSERT e o teste de banco comprova que 20 falhas concorrentes deixam o contador limitado a cinco e registram 20 eventos. Entretanto, esse teste não cobre a admissão HTTP: várias requisições podem consultar o estado desbloqueado antes de qualquer uma gravar o bloqueio. Portanto, o contador final correto não prova que tentativas simultâneas foram impedidas de prosseguir.
+
+**Cobertura existente:** a integração HTTP cobre cinco tentativas sequenciais, bloqueio subsequente, expiração/reinício e limpeza após login válido. Não foi localizado teste HTTP concorrente que sincronize múltiplas requisições antes da consulta de bloqueio.
+
+**Recomendação:** tratar a admissão/consumo de tentativa como operação atômica no início do fluxo de login e adicionar teste HTTP concorrente que prove que o limite é aplicado na entrada, sem expor e-mail/IP na auditoria. Preservar resposta genérica para evitar enumeração de contas. A estratégia deve distinguir tentativas já bloqueadas das falhas efetivamente verificadas e manter a política de janela/expiração documentada.
+
+**Decisão:** pendente antes do merge. Os Achados 1, 2 e 3 da revisão original permanecem resolvidos e validados nas execuções registradas acima; esta é uma observação nova da revisão final, não uma reversão desses resultados.
