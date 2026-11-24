@@ -17,6 +17,25 @@ assert_contains() {
     grep -Fq -- "$expected" "$file" || fail "Não encontrei '$expected' em $file"
 }
 
+assert_header_contains() {
+    local file="$1"
+    local header_name="$2"
+    local expected="$3"
+    local actual
+
+    actual="$(awk -v name="${header_name,,}" '
+        tolower($0) ~ "^" name ":" {
+            sub(/^[^:]*:[[:space:]]*/, "")
+            sub(/\r$/, "")
+            value = $0
+        }
+        END { print value }
+    ' "$file")"
+
+    [[ "${actual,,}" == *"${expected,,}"* ]] ||
+        fail "Cabeçalho $header_name deveria conter '$expected'; recebeu '$actual'."
+}
+
 get_token() {
     local file="$1"
     local token
@@ -69,12 +88,76 @@ grep -Fq 'login.php' "$TMP_DIR/anonymous.html" && fail "Redirecionamento inesper
 HTTP_CODE="$(curl -sS -o "$TMP_DIR/detail-anonymous.html" -w '%{http_code}' -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/detalhes-aluno.php?id=1")"
 [[ "$HTTP_CODE" == "303" ]] || fail "Perfil de aluno anônimo deveria redirecionar para login; retornou $HTTP_CODE."
 
-CACHE_CONTROL="$(curl -sSI "$BASE_URL/login.php" | tr -d '\r' | grep -i '^Cache-Control:' | tail -n 1)"
-[[ "$CACHE_CONTROL" == *"no-store"* ]] || fail "Login não enviou Cache-Control: no-store."
-FRAME_POLICY="$(curl -sSI "$BASE_URL/login.php" | tr -d '\r' | grep -i '^X-Frame-Options:' | tail -n 1)"
-[[ "$FRAME_POLICY" == *"DENY"* ]] || fail "Login não bloqueou incorporação em iframe."
-NOSNIFF="$(curl -sSI "$BASE_URL/login.php" | tr -d '\r' | grep -i '^X-Content-Type-Options:' | tail -n 1)"
-[[ "$NOSNIFF" == *"nosniff"* ]] || fail "Login não enviou X-Content-Type-Options: nosniff."
+LOGIN_HEADERS="$TMP_DIR/login-security-headers.txt"
+curl -sS -D "$LOGIN_HEADERS" -o /dev/null -c "$TMP_DIR/header-cookie.txt" "$BASE_URL/login.php"
+assert_header_contains "$LOGIN_HEADERS" "Cache-Control" "no-store"
+assert_header_contains "$LOGIN_HEADERS" "Cache-Control" "private"
+assert_header_contains "$LOGIN_HEADERS" "Cache-Control" "max-age=0"
+assert_header_contains "$LOGIN_HEADERS" "Pragma" "no-cache"
+assert_header_contains "$LOGIN_HEADERS" "X-Frame-Options" "DENY"
+assert_header_contains "$LOGIN_HEADERS" "X-Content-Type-Options" "nosniff"
+assert_header_contains "$LOGIN_HEADERS" "Referrer-Policy" "strict-origin-when-cross-origin"
+assert_header_contains "$LOGIN_HEADERS" "Permissions-Policy" "camera=(), microphone=(), geolocation=()"
+
+SESSION_COOKIE="$(awk 'tolower($0) ~ /^set-cookie: fitcontrolsessid=/ { sub(/^[^:]*:[[:space:]]*/, ""); sub(/\r$/, ""); value = $0 } END { print value }' "$LOGIN_HEADERS")"
+[[ -n "$SESSION_COOKIE" ]] || fail "Login não definiu o cookie FITCONTROLSESSID."
+SESSION_COOKIE_LOWER="${SESSION_COOKIE,,}"
+for atributo in "path=/" "httponly" "samesite=lax"; do
+    [[ "$SESSION_COOKIE_LOWER" == *"$atributo"* ]] ||
+        fail "Cookie de sessão não contém o atributo obrigatório '$atributo'."
+done
+[[ "$SESSION_COOKIE_LOWER" != *"; secure"* ]] ||
+    fail "O ambiente de teste HTTP recebeu cookie Secure inesperadamente."
+[[ "$SESSION_COOKIE_LOWER" != *"expires="* && "$SESSION_COOKIE_LOWER" != *"max-age="* ]] ||
+    fail "O cookie de sessão deveria ser de duração de sessão, sem expiração persistente."
+
+check_session_configuration() {
+    local expected_secure="$1"
+    local scenario="$2"
+    local session_path="$TMP_DIR/session-$scenario"
+    mkdir -p "$session_path"
+
+    SESSION_EXPECT_SECURE="$expected_secure" SESSION_SAVE_PATH="$session_path" php -r '
+        $_SERVER["HTTPS"] = getenv("SESSION_EXPECT_SECURE") === "1" ? "on" : "off";
+        ini_set("session.save_path", getenv("SESSION_SAVE_PATH"));
+        require "funcoes.php";
+
+        $parameters = session_get_cookie_params();
+        $expectedSecure = getenv("SESSION_EXPECT_SECURE") === "1";
+        $checks = [
+            "nome fixo" => session_name() === "FITCONTROLSESSID",
+            "modo estrito" => ini_get("session.use_strict_mode") === "1",
+            "somente cookies" => ini_get("session.use_only_cookies") === "1",
+            "sem session id em URL" => ini_get("session.use_trans_sid") === "0",
+            "cookie de sessão" => (int) $parameters["lifetime"] === 0,
+            "path raiz" => $parameters["path"] === "/",
+            "HttpOnly" => $parameters["httponly"] === true,
+            "SameSite Lax" => ($parameters["samesite"] ?? "") === "Lax",
+            "atributo Secure coerente com HTTPS" => $parameters["secure"] === $expectedSecure
+        ];
+
+        $failures = 0;
+        foreach ($checks as $label => $passed) {
+            if (!$passed) {
+                fwrite(STDERR, "FALHA: configuração de sessão: {$label}.\n");
+                $failures++;
+            }
+        }
+
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            session_destroy();
+        }
+
+        if ($failures > 0) {
+            exit(1);
+        }
+
+        echo "OK: configuração de sessão em cenário " . ($expectedSecure ? "HTTPS" : "HTTP") . ".\n";
+    ' || fail "A configuração de sessão falhou no cenário $scenario."
+}
+
+check_session_configuration 0 "http"
+check_session_configuration 1 "https"
 
 curl -fsS -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/login.php" -o "$TMP_DIR/login.html"
 LOGIN_TOKEN="$(get_token "$TMP_DIR/login.html")"
@@ -125,17 +208,23 @@ RATE_STILL_BLOCKED="$(db_value "SELECT COUNT(*) FROM login_tentativas WHERE emai
 
 curl -fsS -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/login.php" -o "$TMP_DIR/login-again.html"
 LOGIN_TOKEN="$(get_token "$TMP_DIR/login-again.html")"
+PREAUTH_SESSION_ID="$(awk '$6 == "FITCONTROLSESSID" {print $7}' "$COOKIE_JAR" | tail -n 1)"
+[[ -n "$PREAUTH_SESSION_ID" ]] || fail "Não foi possível identificar a sessão pré-autenticação."
 curl -fsS -L -c "$COOKIE_JAR" -b "$COOKIE_JAR" "$BASE_URL/login.php" \
     --data-urlencode "token=$LOGIN_TOKEN" \
     --data-urlencode "email=provision-ci@example.test" \
     --data-urlencode "senha=$FITCONTROL_TEST_PASSWORD" \
     -o "$TMP_DIR/login-success.html"
 assert_contains "$TMP_DIR/login-success.html" "Crie sua senha pessoal"
+AUTHENTICATED_SESSION_ID="$(awk '$6 == "FITCONTROLSESSID" {print $7}' "$COOKIE_JAR" | tail -n 1)"
+[[ -n "$AUTHENTICATED_SESSION_ID" && "$AUTHENTICATED_SESSION_ID" != "$PREAUTH_SESSION_ID" ]] ||
+    fail "O ID de sessão não foi renovado no login bem-sucedido."
 CLEARED_RATE_LIMIT="$(db_value "SELECT COUNT(*) FROM login_tentativas WHERE email_hash = '$(printf '%s' 'provision-ci@example.test' | sha256sum | awk '{print $1}')' AND origem_hash = '$(printf '%s' '127.0.0.1' | sha256sum | awk '{print $1}')'")"
 [[ "$CLEARED_RATE_LIMIT" == "0" ]] || fail "Login válido não limpou as tentativas anteriores."
 
 echo "1.1/10 - Exigindo troca da senha temporária no primeiro acesso..."
 PASSWORD_TOKEN="$(get_token "$TMP_DIR/login-success.html")"
+[[ "$PASSWORD_TOKEN" != "$LOGIN_TOKEN" ]] || fail "O token CSRF não foi renovado após a autenticação."
 FITCONTROL_LONG_PASSWORD="$(printf '%073d' 0)"
 curl -sS -o "$TMP_DIR/first-password-overlong.html" -c "$COOKIE_JAR" -b "$COOKIE_JAR" -X POST "$BASE_URL/trocar-senha.php" \
     --data-urlencode "token=$PASSWORD_TOKEN" \
