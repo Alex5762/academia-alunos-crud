@@ -61,7 +61,7 @@ foreach ($processes as [$process, $stdout, $stderr]) {
 
 $find = $pdo->prepare(
     'SELECT tentativas, bloqueado_ate FROM login_tentativas
-     WHERE email_hash = :email_hash AND origem_hash = :origin_hash'
+     WHERE email_hash = :email_hash AND origem_hash = :origem_hash'
 );
 $find->execute(['email_hash' => $emailHash, 'origin_hash' => $originHash]);
 $attempt = $find->fetch(PDO::FETCH_ASSOC);
