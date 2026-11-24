@@ -37,6 +37,10 @@ O mesmo teste executa uma verificação isolada da inicialização de sessão co
 - cookie não persistente, caminho raiz, `HttpOnly` e `SameSite=Lax`;
 - atributo `Secure` desativado em HTTP e ativado em HTTPS.
 
+A CI [#1699](https://github.com/Alex5762/academia-alunos-crud/actions/runs/45327940726) aprovou todos os sete jobs funcionais no commit `78ae6b59f10709371e3214383901e4cec09c2869`. Os logs confirmam os cenários HTTP e HTTPS simulados e a integração HTTP completa.
+
+Durante a inclusão das asserções, a CI identificou que o limitador de cache padrão do PHP acrescentava um `Cache-Control` diferente do cabeçalho explícito da aplicação. A inicialização agora chama `session_cache_limiter('')` antes de `session_start()`, evitando que o PHP substitua a política `no-store, private, max-age=0`. O teste permanece exigindo a política completa; não houve relaxamento da asserção.
+
 A CI executa a integração HTTP no ambiente efêmero. O cenário HTTPS isolado valida a configuração do PHP, mas não simula um proxy real, certificado TLS ou navegador.
 
 ## Decisões que permanecem fora desta revisão
