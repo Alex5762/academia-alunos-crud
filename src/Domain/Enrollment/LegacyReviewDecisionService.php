@@ -86,6 +86,15 @@ final class LegacyReviewDecisionService
             }
         }
 
+        if (
+            $observations !== null
+            && (preg_match('//u', $observations) !== 1 || strlen($observations) > 65535)
+        ) {
+            throw new InvalidArgumentException(
+                'As observações precisam ser UTF-8 válidas e caber no campo TEXT.'
+            );
+        }
+
         if (in_array($newResult, ['VINCULO_CONFIRMADO', 'LEGADO_SEM_VIGENCIA'], true) && $sourceReference === null) {
             throw new InvalidArgumentException('Essa decisão exige uma referência de evidência confiável.');
         }
