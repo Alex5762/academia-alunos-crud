@@ -4,20 +4,22 @@ Data: 2026-11-24
 Repositório: `Alex5762/academia-alunos-crud`  
 PR: [#2 — integrar fundação de autenticação e segurança](https://github.com/Alex5762/academia-alunos-crud/pull/2)
 
-## 1. Snapshot do GitHub
-
-Checkpoint de revisão final — 2026-11-24:
+## 1. Snapshot atual
 
 - Base: `main`, SHA `e1f4c8084dc6dec8c772a699855562944d50e89e`.
-- Branch: `feat/foundation-auth-security`, HEAD antes desta atualização final do checklist: `8e89c9c1051b365253589ae378a008a8d5c9ba1a`.
-- Comparação registrada na PR: 66 commits à frente, 0 atrás.
-- Diff: 58 arquivos, 5.763 adições e 73 deleções.
-- PR #2: aberta, pronta para revisão (não draft), reportada como mergeable, ainda não mesclada.
-- Revisões formais e threads inline: nenhuma registrada na consulta mais recente.
+- Branch: `feat/foundation-auth-security`.
+- HEAD deste checkpoint: `6fb629e4a57483eae1c66f423a0d873bae44cf06`.
+- Comparação: 68 commits à frente, 0 atrás.
+- Diff: 58 arquivos, 5.764 adições e 73 deleções.
+- PR #2: aberta, não draft, reportada como mergeable, não mesclada.
+- Revisões formais e threads inline: nenhuma registrada na última consulta.
+- `main` permanece no SHA acima; nenhuma migration ou alteração de banco foi executada nesta preparação.
 
-`mergeable: true` é apenas uma informação de conflito/merge do GitHub. Não substitui CI verde, revisão do conteúdo, requisitos de proteção ou autorização explícita.
+`mergeable: true` informa apenas que o GitHub não detectou conflito de merge naquele snapshot. Não significa que todos os requisitos de integração estejam cumpridos.
 
-## 2. Validação técnica concluída
+## 2. Validação técnica
+
+Os seguintes itens foram implementados e cobertos pelos testes da branch:
 
 - Autenticação, sessões protegidas, CSRF, expiração e revogação por versão da conta.
 - Troca de senha temporária e voluntária, preservando a sessão que concluiu a troca e revogando sessões paralelas.
@@ -29,79 +31,130 @@ Checkpoint de revisão final — 2026-11-24:
 - Teste HTTP com 12 requisições simultâneas e sessões independentes: exatamente cinco falhas persistidas/auditadas, bloqueio ativo e respostas genéricas.
 - Testes de banco em MySQL 8.0 e MariaDB 10.11.
 - Proteção Apache do webroot.
+- Navegação da alteração voluntária de senha corrigida e coberta por integração HTTP.
+- Exemplo de configuração local corrigido para orientar a cópia para `config/database.local.php`.
 
-Evidências na correção do rate limit (`c63c2d008416224d24c59bc79ec70906ca392c5e`):
+## 3. CI — estado real por HEAD
 
-- Run #45425206298 (push): 5/5 jobs aprovados.
-- Run #45425223992 (pull_request): 5/5 jobs aprovados.
+Última validação integral concluída antes da correção documental de configuração:
 
-Evidências da documentação de estado/revisão (`37dda52f2893545c31dec842076757995a05bced`):
+- HEAD `caa7f969151b0519e1683f68261315633cfdee35`.
+- Run pull_request #45432715149: sucesso, 5/5 jobs.
+- Jobs: PHP quality and unit tests; Foundation database (MySQL 8.0); Foundation database (MariaDB 10.11); Foundation HTTP integration (MySQL 8.0); Apache webroot protection.
 
-- Run #45425534390 (push): 5/5 jobs aprovados.
-- Run #45425546689 (pull_request): 5/5 jobs aprovados.
+HEAD atual `6fb629e4a57483eae1c66f423a0d873bae44cf06`:
 
-Os cinco jobs nas duas rodadas documentais passaram: qualidade PHP, MySQL 8.0, MariaDB 10.11, integração HTTP MySQL 8.0 e proteção Apache.
+- Run pull_request #45456925659: em andamento na última consulta.
+- PHP quality and unit tests: sucesso.
+- Apache webroot protection: sucesso.
+- MySQL 8.0, MariaDB 10.11 e integração HTTP: em andamento.
+- Não declarar a CI do HEAD atual verde até a conclusão dos cinco jobs.
 
-## 3. Portões obrigatórios antes de integrar
+Links:
+- [CI pull_request do HEAD atual](https://github.com/Alex5762/academia-alunos-crud/actions/runs/45456925659)
+- [CI pull_request anterior aprovada](https://github.com/Alex5762/academia-alunos-crud/actions/runs/45432715149)
 
-- [ ] A branch continua baseada na mesma `main` e não ficou atrás dela.
-- [ ] O HEAD atual da PR foi conferido, sem commits inesperados após o checkpoint revisado.
-- [x] Os cinco jobs obrigatórios passaram no evento `pull_request` no HEAD documental `8e89c9c1051b365253589ae378a008a8d5c9ba1a` (execução #45432286395, 5/5). Este é o evento que valida os checks da PR.
-- [ ] O evento `push` do mesmo HEAD (#45432279529) permanece pendente/na fila por uma execução anterior ainda ativa. É uma verificação suplementar; acompanhar, mas não confundir com o resultado verde do evento `pull_request`.
-- [x] Não há conversas de revisão, solicitações de mudança ou comentários pendentes; a PR não possui avaliações formais registradas. Isso não equivale a uma aprovação formal independente.
-- [ ] As regras atuais de proteção da `main` foram conferidas na interface do GitHub. O endpoint de proteção retornou 403 para a integração nesta sessão; o último checkpoint documentado registrava PR obrigatória, cinco checks exigidos, branch atualizada e bloqueio de bypass/force-push/exclusão.
-- [ ] O banco de destino foi identificado e seu backup foi confirmado antes de qualquer migration.
-- [ ] O responsável confirmou explicitamente a integração.
+## 4. Portões antes do merge
 
-**Não executar o merge enquanto qualquer portão acima estiver pendente.** A autorização do usuário deve ser uma etapa explícita e separada da preparação técnica.
+- [x] Base e branch comparadas: 68 à frente, 0 atrás.
+- [x] HEAD da PR conferido: `6fb629e4a57483eae1c66f423a0d873bae44cf06`.
+- [ ] Cinco jobs da CI aprovados no HEAD atual.
+- [ ] Regras de proteção da `main` conferidas na interface do GitHub. A API de proteção retornou 403 para a integração; não foi possível confirmar o estado atual por API.
+- [ ] Confirmar se a proteção exige revisão independente e, se exigir, obter a aprovação de outro colaborador. Não há avaliações formais registradas até agora.
+- [ ] Confirmar backup íntegro do banco de destino e registrar onde está guardado.
+- [ ] Confirmar o ambiente de destino (local/XAMPP ou outro) e janela de manutenção.
+- [ ] Autorização explícita do responsável para executar o merge.
 
-## 4. Estratégia de merge recomendada
+**Não executar o merge enquanto qualquer portão acima estiver pendente.** Preparação técnica não equivale a autorização de merge.
 
-Preferir **merge commit** para preservar a sequência dos commits de implementação e documentação deste bloco. Não usar squash/rebase automaticamente: isso apagaria ou reescreveria o histórico incremental que foi usado para revisar os achados por etapa.
+## 5. Estratégia de integração no GitHub
 
-No momento da execução, conferir novamente o HEAD e usar proteção contra movimento da branch (expected head SHA). Se a branch ou a base mudar, interromper e repetir a revisão/CI no novo estado.
+- Método recomendado: merge commit, para preservar o histórico incremental usado na revisão por blocos.
+- Antes de mesclar, consultar novamente PR, base, HEAD e CI.
+- Usar o HEAD esperado `6fb629e4a57483eae1c66f423a0d873bae44cf06` como referência deste checkpoint. Se a branch avançar, repetir revisão e CI no novo HEAD.
+- Não usar squash ou rebase automaticamente.
+- Depois do merge, confirmar o SHA resultante e que a branch `main` recebeu exatamente a PR #2.
 
-## 5. Sequência operacional depois do merge
+## 6. Runbook do banco — executar somente depois da integração e do backup
 
-Nenhuma migration foi executada no ambiente local do usuário durante esta preparação. A integração do código e a atualização do banco são operações separadas.
+A atualização do código e a atualização do banco são operações separadas. Nenhuma migration foi executada nesta preparação.
 
-1. Confirmar backup íntegro do banco `academia_alunos` e registrar o ponto de restauração.
-2. Configurar `config/database.local.php` a partir do exemplo, ou as variáveis de ambiente exigidas pelo ambiente. Nunca versionar credenciais reais.
-3. Para uma instalação inicial, importar `banco.sql` (ele cria o banco/tabela de alunos com `IF NOT EXISTS`; não substitui a conferência do schema existente).
-4. Aplicar uma única vez, nesta ordem: `001_authentication_audit.sql`, `002_force_password_change.sql`, `003_login_rate_limit.sql`, `007_administrative_roles.sql`.
-5. Antes da migration 008, inserir o marcador histórico indicado no README:
-   `INSERT INTO auditoria (usuario_id, acao, entidade, entidade_id) VALUES (NULL, 'evento_legado_baseline', 'sistema', NULL);`
-6. Aplicar uma única vez `008_audit_integrity_chain.sql`.
-7. Executar `php scripts/inicializar-integridade-auditoria.php` e confirmar que a cadeia está íntegra.
-8. Executar `php scripts/provisionar-usuario.php` pelo terminal, copiar a senha temporária e entregá-la por canal seguro.
-9. Fazer smoke test: login do Administrador, troca obrigatória da senha, acesso ao CRUD, permissões e consulta de integridade/auditoria.
+### 6.1 Preparação e backup
 
-**Atenção às migrations:** 002 e 007 alteram a tabela com `ALTER TABLE`; 008 cria tabelas e triggers sem guardas de repetição. Não reaplicar migrations por tentativa. Em caso de falha parcial, inspecionar o schema e comparar com o backup antes de decidir como retomar.
+1. Identificar o banco correto e confirmar que não é produção nem um banco compartilhado sem autorização.
+2. Colocar a aplicação em manutenção ou impedir gravações durante a janela de backup/migrations.
+3. Fazer exportação completa de `academia_alunos`, incluindo estrutura, dados, triggers, rotinas e eventos existentes quando aplicável.
+4. Guardar o backup fora da pasta pública do projeto e verificar que o arquivo não está vazio e pode ser lido/importado em ambiente de teste.
+5. Registrar data, tamanho, local seguro do backup e responsável pela restauração.
+6. Não prosseguir se não houver backup verificável.
 
-## 6. Plano de recuperação
+### 6.2 Configuração da aplicação
 
-- Antes das migrations, o backup do banco é o ponto de retorno.
-- Não presumir que exista rollback SQL automático; esta etapa não fornece migrations reversas.
-- Se a aplicação falhar após habilitar autenticação, não voltar cegamente ao código antigo da `main`: ele antecede a proteção de login e o CRUD protegido. Manter o site em manutenção/bloqueado enquanto se recupera uma versão compatível.
-- Restaurar o backup do banco somente após avaliar perda de dados escritos depois do backup e com decisão explícita.
-- Não remover as tabelas/triggers de auditoria como atalho de rollback.
+- Copiar `config/database.local.example.php` para `config/database.local.php`.
+- Editar host, porta, banco, usuário e senha conforme o ambiente.
+- O arquivo `config/database.local.php` está no `.gitignore`; nunca adicionar credenciais reais ao Git.
+- Em ambiente de produção, definir explicitamente `APP_ENV=production`, `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER` e `DB_PASSWORD`.
+- Validar a conexão com o banco correto antes de executar qualquer SQL.
 
-## 7. Revisão de navegação e senha
+### 6.3 Instalação inicial versus banco existente
 
-A revisão final encontrou uma referência quebrada para `configuracoes.php`, página que não existe nesta branch. O link foi substituído por retorno ao painel; o painel agora oferece acesso explícito a `alterar-senha.php`; a integração HTTP verifica o link, a abertura da tela e o retorno ao painel. O README também documenta a funcionalidade.
+- Instalação inicial vazia: importar `banco.sql` e conferir o schema criado.
+- Banco que já contém dados: não importar cegamente `banco.sql`; inspecionar o schema e fazer backup primeiro. O script não substitui a análise do banco existente.
+- Não executar a sequência de migrations em banco que já tenha parte delas aplicada. Inspecionar tabelas, colunas, índices e triggers antes de decidir como continuar.
 
-Commits da correção:
-- `ac62a82eaab5b2a2abebf0f9fa091d894d1dcce2` — link de alteração de senha no painel.
-- `c7cbe44c731354ec1272538dc4d29f62755a36fe` — retorno da tela de senha.
-- `f288d2707f2bfbe08ff60f5035907a4a570e186e` — README.
-- `2e600860dadc0d335c5b1608945f11a2a8440163` — teste HTTP.
+### 6.4 Ordem das migrations
 
-A CI da revisão de navegação no HEAD `2e600860dadc0d335c5b1608945f11a2a8440163` passou no evento `pull_request` (#45432104997), 5/5 jobs. A CI do HEAD documental `8e89c9c1051b365253589ae378a008a8d5c9ba1a` também passou no evento `pull_request` (#45432286395), 5/5 jobs. O evento `push` desse último HEAD (#45432279529) permanece pendente; uma execução push anterior (#45432063265) não terminou normalmente.
+Executar cada arquivo uma única vez, nesta ordem:
+
+1. `database/migrations/001_authentication_audit.sql`
+2. `database/migrations/002_force_password_change.sql`
+3. `database/migrations/003_login_rate_limit.sql`
+4. `database/migrations/007_administrative_roles.sql`
+
+Antes da migration 008, inserir o marcador histórico, conforme o README:
+
+```sql
+INSERT INTO auditoria (usuario_id, acao, entidade, entidade_id)
+VALUES (NULL, 'evento_legado_baseline', 'sistema', NULL);
+```
+
+Depois:
+
+5. Aplicar `database/migrations/008_audit_integrity_chain.sql`.
+6. Executar no terminal, a partir da raiz do projeto: `php scripts/inicializar-integridade-auditoria.php`.
+7. Confirmar a mensagem de integridade e o marco histórico antes de liberar a aplicação.
+
+**Atenção:** as migrations 002 e 007 usam `ALTER TABLE`; a 008 cria tabelas e triggers sem guardas de repetição. Não reaplicar uma migration por tentativa. Se uma etapa falhar parcialmente, parar, inspecionar o schema e comparar com o backup antes de retomar. Não improvisar rollback SQL.
+
+### 6.5 Provisionamento e smoke test
+
+1. Executar `php scripts/provisionar-usuario.php` pelo terminal, nunca pelo navegador.
+2. Criar o primeiro Administrador e entregar a senha temporária por canal seguro.
+3. Entrar com a senha temporária e concluir a troca obrigatória.
+4. Validar painel, CRUD de alunos, permissões dos perfis e logout.
+5. Validar a alteração voluntária de senha e revogação de sessões paralelas.
+6. Executar a verificação da cadeia de auditoria e conferir eventos de provisionamento/login.
+7. Só retirar a manutenção após todos os testes passarem.
+
+## 7. Plano de recuperação
+
+- O backup íntegro anterior às migrations é o ponto de retorno.
+- Esta etapa não fornece migrations reversas; não presumir rollback automático.
+- Se a aplicação falhar depois de ativar autenticação, não voltar cegamente ao código antigo da `main`, pois ele antecede a proteção de login e do CRUD.
+- Manter a aplicação em manutenção/bloqueada enquanto se recupera uma versão compatível.
+- Restaurar o backup somente após avaliar os dados escritos depois do backup e obter decisão explícita.
+- Não remover tabelas ou triggers de auditoria como atalho de rollback.
+
+## 8. Histórico da revisão final
+
+- Os três achados originais foram resolvidos e validados: revogação de sessões após troca de senha; auditoria/rate limit; revalidação concorrente da autorização administrativa.
+- A observação adicional de admissão concorrente no login também foi resolvida com named locks e teste HTTP de 12 requisições.
+- A revisão de navegação corrigiu o link inexistente para `configuracoes.php`, adicionou o acesso à alteração de senha no painel e ampliou a integração HTTP.
+- O exemplo de configuração local agora indica corretamente o destino `config/database.local.php`.
+- CI aprovada no HEAD `caa7f969151b0519e1683f68261315633cfdee35`, run #45432715149, 5/5 jobs. A correção documental mais recente está sendo validada no run #45456925659.
 
 ## 9. Estado da decisão
 
-## 8. Estado da decisão
+**Preparação operacional documentada; merge ainda não autorizado nem executado.**
 
-**Preparação técnica concluída; merge não executado.**
-
-A PR #2 permanece aberta. A `main` permanece no SHA de base acima. Nenhuma migration, alteração de dados ou operação de merge foi executada nesta preparação.
+A PR #2 continua aberta. A `main` continua no SHA `e1f4c8084dc6dec8c772a699855562944d50e89e`. Nenhuma migration, alteração de dados ou operação de merge foi realizada nesta preparação.
