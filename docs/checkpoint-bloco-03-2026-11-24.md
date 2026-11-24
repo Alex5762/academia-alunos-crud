@@ -131,3 +131,41 @@ A antiga PR #1 permanece Draft e não deve ser mesclada em massa.
 3. Atualizar descrição/checklist da PR com o resultado final.
 4. Manter inspeção visual, backup, schema real e smoke test no XAMPP pendentes até acesso ao computador.
 5. Não retirar a PR do Draft nem mesclar sem revisão completa e autorização explícita.
+
+
+---
+
+## ## Atualização de continuidade — CI final e RBAC HTTP — 2026-11-24
+
+### Estado confirmado no GitHub
+
+- HEAD da PR #9: `b5d56288ff3815f329c477da5e07288a0e541d06`.
+- PR #9: aberta, Draft, base `main`, sem merge.
+- A execução `45488596825`, associada exatamente ao HEAD acima, concluiu com sucesso: **12/12 jobs aprovados**.
+- A execução anterior `45487776063`, no commit `1fd6d17`, também concluiu com 12/12.
+- A falha anterior `45486063860` ocorreu porque o teste de UTF-8 inválido enviava a string literal `\\xB1`; o caso foi corrigido para `chr(0xB1)`. A nova CI aprovou o caso corrigido nos dois bancos.
+
+### Cobertura HTTP de RBAC ampliada
+
+- Commit `47f6638`: `tests/foundation-http.sh` passou a autenticar um perfil OPERADOR e verificar que ele pode consultar planos e criar/cancelar matrículas.
+- O mesmo cenário verifica HTTP 403 para criar/alterar planos e para visualizar/decidir/abrir retificação de vínculos legados.
+- O teste verifica que as tentativas negadas não alteram o catálogo nem a situação do plano.
+- Commit `b5d5628`: acrescenta também tentativa POST ao endpoint `salvar-retificacao-legado.php`, que deve retornar HTTP 403 para OPERADOR.
+- A execução `45488596825` aprovou a integração HTTP do Bloco 03 com o cenário ampliado.
+
+### Revisão estática adicional
+
+- Foram inspecionados os fluxos de formulário e apresentação de `planos.php`, `detalhes-aluno.php`, `revisoes-legado.php` e `retificar-vigencia-legado.php`, além dos serviços de catálogo, criação, cancelamento, revisão e retificação.
+- Saídas de dados de alunos, planos, fontes e observações são escapadas na renderização HTML.
+- Os endpoints de mutação revisados exigem POST, autenticação, permissão RBAC e CSRF.
+- Não foi identificado novo blocker nesta passada estática.
+- A revisão completa de todos os 39 arquivos ainda não está encerrada; não marcar a PR como pronta para merge somente com base nesta amostra.
+
+### Pendências preservadas
+
+1. Terminar a leitura integral do diff dos 39 arquivos e reconciliar o checklist/descrição da PR.
+2. Inspeção visual em navegador e dispositivo físico.
+3. No computador/XAMPP: backup verificável, inspeção do schema real e engine das tabelas, execução controlada das migrations e smoke test.
+4. Manter a PR em Draft e não mesclar sem autorização explícita.
+
+**Link da CI aprovada no HEAD atual:** https://github.com/Alex5762/academia-alunos-crud/actions/runs/45488596825
