@@ -33,6 +33,10 @@ Princípios:
 - `form-action 'self'` mantém envios de formulário na própria origem.
 - Não são usados curingas, `'unsafe-inline'`, `'unsafe-eval'`, `data:` nem hosts externos.
 
+## Estado desta revisão
+
+A política e os testes estão publicados na branch de desenvolvimento. A execução automatizada no novo HEAD ainda precisa concluir para confirmar compatibilidade e zero violações; não tratar a SEC-05 como aprovada antes desse resultado.
+
 ## Como a política é observada
 
 `tests/browser-compatibility.mjs` verifica a presença das diretivas em cada navegação de documento e escuta o evento `securitypolicyviolation` nos três motores de navegador testados pela CI: Chromium, Firefox e WebKit. Uma violação com disposição `report` faz o teste falhar e apresenta a diretiva/URI bloqueada para diagnóstico.
