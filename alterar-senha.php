@@ -18,7 +18,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (strlen($senhaAtual) > 4096 || strlen($novaSenha) > 4096 || strlen($confirmacao) > 4096) {
         $erro = 'Não foi possível validar os dados informados.';
-    } elseif (( $erroPolitica = \\FitControl\\Security\\PasswordPolicy::validationError($novaSenha)) !== null) {
+    } elseif (( $erroPolitica = \FitControl\Security\PasswordPolicy::validationError($novaSenha)) !== null) {
         $erro = $erroPolitica;
     } elseif (!hash_equals($novaSenha, $confirmacao)) {
         $erro = 'A confirmação não corresponde à nova senha.';
@@ -45,7 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $pdo->rollBack();
                 $erro = 'Escolha uma senha diferente da senha atual.';
             } else {
-                $hash = \\FitControl\\Security\\PasswordPolicy::hash($novaSenha);
+                $hash = \FitControl\Security\PasswordPolicy::hash($novaSenha);
                 $atualizar = $pdo->prepare(
                     'UPDATE usuarios SET senha_hash = :hash
                      WHERE id = :id AND ativo = 1 AND deve_trocar_senha = 0'
