@@ -107,7 +107,7 @@ $token = escapar($_SESSION['token']);
 <body class="login-body">
 <main class="login-page">
     <section class="login-card" aria-labelledby="password-title">
-        <a class="settings-back" href="configuracoes.php">← Voltar às configurações</a>
+        <a class="settings-back" href="index.php">← Voltar ao painel</a>
         <span class="eyebrow">SEGURANÇA DA CONTA</span>
         <h1 id="password-title">Alterar senha</h1>
         <p class="login-intro">Confirme sua senha atual e escolha uma nova senha pessoal.</p>
