@@ -347,7 +347,7 @@ function classeSituacaoPlano(string $situacao): string {
             </p>
         </section>
     <?php } else { ?>
-        <?php if ($novaMatriculaSolicitada) { ?>
+        <?php if ($novaMatriculaSolicitada && usuarioTemPermissao($usuario, 'enrollments.create')) { ?>
             <section class="settings-card account-card" aria-labelledby="enrollment-form-title">
                 <div class="settings-card-heading">
                     <span class="settings-icon" aria-hidden="true">＋</span>
