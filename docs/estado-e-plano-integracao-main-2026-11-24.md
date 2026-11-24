@@ -198,14 +198,14 @@ Até lá: não executar migrations no banco local do usuário, não inserir dado
 
 - [x] **Ação 1:** revisar e fechar a regra explícita do último administrador e a revalidação do ator sob concorrência.
 - [x] **Ação 2:** criar testes de banco/concorrência e validar a CI completa, incluindo testes HTTP de status e CSRF.
-- [ ] **Ação 3:** inventariar os 189 arquivos da PR #1 por domínio, migration, teste, documentação e arquivo compartilhado.
+- [x] **Ação 3:** inventariar os 189 arquivos da PR #1 por domínio, migration, teste, documentação e arquivo compartilhado. Registro: `docs/inventario-pr-1-integracao-main-2026-11-24.md`.
 - [ ] **Ação 4:** construir um grafo de dependências e uma matriz arquivo → bloco → PR candidata.
 - [ ] **Ação 5:** confirmar os limites do primeiro conjunto de integração e revisar o procedimento de proteção da `main`.
 - [ ] **Ação 6:** criar a primeira branch limpa a partir da `main` e preparar a primeira PR pequena.
 - [ ] **Ação 7:** repetir o ciclo de validação, PR e autorização para cada bloco.
 - [ ] **Ação 8:** fazer a validação prática local no final, quando o ambiente estiver disponível.
 
-**Ponto exato de retomada:** Ações 1 e 2 concluídas e validadas pela CI #1716. A próxima tarefa é a Ação 3: inventariar os 189 arquivos da PR #1 por domínio, migration, teste, documentação e arquivo compartilhado. HEAD de código validado pela CI #1716: `8ab8315125b790fecffa962b1a05b23be5a14615`. O snapshot documental posterior era `0310e4432429541a1f3bfdeaa216d68464af9a5c`; a CI #1717 para esse commit documental estava na fila na última consulta. A PR #1 permanece Draft. Nenhuma branch nova, regra de proteção, migration local ou integração à `main` foi criada/realizada como parte deste plano.
+**Ponto exato de retomada:** Ações 1 e 2 concluídas e validadas pela CI #1716. A próxima tarefa é a Ação 4: construir o grafo de dependências e a matriz arquivo → bloco → PR candidata, usando `docs/inventario-pr-1-integracao-main-2026-11-24.md` como base. HEAD de código validado pela CI #1716: `8ab8315125b790fecffa962b1a05b23be5a14615`. O snapshot documental posterior era `0310e4432429541a1f3bfdeaa216d68464af9a5c`; a CI #1717 para esse commit documental estava na fila na última consulta. A PR #1 permanece Draft. Nenhuma branch nova, regra de proteção, migration local ou integração à `main` foi criada/realizada como parte deste plano.
 
 ## 8. Instrução para retomar em outro chat
 
