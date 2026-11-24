@@ -12,6 +12,8 @@
 
 ## 1. Estado verificado
 
+**Atualização de progresso em 24/11/2026:** bloco de administração concorrente concluído e validado pela CI #1716; ver `docs/seguranca-administracao-contas-concorrencia.md`.
+
 ### Branch e PR
 
 | Item | Estado observado em 24/11/2026 |
@@ -67,21 +69,29 @@ A CI verde é evidência automatizada importante, mas não substitui validação
 
 ---
 
-## 2. Pendências técnicas imediatas
+## 2. Bloco técnico concluído — administração de contas e concorrência
 
-### Preservação do último administrador
+A inconsistência de proteção do último administrador foi tratada no commit `8ab8315125b790fecffa962b1a05b23be5a14615`.
 
-A revisão estática identificou uma inconsistência de defesa em profundidade:
+- Foi criado `src/Domain/Users/UserAccountAdministrationService.php` para centralizar alterações de perfil e status.
+- Cada operação abre sua própria transação e bloqueia as contas em ordem crescente de ID com `SELECT ... ORDER BY id FOR UPDATE`.
+- Depois de obter os locks, o serviço relê o estado atual do ator e exige conta ativa, perfil com `users.manage` e troca obrigatória de senha concluída. Uma requisição que aguardou o lock não conserva autorização revogada por outra operação.
+- A contagem de administradores ativos considera perfil/permissão administrativa, e não todas as contas ativas.
+- O bloqueio de autodesativação e autorrebaixamento permanece explícito.
+- Alteração de perfil, histórico especializado e auditoria SHA-256 participam da mesma transação; mudança de status e auditoria também.
+- Os endpoints continuam exigindo POST, autenticação, permissão e CSRF; agora delegam a alteração ao serviço e tratam resultados de autorização, alvo inexistente e operação inválida.
 
-- `alterar-perfil-usuario.php` conta administradores ativos e bloqueia a remoção do perfil do último administrador.
-- `alterar-status-usuario.php` bloqueia a desativação da última conta ativa, mas a contagem considera todas as contas ativas, não especificamente administradores ativos.
-- A proteção contra autodesativação evita o caso sequencial comum. Ainda assim, o endpoint de status deve expressar a invariável de administrador de forma explícita e revalidar a autorização do ator dentro da transação após adquirir os bloqueios, para cobrir requisições concorrentes que tenham sido autenticadas antes de aguardar o lock.
+### Testes e evidências
 
-Isso está classificado como robustez/defesa em profundidade; a revisão não demonstrou uma exploração sequencial direta.
+- `tests/database-user-account-administration.php` executa dois processos PHP com conexões PDO independentes e uma barreira de concorrência. Um processo tenta rebaixar A enquanto o outro tenta desativar B. O teste exige que exatamente uma operação seja aceita, a outra perca autorização após o lock e permaneça exatamente um administrador ativo.
+- O mesmo teste cobre autodesativação, autorrebaixamento, ator sem `users.manage`, transições válidas e integridade da auditoria. Ele exige `GITHUB_ACTIONS=true`, pois cria fixtures permanentes na trilha append-only; roda somente nos bancos efêmeros da CI.
+- `tests/integration-crud.sh` também cobre a rota HTTP de status: CSRF ausente retorna 403, autodesativação é bloqueada, desativação e reativação funcionam e cada transição gera exatamente um evento de auditoria.
+- A CI #1716 ([run 45340419014](https://github.com/Alex5762/academia-alunos-crud/actions/runs/45340419014)) passou no HEAD `8ab8315125b790fecffa962b1a05b23be5a14615`: os sete jobs funcionais concluíram com sucesso, incluindo compatibilidade MySQL 8.0/MariaDB 10.11, teste concorrente de administração, sintaxe PHP e integração HTTP/Playwright. A publicação de screenshots foi ignorada pela condição do workflow.
+- A revisão é de código e testes automatizados; não é pentest nem validação local/XAMPP.
 
-**Próxima tarefa técnica:** revisar a estratégia de locks e a revalidação do ator nos dois endpoints; implementar a invariável sem introduzir deadlocks; criar testes de banco para último administrador, concorrência entre alteração de perfil e status, rollback e preservação da auditoria; executar a CI completa.
+**Resultado:** Ações 1 e 2 do plano estão concluídas. Não houve migration, mudança de schema, alteração da `main` ou merge. A PR #1 continua em Draft.
 
-Não começar a reconstrução das PRs antes de fechar essa tarefa e registrar seu resultado.
+
 
 ---
 
@@ -185,8 +195,8 @@ Até lá: não executar migrations no banco local do usuário, não inserir dado
 
 ## 7. Próximas ações, em ordem
 
-- [ ] **Ação 1:** revisar e fechar a regra explícita do último administrador e a revalidação do ator sob concorrência.
-- [ ] **Ação 2:** criar testes de banco/concorrência e validar a CI completa.
+- [x] **Ação 1:** revisar e fechar a regra explícita do último administrador e a revalidação do ator sob concorrência.
+- [x] **Ação 2:** criar testes de banco/concorrência e validar a CI completa, incluindo testes HTTP de status e CSRF.
 - [ ] **Ação 3:** inventariar os 185 arquivos da PR #1 por domínio, migration, teste, documentação e arquivo compartilhado.
 - [ ] **Ação 4:** construir um grafo de dependências e uma matriz arquivo → bloco → PR candidata.
 - [ ] **Ação 5:** confirmar os limites do primeiro conjunto de integração e revisar o procedimento de proteção da `main`.
@@ -194,7 +204,7 @@ Até lá: não executar migrations no banco local do usuário, não inserir dado
 - [ ] **Ação 7:** repetir o ciclo de validação, PR e autorização para cada bloco.
 - [ ] **Ação 8:** fazer a validação prática local no final, quando o ambiente estiver disponível.
 
-**Ponto exato de retomada:** começar pela Ação 1. A branch de referência continua em `7eb9264decd7c7540c9f322369d26e6e0757fc43` até que uma nova consulta ao GitHub confirme outro HEAD. A PR #1 permanece Draft. Nenhuma branch nova, regra de proteção, migration local ou integração à `main` foi criada/realizada como parte deste plano.
+**Ponto exato de retomada:** Ações 1 e 2 concluídas e validadas pela CI #1716. A próxima tarefa é a Ação 3: inventariar os 188 arquivos da PR #1 por domínio, migration, teste, documentação e arquivo compartilhado. HEAD registrado após a implementação: `8ab8315125b790fecffa962b1a05b23be5a14615`. A PR #1 permanece Draft. Nenhuma branch nova, regra de proteção, migration local ou integração à `main` foi criada/realizada como parte deste plano.
 
 ## 8. Instrução para retomar em outro chat
 

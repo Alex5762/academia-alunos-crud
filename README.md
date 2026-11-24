@@ -263,6 +263,7 @@ Para conferir os resultados, consulte a aba **Actions** do GitHub. A CI também 
 - [SEC-04 — Sessões, cookies e cabeçalhos HTTP](docs/seguranca-sessoes-cabecalhos.md)
 - [SEC-05 — Content Security Policy em modo Report-Only](docs/seguranca-csp.md)
 - [Revisão consolidada de segurança](docs/revisao-seguranca-consolidada.md)
+- [Administração de contas — proteção do último administrador e concorrência](docs/seguranca-administracao-contas-concorrencia.md)
 - [Planejamento do Bloco 02 — gestão de alunos](docs/bloco-02-gestao-alunos.md)
 - [Pesquisa, implementação e estado do Bloco 03 — planos e matrículas](docs/bloco-03-planos-matriculas.md)
 - [Bloco 04 — frequência e check-in](docs/bloco-04-frequencia-checkin.md)
