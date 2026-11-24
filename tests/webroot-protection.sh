@@ -41,7 +41,7 @@ docker exec "$CONTAINER_NAME" httpd -t
 docker exec "$CONTAINER_NAME" httpd -k graceful
 
 http_status() {
-    curl --silent --show-error --output /dev/null --write-out '%{http_code}' \
+    curl --path-as-is --silent --show-error --output /dev/null --write-out '%{http_code}' \
         --max-time 5 "$BASE_URL/$1" 2>/dev/null || printf '000'
 }
 
@@ -86,5 +86,11 @@ assert_blocked "docs/matriz-permissoes.md"
 assert_blocked "config/database.local.example.php"
 assert_blocked ".github/workflows/ci.yml"
 assert_blocked ".git/config"
+
+# Envie os caminhos sem normalização do cliente para exercitar a interpretação
+# feita pelo próprio Apache, inclusive após decodificação de caracteres.
+assert_blocked "%2Egithub/workflows/ci.yml"
+assert_blocked "%2Egit/config"
+assert_blocked "docs/../.git/config"
 
 echo "Proteção do webroot: todas as verificações HTTP passaram."
