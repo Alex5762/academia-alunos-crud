@@ -9,7 +9,7 @@ use RuntimeException;
 /**
  * Política centralizada para criação de senhas novas.
  *
- * PASSWORD_DEFAULT é bcrypt nos ambientes suportados atualmente. Como bcrypt
+ * A política usa PASSWORD_BCRYPT explicitamente para manter o limite de 72 bytes determinístico. Como bcrypt
  * considera somente os primeiros 72 bytes, novas senhas acima desse limite são
  * rejeitadas antes do hash para evitar truncamento silencioso.
  *
@@ -61,7 +61,7 @@ final class PasswordPolicy
             throw new InvalidArgumentException($error);
         }
 
-        $passwordHash = password_hash($password, PASSWORD_DEFAULT);
+        $passwordHash = password_hash($password, PASSWORD_BCRYPT);
         if (!is_string($passwordHash) || $passwordHash === '') {
             throw new RuntimeException('Não foi possível proteger a senha.');
         }
