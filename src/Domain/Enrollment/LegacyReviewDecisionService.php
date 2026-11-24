@@ -192,6 +192,13 @@ final class LegacyReviewDecisionService
                         $studentId,
                         $existingLegacyEnrollmentId
                     );
+                    self::assertOptionalHistoricalSnapshotMatches(
+                        $storedLegacy,
+                        $provenPrice,
+                        $provenDuration,
+                        $provenDurationUnit,
+                        $provenCalendarReferenceDay
+                    );
                     $expectedStartUtc = $legacyStartLocal->setTimezone($this->utcTimezone)->format('Y-m-d H:i:s');
                     $expectedEndUtc = $legacyEndExclusiveLocal->setTimezone($this->utcTimezone)->format('Y-m-d H:i:s');
 
@@ -297,6 +304,13 @@ final class LegacyReviewDecisionService
                         );
                     }
 
+                    self::assertOptionalHistoricalSnapshotMatches(
+                        $existingLegacy,
+                        $provenPrice,
+                        $provenDuration,
+                        $provenDurationUnit,
+                        $provenCalendarReferenceDay
+                    );
                     $legacyEnrollmentId = (int) $existingLegacy['id'];
                 } else {
                     $originalPlanText = (string) $review['plano_texto_original'];
@@ -415,7 +429,9 @@ final class LegacyReviewDecisionService
     private function lockLegacyEnrollment(int $studentId, int $enrollmentId): array
     {
         $query = $this->pdo->prepare(
-            "SELECT id, inicio_em, fim_exclusivo_em
+            "SELECT id, inicio_em, fim_exclusivo_em,
+                    valor_contratado, duracao_contratada_valor,
+                    duracao_contratada_unidade, dia_referencia_calendario
              FROM matriculas
              WHERE id = :enrollment_id
                AND aluno_id = :student_id
@@ -433,6 +449,60 @@ final class LegacyReviewDecisionService
         }
 
         return $row;
+    }
+
+    /**
+     * Campos históricos opcionais nunca são atualizados por uma reconfirmação.
+     * Quando um novo valor comprovado é informado, ele precisa corresponder ao snapshot.
+     * Campos omitidos preservam os valores já registrados.
+     *
+     * @param array<string, mixed> $storedLegacy
+     */
+    private static function assertOptionalHistoricalSnapshotMatches(
+        array $storedLegacy,
+        ?string $provenPrice,
+        ?int $provenDuration,
+        ?string $provenDurationUnit,
+        ?int $provenCalendarReferenceDay
+    ): void {
+        $matches = true;
+
+        if (
+            $provenPrice !== null
+            && ($storedLegacy['valor_contratado'] === null
+                || (string) $storedLegacy['valor_contratado'] !== $provenPrice)
+        ) {
+            $matches = false;
+        }
+
+        if (
+            $provenDuration !== null
+            && ($storedLegacy['duracao_contratada_valor'] === null
+                || (int) $storedLegacy['duracao_contratada_valor'] !== $provenDuration)
+        ) {
+            $matches = false;
+        }
+
+        if (
+            $provenDurationUnit !== null
+            && $storedLegacy['duracao_contratada_unidade'] !== $provenDurationUnit
+        ) {
+            $matches = false;
+        }
+
+        if (
+            $provenCalendarReferenceDay !== null
+            && ($storedLegacy['dia_referencia_calendario'] === null
+                || (int) $storedLegacy['dia_referencia_calendario'] !== $provenCalendarReferenceDay)
+        ) {
+            $matches = false;
+        }
+
+        if (!$matches) {
+            throw new DomainException(
+                'Os dados comprovados divergem do snapshot histórico já registrado; a decisão não pode alterá-lo.'
+            );
+        }
     }
 
     private function assertAcademyDateTime(DateTimeImmutable $dateTime, string $fieldName): void
