@@ -312,6 +312,7 @@ function classeSituacaoPlano(string $situacao): string {
     <meta name="description" content="Gerencie o catálogo de planos do FitControl.">
     <title>Planos | FitControl</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="auth.css">
     <?= renderizarMonitorSessao() ?>
     <script src="theme.js"></script>
 </head>
