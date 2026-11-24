@@ -18,11 +18,13 @@ Os fluxos `trocar-senha.php` e `alterar-senha.php` atualizavam `senha_hash` sem 
 
 ## Achado 2 — auditoria de falhas de login e rate limit
 
-**Severidade: média. Pendente.**
+**Severidade: média. Implementado; aguardando CI do novo HEAD.**
 
-`login.php` mantém contadores em `login_tentativas`, usando hashes do e-mail normalizado e IP. A falha de autenticação não aparece na cadeia geral `auditoria`, embora a migration 001 permita eventos sem usuário associado. A política documentada no código é cinco falhas em janela de 15 minutos, com bloqueio de 15 minutos, mas não foi localizado teste HTTP que prove todos esses limites e a expiração.
+O rate limit foi extraído para `LoginAttemptRateLimiter`. A política é de cinco falhas em uma janela de 15 minutos, com bloqueio por 15 minutos. O contador fica limitado a cinco mesmo sob concorrência; a atualização do contador e o evento de auditoria são confirmados ou revertidos juntos.
 
-**Ação proposta:** definir evento de auditoria sem expor e-mail/IP puros; adicionar testes para 1ª–5ª falha, bloqueio, tentativa durante bloqueio, expiração e limpeza após login válido. Tratar concorrência e o crescimento da tabela explicitamente.
+Cada falha de credenciais que passa pelo bloqueio gera `login_falhou` na cadeia append-only, com `usuario_id = NULL`, `entidade = 'autenticacao'` e `entidade_id = NULL`. Nenhum e-mail, IP ou hash de identificação entra no evento. Tentativas já bloqueadas não incrementam o contador nem geram eventos repetidos; um login válido limpa a combinação. Registros sem atividade por mais de um dia são removidos da tabela de tentativas.
+
+**Cobertura adicionada:** integração HTTP para falha inicial, sequência de 1 a 5 tentativas, bloqueio, tentativa durante bloqueio, expiração/reinício da janela e limpeza após login válido. Teste de banco com quatro processos concorrentes (20 falhas) verifica contador limitado, bloqueio, auditoria sem PII e integridade da cadeia.
 
 ## Achado 3 — revalidação da autorização na criação de contas
 
@@ -51,3 +53,11 @@ A revisão consultou os arquivos e testes versionados no HEAD identificado. Não
 ## Decisão atual
 
 **Não aprovar merge ainda.** Fechar o achado 1 com CI verde e tratar os achados 2 e 3 antes de considerar a fundação pronta para integração.
+
+
+## Validação do Achado 2
+
+- Implementação e testes commitados na branch `feat/foundation-auth-security`; CI ainda pendente.
+- O teste concorrente executa quatro processos com cinco falhas cada e verifica o contador final limitado a cinco, mantendo um evento de auditoria por falha.
+- A expiração é simulada ajustando os timestamps no banco; não exige espera real de 15 minutos.
+- A limpeza automática remove registros de rate limit sem atividade por mais de um dia. A cadeia geral de auditoria permanece append-only e não é apagada automaticamente.
