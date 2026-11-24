@@ -164,8 +164,6 @@ jobs:
           DB_USER: root
           DB_PASSWORD: root
         run: |
-          php -S 127.0.0.1:8080 -t . >/tmp/fitcontrol-php-server.log 2>&1 &
-          echo $! >/tmp/fitcontrol-php-server.pid
           bash tests/foundation-http.sh
       - name: Stop PHP server
         if: always()
