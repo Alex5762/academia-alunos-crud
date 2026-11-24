@@ -14,6 +14,9 @@ Projeto acadêmico de Desenvolvimento Web. Esta versão preserva o CRUD original
 - CRUD original de alunos protegido por autenticação e permissões.
 - Gestão de alunos com status ativo/inativo, filtros por situação e pesquisa por nome, e-mail ou telefone.
 - Inativação/reativação por POST com CSRF, RBAC, transação e auditoria; exclusão física aposentada (HTTP 410).
+- Catálogo de planos com rascunhos, ativação/inativação e preservação dos snapshots contratados.
+- Matrículas com cálculo temporal, detecção de sobreposição, cancelamento transacional e auditoria.
+- Revisão de vínculos legados com evidência, histórico append-only e retificação auditada de vigência.
 
 ## Tecnologias
 
@@ -30,6 +33,8 @@ PHP 8.2+, PDO, MySQL 8.0 ou MariaDB 10.11, HTML, CSS e JavaScript.
    - `database/migrations/002_force_password_change.sql`
    - `database/migrations/003_login_rate_limit.sql`
    - `database/migrations/004_student_status.sql`
+   - `database/migrations/005_plans_enrollments_schema.sql`
+   - `database/migrations/006_import_legacy_review.sql`
    - `database/migrations/007_administrative_roles.sql`
 6. Antes da migration 008, grave o marcador histórico:
    `INSERT INTO auditoria (usuario_id, acao, entidade, entidade_id) VALUES (NULL, 'evento_legado_baseline', 'sistema', NULL);`
@@ -42,7 +47,7 @@ PHP 8.2+, PDO, MySQL 8.0 ou MariaDB 10.11, HTML, CSS e JavaScript.
    Informe nome e e-mail quando solicitado e copie a senha temporária exibida. Ela será solicitada somente no primeiro login.
 11. Acesse `http://localhost/academia-alunos-crud/`.
 
-A migration 004 adiciona `alunos.ativo` e preserva os registros existentes como ativos. A migration 015 adiciona uma constraint CHECK que só aceita `0` ou `1`. Execute ambas uma única vez, após backup e inspeção do banco, e confirme a compatibilidade da versão MySQL (8.0.16+) ou MariaDB (10.11).
+A migration 004 adiciona `alunos.ativo` e preserva os registros existentes como ativos. As migrations 005/006 criam catálogo, matrículas e revisão inicial dos vínculos legados; a 006 preserva o texto original de `alunos.plano` e não inventa matrículas, preços ou vigências. A migration 015 adiciona uma constraint CHECK que só aceita `0` ou `1`. Execute cada migration uma única vez, na ordem documentada, após backup e inspeção do banco.
 
 ### Cuidados obrigatórios antes de liberar o sistema
 
@@ -61,7 +66,7 @@ A migration 004 adiciona `alunos.ativo` e preserva os registros existentes como 
 
 ## Testes
 
-A CI valida sintaxe PHP, política de senha, RBAC, configuração de banco, migrations e integridade transacional em MySQL 8.0 e MariaDB 10.11. A integração HTTP cobre autenticação, CSRF, RBAC, operações do CRUD protegido e revogação de sessões paralelas após troca obrigatória e voluntária de senha.
+A CI valida sintaxe PHP, política de senha, RBAC, configuração de banco, migrations e integridade transacional em MySQL 8.0 e MariaDB 10.11. Os testes do Bloco 03 cobrem migrations 005/006, preservação/reexecução da carga legada, cálculo temporal, catálogo, criação/cancelamento de matrículas, revisão, retificação, rollback e concorrência. A integração HTTP da fundação cobre autenticação, CSRF, RBAC, CRUD protegido e revogação de sessões paralelas.
 
 ## Escopo futuro
 
