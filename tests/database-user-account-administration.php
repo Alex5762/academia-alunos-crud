@@ -348,7 +348,7 @@ assertUserAdministration(
     'O administrador não pode desativar a própria conta.'
 );
 assertUserAdministration(
-    $service->changeProfile($activeAdminId, $operator, 'OPERADOR')
+    $service->changeProfile($activeAdminId, $operator, 'GESTOR')
         === UserAccountAdministrationService::UPDATED,
     'O administrador deve conseguir alterar o perfil de outra conta.'
 );
@@ -369,4 +369,4 @@ assertUserAdministration(
     'A cadeia de auditoria deve permanecer íntegra após todas as alterações de conta.'
 );
 
-echo "Administração de contas: autorização revalidada sob lock, corrida entre perfil/status, último administrador, CSRF na camada HTTP e auditoria: OK." . PHP_EOL;
+echo "Administração de contas: autorização revalidada sob lock, corrida entre perfil/status, proteção contra autodesativação/autorrebaixamento e auditoria: OK." . PHP_EOL;
