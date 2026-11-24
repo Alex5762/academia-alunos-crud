@@ -13,8 +13,8 @@ use RuntimeException;
  * considera somente os primeiros 72 bytes, novas senhas acima desse limite são
  * rejeitadas antes do hash para evitar truncamento silencioso.
  *
- * O login não usa esta validação: hashes existentes continuam verificáveis
- * sem alterar a compatibilidade das contas já provisionadas.
+ * O login aplica somente o limite máximo de bytes, sem reaplicar o mínimo
+ * exigido para criação e sem regravar hashes existentes.
  */
 final class PasswordPolicy
 {
