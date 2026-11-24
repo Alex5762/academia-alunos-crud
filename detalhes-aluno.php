@@ -281,6 +281,7 @@ unset($_SESSION['mensagem']);
             <?php if (
                 $historicoMatriculasDisponivel
                 && $ativo
+                && usuarioTemPermissao($usuario, 'enrollments.create')
                 && ($revisaoLegado === null || $revisaoLegado['resultado_atual'] !== 'PENDENTE_REVISAO')
             ) { ?>
                 <a class="button button-primary" href="planos.php?nova_matricula=1&amp;aluno_id=<?= (int) $aluno['id'] ?>">
@@ -460,7 +461,10 @@ unset($_SESSION['mensagem']);
                                         · <?= escapar($matricula['motivo_cancelamento']) ?>
                                     <?php } ?>
                                 </p>
-                            <?php } elseif (in_array($situacao, ['AGENDADA', 'ATIVA'], true)) { ?>
+                            <?php } elseif (
+                                in_array($situacao, ['AGENDADA', 'ATIVA'], true)
+                                && usuarioTemPermissao($usuario, 'enrollments.cancel')
+                            ) { ?>
                                 <form action="cancelar-matricula.php" method="post" class="enrollment-cancel-form">
                                     <input type="hidden" name="token" value="<?= escapar($_SESSION['token']) ?>">
                                     <input type="hidden" name="student_id" value="<?= (int) $aluno['id'] ?>">
