@@ -31,9 +31,9 @@ if (($argv[1] ?? '') === '--worker') {
 }
 
 $cleanup = $pdo->prepare(
-    'DELETE FROM login_tentativas WHERE email_hash = :email_hash AND origem_hash = :origin_hash'
+    'DELETE FROM login_tentativas WHERE email_hash = :email_hash AND origem_hash = :origem_hash'
 );
-$cleanup->execute(['email_hash' => $emailHash, 'origin_hash' => $originHash]);
+$cleanup->execute(['email_hash' => $emailHash, 'origem_hash' => $originHash]);
 
 $processes = [];
 for ($index = 0; $index < 4; $index++) {
@@ -112,7 +112,7 @@ $markStale = $pdo->prepare(
     'UPDATE login_tentativas SET atualizado_em = DATE_SUB(NOW(), INTERVAL 2 DAY)
      WHERE email_hash = :email_hash AND origem_hash = :origin_hash'
 );
-$markStale->execute(['email_hash' => $staleEmailHash, 'origin_hash' => $staleOriginHash]);
+$markStale->execute(['email_hash' => $staleEmailHash, 'origem_hash' => $staleOriginHash]);
 LoginAttemptRateLimiter::cleanupExpired($pdo);
 $staleCheck = $pdo->prepare(
     'SELECT COUNT(*) FROM login_tentativas WHERE email_hash = :email_hash AND origem_hash = :origin_hash'
