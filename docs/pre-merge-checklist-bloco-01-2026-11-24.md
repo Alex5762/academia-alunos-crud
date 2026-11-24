@@ -8,9 +8,9 @@ PR: [#2 — integrar fundação de autenticação e segurança](https://github.c
 
 - Base: `main`, SHA `e1f4c8084dc6dec8c772a699855562944d50e89e`.
 - Branch: `feat/foundation-auth-security`.
-- HEAD deste checkpoint: `6fb629e4a57483eae1c66f423a0d873bae44cf06`.
-- Comparação: 68 commits à frente, 0 atrás.
-- Diff: 58 arquivos, 5.764 adições e 73 deleções.
+- HEAD antes desta consolidação final: `addfb0c05ab2601e44cf6663c02a7afa5f223b2d`.
+- Comparação: 70 commits à frente, 0 atrás.
+- Diff: 58 arquivos, 5.855 adições e 73 deleções.
 - PR #2: aberta, não draft, reportada como mergeable, não mesclada.
 - Revisões formais e threads inline: nenhuma registrada na última consulta.
 - `main` permanece no SHA acima; nenhuma migration ou alteração de banco foi executada nesta preparação.
@@ -36,29 +36,27 @@ Os seguintes itens foram implementados e cobertos pelos testes da branch:
 
 ## 3. CI — estado real por HEAD
 
-Última validação integral concluída antes da correção documental de configuração:
+Última validação integral concluída antes das atualizações documentais finais:
 
 - HEAD `caa7f969151b0519e1683f68261315633cfdee35`.
 - Run pull_request #45432715149: sucesso, 5/5 jobs.
 - Jobs: PHP quality and unit tests; Foundation database (MySQL 8.0); Foundation database (MariaDB 10.11); Foundation HTTP integration (MySQL 8.0); Apache webroot protection.
 
-HEAD atual `6fb629e4a57483eae1c66f423a0d873bae44cf06`:
+HEAD documental `addfb0c05ab2601e44cf6663c02a7afa5f223b2d`:
 
-- Run pull_request #45456925659: em andamento na última consulta.
-- PHP quality and unit tests: sucesso.
-- Apache webroot protection: sucesso.
-- MySQL 8.0, MariaDB 10.11 e integração HTTP: em andamento.
-- Não declarar a CI do HEAD atual verde até a conclusão dos cinco jobs.
+- Run pull_request #45457124106: em andamento na última consulta.
+- Run push #45457111043: em andamento na última consulta.
+- Não declarar a CI do HEAD atual verde até a conclusão dos cinco jobs em `pull_request`.
 
 Links:
-- [CI pull_request do HEAD atual](https://github.com/Alex5762/academia-alunos-crud/actions/runs/45456925659)
+- [CI pull_request do HEAD documental](https://github.com/Alex5762/academia-alunos-crud/actions/runs/45457124106)
 - [CI pull_request anterior aprovada](https://github.com/Alex5762/academia-alunos-crud/actions/runs/45432715149)
 
 ## 4. Portões antes do merge
 
 - [x] Base e branch comparadas: 68 à frente, 0 atrás.
-- [x] HEAD da PR conferido: `6fb629e4a57483eae1c66f423a0d873bae44cf06`.
-- [ ] Cinco jobs da CI aprovados no HEAD atual.
+- [x] HEAD da PR conferido no início da consolidação: `addfb0c05ab2601e44cf6663c02a7afa5f223b2d`.
+- [ ] Cinco jobs da CI aprovados no HEAD documental final (verificar execução `pull_request` mais recente).
 - [ ] Regras de proteção da `main` conferidas na interface do GitHub. A API de proteção retornou 403 para a integração; não foi possível confirmar o estado atual por API.
 - [ ] Confirmar se a proteção exige revisão independente e, se exigir, obter a aprovação de outro colaborador. Não há avaliações formais registradas até agora.
 - [ ] Confirmar backup íntegro do banco de destino e registrar onde está guardado.
@@ -151,7 +149,7 @@ Depois:
 - A observação adicional de admissão concorrente no login também foi resolvida com named locks e teste HTTP de 12 requisições.
 - A revisão de navegação corrigiu o link inexistente para `configuracoes.php`, adicionou o acesso à alteração de senha no painel e ampliou a integração HTTP.
 - O exemplo de configuração local agora indica corretamente o destino `config/database.local.php`.
-- CI aprovada no HEAD `caa7f969151b0519e1683f68261315633cfdee35`, run #45432715149, 5/5 jobs. A correção documental mais recente está sendo validada no run #45456925659.
+- CI aprovada no HEAD `caa7f969151b0519e1683f68261315633cfdee35`, run #45432715149, 5/5 jobs. As atualizações documentais posteriores estão sendo validadas por CI; a última execução conhecida antes desta atualização é #45457124106.
 
 ## 9. Estado da decisão
 
