@@ -2,15 +2,15 @@
 require_once __DIR__ . '/funcoes.php';
 require_once __DIR__ . '/conexao.php';
 $usuario = exigirAutenticacao($pdo);
-exigirPermissao($usuario, 'students.view');
 $contextoLista = obterContextoListaAlunos($_GET);
 
 // Sem ID: formulário novo. Com ID: formulário de edição.
 $aluno = ['id' => '', 'nome' => '', 'telefone' => '', 'email' => '', 'plano' => 'Mensal'];
 $editando = isset($_GET['id']);
 
+exigirPermissao($usuario, $editando ? 'students.update' : 'students.create');
+
 if ($editando) {
-    exigirPermissao($usuario, 'students.update');
     $id = validarId($_GET['id']);
     if ($id === false) {
         http_response_code(400);
