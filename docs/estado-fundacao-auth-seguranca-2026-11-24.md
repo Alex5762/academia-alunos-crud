@@ -123,3 +123,14 @@ Ficam fora: matrículas, frequência, financeiro, grade, dashboard completo, rel
 - A criação autorizada permanece coberta pelo fluxo HTTP, incluindo auditoria e senha temporária.
 - Os três achados da revisão técnica estão resolvidos e validados. A PR #2 permanece aberta, sem merge, aguardando revisão final e autorização explícita.
 - `main` permanece intacta em `e1f4c8084dc6dec8c772a699855562944d50e89e`.
+
+## Revisão final complementar — 2026-11-24
+
+A revisão do diff completo da PR #2 confirmou que os três achados originais permanecem resolvidos e que os cinco jobs do run #45418011102 passaram no HEAD documental anterior. Foi identificada, porém, uma observação adicional no fluxo de rate limit:
+
+- Em `login.php`, a chamada `isBlocked()` ocorre antes da verificação da senha e não reserva/serializa a tentativa.
+- A gravação do contador e do evento `login_falhou` acontece depois, por `recordFailure()`.
+- Requisições concorrentes podem consultar o estado ainda desbloqueado e avançar simultaneamente até a verificação de credenciais. O teste de banco demonstra que o contador final fica limitado a cinco, mas não demonstra que o gate HTTP impede bursts já admitidos.
+- A cobertura HTTP atual valida cinco falhas sequenciais, bloqueio e expiração; não há teste de integração concorrente no endpoint de login.
+
+**Status:** observação adicional pendente de decisão/correção antes do merge. Não altera os três achados originais já validados. A descrição da PR #2 foi sincronizada para deixar explícita essa pendência. Nenhuma alteração foi feita na `main`; nenhum merge foi realizado.
