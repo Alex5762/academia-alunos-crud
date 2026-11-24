@@ -258,3 +258,23 @@ A CI confirma a implementação da fundação, incluindo rate limit concorrente 
 O checklist `docs/pre-merge-checklist-bloco-01-2026-11-24.md` contém a sequência detalhada de backup, configuração, migrations 001/002/003/007/008, marcador histórico, inicialização da cadeia, provisionamento CLI, smoke tests e recuperação.
 
 Nenhuma migration foi executada; nenhum dado foi alterado; nenhum merge foi realizado. A `main` permanece no SHA informado acima.
+
+## Resultado final da CI e estado da PR — 2026-11-24
+
+Este registro supersede os snapshots operacionais anteriores desta documentação.
+
+- PR #2: aberta, não mesclada, não draft.
+- HEAD validado: `501f49cea8ecd405b0a22057c50ab482ec56fe62`.
+- Base `main`: `e1f4c8084dc6dec8c772a699855562944d50e89e`.
+- Comparação: 71 commits à frente, 0 atrás; 58 arquivos, 5.853 adições e 73 deleções.
+- Estado da PR na última consulta: `mergeable=true`, `mergeable_state=clean`.
+- Run pull_request #45457276790: sucesso, 5/5 jobs.
+- Run push #45457261651: sucesso, 5/5 jobs.
+- Os dois eventos passaram em PHP quality, MySQL 8.0, MariaDB 10.11, integração HTTP MySQL 8.0 e proteção Apache.
+- Não havia avaliações formais, comentários de revisão ou threads inline registrados.
+- A API de proteção da `main` retornou 403 para a integração; as regras atuais precisam ser conferidas manualmente na interface do GitHub.
+- O checklist operacional foi atualizado em `docs/pre-merge-checklist-bloco-01-2026-11-24.md`.
+
+**Pendências fora da CI:** conferir proteção da branch e política de revisão; obter aprovação independente caso exigida; confirmar backup íntegro e ambiente de destino; definir janela de manutenção; receber autorização explícita para o merge.
+
+**Não houve merge, alteração da `main`, migration ou alteração de dados.** A conclusão dos checks não substitui os portões operacionais nem a autorização do responsável.
