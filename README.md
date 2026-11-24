@@ -22,7 +22,7 @@ PHP 8.2+, PDO, MySQL 8.0 ou MariaDB 10.11, HTML, CSS e JavaScript.
 
 1. Copie o repositório para `htdocs`.
 2. Inicie Apache e MySQL.
-3. Importe `banco.sql` no banco local.
+3. Para uma instalação nova em banco vazio, importe `banco.sql`. Se o banco já existir ou contiver dados, não importe cegamente: faça backup e inspecione o schema antes de decidir como aplicar as migrations; siga o checklist em `docs/pre-merge-checklist-bloco-01-2026-11-24.md`.
 4. Copie `config/database.local.example.php` para `config/database.local.php` e ajuste host, porta, banco, usuário e senha. O arquivo local real é ignorado pelo Git.
 5. Execute as migrations, nesta ordem, pelo terminal na raiz do projeto:
    - `database/migrations/001_authentication_audit.sql`
@@ -38,6 +38,13 @@ PHP 8.2+, PDO, MySQL 8.0 ou MariaDB 10.11, HTML, CSS e JavaScript.
    `php scripts/provisionar-usuario.php`
    Informe nome e e-mail quando solicitado e copie a senha temporária exibida. Ela será solicitada somente no primeiro login.
 10. Acesse `http://localhost/academia-alunos-crud/`.
+
+### Cuidados obrigatórios antes de liberar o sistema
+
+- **Nome do banco:** `banco.sql` e as migrations atuais usam explicitamente o schema `academia_alunos` (por meio de `CREATE DATABASE` / `USE academia_alunos`). Mantenha `database` no arquivo local e `DB_NAME` no ambiente exatamente como `academia_alunos`. Alterar apenas a configuração da aplicação para outro nome não redireciona as migrations; uma mudança de nome exige ajuste coordenado dos scripts SQL e da configuração.
+- **Banco existente:** não trate a sequência de instalação nova como atualização automática. Antes de importar qualquer SQL ou executar migrations em banco com dados, faça backup completo e inspecione tabelas, colunas, índices e triggers. Não repita migrations parcialmente executadas.
+- **Perfis herdados:** a migration `007_administrative_roles.sql` atribui `ADMINISTRADOR` às contas que já existiam em `usuarios` quando a coluna é criada. Antes de abrir o sistema a usuários reais, revise individualmente essas contas e reduza os perfis que não devam ser administrativos, usando o fluxo autorizado da aplicação para preservar a auditoria. Em instalação nova, registre que não havia contas preexistentes antes do provisionamento.
+- **Prontidão:** use o runbook e o checklist acima para backup, sequência das migrations, inicialização da cadeia de auditoria, provisionamento CLI e smoke tests. CI verde não substitui esses passos no banco local/de destino.
 
 > A migration 008 instala triggers que impedem inserções diretas na tabela de auditoria. Depois dela, eventos devem ser escritos pelo serviço transacional da aplicação. Por isso, o marcador histórico precisa ser criado antes de aplicar essa migration.
 
