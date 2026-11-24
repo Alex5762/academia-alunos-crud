@@ -262,6 +262,14 @@ OPERATOR_USERS_CODE="$(curl -sS -o "$TMP_DIR/operator-users.html" -w '%{http_cod
 OPERATOR_DELETE_CODE="$(curl -sS -o "$TMP_DIR/operator-delete.html" -w '%{http_code}' -b "$OPERATOR_JAR" -c "$OPERATOR_JAR" "$BASE_URL/excluir.php?id=$STUDENT_ID")"
 [[ "$OPERATOR_DELETE_CODE" == "410" ]] || fail "O endpoint legado de exclusão deveria estar aposentado com 410; recebeu $OPERATOR_DELETE_CODE."
 
+# Operador pode consultar/criar/editar, mas não pode inativar ou reativar alunos.
+OPERATOR_STUDENT_STATUS_TOKEN="$(get_token "$TMP_DIR/operator-dashboard.html")"
+OPERATOR_STUDENT_STATUS_CODE="$(curl -sS -o "$TMP_DIR/operator-student-status.html" -w '%{http_code}' -b "$OPERATOR_JAR" -c "$OPERATOR_JAR" -X POST "$BASE_URL/alterar-status-aluno.php" \
+    --data-urlencode "token=$OPERATOR_STUDENT_STATUS_TOKEN" --data-urlencode "id=$STUDENT_ID" --data-urlencode "acao=inativar")"
+[[ "$OPERATOR_STUDENT_STATUS_CODE" == "403" ]] || fail "Operador deveria receber 403 ao alterar status do aluno; recebeu $OPERATOR_STUDENT_STATUS_CODE."
+STUDENT_STILL_ACTIVE="$(db_value "SELECT ativo FROM alunos WHERE id = $STUDENT_ID")"
+[[ "$STUDENT_STILL_ACTIVE" == "1" ]] || fail "Operador sem students.status alterou o aluno."
+
 # Alteração de status sem CSRF não pode produzir efeito.
 STATUS_CSRF_CODE="$(curl -sS -o "$TMP_DIR/status-invalid-csrf.html" -w '%{http_code}' -b "$ADMIN_JAR" -c "$ADMIN_JAR" -X POST "$BASE_URL/alterar-status-usuario.php" \
     --data-urlencode "id=$OPERATOR_ID" --data-urlencode "acao=desativar")"
@@ -373,6 +381,15 @@ curl -fsS -b "$ADMIN_JAR" -c "$ADMIN_JAR" "$BASE_URL/index.php?status=ativos&bus
 if grep -Fq 'Aluno Foundation HTTP' "$TMP_DIR/student-filter-active.html"; then fail "Aluno inativo apareceu no filtro de ativos."; fi
 AUDIT_INACTIVE="$(db_value "SELECT COUNT(*) FROM auditoria WHERE usuario_id = $ADMIN_ID AND acao = 'aluno_inativado' AND entidade='alunos' AND entidade_id=$STUDENT_ID")"
 [[ "$AUDIT_INACTIVE" == "1" ]] || fail "Inativação não produziu exatamente um evento de auditoria."
+
+# Repetir a mesma transição não deve gerar um segundo evento.
+TOKEN="$(get_token "$TMP_DIR/student-inactivated.html")"
+curl -fsS -L -b "$ADMIN_JAR" -c "$ADMIN_JAR" "$BASE_URL/alterar-status-aluno.php" \
+    --data-urlencode "token=$TOKEN" --data-urlencode "id=$STUDENT_ID" --data-urlencode "acao=inativar" \
+    --data-urlencode "busca=Aluno Foundation HTTP" --data-urlencode "status=ativos" -o "$TMP_DIR/student-inactivated-again.html"
+grep -Fq 'O aluno já estava inativo.' "$TMP_DIR/student-inactivated-again.html" || fail "A transição repetida não informou que o aluno já estava inativo."
+AUDIT_INACTIVE_REPEAT="$(db_value "SELECT COUNT(*) FROM auditoria WHERE usuario_id = $ADMIN_ID AND acao = 'aluno_inativado' AND entidade='alunos' AND entidade_id=$STUDENT_ID")"
+[[ "$AUDIT_INACTIVE_REPEAT" == "1" ]] || fail "Repetir a inativação duplicou o evento de auditoria."
 
 curl -fsS -b "$ADMIN_JAR" -c "$ADMIN_JAR" "$BASE_URL/detalhes-aluno.php?id=$STUDENT_ID&busca=Aluno+Foundation+HTTP&status=inativos" -o "$TMP_DIR/student-details.html"
 grep -Fq 'Detalhes do aluno' "$TMP_DIR/student-details.html" || fail "Página de detalhes não abriu."
