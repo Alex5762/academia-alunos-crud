@@ -184,6 +184,15 @@ jobs:
           DB_PASSWORD: root
         run: php tests/database-audit-checkpoint.php
 
+      - name: Validate user administration permissions and concurrent last-administrator changes
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_NAME: academia_alunos
+          DB_USER: root
+          DB_PASSWORD: root
+        run: php tests/database-user-account-administration.php
+
   block-03-migrations:
     name: Block 03 migrations (${{ matrix.database-name }})
     runs-on: ubuntu-latest

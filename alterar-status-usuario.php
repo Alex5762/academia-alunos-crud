@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/funcoes.php';
 require_once __DIR__ . '/conexao.php';
+require_once __DIR__ . '/src/Domain/Users/UserAccountAdministrationService.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
@@ -23,95 +24,36 @@ if ($id === false || !is_string($acao) || !in_array($acao, ['desativar', 'reativ
 $usuarioAlvoId = (int) $id;
 $usuarioAtualId = (int) $usuario['id'];
 
-if ($acao === 'desativar' && $usuarioAlvoId === $usuarioAtualId) {
-    $_SESSION['mensagem'] = 'Você não pode desativar sua própria conta.';
-    redirecionar('usuarios.php');
-}
-
 try {
-    $pdo->beginTransaction();
+    $service = new \FitControl\Domain\Users\UserAccountAdministrationService($pdo);
+    $result = $service->changeStatus($usuarioAtualId, $usuarioAlvoId, $acao);
 
-    // Trava as contas em ordem estável antes de contar/alterar status.
-    // Isso serializa as mudanças concorrentes e reduz disputas de lock.
-    $contas = $pdo->query(
-        'SELECT id, ativo FROM usuarios ORDER BY id FOR UPDATE'
-    )->fetchAll();
-
-    $conta = null;
-    $quantidadeAtivas = 0;
-
-    foreach ($contas as $registro) {
-        if ((int) $registro['ativo'] === 1) {
-            $quantidadeAtivas++;
-        }
-
-        if ((int) $registro['id'] === $usuarioAlvoId) {
-            $conta = $registro;
-        }
+    if ($result === \FitControl\Domain\Users\UserAccountAdministrationService::UNAUTHORIZED) {
+        http_response_code(403);
+        header('Content-Type: text/plain; charset=UTF-8');
+        exit('Sua conta não possui mais permissão para administrar funcionários.');
     }
 
-    if (!$conta) {
-        $pdo->rollBack();
-        $_SESSION['mensagem'] = 'Conta não encontrada.';
-        redirecionar('usuarios.php');
-    }
+    $messages = [
+        \FitControl\Domain\Users\UserAccountAdministrationService::NOT_FOUND =>
+            'Conta não encontrada.',
+        \FitControl\Domain\Users\UserAccountAdministrationService::SELF_DEACTIVATION =>
+            'Você não pode desativar sua própria conta.',
+        \FitControl\Domain\Users\UserAccountAdministrationService::ALREADY_INACTIVE =>
+            'A conta já estava inativa.',
+        \FitControl\Domain\Users\UserAccountAdministrationService::ALREADY_ACTIVE =>
+            'A conta já estava ativa.',
+        \FitControl\Domain\Users\UserAccountAdministrationService::LAST_ADMINISTRATOR =>
+            'Não é possível desativar o último administrador ativo.',
+        \FitControl\Domain\Users\UserAccountAdministrationService::DEACTIVATED =>
+            'Conta desativada. O histórico de auditoria foi preservado.',
+        \FitControl\Domain\Users\UserAccountAdministrationService::REACTIVATED =>
+            'Conta reativada com sucesso.',
+    ];
 
-    $jaAtiva = (int) $conta['ativo'] === 1;
-
-    if ($acao === 'desativar' && !$jaAtiva) {
-        $pdo->commit();
-        $_SESSION['mensagem'] = 'A conta já estava inativa.';
-        redirecionar('usuarios.php');
-    }
-
-    if ($acao === 'reativar' && $jaAtiva) {
-        $pdo->commit();
-        $_SESSION['mensagem'] = 'A conta já estava ativa.';
-        redirecionar('usuarios.php');
-    }
-
-    if ($acao === 'desativar') {
-        if ($quantidadeAtivas <= 1) {
-            $pdo->rollBack();
-            $_SESSION['mensagem'] = 'Não é possível desativar a última conta ativa.';
-            redirecionar('usuarios.php');
-        }
-
-        $atualizar = $pdo->prepare(
-            'UPDATE usuarios SET ativo = 0 WHERE id = :id AND ativo = 1'
-        );
-        $atualizar->execute(['id' => $usuarioAlvoId]);
-        $evento = 'usuario_desativado';
-        $mensagem = 'Conta desativada. O histórico de auditoria foi preservado.';
-    } else {
-        $atualizar = $pdo->prepare(
-            'UPDATE usuarios SET ativo = 1 WHERE id = :id AND ativo = 0'
-        );
-        $atualizar->execute(['id' => $usuarioAlvoId]);
-        $evento = 'usuario_reativado';
-        $mensagem = 'Conta reativada com sucesso.';
-    }
-
-    if ($atualizar->rowCount() !== 1) {
-        throw new RuntimeException('O status da conta não foi alterado.');
-    }
-
-    registrarAuditoria(
-        $pdo,
-        $usuarioAtualId,
-        $evento,
-        'usuarios',
-        $usuarioAlvoId
-    );
-
-    $pdo->commit();
-    $_SESSION['mensagem'] = $mensagem;
+    $_SESSION['mensagem'] = $messages[$result] ?? 'Não foi possível alterar o status da conta.';
     redirecionar('usuarios.php');
 } catch (Throwable $falha) {
-    if ($pdo->inTransaction()) {
-        $pdo->rollBack();
-    }
-
     error_log($falha->getMessage());
     http_response_code(500);
     exit('Não foi possível alterar o status da conta. Tente novamente.');
