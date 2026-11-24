@@ -158,3 +158,20 @@ Commits desta correção:
 - afb6771 — adicionar teste HTTP concorrente com múltiplas sessões.
 
 **Validação ainda não concluída:** aguardar os cinco jobs da CI no HEAD que inclui todos os commits acima. Se algum job falhar, corrigir antes de fechar o bloco. main permanece intacta; PR #2 continua sem merge.
+
+
+## Validação final da admissão concorrente — 2026-11-24
+
+**Correção validada em CI no commit c63c2d008416224d24c59bc79ec70906ca392c5e.**
+
+- Run #45425206298 (push): sucesso, 5/5 jobs.
+- Run #45425223992 (pull_request): sucesso, 5/5 jobs.
+- Os cinco jobs passaram nos dois eventos: PHP quality and unit tests; Foundation database (MySQL 8.0); Foundation database (MariaDB 10.11); Foundation HTTP integration (MySQL 8.0); Apache webroot protection.
+- A integração HTTP executou o teste de 12 requisições simultâneas com sessões independentes e confirmou contador igual a cinco, bloqueio ativo e exatamente cinco eventos de auditoria sem PII.
+- A suíte sequencial, expiração, reinício da janela, limpeza após login válido e os fluxos existentes de autenticação/RBAC/CRUD também passaram.
+- A primeira execução intermediária encontrou somente um erro de sintaxe no namespace do rate limiter; corrigido em c63c2d0. A CI final acima foi executada no commit corrigido.
+- O protocolo usa named locks GET_LOCK/RELEASE_LOCK; compatibilidade confirmada pelos jobs de MySQL 8.0 e MariaDB 10.11.
+- A observação adicional de admissão concorrente fica resolvida e validada. Os três achados originais também permanecem validados.
+- PR #2 segue aberta e sem merge. main permanece em e1f4c8084dc6dec8c772a699855562944d50e89e. Nenhuma migration foi aplicada ao ambiente local do usuário.
+
+**Próxima etapa:** revisão final do diff e do estado da PR; não mesclar sem autorização explícita.
