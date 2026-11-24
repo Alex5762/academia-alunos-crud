@@ -398,10 +398,12 @@ if ($estruturaDisponivel) {
                         Este vínculo já foi confirmado e possui um intervalo histórico materializado.
                         Para corrigir suas datas com uma nova evidência, use a retificação auditada. A revisão pode ser reaberta se a confirmação anterior deixar de ser confiável.
                     </p>
-                    <a class="button button-primary legacy-review-profile-link"
-                       href="retificar-vigencia-legado.php?review_id=<?= (int) $revisaoSelecionada['revisao_id'] ?>">
-                        Retificar vigência comprovada
-                    </a>
+                    <?php if (usuarioTemPermissao($usuario, 'legacy.rectify')) { ?>
+                        <a class="button button-primary legacy-review-profile-link"
+                           href="retificar-vigencia-legado.php?review_id=<?= (int) $revisaoSelecionada['revisao_id'] ?>">
+                            Retificar vigência comprovada
+                        </a>
+                    <?php } ?>
                 <?php } else { ?>
                     <p class="plan-setup-note">
                         <strong>Vínculo confirmado:</strong> exige início e fim exclusivo comprovados.
@@ -410,6 +412,7 @@ if ($estruturaDisponivel) {
                     </p>
                 <?php } ?>
 
+                <?php if (usuarioTemPermissao($usuario, 'legacy.review')) { ?>
                 <form action="salvar-revisao-legado.php" method="post" class="account-create-form legacy-review-form">
                     <input type="hidden" name="token" value="<?= escapar($_SESSION['token']) ?>">
                     <input type="hidden" name="review_id" value="<?= (int) $revisaoSelecionada['revisao_id'] ?>">
@@ -495,6 +498,7 @@ if ($estruturaDisponivel) {
                         <a class="button button-search" href="detalhes-aluno.php?id=<?= (int) $revisaoSelecionada['aluno_id_origem'] ?>">Abrir perfil do aluno</a>
                     </div>
                 </form>
+                <?php } ?>
             </section>
 
             <section class="settings-card account-card" aria-labelledby="legacy-review-events-title">
