@@ -106,7 +106,7 @@ try {
             inicio_em DATETIME NOT NULL,
             fim_exclusivo_em DATETIME NOT NULL,
             cancelada_em DATETIME NULL,
-            motivo_cancelamento VARCHAR(500) NULL,
+            motivo_cancelamento VARCHAR(255) NULL,
             criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
             KEY idx_matriculas_aluno_inicio (aluno_id, inicio_em),
             CONSTRAINT fk_cancel_test_student
@@ -258,6 +258,27 @@ try {
     assertCancellation(
         countCancellationAudits($pdo, $actorId, $activeId) === 1,
         'O cancelamento ativo precisa gerar exatamente um evento de auditoria.'
+    );
+
+    // O domínio também protege o limite do schema, mesmo quando chamado fora do endpoint.
+    $invalidReasonRejected = false;
+    try {
+        $service->cancel(
+            $studentIds[2],
+            $expiredId,
+            $actorId,
+            str_repeat('x', 256)
+        );
+    } catch (InvalidArgumentException) {
+        $invalidReasonRejected = true;
+    }
+    assertCancellation(
+        $invalidReasonRejected,
+        'Motivo acima de 255 caracteres deve ser rejeitado antes da transação.'
+    );
+    assertCancellation(
+        $pdo->query('SELECT cancelada_em FROM matriculas WHERE id = ' . $expiredId)->fetchColumn() === null,
+        'Motivo inválido não pode alterar a matrícula.'
     );
 
     // Matrícula vencida não pode ser cancelada nem receber evento.
