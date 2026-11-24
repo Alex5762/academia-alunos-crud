@@ -333,3 +333,51 @@ A API confirma que `main` está protegida, mas não expõe os detalhes da prote�
 Continuam pendentes: backup íntegro do banco de destino; identificação do ambiente e janela de manutenção; aprovação independente caso exigida; autorização explícita para merge.
 
 **Estado:** revisão técnica e CI aprovadas no HEAD acima. A PR continua aberta e não mesclada; nenhuma migration ou alteração de dados foi executada. A `main` permanece no SHA informado.
+
+
+## Checkpoint pós-merge — PR #2 — 2026-11-24
+
+Este é o registro atual do estado do Bloco 01 e supersede os snapshots anteriores que indicavam PR aberta/não mesclada. Os registros anteriores foram mantidos como histórico da preparação.
+
+### Integração confirmada
+
+- PR #2: **fechada e mesclada**.
+- Título: `feat: integrar fundação de autenticação e segurança`.
+- Branch de origem: `feat/foundation-auth-security`.
+- HEAD integrado: `678d9eeb0d7d882e3017ca60525afcd5b42a0765`.
+- Base anterior: `e1f4c8084dc6dec8c772a699855562944d50e89e`.
+- Commit de merge: `c80986b763e23d5a9541334c9894dbd9effa5e27`.
+- A referência `main` foi consultada após a operação e aponta exatamente para o commit de merge.
+- O commit contém os dois pais esperados: a base anterior da `main` e o HEAD da PR.
+- Escopo integrado: 78 commits; 58 arquivos; 6.020 adições e 73 exclusões.
+- Verificação de assinatura do commit de merge: válida.
+
+### CI no commit de merge
+
+Run #45464299740, associado ao commit `c80986b763e23d5a9541334c9894dbd9effa5e27`: **5/5 checks concluídos com sucesso**.
+
+1. `PHP quality and unit tests`
+2. `Foundation database (MySQL 8.0)`
+3. `Foundation database (MariaDB 10.11)`
+4. `Foundation HTTP integration (MySQL 8.0)`
+5. `Apache webroot protection`
+
+### Proteção da branch principal
+
+A consulta da referência `main` confirmou `protected: true` e os cinco checks acima como verificações obrigatórias. O merge foi realizado pela PR #2; não houve atualização direta nem force-push da branch principal.
+
+### Situação operacional após a integração
+
+O código da fundação está integrado e validado por CI. Isso **não significa que o banco do ambiente local/de destino já foi atualizado**.
+
+- Nenhuma migration foi executada por este checkpoint.
+- Não foi feita alteração de dados do banco.
+- Não foi provisionado um Administrador inicial nesta etapa.
+- Backup, identificação do banco correto e execução controlada do runbook continuam sendo etapas operacionais separadas.
+- O runbook permanece em `docs/pre-merge-checklist-bloco-01-2026-11-24.md`; seu conteúdo de preparação foi mantido e recebeu um registro pós-merge ao final.
+
+### Próximo marco
+
+Preparar a aplicação local contra a `main` integrada; identificar e inspecionar o banco de destino; gerar e verificar backup; executar migrations na ordem documentada somente após confirmar o estado real do schema; inicializar a cadeia de auditoria; provisionar o primeiro Administrador via CLI; executar smoke tests de autenticação, RBAC, CRUD, sessões, auditoria e logout.
+
+**Estado atual:** Bloco 01 integrado à `main` e CI pós-merge verde. Implantação/migrations e smoke test no ambiente local ou de destino ainda não foram executados neste checkpoint.

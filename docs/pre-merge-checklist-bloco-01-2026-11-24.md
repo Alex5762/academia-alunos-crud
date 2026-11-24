@@ -203,3 +203,48 @@ A API de proteção da `main` retornou 403 para a integração; confirmar as reg
 - Nenhuma avaliação formal, comentário de revisão ou thread inline registrada.
 - Backup, ambiente de destino, janela de manutenção, aprovação independente caso exigida e autorização explícita continuam pendentes.
 - Nenhuma migration, alteração de dados ou merge foi executado.
+
+
+## 13. Registro pós-merge — 2026-11-24
+
+Esta seção atualiza a decisão de integração. As seções anteriores são snapshots históricos da preparação e não representam mais o estado atual da PR.
+
+- PR #2: **merged**.
+- Branch integrada: `feat/foundation-auth-security`.
+- HEAD da PR: `678d9eeb0d7d882e3017ca60525afcd5b42a0765`.
+- Commit de merge: `c80986b763e23d5a9541334c9894dbd9effa5e27`.
+- `main` consultada após o merge: SHA exatamente igual a `c80986b763e23d5a9541334c9894dbd9effa5e27`.
+- CI pós-merge no commit resultante: run #45464299740, 5/5 checks concluídos com sucesso.
+- Branch `main`: protegida; os cinco checks de qualidade, banco, HTTP e proteção Apache continuam configurados como obrigatórios.
+- Commit de merge verificado; pais correspondem à base anterior e ao HEAD da PR.
+- Escopo integrado: 78 commits, 58 arquivos, 6.020 adições e 73 exclusões.
+
+### 13.1 Próxima fase — implantação controlada do Bloco 01
+
+**A integração de código terminou. A implantação no banco ainda não está concluída.** Não executar migrations automaticamente nem presumir que o ambiente local está vazio.
+
+- [x] Confirmar PR #2 mesclada.
+- [x] Confirmar que `main` aponta para o commit de merge.
+- [x] Confirmar CI pós-merge 5/5 no commit de merge.
+- [ ] Atualizar o clone local a partir da `main` e confirmar o SHA antes de testar.
+- [ ] Identificar explicitamente o ambiente e o banco alvo; confirmar que não é produção ou banco compartilhado sem autorização.
+- [ ] Verificar a configuração local não versionada e validar a conexão com o banco correto.
+- [ ] Fazer backup completo, fora da pasta pública, e comprovar que pode ser lido/restaurado em ambiente de teste.
+- [ ] Inspecionar o schema atual para decidir entre instalação vazia e banco existente; não importar `banco.sql` cegamente em banco com dados.
+- [ ] Aplicar migrations 001, 002, 003 e 007 uma única vez, na ordem do runbook.
+- [ ] Inserir o marcador histórico antes da migration 008, conforme instrução documentada.
+- [ ] Aplicar migration 008 e executar `php scripts/inicializar-integridade-auditoria.php`.
+- [ ] Verificar a integridade da cadeia de auditoria.
+- [ ] Provisionar o primeiro Administrador com `php scripts/provisionar-usuario.php`, exclusivamente pelo terminal.
+- [ ] Executar smoke tests: login, troca obrigatória de senha, alteração voluntária, revogação de sessões paralelas, RBAC, CRUD protegido, auditoria, logout e acesso por perfil.
+- [ ] Registrar evidências, resultado e eventuais desvios em novo checkpoint documental.
+
+### 13.2 Regras de segurança para a próxima fase
+
+- Não colocar credenciais reais no Git.
+- Não executar migrations sem backup verificável e inspeção do schema.
+- Não reaplicar migrations parcialmente executadas; parar e inspecionar o estado antes de qualquer retomada.
+- Não improvisar rollback SQL; usar o plano de recuperação e o backup validado.
+- Não liberar o ambiente até que provisionamento, integridade da auditoria e smoke tests estejam aprovados.
+
+**Estado:** integração de código concluída; execução operacional do banco e validação local continuam pendentes. Nenhuma migration, alteração de dados ou provisionamento foi realizado neste checkpoint.
