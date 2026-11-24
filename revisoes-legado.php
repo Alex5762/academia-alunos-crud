@@ -495,7 +495,7 @@ if ($estruturaDisponivel) {
                                 <input type="number" id="referencia-legado" name="dia_referencia_calendario"
                                        min="1" max="31" step="1" inputmode="numeric">
                             </div>
-                            <small class="field-hint">Preço e duração ficam nulos quando não há prova. O dia de referência só se aplica a uma duração mensal.</small>
+                            <small class="field-hint">Na primeira confirmação, preço e duração ficam nulos quando não há prova. Na reconfirmação, valores já registrados são preservados; informe somente dados adicionais comprovados que coincidam com o snapshot. O dia de referência só se aplica a uma duração mensal.</small>
                         </fieldset>
                     <?php } ?>
 
