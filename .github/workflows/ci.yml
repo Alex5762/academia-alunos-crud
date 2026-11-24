@@ -103,14 +103,6 @@ jobs:
           DB_USER: root
           DB_PASSWORD: root
         run: php tests/database-login-rate-limit.php
-      - name: Test concurrent login rate limiting and audit
-        env:
-          DB_HOST: 127.0.0.1
-          DB_PORT: 3306
-          DB_NAME: academia_alunos
-          DB_USER: root
-          DB_PASSWORD: root
-        run: php tests/database-login-rate-limit.php
       - name: Test concurrent account administration
         env:
           DB_HOST: 127.0.0.1
