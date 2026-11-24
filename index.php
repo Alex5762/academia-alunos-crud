@@ -38,6 +38,7 @@ unset($_SESSION['mensagem']); // Mostra a mensagem apenas uma vez.
     <h1>Cadastro de alunos</h1>
     <nav class="auth-nav" aria-label="Conta">
         <span>Olá, <?= escapar($usuario['nome']) ?></span>
+        <a href="alterar-senha.php">Alterar senha</a>
         <?php if (usuarioTemPermissao($usuario, 'students.create')) { ?><a href="cadastro.php">Cadastrar aluno</a><?php } ?>
         <?php if (usuarioTemPermissao($usuario, 'users.manage')) { ?><a href="usuarios.php">Gerenciar funcionários</a><?php } ?>
         <form action="logout.php" method="post" class="logout-form">
