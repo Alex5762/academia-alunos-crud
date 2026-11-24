@@ -19,38 +19,38 @@
 | Item | Estado observado em 24/11/2026 |
 |---|---|
 | Branch de trabalho | `feat/dashboard-portfolio` |
-| HEAD da branch | `7eb9264decd7c7540c9f322369d26e6e0757fc43` |
-| Último commit | `docs(security): add consolidated security review` |
+| HEAD da branch no snapshot desta atualização | `0310e4432429541a1f3bfdeaa216d68464af9a5c` |
+| Último commit no snapshot | `docs(users): record concurrent administrator safeguards` |
 | Branch de destino da PR | `main` |
 | PR #1 | Aberta, em Draft, não merged |
-| Arquivos na PR | 185 |
-| Commits apresentados na PR | 1.189 |
-| Adições / remoções | 37.494 / 305 |
+| Arquivos na PR | 189 |
+| Commits apresentados na PR | 1.197 |
+| Adições / remoções | 38.381 / 305 |
 | Estado de merge reportado pelo GitHub | `mergeable: true` |
 
 O `mergeable: true` indica que o GitHub não reportou conflito de merge naquele momento. **Não significa que a PR esteja aprovada, revisada ou pronta para integração.**
 
 Links:
 - [PR #1](https://github.com/Alex5762/academia-alunos-crud/pull/1)
-- [HEAD atual registrado](https://github.com/Alex5762/academia-alunos-crud/commit/7eb9264decd7c7540c9f322369d26e6e0757fc43)
+- [HEAD de referência do snapshot](https://github.com/Alex5762/academia-alunos-crud/commit/0310e4432429541a1f3bfdeaa216d68464af9a5c)
 
 ### Estado da main e divergência de histórico
 
 | Referência | SHA observado |
 |---|---|
 | `main` | `e1f4c8084dc6dec8c772a699855562944d50e89e` |
-| `feat/dashboard-portfolio` | `7eb9264decd7c7540c9f322369d26e6e0757fc43` |
+| `feat/dashboard-portfolio` no snapshot | `0310e4432429541a1f3bfdeaa216d68464af9a5c` |
 | Base comum identificada | `887fb6549888132202d3561faaed76a9928c0314` |
 
-A comparação GitHub entre `main` e `feat/dashboard-portfolio` retornou estado divergente: 1.189 commits à frente na branch de trabalho e 6 commits à frente na `main`, em relação à base comum.
+A comparação GitHub entre `main` e `feat/dashboard-portfolio` retornou estado divergente: 1.197 commits à frente na branch de trabalho e 6 commits à frente na `main`, em relação à base comum.
 
 Os seis commits da `main` depois da base comum foram inspecionados por comparação: a comparação da base `887fb654...` até `main` retornou seis commits e **nenhum arquivo com diferença líquida**. O histórico registra adições e remoções de arquivos de diagnóstico e uma mudança no histórico financeiro posteriormente revertida. Isso não autoriza ignorar os commits; apenas indica que, na comparação de arquivos feita naquele momento, não havia alteração líquida para transportar.
 
-A quantidade de commits da PR e o histórico divergente tornam desaconselhável fazer um merge integral sem antes reconstruir e revisar os conjuntos lógicos de alterações. Também não é recomendável tentar transportar os 1.189 commits individualmente.
+A quantidade de commits da PR e o histórico divergente tornam desaconselhável fazer um merge integral sem antes reconstruir e revisar os conjuntos lógicos de alterações. Também não é recomendável tentar transportar os 1.197 commits individualmente.
 
-### CI do HEAD
+### CI da implementação técnica
 
-A [CI #1709](https://github.com/Alex5762/academia-alunos-crud/actions/runs/45334857551) foi executada no HEAD exato `7eb9264decd7c7540c9f322369d26e6e0757fc43` e concluiu com sucesso.
+A [CI #1716](https://github.com/Alex5762/academia-alunos-crud/actions/runs/45340419014) foi executada no commit de implementação `8ab8315125b790fecffa962b1a05b23be5a14615` e concluiu com sucesso.
 
 - Sete jobs funcionais concluídos com sucesso.
 - Compatibilidade automatizada com MySQL 8.0 e MariaDB 10.11.
@@ -63,6 +63,7 @@ A CI verde é evidência automatizada importante, mas não substitui validação
 
 - Blocos 01–07 têm implementação relevante na branch e evidências automatizadas registradas nos documentos do projeto.
 - A revisão consolidada de segurança está em [`docs/revisao-seguranca-consolidada.md`](revisao-seguranca-consolidada.md).
+- A revisão de administração concorrente está em [`docs/seguranca-administracao-contas-concorrencia.md`](seguranca-administracao-contas-concorrencia.md).
 - O roadmap permanece em [`docs/roadmap.md`](roadmap.md).
 - A CSP está em modo **Report-Only**; não converter para enforcement sem revisão manual e aprovação específica.
 - O projeto continua acadêmico/local. Não usar dados reais nem expor publicamente como aplicação de produção.
@@ -197,14 +198,14 @@ Até lá: não executar migrations no banco local do usuário, não inserir dado
 
 - [x] **Ação 1:** revisar e fechar a regra explícita do último administrador e a revalidação do ator sob concorrência.
 - [x] **Ação 2:** criar testes de banco/concorrência e validar a CI completa, incluindo testes HTTP de status e CSRF.
-- [ ] **Ação 3:** inventariar os 185 arquivos da PR #1 por domínio, migration, teste, documentação e arquivo compartilhado.
+- [ ] **Ação 3:** inventariar os 189 arquivos da PR #1 por domínio, migration, teste, documentação e arquivo compartilhado.
 - [ ] **Ação 4:** construir um grafo de dependências e uma matriz arquivo → bloco → PR candidata.
 - [ ] **Ação 5:** confirmar os limites do primeiro conjunto de integração e revisar o procedimento de proteção da `main`.
 - [ ] **Ação 6:** criar a primeira branch limpa a partir da `main` e preparar a primeira PR pequena.
 - [ ] **Ação 7:** repetir o ciclo de validação, PR e autorização para cada bloco.
 - [ ] **Ação 8:** fazer a validação prática local no final, quando o ambiente estiver disponível.
 
-**Ponto exato de retomada:** Ações 1 e 2 concluídas e validadas pela CI #1716. A próxima tarefa é a Ação 3: inventariar os 188 arquivos da PR #1 por domínio, migration, teste, documentação e arquivo compartilhado. HEAD registrado após a implementação: `8ab8315125b790fecffa962b1a05b23be5a14615`. A PR #1 permanece Draft. Nenhuma branch nova, regra de proteção, migration local ou integração à `main` foi criada/realizada como parte deste plano.
+**Ponto exato de retomada:** Ações 1 e 2 concluídas e validadas pela CI #1716. A próxima tarefa é a Ação 3: inventariar os 189 arquivos da PR #1 por domínio, migration, teste, documentação e arquivo compartilhado. HEAD de código validado pela CI #1716: `8ab8315125b790fecffa962b1a05b23be5a14615`. O snapshot documental posterior era `0310e4432429541a1f3bfdeaa216d68464af9a5c`; a CI #1717 para esse commit documental estava na fila na última consulta. A PR #1 permanece Draft. Nenhuma branch nova, regra de proteção, migration local ou integração à `main` foi criada/realizada como parte deste plano.
 
 ## 8. Instrução para retomar em outro chat
 
