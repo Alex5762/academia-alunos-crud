@@ -2,6 +2,7 @@
 require_once __DIR__ . '/funcoes.php';
 require_once __DIR__ . '/conexao.php';
 require_once __DIR__ . '/src/Security/PasswordPolicy.php';
+require_once __DIR__ . '/src/Domain/Users/UserAccountAdministrationService.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
@@ -43,29 +44,19 @@ try {
     );
     $senhaHash = \FitControl\Security\PasswordPolicy::hash($senhaTemporaria);
 
-    $pdo->beginTransaction();
-
-    $inserir = $pdo->prepare(
-        "INSERT INTO usuarios (nome, email, senha_hash, ativo, perfil, deve_trocar_senha)
-         VALUES (:nome, :email, :senha_hash, 1, 'OPERADOR', 1)"
-    );
-    $inserir->execute([
-        'nome' => $nome,
-        'email' => $email,
-        'senha_hash' => $senhaHash
-    ]);
-
-    $novoUsuarioId = (int) $pdo->lastInsertId();
-
-    registrarAuditoria(
-        $pdo,
+    $service = new \\FitControl\\Domain\\Users\\UserAccountAdministrationService($pdo);
+    $novoUsuarioId = $service->createAccount(
         (int) $usuario['id'],
-        'usuario_criado',
-        'usuarios',
-        $novoUsuarioId
+        $nome,
+        $email,
+        $senhaHash
     );
 
-    $pdo->commit();
+    if ($novoUsuarioId === \\FitControl\\Domain\\Users\\UserAccountAdministrationService::UNAUTHORIZED) {
+        http_response_code(403);
+        header('Content-Type: text/plain; charset=UTF-8');
+        exit('Sua conta não possui mais permissão para administrar funcionários.');
+    }
 
     $_SESSION['mensagem'] = 'Conta criada com sucesso.';
     $_SESSION['senha_temporaria_criada'] = $senhaTemporaria;
