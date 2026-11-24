@@ -436,6 +436,9 @@ jobs:
       - name: Test report period validation
         run: php tests/report-period.php
 
+      - name: Test centralized password policy and bcrypt byte limit
+        run: php tests/password-policy.php
+
       - name: Test role-based access control matrix
         run: php tests/access-control.php
 
