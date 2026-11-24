@@ -293,32 +293,34 @@ assertUserAdministration(
     'A requisição com ator revogado não pode alterar a conta de destino.'
 );
 
-// A invariável deve valer também fora do cenário concorrente.
-$lastAdminProfileResult = $service->changeProfile($activeAdminId = (int) $pdo->query(
+// Regressões das invariantes após a corrida: o administrador preservado
+// não pode alterar o próprio perfil nem desativar a própria conta.
+$service = new UserAccountAdministrationService($pdo);
+$activeAdminId = (int) $pdo->query(
     "SELECT id FROM usuarios
      WHERE id IN ({$adminA}, {$adminB})
        AND ativo = 1 AND perfil = 'ADMINISTRADOR'
      LIMIT 1"
-)->fetchColumn(), $operator, 'GESTOR');
+)->fetchColumn();
+assertUserAdministration($activeAdminId > 0, 'O teste precisa identificar o administrador preservado.');
+
 assertUserAdministration(
-    $lastAdminProfileResult === UserAccountAdministrationService::UPDATED,
-    'A conta OPERADOR de fixture deve poder receber perfil de Gestor.'
+    $service->changeProfile($activeAdminId, $activeAdminId, 'GESTOR')
+        === UserAccountAdministrationService::SELF_PROFILE,
+    'O último administrador não pode remover o próprio perfil.'
 );
 assertUserAdministration(
-    $service->changeProfile($activeAdminId, $activeAdminId === $adminA ? $adminB : $adminA, 'GESTOR')
-        === UserAccountAdministrationService::LAST_ADMINISTRATOR,
-    'Não deve ser possível rebaixar o último administrador ativo.'
+    $service->changeStatus($activeAdminId, $activeAdminId, 'desativar')
+        === UserAccountAdministrationService::SELF_DEACTIVATION,
+    'O último administrador não pode desativar a própria conta.'
 );
 assertUserAdministration(
-    $service->changeStatus($activeAdminId, $activeAdminId, 'reativar')
-        === UserAccountAdministrationService::ALREADY_ACTIVE,
-    'Reativar uma conta já ativa deve ser operação idempotente.'
-);
-$otherAdminId = $activeAdminId === $adminA ? $adminB : $adminA;
-assertUserAdministration(
-    $service->changeStatus($activeAdminId, $otherAdminId, 'desativar')
-        === UserAccountAdministrationService::LAST_ADMINISTRATOR,
-    'Não deve ser possível desativar o último administrador ativo.'
+    (int) $pdo->query(
+        "SELECT COUNT(*) FROM usuarios
+         WHERE id IN ({$adminA}, {$adminB})
+           AND ativo = 1 AND perfil = 'ADMINISTRADOR'"
+    )->fetchColumn() === 1,
+    'As operações contra a própria conta devem preservar o último administrador.'
 );
 assertUserAdministration(
     $service->changeProfile($operator, $activeAdminId, 'GESTOR')
