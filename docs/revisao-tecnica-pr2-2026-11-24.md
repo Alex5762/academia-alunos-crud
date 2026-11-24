@@ -28,11 +28,11 @@ Cada falha de credenciais que passa pelo bloqueio gera `login_falhou` na cadeia 
 
 ## Achado 3 — revalidação da autorização na criação de contas
 
-**Severidade: média. Pendente.**
+**Severidade: média. Implementado; aguardando CI do novo HEAD.**
 
-`salvar-usuario.php` chama `exigirPermissao($usuario, 'users.manage')` antes de iniciar a transação. Diferentemente de alteração de perfil/status, a criação não revalida o administrador sob lock. Se o privilégio for revogado concorrentemente após a checagem, a requisição já iniciada pode criar uma conta.
+`salvar-usuario.php` mantém a checagem antecipada para rejeição rápida, mas a criação efetiva agora passa por `UserAccountAdministrationService::createAccount()`. O serviço usa a mesma transação com `SELECT ... FOR UPDATE` de todas as contas, revalida ator ativo, perfil com `users.manage` e `deve_trocar_senha = 0`, cria a conta e grava `usuario_criado` na mesma transação. Assim, se a autorização for revogada antes de a operação obter o lock, a criação retorna `UNAUTHORIZED` sem inserir a conta.
 
-**Ação proposta:** mover criação de conta para `UserAccountAdministrationService`, revalidando ator ativo, administrador e `deve_trocar_senha = 0` dentro da transação bloqueada; acrescentar teste concorrente de revogação contra criação.
+**Cobertura adicionada:** o teste de administração de contas inicia uma criação após pré-autorização, mantém a operação aguardando o lock global, revoga o perfil do ator em outra transação e comprova que, ao prosseguir, o serviço nega a criação e não deixa conta persistida. O caminho autorizado e a auditoria da criação também são verificados.
 
 ## Pontos positivos observados
 
@@ -52,7 +52,7 @@ A revisão consultou os arquivos e testes versionados no HEAD identificado. A va
 
 ## Decisão atual
 
-**Não aprovar merge ainda.** Os achados 1 e 2 estão resolvidos e validados. O Achado 3 permanece pendente e deve ser tratado antes de considerar a fundação pronta para integração.
+**Não aprovar merge ainda.** Os achados 1 e 2 estão resolvidos e validados. O Achado 3 foi implementado e aguarda a CI do novo HEAD antes de ser considerado resolvido.
 
 
 ## Validação do Achado 2
@@ -64,3 +64,11 @@ A revisão consultou os arquivos e testes versionados no HEAD identificado. A va
 - A integração HTTP cobre falhas 1–5, bloqueio, tentativa durante bloqueio, expiração/reinício da janela e limpeza após login válido.
 - A expiração é simulada ajustando os timestamps no banco; não exige espera real de 15 minutos.
 - A limpeza automática remove registros de rate limit sem atividade por mais de um dia. A cadeia geral de auditoria permanece append-only e não é apagada automaticamente.
+
+
+## Validação do Achado 3
+
+- Implementação commitada na branch `feat/foundation-auth-security`.
+- `salvar-usuario.php` delega a criação ao `UserAccountAdministrationService`; a autorização é revalidada dentro do lock transacional.
+- O teste concorrente de administração cobre pré-autorização, revogação de perfil antes da obtenção do lock, negação da criação, ausência de conta persistida, caminho autorizado e evento de auditoria.
+- A CI do novo HEAD ainda está pendente; não considerar o achado fechado até os cinco checks passarem em push e pull_request.
