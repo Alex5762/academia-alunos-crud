@@ -298,3 +298,7 @@ A antiga PR #1 permanece Draft e não deve ser mesclada em massa.
 - Essa mudança é somente no teste; nenhuma migration, dado do banco local ou configuração de produção foi alterada.
 - A CI precisa ser conferida no novo HEAD `e544f36` antes de considerar esta melhoria validada.
 - PR #9 permanece aberta em Draft, sem merge. Validação XAMPP/visual ainda pendente.
+
+
+- Revisão do novo teste identificou um detalhe de implementação nos sinais IPC: as quebras de linha estavam escapadas duas vezes. Corrigido no commit `8b1c6d1`, para que os workers emitam e o processo principal compare quebras de linha reais (`\n`). A execução da CI anterior `45544734836` estava apenas enfileirada no HEAD `81b8b94`; não foi considerada aprovação.
+- Novo HEAD após a correção: `8b1c6d1`; aguardar e conferir a CI neste commit antes de fechar a melhoria.
