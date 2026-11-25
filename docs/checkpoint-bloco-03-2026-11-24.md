@@ -294,11 +294,20 @@ A antiga PR #1 permanece Draft e não deve ser mesclada em massa.
 - Revisados os testes de disputa por matrícula, exclusão de plano, decisão/retificação legada em ambas as ordens e append concorrente da auditoria.
 - Os serviços mantêm ordem de locks documentada (aluno → plano/revisão/matrículas conforme operação), transações e auditoria atômica. Os testes de disputa usam conexões/processos independentes e tabelas/fixtures descartáveis.
 - Revisada a cadeia SHA-256: lock da linha de estado serializa escritores; evento, hash e atualização do estado compartilham a transação; triggers impedem inserção direta, update e delete fora do registrador; testes cobrem rollback, adulteração bloqueada, verificação e append paralelo.
-- Melhoria aplicada no teste `tests/database-audit-integrity.php` (commit `e544f36`): agora os quatro workers precisam sinalizar que iniciaram o append enquanto a conexão principal mantém o lock da linha de estado; só então o lock é liberado. O teste aguarda confirmação individual dos quatro workers e exige exatamente quatro hashes adicionais, tornando a disputa determinística em vez de depender de escalonamento casual.
-- Essa mudança é somente no teste; nenhuma migration, dado do banco local ou configuração de produção foi alterada.
-- A CI precisa ser conferida no novo HEAD `e544f36` antes de considerar esta melhoria validada.
+- Melhoria aplicada no teste `tests/database-audit-integrity.php` (commit `e544f36`): os quatro workers emitem um sinal de início enquanto a conexão principal mantém o lock da linha de estado; o processo principal só libera o lock depois de receber os quatro sinais. O teste aguarda a confirmação de conclusão de cada worker e exige exatamente quatro hashes adicionais. Isso estabelece uma barreira de início entre os processos; não mede individualmente o tempo que cada worker passou aguardando o lock.
+- A primeira versão da barreira tinha sinais IPC com quebras de linha escapadas duas vezes. Corrigido no commit `8b1c6d1`, com `\n` real nos sinais e comparações.
+- A execução `45544813955`, no HEAD documental `d8798c3` (que contém a correção `8b1c6d1`), concluiu com **12/12 jobs aprovados** em 2026-11-25. Incluiu os testes de cadeia SHA-256, rollback, triggers append-only e concorrência no MySQL 8.0, além dos testes MariaDB 10.11 e integração HTTP.
+- A cadeia SHA-256 e os triggers são controles de integridade contra gravações fora do fluxo normal e adulterações acidentais. A variável de sessão `@fitcontrol_audit_chain_write` é um gate controlado pelo cliente SQL; portanto, a solução não é inviolável contra alguém com credenciais privilegiadas do banco. Para resistência a comprometimento das credenciais, seria necessário evoluir o modelo de privilégios (por exemplo, conta de aplicação sem DML direto e escrita encapsulada em procedimento com privilégios controlados).
+- Nenhuma migration, dado do banco local ou configuração de produção foi alterada nesta revisão.
 - PR #9 permanece aberta em Draft, sem merge. Validação XAMPP/visual ainda pendente.
 
 
-- Revisão do novo teste identificou um detalhe de implementação nos sinais IPC: as quebras de linha estavam escapadas duas vezes. Corrigido no commit `8b1c6d1`, para que os workers emitam e o processo principal compare quebras de linha reais (`\n`). A execução da CI anterior `45544734836` estava apenas enfileirada no HEAD `81b8b94`; não foi considerada aprovação.
-- Novo HEAD após a correção: `8b1c6d1`; aguardar e conferir a CI neste commit antes de fechar a melhoria.
+### Fechamento da revisão de concorrência e auditoria — 2026-11-25
+
+- HEAD revisado: `d8798c3153a6c2c7bf70f62648da08758171dbaa`.
+- CI `45544813955`: **12/12 jobs aprovados**, sem falhas. A execução inclui MySQL 8.0, MariaDB 10.11, migrations, domínio/persistência, integração HTTP, testes de concorrência e proteção do webroot.
+- O teste de auditoria agora sincroniza o início dos quatro workers por sinais IPC antes de liberar o lock da linha de estado. Os workers concluem o append e o teste exige quatro hashes novos. O teste não mede o tempo individual de espera pelo lock; essa é uma possível melhoria de robustez, não um defeito funcional demonstrado.
+- Limite do modelo de integridade documentado: os triggers usam a variável de sessão `@fitcontrol_audit_chain_write`, que pode ser definida pelo cliente SQL. O mecanismo detecta e bloqueia operações fora do fluxo normal, mas não oferece proteção absoluta contra credenciais privilegiadas/comprometidas do banco. Para esse cenário, recomenda-se evoluir privilégios e encapsular escrita em procedimento controlado.
+- Revisão estática de concorrência, transações e auditoria concluída sem novo bloqueador funcional.
+- Permanecem pendentes somente validações operacionais/visuais no ambiente do usuário: backup verificável, engine InnoDB, aplicação controlada das migrations, smoke test e inspeção visual.
+- PR #9 continua aberta em Draft, base `main`, sem merge. A atualização deste checkpoint cria novo HEAD e exige CI final correspondente.
