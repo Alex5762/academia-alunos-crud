@@ -33,6 +33,9 @@ jobs:
         run: |
           set -euo pipefail
           while IFS= read -r -d '' file; do php -l "$file"; done < <(find . -type f -name '*.php' -not -path './.git/*' -print0)
+      - name: Validate CSS block structure
+        run: |
+          php -r '$css = file_get_contents("style.css"); if ($css === false || substr_count($css, "{") !== substr_count($css, "}")) { fwrite(STDERR, "CSS contém blocos não balanceados.\n"); exit(1); }'
       - name: Validate pure configuration, password policy and RBAC
         run: |
           php tests/database-configuration.php
@@ -255,3 +258,188 @@ jobs:
           coverage: none
       - name: Test Apache access rules
         run: bash tests/webroot-protection.sh
+
+
+  block-03-migrations:
+    name: Block 03 migrations (${{ matrix.database-name }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - database-name: MySQL 8.0
+            image: mysql:8.0
+          - database-name: MariaDB 10.11
+            image: mariadb:10.11
+    services:
+      database:
+        image: ${{ matrix.image }}
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: academia_alunos
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: pdo_mysql
+          coverage: none
+      - name: Install MySQL-compatible client
+        run: sudo apt-get update && sudo apt-get install --yes default-mysql-client
+      - name: Validate migrations 005/006, legacy preservation and re-execution
+        env:
+          MYSQL_HOST: 127.0.0.1
+          MYSQL_PORT: 3306
+          MYSQL_USER: root
+          MYSQL_DATABASE: academia_alunos
+          MYSQL_BIN: mysql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_NAME: academia_alunos
+          DB_USER: root
+          DB_PASSWORD: root
+        run: bash tests/migration-block-03.sh
+
+  block-03-domain:
+    name: Block 03 domain and persistence (${{ matrix.database-name }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - database-name: MySQL 8.0
+            image: mysql:8.0
+          - database-name: MariaDB 10.11
+            image: mariadb:10.11
+    services:
+      database:
+        image: ${{ matrix.image }}
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: academia_alunos
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: pdo_mysql
+          coverage: none
+      - name: Install MySQL-compatible client
+        run: sudo apt-get update && sudo apt-get install --yes default-mysql-client
+      - name: Prepare isolated foundation for Block 03 service tests
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_NAME: academia_alunos
+          DB_USER: root
+          DB_PASSWORD: root
+        run: bash tests/prepare-block-03-test-database.sh
+      - name: Test temporal domain rules
+        run: |
+          php tests/enrollment-period-calculator.php
+          php tests/enrollment-interval.php
+          php tests/enrollment-status.php
+      - name: Test plan catalog and enrollment creation/cancellation
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_NAME: academia_alunos
+          DB_USER: root
+          DB_PASSWORD: root
+        run: |
+          php tests/database-plan-management.php
+          php tests/database-plan-lock-concurrency.php
+          php tests/database-enrollment-creation.php
+          php tests/database-enrollment-cancellation.php
+          php tests/database-enrollment-concurrency.php
+      - name: Test legacy review, rectification and concurrency
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_NAME: academia_alunos
+          DB_USER: root
+          DB_PASSWORD: root
+        run: |
+          php tests/database-legacy-review-decision.php
+          php tests/database-legacy-enrollment-rectification.php
+          php tests/database-legacy-rectification-decision-concurrency.php
+          php tests/database-legacy-review-rectification-concurrency.php
+
+
+  block-03-http:
+    name: Block 03 HTTP integration (MySQL 8.0)
+    runs-on: ubuntu-latest
+    services:
+      database:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: academia_alunos
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: pdo_mysql
+          coverage: none
+      - name: Install MySQL client
+        run: sudo apt-get update && sudo apt-get install --yes default-mysql-client
+      - name: Prepare foundation and Block 03 migrations
+        env:
+          MYSQL_HOST: 127.0.0.1
+          MYSQL_PORT: 3306
+          MYSQL_USER: root
+          MYSQL_DATABASE: academia_alunos
+          MYSQL_BIN: mysql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_NAME: academia_alunos
+          DB_USER: root
+          DB_PASSWORD: root
+        run: bash tests/migration-block-03.sh
+      - name: Provision first administrator
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_NAME: academia_alunos
+          DB_USER: root
+          DB_PASSWORD: root
+        run: bash tests/provision-user.sh
+      - name: Verify Block 03 authenticated HTTP flows
+        env:
+          FITCONTROL_BLOCK_03: '1'
+          APP_ENV: production
+          BASE_URL: http://127.0.0.1:8080
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_NAME: academia_alunos
+          DB_USER: root
+          DB_PASSWORD: root
+        run: bash tests/foundation-http.sh

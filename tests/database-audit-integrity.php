@@ -17,6 +17,9 @@ function assertAuditIntegrity(bool $condition, string $message): void
 }
 
 if (($argv[1] ?? '') === '--worker') {
+    fwrite(STDOUT, "ATTEMPTING\n");
+    fflush(STDOUT);
+
     \FitControl\Security\AuditIntegrityChain::append(
         $pdo,
         null,
@@ -24,6 +27,9 @@ if (($argv[1] ?? '') === '--worker') {
         'teste',
         null
     );
+
+    fwrite(STDOUT, "APPENDED\n");
+    fflush(STDOUT);
     exit(0);
 }
 
@@ -113,38 +119,89 @@ assertAuditIntegrity(
     'Tentativas bloqueadas não podem corromper a cadeia.'
 );
 
-// Duas conexões/processos tentam gravar em paralelo. A linha de estado
-// serializa o encadeamento para que cada evento receba o hash anterior correto.
+// Mantém o lock da linha de estado enquanto os quatro workers iniciam.
+ // Assim, todos confirmam que chegaram ao append e ficam disputando o mesmo lock
+ // antes de o processo principal liberá-lo; a concorrência não depende de timing.
+$beforeConcurrent = \FitControl\Security\AuditIntegrityChain::verify($pdo);
+assertAuditIntegrity($beforeConcurrent['ok'], 'A cadeia deve estar íntegra antes da disputa concorrente.');
+
 $processes = [];
-for ($index = 0; $index < 4; $index++) {
-    $descriptors = [
-        0 => ['pipe', 'r'],
-        1 => ['pipe', 'w'],
-        2 => ['pipe', 'w'],
-    ];
-    $process = proc_open(
-        [PHP_BINARY, __FILE__, '--worker'],
-        $descriptors,
-        $pipes,
-        dirname(__DIR__)
-    );
-    if (!is_resource($process)) {
-        throw new RuntimeException('Não foi possível iniciar o processo concorrente.');
+$pdo->beginTransaction();
+
+try {
+    $pdo->query(
+        'SELECT id FROM auditoria_integridade_estado WHERE id = 1 FOR UPDATE'
+    )->fetchColumn();
+
+    for ($index = 0; $index < 4; $index++) {
+        $descriptors = [
+            0 => ['pipe', 'r'],
+            1 => ['pipe', 'w'],
+            2 => ['pipe', 'w'],
+        ];
+        $process = proc_open(
+            [PHP_BINARY, __FILE__, '--worker'],
+            $descriptors,
+            $pipes,
+            dirname(__DIR__)
+        );
+        if (!is_resource($process)) {
+            throw new RuntimeException('Não foi possível iniciar o processo concorrente.');
+        }
+
+        fclose($pipes[0]);
+        $processes[] = [$process, $pipes[1], $pipes[2]];
+
+        stream_set_timeout($pipes[1], 10);
+        $signal = fgets($pipes[1]);
+        assertAuditIntegrity(
+            $signal === "ATTEMPTING\n",
+            'O worker não confirmou que iniciou a gravação concorrente: ' . (string) $signal
+        );
     }
-    fclose($pipes[0]);
-    $processes[] = [$process, $pipes[1], $pipes[2]];
+
+    // Todos os workers já iniciaram e aguardam o lock da linha de estado.
+    $pdo->commit();
+} catch (Throwable $error) {
+    if ($pdo->inTransaction()) {
+        $pdo->rollBack();
+    }
+
+    foreach ($processes as [$process, $stdout, $stderr]) {
+        if (is_resource($stdout)) {
+            fclose($stdout);
+        }
+        if (is_resource($stderr)) {
+            fclose($stderr);
+        }
+        if (is_resource($process)) {
+            proc_terminate($process);
+            proc_close($process);
+        }
+    }
+
+    throw $error;
 }
 
 foreach ($processes as [$process, $stdout, $stderr]) {
-    stream_get_contents($stdout);
+    stream_set_timeout($stdout, 10);
+    $result = fgets($stdout);
     $errorOutput = stream_get_contents($stderr);
     fclose($stdout);
     fclose($stderr);
     $exitCode = proc_close($process);
-    assertAuditIntegrity($exitCode === 0, 'Gravação concorrente falhou: ' . $errorOutput);
+
+    assertAuditIntegrity(
+        $exitCode === 0 && $result === "APPENDED\n",
+        'Gravação concorrente falhou: ' . $errorOutput . ' ' . (string) $result
+    );
 }
 
 $final = \FitControl\Security\AuditIntegrityChain::verify($pdo);
 assertAuditIntegrity($final['ok'], 'A cadeia deve continuar íntegra após gravações concorrentes.');
+assertAuditIntegrity(
+    $final['chained_count'] === $beforeConcurrent['chained_count'] + 4,
+    'As quatro gravações concorrentes devem produzir exatamente quatro novos hashes.'
+);
 
 echo "Cadeia SHA-256, rollback, triggers append-only e concorrência: OK." . PHP_EOL;
