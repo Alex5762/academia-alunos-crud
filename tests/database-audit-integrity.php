@@ -17,7 +17,7 @@ function assertAuditIntegrity(bool $condition, string $message): void
 }
 
 if (($argv[1] ?? '') === '--worker') {
-    fwrite(STDOUT, "ATTEMPTING\\n");
+    fwrite(STDOUT, "ATTEMPTING\n");
     fflush(STDOUT);
 
     \FitControl\Security\AuditIntegrityChain::append(
@@ -28,7 +28,7 @@ if (($argv[1] ?? '') === '--worker') {
         null
     );
 
-    fwrite(STDOUT, "APPENDED\\n");
+    fwrite(STDOUT, "APPENDED\n");
     fflush(STDOUT);
     exit(0);
 }
@@ -155,7 +155,7 @@ try {
         stream_set_timeout($pipes[1], 10);
         $signal = fgets($pipes[1]);
         assertAuditIntegrity(
-            $signal === "ATTEMPTING\\n",
+            $signal === "ATTEMPTING\n",
             'O worker não confirmou que iniciou a gravação concorrente: ' . (string) $signal
         );
     }
@@ -192,7 +192,7 @@ foreach ($processes as [$process, $stdout, $stderr]) {
     $exitCode = proc_close($process);
 
     assertAuditIntegrity(
-        $exitCode === 0 && $result === "APPENDED\\n",
+        $exitCode === 0 && $result === "APPENDED\n",
         'Gravação concorrente falhou: ' . $errorOutput . ' ' . (string) $result
     );
 }
