@@ -238,3 +238,15 @@ A antiga PR #1 permanece Draft e não deve ser mesclada em massa.
 - A execução `45537399210`, associada exatamente ao HEAD `5f16a9cec3f2812f224ae5c1e05df13824b5e7f0`, concluiu com **12/12 jobs aprovados**.
 - A revisão do diff confirmou 39 arquivos alterados. Ainda não declarar encerrada a revisão linha a linha de todos os arquivos; inspeção visual em navegador/dispositivo e validação local/XAMPP permanecem pendentes.
 - PR #9 segue aberta em Draft, base `main`, sem merge. Qualquer commit posterior exige nova CI verde no HEAD correspondente.
+
+
+### Regressões de legado e cancelamento — 2026-11-25
+
+- Commit `630fc2f`: ampliados os testes de `LegacyReviewDecisionService`, `EnrollmentCancellationService` e integração HTTP.
+- O teste de revisão agora comprova que `LEGADO_SEM_VIGENCIA` significa ausência de contrato vigente no instante da decisão: uma matrícula LEGADO futura é preservada sem alteração, sem ser confundida com contrato ativo.
+- O teste de snapshot cria uma matrícula LEGADO com preço, duração, unidade e dia de referência preenchidos; repetições com divergência em cada campo são rejeitadas, repetição idêntica é idempotente e a reconfirmação após reabrir a revisão deve reutilizar o mesmo registro.
+- A primeira execução ampliada, `45540706888`, encontrou uma falha real no caminho de reconfirmação: a consulta de matrículas bloqueadas não selecionava `dia_referencia_calendario`, embora o comparador precisasse desse campo.
+- Commit `8b7fe01`: incluído `dia_referencia_calendario` na consulta `SELECT ... FOR UPDATE` de matrículas do aluno usada na reconfirmação. A falha foi corrigida na origem, mantendo os testes de regressão.
+- Testes de cancelamento agora aceitam 255 caracteres Unicode multibyte e rejeitam 256, verificando que a rejeição não altera o motivo nem duplica auditoria. A integração HTTP testa o mesmo limite e verifica `CHAR_LENGTH` e `LENGTH` no banco.
+- CI `45540843236`, associada exatamente ao commit `8b7fe01238a21478382d141ca1e28ba69cb6928c`, concluiu com sucesso: **12/12 jobs aprovados**, incluindo MySQL 8.0 e MariaDB 10.11.
+- PR #9 permanece aberta em Draft, sem merge. O checkpoint documental atualizado gera nova execução de CI; exigir aprovação no HEAD documental final.
