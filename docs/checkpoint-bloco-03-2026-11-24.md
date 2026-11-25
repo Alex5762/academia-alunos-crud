@@ -286,3 +286,15 @@ A antiga PR #1 permanece Draft e não deve ser mesclada em massa.
 - O provisionamento gera senha temporária aleatória, grava apenas o hash, registra evento de auditoria e não imprime a senha nos logs do workflow. O harness mantém o valor somente em arquivo temporário/ambiente do job e remove o diretório temporário no encerramento.
 - Não foi identificado bloqueador adicional nesta revisão de configuração e segurança.
 - A PR #9 continua aberta em Draft, sem merge. A validação local no XAMPP e a inspeção visual permanecem pendentes.
+
+
+### Concorrência e cadeia de auditoria — 2026-11-25
+
+- CI do HEAD anterior `284334e`: execução `45544097947`, **12/12 jobs aprovados**.
+- Revisados os testes de disputa por matrícula, exclusão de plano, decisão/retificação legada em ambas as ordens e append concorrente da auditoria.
+- Os serviços mantêm ordem de locks documentada (aluno → plano/revisão/matrículas conforme operação), transações e auditoria atômica. Os testes de disputa usam conexões/processos independentes e tabelas/fixtures descartáveis.
+- Revisada a cadeia SHA-256: lock da linha de estado serializa escritores; evento, hash e atualização do estado compartilham a transação; triggers impedem inserção direta, update e delete fora do registrador; testes cobrem rollback, adulteração bloqueada, verificação e append paralelo.
+- Melhoria aplicada no teste `tests/database-audit-integrity.php` (commit `e544f36`): agora os quatro workers precisam sinalizar que iniciaram o append enquanto a conexão principal mantém o lock da linha de estado; só então o lock é liberado. O teste aguarda confirmação individual dos quatro workers e exige exatamente quatro hashes adicionais, tornando a disputa determinística em vez de depender de escalonamento casual.
+- Essa mudança é somente no teste; nenhuma migration, dado do banco local ou configuração de produção foi alterada.
+- A CI precisa ser conferida no novo HEAD `e544f36` antes de considerar esta melhoria validada.
+- PR #9 permanece aberta em Draft, sem merge. Validação XAMPP/visual ainda pendente.
