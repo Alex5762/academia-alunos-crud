@@ -250,3 +250,17 @@ A antiga PR #1 permanece Draft e não deve ser mesclada em massa.
 - Testes de cancelamento agora aceitam 255 caracteres Unicode multibyte e rejeitam 256, verificando que a rejeição não altera o motivo nem duplica auditoria. A integração HTTP testa o mesmo limite e verifica `CHAR_LENGTH` e `LENGTH` no banco.
 - CI `45540843236`, associada exatamente ao commit `8b7fe01238a21478382d141ca1e28ba69cb6928c`, concluiu com sucesso: **12/12 jobs aprovados**, incluindo MySQL 8.0 e MariaDB 10.11.
 - PR #9 permanece aberta em Draft, sem merge. O checkpoint documental atualizado gera nova execução de CI; exigir aprovação no HEAD documental final.
+
+
+### Revisão estática complementar — migrations, domínio e camada web — 2026-11-25
+
+- A CI `45541030978`, vinculada exatamente ao HEAD `2bdb7363423562a4a19088e06558bb92fcfd9d66`, concluiu com sucesso: **12/12 jobs aprovados**.
+- Migrations 005/006 conferidas contra `banco.sql`: `alunos.id` é `INT UNSIGNED`, `alunos.plano` é `VARCHAR(40)`, e `revisoes_legado.plano_texto_original` preserva o mesmo limite. As FKs de aluno/usuário/plano são compatíveis com os tipos de origem; tabelas novas são InnoDB.
+- Migration 006 mantém o corte inicial de IDs, cria revisões pendentes sem evidência inventada e não cria matrículas. A reexecução preserva decisões humanas e não inclui alunos cadastrados depois do corte.
+- Scripts de preparação dos testes foram conferidos: o ambiente de serviço prepara a fundação e a cadeia de auditoria sem aplicar 005/006; os testes de migration executam 005/006 em bancos descartáveis separados.
+- Serviços de catálogo, criação, cancelamento, decisão de revisão e retificação foram revisados quanto a transações, locks, validação, snapshots e auditoria atômica.
+- Cálculo temporal e testes conferidos: intervalos semiabertos, adjacência, sobreposição, cancelamento, dias/semanas/meses, último dia do mês, ano bissexto e transição histórica de horário civil.
+- Endpoints e telas revisados: métodos HTTP, autenticação, RBAC, CSRF, validação de tipos recebidos, consultas parametrizadas e escape da saída dinâmica. O helper `validarId` limita os IDs a `INT UNSIGNED`; isso corresponde a `alunos` e `planos`, mas é um teto mais baixo que o tipo `BIGINT UNSIGNED` usado em matrículas/revisões. O limite é extremamente distante para a escala esperada, mas deve ser considerado se o projeto evoluir para volumes acima de 4.294.967.295 registros.
+- Não foi identificado novo bloqueador funcional nesta passada estática.
+- Ainda pendentes: inspeção visual real em navegador/dispositivo; backup verificável, inspeção do banco/engine existente, aplicação controlada das migrations e smoke test no XAMPP; conferir CI no novo HEAD depois desta atualização documental.
+- PR #9 continua aberta em Draft, base `main`, sem merge. Não declarar o Bloco 03 pronto para integração até concluir a validação visual/local e a revisão final do checklist.
