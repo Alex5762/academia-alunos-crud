@@ -240,7 +240,8 @@ final class LegacyReviewDecisionService
             $lockEnrollments = $this->pdo->prepare(
                 'SELECT id, plano_id, plano_nome_contratado, valor_contratado,
                         duracao_contratada_valor, duracao_contratada_unidade,
-                        inicio_em, fim_exclusivo_em, cancelada_em, origem
+                        inicio_em, fim_exclusivo_em, dia_referencia_calendario,
+                        cancelada_em, origem
                  FROM matriculas
                  WHERE aluno_id = :student_id
                  ORDER BY id
