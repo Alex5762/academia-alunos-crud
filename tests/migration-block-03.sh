@@ -43,6 +43,8 @@ INSERT INTO alunos (nome, telefone, email, plano, ativo) VALUES
 ('Legado migration B', '21990001002', 'migration-legacy-b@example.test', 'Plano sem preço', 1);
 SQL
 
+assert_equals "InnoDB" "$(mysql_cmd -e "SELECT ENGINE FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'alunos'")" "alunos deve usar InnoDB para suportar as chaves estrangeiras do Bloco 03"
+
 echo "Aplicando migration 005 (DDL)..."
 "${MYSQL_BIN}" --host="${MYSQL_HOST}" --port="${MYSQL_PORT}" --user="${MYSQL_USER}" --database="${MYSQL_DATABASE}" < "${migration_dir}/005_plans_enrollments_schema.sql"
 
