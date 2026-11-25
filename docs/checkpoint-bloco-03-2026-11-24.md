@@ -273,3 +273,16 @@ A antiga PR #1 permanece Draft e não deve ser mesclada em massa.
 - A validação operacional local permanece pendente: não foram executados scripts, migrations, backups nem alterações no banco do usuário.
 - CI do HEAD anterior `674c122`: run `45542602990`, **12/12 jobs aprovados**. Esta atualização documental cria novo HEAD e exige nova CI.
 - PR #9 permanece aberta em Draft, base `main`, sem merge.
+
+
+### Revisão de configuração e proteção do webroot — 2026-11-25
+
+- A CI `45543422409`, associada exatamente ao HEAD `250d412c8ddb8acaa17254acea0b3853371bfb4a`, concluiu com **12/12 jobs aprovados**.
+- Revisados `DatabaseConfig.php`, `conexao.php`, `.gitignore`, `config/database.local.example.php` e regras Apache de raiz e diretórios.
+- A configuração de produção exige explicitamente `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER` e `DB_PASSWORD`; senha vazia só é aceita em modo local declarado.
+- `config/database.local.php` está excluído do Git. Nenhum segredo local foi incluído na branch.
+- `config`, `database`, `scripts`, `src`, `tests`, `docs` e `.github` possuem bloqueio Apache. O teste `tests/webroot-protection.sh` verifica arquivos SQL, configuração, scripts CLI, código-fonte, testes, documentação e metadados Git, incluindo caminhos codificados.
+- `scripts/provisionar-usuario.php` e `scripts/inicializar-integridade-auditoria.php` rejeitam execução fora de CLI antes de conectar ao banco.
+- O provisionamento gera senha temporária aleatória, grava apenas o hash, registra evento de auditoria e não imprime a senha nos logs do workflow. O harness mantém o valor somente em arquivo temporário/ambiente do job e remove o diretório temporário no encerramento.
+- Não foi identificado bloqueador adicional nesta revisão de configuração e segurança.
+- A PR #9 continua aberta em Draft, sem merge. A validação local no XAMPP e a inspeção visual permanecem pendentes.
