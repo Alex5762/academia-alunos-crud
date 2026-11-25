@@ -311,3 +311,14 @@ A antiga PR #1 permanece Draft e não deve ser mesclada em massa.
 - Revisão estática de concorrência, transações e auditoria concluída sem novo bloqueador funcional.
 - Permanecem pendentes somente validações operacionais/visuais no ambiente do usuário: backup verificável, engine InnoDB, aplicação controlada das migrations, smoke test e inspeção visual.
 - PR #9 continua aberta em Draft, base `main`, sem merge. A atualização deste checkpoint cria novo HEAD e exige CI final correspondente.
+
+
+### Reconciliação final do diff e do estado da PR — 2026-11-25
+
+- A listagem atual da PR #9 contém **40 arquivos alterados**. Referências a 39 arquivos nas seções históricas deste checkpoint correspondem a contagens anteriores e estão superadas.
+- O inventário dos 40 caminhos foi comparado com a lista do GitHub. A revisão estática cruzada cobriu migrations 005/006, serviços de domínio, transações e auditoria, endpoints/telas, testes temporais, persistência, concorrência, integração HTTP, configuração, webroot, CSS e workflow.
+- Não foi identificado novo bloqueador funcional na revisão estática complementar. A revisão estática não substitui inspeção visual real nem validação operacional no ambiente do usuário.
+- CI `45545044728`, associada exatamente ao HEAD `58c9d4bfbe9d35aeb09e40a2260cf615e0ca5f5e`, concluiu com **12/12 jobs aprovados**.
+- Limitação documentada da cadeia de auditoria: o gate de trigger usa variável de sessão definida pelo cliente SQL; portanto, não é uma defesa absoluta contra credenciais privilegiadas do banco. Para esse cenário, seria necessário restringir privilégios da conta da aplicação e encapsular a escrita.
+- Pendências operacionais: inspeção visual em navegador/dispositivo; backup verificável do banco local; confirmação de InnoDB em `alunos`; aplicação controlada das migrations 005/006 somente depois de inspecionar o schema e o backup; smoke test dos fluxos de plano, matrícula, revisão e retificação.
+- Estado atual: PR #9 aberta, Draft, base `main`, sem merge. O inventário estático está consolidado; a integração permanece bloqueada até a validação visual/operacional e autorização explícita.
