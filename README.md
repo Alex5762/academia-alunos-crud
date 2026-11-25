@@ -53,6 +53,7 @@ A migration 004 adiciona `alunos.ativo` e preserva os registros existentes como 
 
 - **Nome do banco:** `banco.sql` e as migrations atuais usam explicitamente o schema `academia_alunos` (por meio de `CREATE DATABASE` / `USE academia_alunos`). Mantenha `database` no arquivo local e `DB_NAME` no ambiente exatamente como `academia_alunos`. Alterar apenas a configuração da aplicação para outro nome não redireciona as migrations; uma mudança de nome exige ajuste coordenado dos scripts SQL e da configuração.
 - **Banco existente:** não trate a sequência de instalação nova como atualização automática. Antes de importar qualquer SQL ou executar migrations em banco com dados, faça backup completo e inspecione tabelas, colunas, índices e triggers. Não repita migrations parcialmente executadas.
+- **Engine de alunos:** a migration 005 cria chaves estrangeiras que referenciam `alunos`; confirme que essa tabela usa InnoDB antes de aplicá-la. Consulte `SELECT ENGINE FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'alunos';`. Se o mecanismo não for InnoDB, interrompa a instalação e planeje a conversão com backup e janela controlada; não tente contornar removendo as FKs.
 - **Perfis herdados:** a migration `007_administrative_roles.sql` atribui `ADMINISTRADOR` às contas que já existiam em `usuarios` quando a coluna é criada. Antes de abrir o sistema a usuários reais, revise individualmente essas contas e reduza os perfis que não devam ser administrativos, usando o fluxo autorizado da aplicação para preservar a auditoria. Em instalação nova, registre que não havia contas preexistentes antes do provisionamento.
 - **Prontidão:** use o runbook e o checklist acima para backup, sequência das migrations, inicialização da cadeia de auditoria, provisionamento CLI e smoke tests. CI verde não substitui esses passos no banco local/de destino.
 
@@ -66,11 +67,11 @@ A migration 004 adiciona `alunos.ativo` e preserva os registros existentes como 
 
 ## Testes
 
-A CI valida sintaxe PHP, política de senha, RBAC, configuração de banco, migrations e integridade transacional em MySQL 8.0 e MariaDB 10.11. Os testes do Bloco 03 cobrem migrations 005/006, preservação/reexecução da carga legada, cálculo temporal, catálogo, criação/cancelamento de matrículas, revisão, retificação, rollback e concorrência. A integração HTTP da fundação cobre autenticação, CSRF, RBAC, CRUD protegido e revogação de sessões paralelas.
+A CI valida sintaxe PHP, política de senha, RBAC, configuração de banco, migrations e integridade transacional em MySQL 8.0 e MariaDB 10.11. Os testes do Bloco 03 cobrem migrations 005/006, compatibilidade InnoDB, preservação/reexecução da carga legada, cálculo temporal, catálogo, criação/cancelamento de matrículas, revisão, retificação, rollback e concorrência. A integração HTTP cobre autenticação, CSRF, RBAC, CRUD protegido, catálogo, snapshots, cancelamento, revisão legada e revogação de sessões paralelas.
 
 ## Escopo futuro
 
-Planos, matrículas, frequência, financeiro, grade, dashboard e relatórios serão integrados em PRs independentes, com suas migrations e regressões próprias. A migration 010 permanece fora desta etapa.
+Frequência, financeiro, grade, dashboard e relatórios serão integrados em PRs independentes, com suas migrations e regressões próprias. Planos e matrículas pertencem ao Bloco 03 desta etapa. A migration 010 permanece fora desta etapa.
 
 
 ### Rate limit e auditoria de autenticação
