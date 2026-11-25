@@ -226,3 +226,15 @@ A antiga PR #1 permanece Draft e não deve ser mesclada em massa.
 - A PR #9 permanece aberta, em Draft, sem merge.
 - A revisão estática dos grupos de banco/migrations, domínio/catálogo, transações/auditoria e endpoints/interfaces foi concluída nesta passada. A revisão linha a linha do diff completo dos 39 arquivos e a inspeção visual em navegador/dispositivo ainda não foram encerradas.
 - Validações locais no XAMPP continuam pendentes até o usuário ter acesso ao computador; não aplicar migrations em banco real sem backup e inspeção prévia.
+
+
+### Continuidade da revisão — README, engine InnoDB, acessibilidade e CI — 2026-11-25
+
+- Commit `c705105`: README alinhado ao escopo real do Bloco 03; frequência, financeiro, grade, dashboard e relatórios permanecem no escopo futuro.
+- O README agora documenta explicitamente que `alunos` precisa utilizar InnoDB antes da migration 005, por causa das chaves estrangeiras do Bloco 03, e apresenta a consulta de verificação em `information_schema.TABLES`.
+- Commit `4931bb5`: `tests/migration-block-03.sh` verifica que `alunos` está em InnoDB e interrompe a preparação caso o pré-requisito não seja atendido, antes da migration 005.
+- Commit `5f16a9c`: CSS respeita `prefers-reduced-motion: reduce`, removendo transições e deslocamentos de hover dos componentes interativos afetados.
+- Revisão estrutural do CSS após o ajuste: 251 chaves de abertura e 251 de fechamento; regra de movimento reduzido presente.
+- A execução `45537399210`, associada exatamente ao HEAD `5f16a9cec3f2812f224ae5c1e05df13824b5e7f0`, concluiu com **12/12 jobs aprovados**.
+- A revisão do diff confirmou 39 arquivos alterados. Ainda não declarar encerrada a revisão linha a linha de todos os arquivos; inspeção visual em navegador/dispositivo e validação local/XAMPP permanecem pendentes.
+- PR #9 segue aberta em Draft, base `main`, sem merge. Qualquer commit posterior exige nova CI verde no HEAD correspondente.
