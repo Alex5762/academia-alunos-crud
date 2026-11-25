@@ -1143,3 +1143,17 @@ th { background: #edf1f6; }
     background: #ffe3e3;
     border-color: #eabfc4;
 }
+
+/* Respeita a preferência do sistema por movimento reduzido. */
+@media (prefers-reduced-motion: reduce) {
+    .legacy-review-count,
+    .button {
+        transition: none;
+    }
+
+    .legacy-review-count:hover,
+    .legacy-review-count.is-selected,
+    .button:hover {
+        transform: none;
+    }
+}
