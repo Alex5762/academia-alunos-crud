@@ -132,7 +132,7 @@ try {
          VALUES (:nome, :telefone, :email, :plano)'
     );
 
-    for ($index = 1; $index <= 5; $index++) {
+    for ($index = 1; $index <= 6; $index++) {
         $email = 'fitcontrol-cancel-student-' . bin2hex(random_bytes(5)) . '@example.invalid';
         $studentEmails[] = $email;
         $createStudent->execute([
@@ -347,6 +347,49 @@ try {
     assertCancellation(
         countCancellationAudits($pdo, $actorId, $auditFailureId) === 0,
         'A falha na auditoria não pode deixar evento parcial.'
+    );
+
+    // O limite é de 255 caracteres Unicode, não de 255 bytes.
+    $unicodeBoundaryId = $insertEnrollment(
+        $studentIds[5],
+        '2026-01-11 09:00:00',
+        '2026-02-11 09:00:00'
+    );
+    $unicodeBoundaryReason = str_repeat('ç', 255);
+    $service->cancel($studentIds[5], $unicodeBoundaryId, $actorId, $unicodeBoundaryReason);
+    $unicodeBoundaryRow = $pdo->query(
+        'SELECT motivo_cancelamento FROM matriculas WHERE id = ' . $unicodeBoundaryId
+    )->fetchColumn();
+    assertCancellation(
+        $unicodeBoundaryRow === $unicodeBoundaryReason,
+        'O serviço deve aceitar e preservar exatamente 255 caracteres multibyte válidos.'
+    );
+    assertCancellation(
+        countCancellationAudits($pdo, $actorId, $unicodeBoundaryId) === 1,
+        'O cancelamento com 255 caracteres Unicode deve gerar uma auditoria.'
+    );
+
+    $unicodeOverLimitRejected = false;
+    try {
+        $service->cancel(
+            $studentIds[5],
+            $unicodeBoundaryId,
+            $actorId,
+            str_repeat('ç', 256)
+        );
+    } catch (InvalidArgumentException) {
+        $unicodeOverLimitRejected = true;
+    }
+    assertCancellation(
+        $unicodeOverLimitRejected,
+        'O serviço deve rejeitar 256 caracteres Unicode mesmo quando o tamanho em bytes é maior.'
+    );
+    assertCancellation(
+        $pdo->query(
+            'SELECT motivo_cancelamento FROM matriculas WHERE id = ' . $unicodeBoundaryId
+        )->fetchColumn() === $unicodeBoundaryReason
+        && countCancellationAudits($pdo, $actorId, $unicodeBoundaryId) === 1,
+        'A rejeição do motivo Unicode acima do limite não pode alterar o cancelamento nem duplicar auditoria.'
     );
 
     printf(

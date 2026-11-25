@@ -472,17 +472,34 @@ if [[ "\${FITCONTROL_BLOCK_03:-0}" == "1" ]]; then
     [[ "$CHARGE_TABLE_COUNT" == "0" ]] || fail "O Bloco 03 não deve criar nem depender da tabela financeira cobrancas."
 
     TOKEN="$(get_token "$TMP_DIR/block03-enrollment-created.html")"
+    BOUNDARY_CANCEL_REASON="$(php -r 'echo str_repeat("ç", 255);')"
     curl -fsS -L -b "$ADMIN_JAR" -c "$ADMIN_JAR" "$BASE_URL/cancelar-matricula.php" \
         --data-urlencode "token=$TOKEN" \
         --data-urlencode "student_id=$BLOCK03_STUDENT_ID" \
         --data-urlencode "enrollment_id=$ENROLLMENT_ID" \
-        --data-urlencode "motivo_cancelamento=Cancelamento de fixture HTTP" \
+        --data-urlencode "motivo_cancelamento=$BOUNDARY_CANCEL_REASON" \
         -o "$TMP_DIR/block03-enrollment-cancelled.html"
     grep -Fq 'Matrícula cancelada com sucesso.' "$TMP_DIR/block03-enrollment-cancelled.html" || fail "Cancelamento da matrícula agendada não foi concluído."
     CANCELLED_AT="$(db_value "SELECT COUNT(*) FROM matriculas WHERE id = $ENROLLMENT_ID AND cancelada_em IS NOT NULL")"
     [[ "$CANCELLED_AT" == "1" ]] || fail "Cancelamento não foi persistido."
     CANCEL_AUDIT="$(db_value "SELECT COUNT(*) FROM auditoria WHERE acao = 'matricula_cancelada' AND entidade = 'matriculas' AND entidade_id = $ENROLLMENT_ID")"
     [[ "$CANCEL_AUDIT" == "1" ]] || fail "Cancelamento não foi auditado exatamente uma vez."
+    CANCEL_REASON_CHARS="$(db_value "SELECT CHAR_LENGTH(motivo_cancelamento) FROM matriculas WHERE id = $ENROLLMENT_ID")"
+    CANCEL_REASON_BYTES="$(db_value "SELECT LENGTH(motivo_cancelamento) FROM matriculas WHERE id = $ENROLLMENT_ID")"
+    [[ "$CANCEL_REASON_CHARS" == "255" && "$CANCEL_REASON_BYTES" -gt 255 ]] || fail "O endpoint não preservou o limite de 255 caracteres Unicode."
+
+    TOKEN="$(get_token "$TMP_DIR/block03-enrollment-cancelled.html")"
+    OVER_LIMIT_CANCEL_REASON="$(php -r 'echo str_repeat("ç", 256);')"
+    OVER_LIMIT_CANCEL_RESPONSE="$(curl -fsS -L -b "$ADMIN_JAR" -c "$ADMIN_JAR" "$BASE_URL/cancelar-matricula.php" \
+        --data-urlencode "token=$TOKEN" \
+        --data-urlencode "student_id=$BLOCK03_STUDENT_ID" \
+        --data-urlencode "enrollment_id=$ENROLLMENT_ID" \
+        --data-urlencode "motivo_cancelamento=$OVER_LIMIT_CANCEL_REASON")"
+    grep -Fq 'no máximo 255 caracteres válidos' <<< "$OVER_LIMIT_CANCEL_RESPONSE" || fail "O endpoint deveria rejeitar 256 caracteres Unicode."
+    CANCEL_AUDIT_AFTER_REJECTION="$(db_value "SELECT COUNT(*) FROM auditoria WHERE acao = 'matricula_cancelada' AND entidade = 'matriculas' AND entidade_id = $ENROLLMENT_ID")"
+    [[ "$CANCEL_AUDIT_AFTER_REJECTION" == "1" ]] || fail "Motivo acima do limite duplicou auditoria."
+    CANCEL_REASON_AFTER_REJECTION="$(db_value "SELECT CHAR_LENGTH(motivo_cancelamento) FROM matriculas WHERE id = $ENROLLMENT_ID")"
+    [[ "$CANCEL_REASON_AFTER_REJECTION" == "255" ]] || fail "Motivo inválido alterou o motivo original."
 
     curl -fsS -b "$ADMIN_JAR" -c "$ADMIN_JAR" "$BASE_URL/revisoes-legado.php" -o "$TMP_DIR/block03-legacy-review.html"
     grep -Fq 'Revisão de vínculos legados' "$TMP_DIR/block03-legacy-review.html" || fail "Fila de revisão de legados não abriu."

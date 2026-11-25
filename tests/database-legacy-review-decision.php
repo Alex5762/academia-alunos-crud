@@ -187,7 +187,7 @@ try {
          VALUES (:name, :phone, :email, :plan_text)'
     );
 
-    $originalPlanTexts = ['Mensal antigo', 'Plano sem vigência', 'Sem informação', 'Plano repetido', 'Legado com conflito'];
+    $originalPlanTexts = ['Mensal antigo', 'Plano sem vigência', 'Sem informação', 'Plano repetido', 'Legado com conflito', 'Legado com snapshot opcional'];
     foreach ($originalPlanTexts as $index => $planText) {
         $createStudent->execute([
             'name' => 'Aluno de revisão legada ' . ($index + 1),
@@ -415,6 +415,27 @@ try {
         'Nova confirmação não pode duplicar a matrícula LEGADO.'
     );
 
+    // Um vínculo LEGADO futuro não está vigente no instante da decisão.
+    // Registrar ausência de vigência atual não pode apagar nem reclassificar esse histórico futuro.
+    $insertFutureLegacy = $pdo->prepare(
+        "INSERT INTO matriculas (
+            aluno_id, plano_id, plano_nome_contratado, valor_contratado,
+            duracao_contratada_valor, duracao_contratada_unidade,
+            inicio_em, fim_exclusivo_em, dia_referencia_calendario,
+            cancelada_em, origem
+        ) VALUES (
+            :student_id, NULL, :plan_name, NULL,
+            NULL, NULL, :start_at, :end_at, NULL, NULL, 'LEGADO'
+        )"
+    );
+    $insertFutureLegacy->execute([
+        'student_id' => $studentIds[1],
+        'plan_name' => $originalPlanTexts[1],
+        'start_at' => legacyUtc('2026-01-20 00:00:00'),
+        'end_at' => legacyUtc('2026-02-20 00:00:00'),
+    ]);
+    $futureLegacyId = (int) $pdo->lastInsertId();
+
     // Ausência de vigência exige fonte e não cria matrícula artificial.
     $noVigencyResult = $service->decide(
         $studentIds[1],
@@ -429,9 +450,138 @@ try {
         (string) $pdo->query('SELECT resultado_atual FROM revisoes_legado WHERE id = ' . $reviewIds[1])->fetchColumn() === 'LEGADO_SEM_VIGENCIA',
         'Resultado sem vigência deve atualizar a revisão.'
     );
+    $futureLegacyRow = $pdo->query(
+        'SELECT id, inicio_em, fim_exclusivo_em, origem
+         FROM matriculas
+         WHERE id = ' . $futureLegacyId
+    )->fetch();
     assertLegacyReview(
-        (int) $pdo->query('SELECT COUNT(*) FROM matriculas WHERE aluno_id = ' . $studentIds[1])->fetchColumn() === 0,
-        'Ausência de vigência não deve gerar matrícula fictícia.'
+        (int) $pdo->query(
+            "SELECT COUNT(*) FROM matriculas WHERE aluno_id = {$studentIds[1]} AND origem = 'LEGADO'"
+        )->fetchColumn() === 1
+        && (int) $futureLegacyRow['id'] === $futureLegacyId
+        && $futureLegacyRow['inicio_em'] === legacyUtc('2026-01-20 00:00:00')
+        && $futureLegacyRow['fim_exclusivo_em'] === legacyUtc('2026-02-20 00:00:00')
+        && $futureLegacyRow['origem'] === 'LEGADO',
+        'Sem vigência atual não pode apagar nem alterar uma matrícula LEGADO futura.'
+    );
+    $noVigencyEventLink = $pdo->query(
+        'SELECT matricula_id
+         FROM revisoes_legado_eventos
+         WHERE revisao_legado_id = ' . $reviewIds[1] . '
+         ORDER BY id DESC
+         LIMIT 1'
+    )->fetchColumn();
+    assertLegacyReview(
+        $noVigencyEventLink === null,
+        'A decisão de ausência de vigência atual não deve afirmar que o contrato futuro foi materializado por ela.'
+    );
+
+    // Snapshot histórico completo: cada campo opcional precisa coincidir numa repetição idempotente.
+    $snapshotSource = 'Contrato físico, pasta snapshot, folha 31';
+    $snapshotObservations = 'Preço e duração conferidos no documento original.';
+    $snapshotStart = legacyLocalDate('2025-01-31 09:00:00');
+    $snapshotEnd = legacyLocalDate('2026-01-31 09:00:00');
+    $fullSnapshotEnrollmentId = $service->decide(
+        $studentIds[5],
+        $reviewIds[5],
+        $actorId,
+        'VINCULO_CONFIRMADO',
+        $snapshotSource,
+        $snapshotObservations,
+        $snapshotStart,
+        $snapshotEnd,
+        '89.90',
+        12,
+        'MES',
+        31
+    );
+    assertLegacyReview(
+        is_int($fullSnapshotEnrollmentId) && $fullSnapshotEnrollmentId > 0,
+        'Confirmação com snapshot opcional completo deve materializar matrícula.'
+    );
+
+    $fullSnapshotRow = $pdo->query(
+        'SELECT valor_contratado, duracao_contratada_valor,
+                duracao_contratada_unidade, dia_referencia_calendario
+         FROM matriculas WHERE id = ' . $fullSnapshotEnrollmentId
+    )->fetch();
+    assertLegacyReview(
+        $fullSnapshotRow['valor_contratado'] === '89.90'
+        && (int) $fullSnapshotRow['duracao_contratada_valor'] === 12
+        && $fullSnapshotRow['duracao_contratada_unidade'] === 'MES'
+        && (int) $fullSnapshotRow['dia_referencia_calendario'] === 31,
+        'A matrícula deve preservar todos os campos opcionais comprovados.'
+    );
+
+    assertLegacyReviewRejected(
+        fn () => $service->decide(
+            $studentIds[5], $reviewIds[5], $actorId,
+            'VINCULO_CONFIRMADO', $snapshotSource, $snapshotObservations,
+            $snapshotStart, $snapshotEnd, '90.00', 12, 'MES', 31
+        ),
+        'Repetição idempotente deve rejeitar preço divergente'
+    );
+    assertLegacyReviewRejected(
+        fn () => $service->decide(
+            $studentIds[5], $reviewIds[5], $actorId,
+            'VINCULO_CONFIRMADO', $snapshotSource, $snapshotObservations,
+            $snapshotStart, $snapshotEnd, '89.90', 11, 'MES', 31
+        ),
+        'Repetição idempotente deve rejeitar duração divergente'
+    );
+    assertLegacyReviewRejected(
+        fn () => $service->decide(
+            $studentIds[5], $reviewIds[5], $actorId,
+            'VINCULO_CONFIRMADO', $snapshotSource, $snapshotObservations,
+            $snapshotStart, $snapshotEnd, '89.90', 12, 'DIA', null
+        ),
+        'Repetição idempotente deve rejeitar unidade divergente'
+    );
+    assertLegacyReviewRejected(
+        fn () => $service->decide(
+            $studentIds[5], $reviewIds[5], $actorId,
+            'VINCULO_CONFIRMADO', $snapshotSource, $snapshotObservations,
+            $snapshotStart, $snapshotEnd, '89.90', 12, 'MES', 30
+        ),
+        'Repetição idempotente deve rejeitar dia de referência divergente'
+    );
+
+    $snapshotReplay = $service->decide(
+        $studentIds[5], $reviewIds[5], $actorId,
+        'VINCULO_CONFIRMADO', $snapshotSource, $snapshotObservations,
+        $snapshotStart, $snapshotEnd, '89.90', 12, 'MES', 31
+    );
+    assertLegacyReview(
+        $snapshotReplay === $fullSnapshotEnrollmentId,
+        'Repetição com todos os campos históricos idênticos deve ser idempotente.'
+    );
+
+    // Depois de reabrir, a mesma proteção deve valer no caminho de reconfirmação.
+    $service->decide(
+        $studentIds[5],
+        $reviewIds[5],
+        $actorId,
+        'PENDENTE_REVISAO',
+        null,
+        'Nova evidência exige reconfirmação do snapshot completo.'
+    );
+    assertLegacyReviewRejected(
+        fn () => $service->decide(
+            $studentIds[5], $reviewIds[5], $actorId,
+            'VINCULO_CONFIRMADO', $snapshotSource, $snapshotObservations,
+            $snapshotStart, $snapshotEnd, '89.90', 12, 'MES', 30
+        ),
+        'Reconfirmação deve rejeitar dia de referência divergente'
+    );
+    $snapshotReconfirmation = $service->decide(
+        $studentIds[5], $reviewIds[5], $actorId,
+        'VINCULO_CONFIRMADO', $snapshotSource, $snapshotObservations,
+        $snapshotStart, $snapshotEnd, '89.90', 12, 'MES', 31
+    );
+    assertLegacyReview(
+        $snapshotReconfirmation === $fullSnapshotEnrollmentId,
+        'Reconfirmação idêntica deve reutilizar a matrícula LEGADO existente.'
     );
 
     // Evidência insuficiente exige observação e mantém o bloqueio.
