@@ -67,6 +67,8 @@ A migration 004 adiciona `alunos.ativo` e preserva os registros existentes como 
 
 ## Testes
 
+**Execute testes de persistência e migrations somente em banco descartável, nunca no banco de uso do XAMPP ou em produção.** Os scripts de banco criam fixtures, tabelas temporárias, usuários e eventos de auditoria; alguns usuários de fixture permanecem por causa das FKs append-only. O script `tests/prepare-block-03-test-database.sh` importa o schema base e aplica migrations da fundação, enquanto `tests/migration-block-03.sh` importa o schema e executa migrations 001–008/015 e a carga legada. Eles não são scripts de atualização do banco da aplicação e não devem ser repetidos sobre um banco persistente.
+
 A CI valida sintaxe PHP, política de senha, RBAC, configuração de banco, migrations e integridade transacional em MySQL 8.0 e MariaDB 10.11. Os testes do Bloco 03 cobrem migrations 005/006, compatibilidade InnoDB, preservação/reexecução da carga legada, cálculo temporal, catálogo, criação/cancelamento de matrículas, revisão, retificação, rollback e concorrência. A integração HTTP cobre autenticação, CSRF, RBAC, CRUD protegido, catálogo, snapshots, cancelamento, revisão legada e revogação de sessões paralelas.
 
 ## Escopo futuro

@@ -264,3 +264,12 @@ A antiga PR #1 permanece Draft e não deve ser mesclada em massa.
 - Não foi identificado novo bloqueador funcional nesta passada estática.
 - Ainda pendentes: inspeção visual real em navegador/dispositivo; backup verificável, inspeção do banco/engine existente, aplicação controlada das migrations e smoke test no XAMPP; conferir CI no novo HEAD depois desta atualização documental.
 - PR #9 continua aberta em Draft, base `main`, sem merge. Não declarar o Bloco 03 pronto para integração até concluir a validação visual/local e a revisão final do checklist.
+
+
+### Segurança operacional dos testes — 2026-11-25
+
+- O README foi atualizado para destacar que os scripts de persistência/migration devem ser executados somente em banco descartável. Eles criam fixtures, tabelas temporárias e eventos de auditoria; parte dos usuários de fixture permanece por causa das FKs append-only.
+- `tests/prepare-block-03-test-database.sh` importa o schema base e aplica migrations de fundação, sem instalar 005/006; `tests/migration-block-03.sh` prepara um banco limpo e executa migrations 001–008/015, inclusive a carga legada. Nenhum desses scripts é um atualizador seguro para banco de uso do XAMPP.
+- A validação operacional local permanece pendente: não foram executados scripts, migrations, backups nem alterações no banco do usuário.
+- CI do HEAD anterior `674c122`: run `45542602990`, **12/12 jobs aprovados**. Esta atualização documental cria novo HEAD e exige nova CI.
+- PR #9 permanece aberta em Draft, base `main`, sem merge.
